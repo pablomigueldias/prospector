@@ -1,9 +1,9 @@
-# 🎯 Prospector — Agente de Prospecção Automatizada
+# Prospector — Agente de Prospecção Automatizada
 
 Agente que coleta dados públicos de empresas (Google Maps, BrasilAPI, sites)
 e cadastra automaticamente no seu CRM Notion, com análise crítica gerada por IA.
 
-## 📦 Estado atual: Fase 1 — Integração com Notion
+## Estado atual: Fase 1 — Integração com Notion
 
 Apenas a integração com o Notion está implementada. As demais fases virão
 incrementalmente:
@@ -20,7 +20,7 @@ incrementalmente:
 - ⏳ Fase 10 — FastAPI
 - ⏳ Fase 11 — Frontend React
 
-## 🚀 Como rodar (Fase 1)
+## Como rodar (Fase 1)
 
 ### 1. Pré-requisitos
 
@@ -56,7 +56,7 @@ python run.py test-notion
 ```
 
 Esse comando cria uma empresa e um contato de teste no seu CRM. Vá lá conferir!
-Se aparecer corretamente, a Fase 1 está validada. ✅
+Se aparecer corretamente, a Fase 1 está validada. 
 
 ### 4. Comandos úteis
 
@@ -64,7 +64,7 @@ Se aparecer corretamente, a Fase 1 está validada. ✅
 python run.py list-leads      # lista leads salvos localmente
 ```
 
-## 📂 Estrutura de pastas
+## Estrutura de pastas
 
 ```
 backend/
@@ -72,8 +72,8 @@ backend/
 │   ├── config.py            # carrega .env e define opções dos selects
 │   ├── collectors/          # (próximas fases) Maps, BrasilAPI, sites
 │   ├── analyzers/           # (Fase 8) análise crítica com Gemini
-│   ├── exporters/           # ⭐ notion_exporter.py
-│   ├── models/              # ⭐ lead.py — Empresa, Contato, Lead
+│   ├── exporters/           # notion_exporter.py
+│   ├── models/              # lead.py — Empresa, Contato, Lead
 │   ├── services/            # (próximas fases) orquestração
 │   └── utils/               # logger, storage
 ├── data/
@@ -86,7 +86,7 @@ backend/
 └── run.py                   # ponto de entrada
 ```
 
-## 🛡️ Princípios do projeto
+## Princípios do projeto
 
 - **Lento de propósito**: delays aleatórios, no máximo 30-50 leads/dia
 - **Idempotente**: salva tudo em JSON antes de enviar; não duplica empresas (busca por CNPJ)
