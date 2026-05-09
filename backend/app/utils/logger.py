@@ -1,0 +1,48 @@
+"""
+Logger central do projeto usando loguru.
+Logs vão pro console (colorido) e pro arquivo logs/prospector_YYYY-MM-DD.log.
+"""
+
+import sys
+from typing import Optional
+
+from loguru import logger
+
+from app.config import LOGS_DIR, settings
+
+
+# Remove o handler padrão do loguru
+logger.remove()
+
+# Console (stderr) com cores
+logger.add(
+    sys.stderr,
+    level=settings.log_level,
+    format=(
+        "<green>{time:HH:mm:ss}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan> - "
+        "<level>{message}</level>"
+    ),
+    colorize=True,
+)
+
+# Arquivo (rotação diária, 7 dias de retenção)
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+logger.add(
+    LOGS_DIR / "prospector_{time:YYYY-MM-DD}.log",
+    level=settings.log_level,
+    rotation="00:00",
+    retention="7 days",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function} - {message}",
+    encoding="utf-8",
+)
+
+
+def get_logger(name: Optional[str] = None):
+    """
+    Retorna o logger global do loguru.
+    O parâmetro 'name' é mantido por compatibilidade mas não é usado
+    (loguru já captura o módulo automaticamente).
+    """
+    return logger
