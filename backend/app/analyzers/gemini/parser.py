@@ -1,8 +1,3 @@
-"""
-Parser: converte o JSON cru retornado pelo Gemini em estrutura validada,
-e formata um relatório bonito pra ir nas Notas da Empresa.
-"""
-
 import json
 import re
 from typing import Any, Dict, List, Optional
