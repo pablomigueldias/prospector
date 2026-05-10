@@ -241,4 +241,6 @@ certbot/
 # Adicione aqui arquivos específicos do seu projeto
 # exemplo:
 # config/local-config.json
-# data/temp/
+*data/temp/
+*.data
+data/

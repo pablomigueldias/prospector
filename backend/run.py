@@ -1,13 +1,7 @@
-"""
-Uso:
-    python run.py test-conexao      → testa apenas a conexão com o Notion
-    python run.py test-notion       → cria empresa + contato de teste
-    python run.py list-leads        → lista leads salvos localmente
-"""
-
 import sys
 import traceback
 from datetime import datetime
+from typing import Optional
 
 
 def test_conexao():
@@ -39,7 +33,6 @@ def test_conexao():
 
 
 def test_notion():
-
     from app.exporters.notion import NotionExporter
     from app.models.lead import Contato, Empresa, Lead, Socio
     from app.utils.logger import get_logger
@@ -114,6 +107,196 @@ def cmd_list_leads():
             logger.info(f"   - {path.name}")
 
 
+def cmd_buscar_cnpj(cnpj: str):
+    from app.collectors.brasilapi import buscar_lead_por_cnpj
+    from app.utils.logger import get_logger
+
+    logger = get_logger()
+    logger.info(f"🔎 Buscando CNPJ: {cnpj}")
+
+    lead = buscar_lead_por_cnpj(cnpj)
+    if lead is None:
+        logger.error("❌ Lead não pôde ser montado (CNPJ inválido ou não encontrado)")
+        return
+
+    e = lead.empresa
+    logger.info("=" * 60)
+    logger.info(f"🏢 {e.nome}")
+    logger.info(f"   Razão Social:    {e.razao_social}")
+    logger.info(f"   CNPJ:            {e.cnpj}")
+    logger.info(f"   Capital Social:  R$ {e.capital_social or 0:,.2f}")
+    logger.info(f"   Setor:           {e.setor or '(não mapeado)'}")
+    logger.info(f"   Tamanho:         {e.tamanho or '(não estimado)'}")
+    logger.info(f"   Cidade/Estado:   {e.cidade}/{e.estado}")
+    logger.info(f"   Endereço:        {e.local}")
+    logger.info(f"   Sócios ({len(e.socios)}):")
+    for s in e.socios:
+        logger.info(f"     - {s.nome} ({s.qualificacao or 'sem qualificação'})")
+    if e.notas:
+        logger.info(f"   📝 Notas:")
+        for linha in e.notas.split("\n"):
+            logger.info(f"      {linha}")
+    logger.info("=" * 60)
+
+
+def cmd_prospectar_cnpj(cnpj: str):
+    from app.collectors.brasilapi import buscar_lead_por_cnpj
+    from app.exporters.notion import NotionExporter
+    from app.utils.logger import get_logger
+    from app.utils.storage import save_lead
+
+    logger = get_logger()
+    logger.info("=" * 60)
+    logger.info(f"🎯 PROSPECÇÃO POR CNPJ: {cnpj}")
+    logger.info("=" * 60)
+
+    lead = buscar_lead_por_cnpj(cnpj)
+    if lead is None:
+        logger.error("❌ Não foi possível obter o Lead. Abortando.")
+        return
+
+    save_lead(lead, stage="processed")
+
+    exporter = NotionExporter()
+    lead = exporter.send_lead(lead)
+
+    save_lead(lead, stage="sent")
+
+    logger.info("=" * 60)
+    logger.success(f"✅ PROSPECÇÃO CONCLUÍDA: {lead.empresa.nome}")
+    logger.info(f"   Empresa:  {lead.empresa.notion_page_id}")
+    logger.info(f"   Contatos: {len(lead.contatos)} criado(s)/atualizado(s)")
+    logger.info("=" * 60)
+
+
+def cmd_extrair_site(url: str, force_playwright: bool = False):
+    from app.collectors.website import coletar_do_site
+    from app.utils.logger import get_logger
+
+    logger = get_logger()
+    logger.info(f"🌐 Extraindo de: {url}")
+    if force_playwright:
+        logger.info("   (Modo Playwright forçado)")
+
+    contatos = coletar_do_site(url, force_playwright=force_playwright)
+    logger.info("=" * 60)
+    logger.info(f"   📧 Emails:     {contatos.get('emails') or '(nenhum)'}")
+    logger.info(f"   📱 WhatsApp:   {contatos.get('whatsapps') or '(nenhum)'}")
+    logger.info(f"   ☎️  Telefones:  {contatos.get('telefones') or '(nenhum)'}")
+    logger.info(f"   📷 Instagram:  {contatos.get('instagram') or '(nenhum)'}")
+    logger.info(f"   📘 Facebook:   {contatos.get('facebook') or '(nenhum)'}")
+    logger.info(f"   💼 LinkedIn:   {contatos.get('linkedin') or '(nenhum)'}")
+    logger.info("=" * 60)
+
+
+def cmd_prospectar_completo(cnpj: str, url_site: Optional[str] = None):
+    from app.collectors.brasilapi import buscar_lead_por_cnpj
+    from app.collectors.website import enriquecer_lead_com_site
+    from app.exporters.notion import NotionExporter
+    from app.utils.logger import get_logger
+    from app.utils.storage import save_lead
+
+    logger = get_logger()
+    logger.info("=" * 60)
+    logger.info(f"🎯 PROSPECÇÃO COMPLETA: {cnpj}")
+    if url_site:
+        logger.info(f"   + site: {url_site}")
+    logger.info("=" * 60)
+
+    lead = buscar_lead_por_cnpj(cnpj)
+    if lead is None:
+        logger.error("❌ Não foi possível obter o Lead. Abortando.")
+        return
+
+    if url_site:
+        lead = enriquecer_lead_com_site(lead, url_site)
+
+    save_lead(lead, stage="processed")
+
+    exporter = NotionExporter()
+    lead = exporter.send_lead(lead)
+    save_lead(lead, stage="sent")
+
+    logger.info("=" * 60)
+    logger.success(f"✅ PROSPECÇÃO COMPLETA: {lead.empresa.nome}")
+    logger.info(f"   Empresa Notion: {lead.empresa.notion_page_id}")
+    logger.info(f"   Contatos: {len(lead.contatos)}")
+    for c in lead.contatos:
+        marca = "📞" if c.telefone or c.whatsapp else "📭"
+        logger.info(f"     {marca} {c.nome} — email={c.email or '-'} whats={c.whatsapp or '-'}")
+    logger.info("=" * 60)
+
+
+def cmd_analisar_cnpj(cnpj: str, url_site: Optional[str] = None):
+    from app.analyzers.gemini import analisar_lead
+    from app.analyzers.gemini.parser import formatar_para_notas
+    from app.collectors.brasilapi import buscar_lead_por_cnpj
+    from app.collectors.website import enriquecer_lead_com_site
+    from app.utils.logger import get_logger
+
+    logger = get_logger()
+    logger.info("=" * 60)
+    logger.info(f"🤖 ANÁLISE IA: {cnpj}")
+    logger.info("=" * 60)
+
+    lead = buscar_lead_por_cnpj(cnpj)
+    if lead is None:
+        logger.error("❌ Não foi possível obter o Lead. Abortando.")
+        return
+
+    if url_site:
+        lead = enriquecer_lead_com_site(lead, url_site)
+
+    analise = analisar_lead(lead)
+    if analise is None:
+        logger.error("❌ Análise falhou. Abortando.")
+        return
+
+    print()
+    print(formatar_para_notas(analise))
+    print()
+
+
+def cmd_prospectar_full(cnpj: str, url_site: Optional[str] = None):
+    from app.analyzers.gemini import enriquecer_lead_com_analise
+    from app.collectors.brasilapi import buscar_lead_por_cnpj
+    from app.collectors.website import enriquecer_lead_com_site
+    from app.exporters.notion import NotionExporter
+    from app.utils.logger import get_logger
+    from app.utils.storage import save_lead
+
+    logger = get_logger()
+    logger.info("=" * 60)
+    logger.info(f"🚀 PROSPECÇÃO FULL: {cnpj}")
+    if url_site:
+        logger.info(f"   + site: {url_site}")
+    logger.info("   + análise IA")
+    logger.info("=" * 60)
+
+    lead = buscar_lead_por_cnpj(cnpj)
+    if lead is None:
+        logger.error("❌ Não foi possível obter o Lead. Abortando.")
+        return
+
+    if url_site:
+        lead = enriquecer_lead_com_site(lead, url_site)
+
+    lead = enriquecer_lead_com_analise(lead)
+
+    save_lead(lead, stage="processed")
+
+    exporter = NotionExporter()
+    lead = exporter.send_lead(lead)
+    save_lead(lead, stage="sent")
+
+    logger.info("=" * 60)
+    logger.success(f"✅ FULL CONCLUÍDO: {lead.empresa.nome}")
+    logger.info(f"   Empresa: {lead.empresa.notion_page_id}")
+    logger.info(f"   Contatos: {len(lead.contatos)}")
+    logger.info(f"   👉 Vai no Notion ver a análise da IA nas Notas!")
+    logger.info("=" * 60)
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -126,6 +309,47 @@ def main():
         test_conexao()
     elif cmd == "list-leads":
         cmd_list_leads()
+    elif cmd == "buscar-cnpj":
+        if len(sys.argv) < 3:
+            print("❌ Uso: python run.py buscar-cnpj <CNPJ>")
+            sys.exit(1)
+        cmd_buscar_cnpj(sys.argv[2])
+    elif cmd == "prospectar-cnpj":
+        if len(sys.argv) < 3:
+            print("❌ Uso: python run.py prospectar-cnpj <CNPJ>")
+            sys.exit(1)
+        cmd_prospectar_cnpj(sys.argv[2])
+    elif cmd == "extrair-site":
+        if len(sys.argv) < 3:
+            print("❌ Uso: python run.py extrair-site <URL> [--playwright]")
+            sys.exit(1)
+        force_pw = "--playwright" in sys.argv[2:]
+        url = next((a for a in sys.argv[2:] if not a.startswith("--")), None)
+        if not url:
+            print("❌ URL não informada")
+            sys.exit(1)
+        cmd_extrair_site(url, force_playwright=force_pw)
+    elif cmd == "prospectar-completo":
+        if len(sys.argv) < 3:
+            print("❌ Uso: python run.py prospectar-completo <CNPJ> [URL]")
+            sys.exit(1)
+        cnpj = sys.argv[2]
+        url = sys.argv[3] if len(sys.argv) > 3 else None
+        cmd_prospectar_completo(cnpj, url)
+    elif cmd == "analisar-cnpj":
+        if len(sys.argv) < 3:
+            print("❌ Uso: python run.py analisar-cnpj <CNPJ> [URL]")
+            sys.exit(1)
+        cnpj = sys.argv[2]
+        url = sys.argv[3] if len(sys.argv) > 3 else None
+        cmd_analisar_cnpj(cnpj, url)
+    elif cmd == "prospectar-full":
+        if len(sys.argv) < 3:
+            print("❌ Uso: python run.py prospectar-full <CNPJ> [URL]")
+            sys.exit(1)
+        cnpj = sys.argv[2]
+        url = sys.argv[3] if len(sys.argv) > 3 else None
+        cmd_prospectar_full(cnpj, url)
     else:
         print(f"❌ Comando desconhecido: {cmd}")
         print(__doc__)

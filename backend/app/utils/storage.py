@@ -70,7 +70,7 @@ def log_unmapped_field(field_name: str, value: str, empresa_nome: str) -> None:
 
     if UNMAPPED_FIELDS_FILE.exists():
         data: Dict[str, List[Dict[str, Any]]] = json.loads(
-            UNMAPPED_FIELDS_FILE.read_text(encoding='urf-8')
+            UNMAPPED_FIELDS_FILE.read_text(encoding='utf-8')
         )
     else:
         data = {}
@@ -83,7 +83,7 @@ def log_unmapped_field(field_name: str, value: str, empresa_nome: str) -> None:
         }
     )
     UNMAPPED_FIELDS_FILE.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False), encoding="urf-8"
+        json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     logger.warning(
         f"Campo não mapeado [{field_name}]: '{value}' (empresa: {empresa_nome})"
