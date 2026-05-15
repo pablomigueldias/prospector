@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Fontes — Space Grotesk + Manrope + JetBrains Mono
+   Carregadas via <link> em _document.tsx por performance.
+   ============================================================ */
+
+/* ============================================================
+   Base global
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: oklch(0.16 0.015 50);
+  background: oklch(0.985 0.005 60);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#__next {
+  min-height: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Scrollbar discreta (estilo Reativa) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.9 0.008 60);
+  border-radius: 999px;
+  border: 2px solid oklch(0.985 0.005 60);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.7 0.01 60);
+}
+
+/* ============================================================
+   Componentes reutilizáveis (atalhos de utility chains)
+   ============================================================ */
+
+@layer components {
+  /* Eyebrow — pequeno label monospaced com risco lateral */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 font-mono uppercase tracking-[0.14em] text-[10px] font-medium text-brand;
+  }
+  .eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 1px;
+    background: oklch(0.68 0.19 38);
+  }
+
+  /* Pill button — laranja primário */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-5 py-3 rounded-pill bg-brand text-white font-display font-medium text-sm tracking-tight shadow-brand-sm transition-all hover:bg-brand-deep hover:-translate-y-px;
+  }
+
+  /* Pill button — ghost (borda fina) */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-5 py-3 rounded-pill border border-line bg-transparent text-ink font-display font-medium text-sm tracking-tight transition-colors hover:border-ink-mute;
+  }
+
+  /* Card — superfície branca com borda fina */
+  .card {
+    @apply bg-surface border border-line rounded-lg;
+  }
+
+  /* Input padrão */
+  .input {
+    @apply h-10 w-full px-3 rounded border border-line bg-surface text-sm text-ink transition-all placeholder:text-ink-faint focus:outline-none focus:border-brand focus:shadow-focus;
+  }
+}

@@ -5,6 +5,7 @@ from typing import Optional
 
 
 def test_conexao():
+    """Testa só a conexão com o Notion (sem criar nada)."""
     from app.exporters.notion import NotionExporter
     from app.utils.logger import get_logger
 
@@ -33,6 +34,10 @@ def test_conexao():
 
 
 def test_notion():
+    """
+    Cria um Lead de teste e envia pro Notion.
+    Salva em data/processed/ e move pra data/sent/ depois.
+    """
     from app.exporters.notion import NotionExporter
     from app.models.lead import Contato, Empresa, Lead, Socio
     from app.utils.logger import get_logger
@@ -78,11 +83,14 @@ def test_notion():
 
     lead = Lead(empresa=empresa, contatos=[contato])
 
+    # 1. Salva localmente em processed/
     filepath = save_lead(lead, stage="processed")
 
+    # 2. Envia pro Notion
     exporter = NotionExporter()
     lead = exporter.send_lead(lead)
 
+    # 3. Move pra sent/
     save_lead(lead, stage="sent")
     filepath.unlink()
 
@@ -96,6 +104,7 @@ def test_notion():
 
 
 def cmd_list_leads():
+    """Lista os leads salvos localmente."""
     from app.utils.logger import get_logger
     from app.utils.storage import list_leads
 
@@ -108,6 +117,10 @@ def cmd_list_leads():
 
 
 def cmd_buscar_cnpj(cnpj: str):
+    """
+    Só busca o CNPJ na BrasilAPI e mostra os dados (sem mandar pro Notion).
+    Útil pra debugar o mapeamento antes de cadastrar.
+    """
     from app.collectors.brasilapi import buscar_lead_por_cnpj
     from app.utils.logger import get_logger
 
@@ -140,6 +153,9 @@ def cmd_buscar_cnpj(cnpj: str):
 
 
 def cmd_prospectar_cnpj(cnpj: str):
+    """
+    Pipeline completo: busca CNPJ na BrasilAPI + envia pro Notion.
+    """
     from app.collectors.brasilapi import buscar_lead_por_cnpj
     from app.exporters.notion import NotionExporter
     from app.utils.logger import get_logger
@@ -150,16 +166,20 @@ def cmd_prospectar_cnpj(cnpj: str):
     logger.info(f"🎯 PROSPECÇÃO POR CNPJ: {cnpj}")
     logger.info("=" * 60)
 
+    # 1. Busca na BrasilAPI
     lead = buscar_lead_por_cnpj(cnpj)
     if lead is None:
         logger.error("❌ Não foi possível obter o Lead. Abortando.")
         return
 
+    # 2. Salva em processed/ antes de mandar pro Notion (segurança)
     save_lead(lead, stage="processed")
 
+    # 3. Envia pro Notion
     exporter = NotionExporter()
     lead = exporter.send_lead(lead)
 
+    # 4. Atualiza o JSON com os notion_page_ids preenchidos
     save_lead(lead, stage="sent")
 
     logger.info("=" * 60)
@@ -170,6 +190,7 @@ def cmd_prospectar_cnpj(cnpj: str):
 
 
 def cmd_extrair_site(url: str, force_playwright: bool = False):
+    """Extrai contatos de um site (sem mandar pro Notion)."""
     from app.collectors.website import coletar_do_site
     from app.utils.logger import get_logger
 
@@ -190,6 +211,9 @@ def cmd_extrair_site(url: str, force_playwright: bool = False):
 
 
 def cmd_prospectar_completo(cnpj: str, url_site: Optional[str] = None):
+    """
+    Pipeline completo: BrasilAPI + (opcional) site → Notion.
+    """
     from app.collectors.brasilapi import buscar_lead_por_cnpj
     from app.collectors.website import enriquecer_lead_com_site
     from app.exporters.notion import NotionExporter
@@ -203,16 +227,20 @@ def cmd_prospectar_completo(cnpj: str, url_site: Optional[str] = None):
         logger.info(f"   + site: {url_site}")
     logger.info("=" * 60)
 
+    # 1. BrasilAPI
     lead = buscar_lead_por_cnpj(cnpj)
     if lead is None:
         logger.error("❌ Não foi possível obter o Lead. Abortando.")
         return
 
+    # 2. (opcional) enriquecimento via site
     if url_site:
         lead = enriquecer_lead_com_site(lead, url_site)
 
+    # 3. Salva backup local antes de mandar pro Notion
     save_lead(lead, stage="processed")
 
+    # 4. Notion
     exporter = NotionExporter()
     lead = exporter.send_lead(lead)
     save_lead(lead, stage="sent")
@@ -228,6 +256,10 @@ def cmd_prospectar_completo(cnpj: str, url_site: Optional[str] = None):
 
 
 def cmd_analisar_cnpj(cnpj: str, url_site: Optional[str] = None):
+    """
+    Roda só a análise da IA (BrasilAPI + site opcional + Gemini).
+    NÃO manda pro Notion. Útil pra debugar o prompt.
+    """
     from app.analyzers.gemini import analisar_lead
     from app.analyzers.gemini.parser import formatar_para_notas
     from app.collectors.brasilapi import buscar_lead_por_cnpj
@@ -257,34 +289,61 @@ def cmd_analisar_cnpj(cnpj: str, url_site: Optional[str] = None):
     print()
 
 
-def cmd_prospectar_full(cnpj: str, url_site: Optional[str] = None):
+def cmd_prospectar_full(
+    cnpj: str,
+    url_site: Optional[str] = None,
+    extras: Optional[dict] = None,
+):
+    """
+    Pipeline TOTAL: BrasilAPI + site + análise IA + Notion.
+    O comando 'turbo' que junta todas as fases.
+
+    `extras` (opcional) aceita overrides manuais com as chaves:
+        instagram, facebook   → vão pra Empresa
+        linkedin, email, telefone, whatsapp → vão pro Contato principal
+    Input manual SEMPRE prevalece sobre dados automáticos.
+    """
     from app.analyzers.gemini import enriquecer_lead_com_analise
     from app.collectors.brasilapi import buscar_lead_por_cnpj
     from app.collectors.website import enriquecer_lead_com_site
     from app.exporters.notion import NotionExporter
+    from app.services.manual_overrides import aplicar_overrides_manuais
     from app.utils.logger import get_logger
     from app.utils.storage import save_lead
+
+    extras = extras or {}
 
     logger = get_logger()
     logger.info("=" * 60)
     logger.info(f"🚀 PROSPECÇÃO FULL: {cnpj}")
     if url_site:
         logger.info(f"   + site: {url_site}")
+    if extras:
+        logger.info(f"   + overrides manuais: {', '.join(extras.keys())}")
     logger.info("   + análise IA")
     logger.info("=" * 60)
 
+    # 1. BrasilAPI
     lead = buscar_lead_por_cnpj(cnpj)
     if lead is None:
         logger.error("❌ Não foi possível obter o Lead. Abortando.")
         return
 
+    # 2. Site (se informado)
     if url_site:
         lead = enriquecer_lead_com_site(lead, url_site)
 
+    # 3. Overrides manuais (DEPOIS do site, pra ganhar prioridade)
+    if extras:
+        lead = aplicar_overrides_manuais(lead, **extras)
+
+    # 4. Análise IA (anexa nas Notas)
     lead = enriquecer_lead_com_analise(lead)
 
+    # 5. Salva backup
     save_lead(lead, stage="processed")
 
+    # 6. Notion
     exporter = NotionExporter()
     lead = exporter.send_lead(lead)
     save_lead(lead, stage="sent")
@@ -295,6 +354,368 @@ def cmd_prospectar_full(cnpj: str, url_site: Optional[str] = None):
     logger.info(f"   Contatos: {len(lead.contatos)}")
     logger.info(f"   👉 Vai no Notion ver a análise da IA nas Notas!")
     logger.info("=" * 60)
+
+
+def _parse_prospectar_full_args(argv: list) -> tuple:
+    """
+    Parser flexível pro prospectar-full. Aceita posicional, flags, ou ambos.
+
+    Exemplos válidos:
+        prospectar-full <CNPJ> [URL]                          (modo antigo)
+        prospectar-full --cnpj X --site Y                     (só flags)
+        prospectar-full <CNPJ> [URL] --email x@y.com          (misto)
+
+    Flags suportadas:
+        --cnpj, --site (=--url)
+        --ig (=--instagram), --fb (=--facebook), --linkedin
+        --email, --tel (=--telefone), --whats (=--whatsapp)
+
+    Devolve: (cnpj: str, url_site: Optional[str], extras: dict)
+    Lança ValueError se input for inválido.
+    """
+    FLAGS_VALIDAS = {
+        "cnpj", "site", "url",
+        "ig", "instagram",
+        "fb", "facebook",
+        "linkedin",
+        "email",
+        "tel", "telefone",
+        "whats", "whatsapp",
+    }
+
+    posicionais = []
+    flags = {}
+
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg.startswith("--"):
+            chave = arg[2:]
+            if chave not in FLAGS_VALIDAS:
+                raise ValueError(f"Flag desconhecida: --{chave}")
+            if i + 1 >= len(argv) or argv[i + 1].startswith("--"):
+                raise ValueError(f"Flag --{chave} precisa de valor")
+            flags[chave] = argv[i + 1]
+            i += 2
+        else:
+            posicionais.append(arg)
+            i += 1
+
+    # CNPJ: flag tem prioridade, senão pega o 1º posicional
+    cnpj = flags.get("cnpj") or (posicionais[0] if posicionais else None)
+    if not cnpj:
+        raise ValueError("CNPJ é obrigatório (via --cnpj ou posicional)")
+
+    # URL do site: --site, --url, ou 2º posicional
+    url_site = (
+        flags.get("site")
+        or flags.get("url")
+        or (posicionais[1] if len(posicionais) > 1 else None)
+    )
+
+    # Overrides manuais
+    extras: dict = {}
+    if "ig" in flags or "instagram" in flags:
+        extras["instagram"] = flags.get("ig") or flags.get("instagram")
+    if "fb" in flags or "facebook" in flags:
+        extras["facebook"] = flags.get("fb") or flags.get("facebook")
+    if "linkedin" in flags:
+        extras["linkedin"] = flags["linkedin"]
+    if "email" in flags:
+        extras["email"] = flags["email"]
+    if "tel" in flags or "telefone" in flags:
+        extras["telefone"] = flags.get("tel") or flags.get("telefone")
+    if "whats" in flags or "whatsapp" in flags:
+        extras["whatsapp"] = flags.get("whats") or flags.get("whatsapp")
+
+    return cnpj, url_site, extras
+
+
+def cmd_test_buscadores(query: str = "padaria são paulo"):
+    """
+    Testa cada motor de busca individualmente.
+    Útil pra ver quem está bloqueado AGORA antes de uma investigação.
+    """
+    from app.collectors._common.buscadores import (
+        DuckDuckGoBuscador, BraveBuscador, BingBuscador,
+        BuscadorBloqueado, BuscadorIndisponivel,
+    )
+    from app.utils.logger import get_logger
+
+    logger = get_logger()
+    print()
+    print("═" * 60)
+    print(f"🔎 TESTE DOS BUSCADORES — query: {query!r}")
+    print("═" * 60)
+
+    motores = [DuckDuckGoBuscador(), BraveBuscador(), BingBuscador()]
+    for m in motores:
+        print(f"\n→ Testando {m.nome.upper()}...")
+        try:
+            resultados = m.buscar(query, max_resultados=3)
+            if resultados:
+                print(f"   ✅ {m.nome}: {len(resultados)} resultados")
+                for r in resultados[:2]:
+                    print(f"      • {r.titulo[:60]}")
+                    print(f"        {r.url[:80]}")
+            else:
+                print(f"   📭 {m.nome}: sem resultados (mas funcionou)")
+        except BuscadorBloqueado as e:
+            print(f"   🚫 {m.nome} BLOQUEADO: {e}")
+        except BuscadorIndisponivel as e:
+            print(f"   ⚠️  {m.nome} indisponível: {e}")
+        except Exception as e:
+            print(f"   ❌ {m.nome} erro: {type(e).__name__}: {e}")
+    print()
+    print("═" * 60)
+
+
+def cmd_tor_status():
+    """
+    Verifica se o Tor está acessível e mostra seu IP atual via Tor vs direto.
+
+    Pra instalar Tor:
+      Ubuntu: sudo apt install tor && sudo systemctl start tor
+      Mac:    brew install tor && brew services start tor
+    """
+    from app.collectors._common import tor_client
+    from app.utils.logger import get_logger
+
+    logger = get_logger()
+    logger.info("🧅 Verificando status do Tor...")
+
+    status = tor_client.status()
+    print()
+    print("═" * 60)
+    print("🧅 STATUS DO TOR")
+    print("═" * 60)
+    print(f"  Disponível: {'✅ SIM' if status['disponivel'] else '❌ NÃO'}")
+    print(f"  IP direto (seu IP real):  {status['ip_direto']}")
+    if status["disponivel"]:
+        print(f"  IP via Tor:               {status['ip_via_tor']}")
+        print()
+        print("✅ Tor funcionando! Pra usar, defina no .env:")
+        print("     USAR_TOR=true")
+    else:
+        print()
+        print("❌ Tor NÃO está disponível. Instale e inicie:")
+        print("   Ubuntu: sudo apt install tor && sudo systemctl start tor")
+        print("   Mac:    brew install tor && brew services start tor")
+    print("═" * 60)
+
+
+def cmd_investigar(args: list):
+    """
+    Investigação multi-fonte. Aceita flags flexíveis.
+
+    Uso:
+        python run.py investigar --nome "Padaria do Zé" --cidade "Atibaia"
+        python run.py investigar --cnpj 40165696000120
+        python run.py investigar --instagram padariadoze
+        python run.py investigar --site exemplo.com.br
+        python run.py investigar --nome X --cidade Y --site Z   # combina o que quiser
+
+    Flags disponíveis: --nome, --cnpj, --cidade, --estado, --site,
+                        --instagram, --telefone
+    """
+    from app.analyzers.gemini import enriquecer_lead_com_analise
+    from app.exporters.notion import NotionExporter
+    from app.services.investigador import (
+        InputInvestigacao,
+        investigar_e_montar_lead,
+    )
+    from app.utils.logger import get_logger
+    from app.utils.storage import save_lead
+
+    logger = get_logger()
+
+    # Parsing simples de --flag valor
+    kwargs = {}
+    i = 0
+    while i < len(args):
+        if args[i].startswith("--"):
+            chave = args[i][2:]
+            if i + 1 < len(args) and not args[i + 1].startswith("--"):
+                kwargs[chave] = args[i + 1]
+                i += 2
+                continue
+        i += 1
+
+    if not kwargs:
+        print("❌ Você precisa passar pelo menos uma flag.")
+        print(cmd_investigar.__doc__)
+        return
+
+    try:
+        input_ = InputInvestigacao(**kwargs)
+    except Exception as e:
+        print(f"❌ Input inválido: {e}")
+        return
+
+    if not input_.tem_algo():
+        print("❌ Nenhum campo válido foi reconhecido.")
+        return
+
+    logger.info("=" * 60)
+    logger.info(f"🔬 INVESTIGAÇÃO MULTI-FONTE")
+    logger.info(f"   Entrada: {input_.descricao_curta()}")
+    logger.info("=" * 60)
+
+    # Aquecimento: pausa longa no início pra parecer humano que acabou
+    # de abrir o navegador. Pular essa pausa é red flag forte.
+    from app.config import settings
+    if settings.aquecer_sessao:
+        from app.collectors._common.humano import aquecer_sessao
+        import random
+        delay = random.uniform(15, 45)  # 15-45s no início
+        logger.info(f"   ☕ Aquecendo sessão ({delay:.0f}s)...")
+        import time
+        time.sleep(delay)
+
+    # 1. Investigação interativa (pergunta site + aprovação)
+    lead, inv, aprovado = investigar_e_montar_lead(input_, interativo=True)
+
+    # 2. Análise IA (sempre roda — qualidade > velocidade)
+    logger.info("")
+    logger.info("🤖 Rodando análise IA...")
+    lead = enriquecer_lead_com_analise(lead)
+
+    # 3. Salva backup local
+    save_lead(lead, stage="processed")
+
+    # 4. Notion
+    exporter = NotionExporter()
+    lead = exporter.send_lead(lead)
+    save_lead(lead, stage="sent")
+
+    # 5. Resumo final
+    logger.info("=" * 60)
+    if aprovado:
+        logger.success(f"✅ APROVADO — Status: 🔵 Prospect")
+    else:
+        logger.info(f"📌 NÃO APROVADO — Status: 🔬 Em investigação")
+        logger.info(f"   Revise no Notion e mude o status manualmente.")
+    logger.info(f"   Empresa Notion: {lead.empresa.notion_page_id}")
+    logger.info(f"   Contatos criados: {len(lead.contatos)}")
+    logger.info("=" * 60)
+
+
+def cmd_debug_site(url: str, force_playwright: bool = False):
+    """
+    Investiga o que o site scraper consegue extrair de uma URL.
+
+    Útil quando você prospectou uma empresa e os contatos vieram vazios
+    — esse comando mostra exatamente o que o crawler achou (ou não).
+
+    Uso:
+        python run.py debug-site https://endolive.com.br/
+        python run.py debug-site https://exemplo.com --playwright
+    """
+    from app.collectors.website.crawler import coletar_do_site
+    from app.collectors.website.extractors import (
+        formatar_telefone,
+        normalizar_url,
+    )
+
+    url_norm = normalizar_url(url)
+    print("=" * 60)
+    print(f"🔍 DEBUG SITE: {url_norm}")
+    print(f"   Playwright: {'ON' if force_playwright else 'OFF (HTTP simples)'}")
+    print("=" * 60)
+
+    try:
+        resultado = coletar_do_site(url_norm, force_playwright=force_playwright)
+    except Exception as e:
+        print(f"❌ FALHA: {type(e).__name__}: {e}")
+        return
+
+    emails = resultado.get("emails", []) or []
+    whatsapps = resultado.get("whatsapps", []) or []
+    telefones = resultado.get("telefones", []) or []
+    instagram = resultado.get("instagram")
+    facebook = resultado.get("facebook")
+    linkedin = resultado.get("linkedin")
+
+    def linha(rotulo: str, valor):
+        marca = "✅" if valor else "  "
+        print(f"  {marca} {rotulo}")
+
+    print()
+    print("━━━ Resultado ━━━")
+    linha(f"Emails ({len(emails)}):", emails)
+    for e in emails[:5]:
+        print(f"       • {e}")
+    if len(emails) > 5:
+        print(f"       ... e mais {len(emails) - 5}")
+
+    linha(f"WhatsApps ({len(whatsapps)}):", whatsapps)
+    for w in whatsapps[:5]:
+        try:
+            print(f"       • {formatar_telefone(w)}")
+        except Exception:
+            print(f"       • {w}")
+
+    linha(f"Telefones fixos ({len(telefones)}):", telefones)
+    for t in telefones[:5]:
+        try:
+            print(f"       • {formatar_telefone(t)}")
+        except Exception:
+            print(f"       • {t}")
+
+    linha("Instagram:", instagram)
+    if instagram:
+        print(f"       • {instagram}")
+    linha("Facebook:", facebook)
+    if facebook:
+        print(f"       • {facebook}")
+    linha("LinkedIn:", linkedin)
+    if linkedin:
+        print(f"       • {linkedin}")
+
+    print()
+    nada = not any([emails, whatsapps, telefones, instagram, facebook, linkedin])
+    if nada:
+        print("⚠️  Nada foi extraído.")
+        if not force_playwright:
+            print("   💡 Tenta com --playwright (site pode ser SPA / JS).")
+        else:
+            print("   💡 Site pode bloquear bots ou esconder contato.")
+            print("      Considere passar os dados manualmente (--email, --whats, etc).")
+    print("=" * 60)
+
+
+def cmd_serve(host: str = "127.0.0.1", port: int = 8000, reload: bool = True):
+    """
+    Inicia a API HTTP (FastAPI) pro frontend consumir.
+
+    Docs interativos:
+        http://localhost:8000/docs
+
+    Healthcheck:
+        http://localhost:8000/api/health
+    """
+    try:
+        import uvicorn
+    except ImportError:
+        print("❌ uvicorn não está instalado. Rode: pip install fastapi uvicorn[standard]")
+        sys.exit(1)
+
+    from app.utils.logger import get_logger
+    logger = get_logger()
+    logger.info("=" * 60)
+    logger.info(f"🌐 Subindo API em http://{host}:{port}")
+    logger.info(f"   📚 Swagger:  http://{host}:{port}/docs")
+    logger.info(f"   ❤️  Health:   http://{host}:{port}/api/health")
+    logger.info(f"   🔄 Reload:   {'ON' if reload else 'OFF'}")
+    logger.info("=" * 60)
+
+    uvicorn.run(
+        "app.api.main:app",
+        host=host,
+        port=port,
+        reload=reload,
+        log_level="info",
+    )
 
 
 def main():
@@ -324,6 +745,7 @@ def main():
             print("❌ Uso: python run.py extrair-site <URL> [--playwright]")
             sys.exit(1)
         force_pw = "--playwright" in sys.argv[2:]
+        # Pega a URL ignorando flags
         url = next((a for a in sys.argv[2:] if not a.startswith("--")), None)
         if not url:
             print("❌ URL não informada")
@@ -345,11 +767,49 @@ def main():
         cmd_analisar_cnpj(cnpj, url)
     elif cmd == "prospectar-full":
         if len(sys.argv) < 3:
-            print("❌ Uso: python run.py prospectar-full <CNPJ> [URL]")
+            print("❌ Uso:")
+            print("   python run.py prospectar-full <CNPJ> [URL]")
+            print("   python run.py prospectar-full --cnpj X --site Y \\")
+            print("       --ig @foo --fb foo --linkedin pessoa \\")
+            print("       --email a@b.com --tel '11 1234-5678' --whats '11 91234-5678'")
             sys.exit(1)
-        cnpj = sys.argv[2]
-        url = sys.argv[3] if len(sys.argv) > 3 else None
-        cmd_prospectar_full(cnpj, url)
+        try:
+            cnpj, url, extras = _parse_prospectar_full_args(sys.argv[2:])
+        except ValueError as e:
+            print(f"❌ {e}")
+            sys.exit(1)
+        cmd_prospectar_full(cnpj, url, extras)
+    elif cmd == "investigar":
+        cmd_investigar(sys.argv[2:])
+    elif cmd == "tor-status":
+        cmd_tor_status()
+    elif cmd == "test-buscadores":
+        query = sys.argv[2] if len(sys.argv) > 2 else "padaria são paulo"
+        cmd_test_buscadores(query)
+    elif cmd == "debug-site":
+        if len(sys.argv) < 3:
+            print("❌ Uso: python run.py debug-site <URL> [--playwright]")
+            sys.exit(1)
+        url = sys.argv[2]
+        usar_pw = "--playwright" in sys.argv[3:]
+        cmd_debug_site(url, force_playwright=usar_pw)
+    elif cmd == "serve":
+        port = 8000
+        host = "127.0.0.1"
+        reload_flag = True
+        # Flags simples: --port 8001 --host 0.0.0.0 --no-reload
+        argv = sys.argv[2:]
+        i = 0
+        while i < len(argv):
+            if argv[i] == "--port" and i + 1 < len(argv):
+                port = int(argv[i + 1]); i += 2
+            elif argv[i] == "--host" and i + 1 < len(argv):
+                host = argv[i + 1]; i += 2
+            elif argv[i] == "--no-reload":
+                reload_flag = False; i += 1
+            else:
+                i += 1
+        cmd_serve(host=host, port=port, reload=reload_flag)
     else:
         print(f"❌ Comando desconhecido: {cmd}")
         print(__doc__)
@@ -357,6 +817,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # Wrapper com try/except global pra NUNCA sair silencioso.
+    # Se algo der errado, mostra o erro completo.
     try:
         main()
     except Exception as exc:

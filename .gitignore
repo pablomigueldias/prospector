@@ -244,3 +244,6 @@ certbot/
 *data/temp/
 *.data
 data/
+*.data/
+*.sent
+*.sent/

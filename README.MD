@@ -127,7 +127,7 @@ cp .env.example .env
 
 ---
 
-## 🔑 Configuração do .env
+## Configuração do .env
 
 ```env
 # --- Notion ---
@@ -214,7 +214,7 @@ Porte: Pequena sociedade individual de advocacia.
 
 ---
 
-##  Como o agente decide as coisas
+## Como o agente decide as coisas
 
 ### Idempotência (não duplica)
 - **Empresa:** busca por CNPJ formatado no Notion antes de criar. Se existir, atualiza.
@@ -305,8 +305,6 @@ Já tem proteção: rich_text é quebrado em pedaços <= 2000 chars. Title é tr
 
 ## Próximas fases planejadas
 
-- ⏳ **Fase 7 — Google Maps**: buscar por "pizzarias em Santo André" e descobrir CNPJs automaticamente
-- ⏳ **Fase 10 — FastAPI**: expor o agente via API REST
-- ⏳ **Fase 11 — Frontend React**: interface web com formulário e tabela
-- ⏳ **Fase 5 — Rate limiter global**: centralizar controle de volume (necessário pra Fase 7)
+- ⏳ **— Google Maps**: buscar por "pizzarias em Santo André" e descobrir CNPJs automaticamente
+
 
