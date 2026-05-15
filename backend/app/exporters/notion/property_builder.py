@@ -1,18 +1,6 @@
-"""
-Constrói o JSON de propriedades da API do Notion a partir de um tipo + valor.
-
-Camada de mais baixo nível: NÃO conhece Empresa, Contato, ou regras de negócio.
-Conhece SÓ a API do Notion: dado um tipo ('rich_text', 'select', etc.) e um valor,
-retorna o dict no formato que a API aceita.
-
-Referência: https://developers.notion.com/reference/property-value-object
-"""
-
 from typing import Any, Optional
 
 
-# Tipos do Notion que NÃO são escrevíveis via API.
-# Esses campos serão pulados automaticamente quando aparecerem no schema.
 NOT_WRITABLE_TYPES = frozenset({
     "place",            # localização (feature do Notion sem suporte na API)
     "formula",
@@ -28,12 +16,6 @@ NOT_WRITABLE_TYPES = frozenset({
 
 
 def build_value(notion_type: str, value: Any) -> Optional[dict]:
-    """
-    Constrói o JSON da propriedade pra um tipo do Notion.
-
-    Retorna None se o tipo não é escrevível ou desconhecido.
-    Retorna o shape vazio adequado se o valor for None/''.
-    """
     if value is None or value == "":
         return _empty_value(notion_type)
 
@@ -44,47 +26,31 @@ def build_value(notion_type: str, value: Any) -> Optional[dict]:
 
 
 def _empty_value(notion_type: str) -> Optional[dict]:
-    """Retorna o shape vazio correto pra cada tipo (None se não-escrevível)."""
     if notion_type in NOT_WRITABLE_TYPES:
         return None
     return _EMPTY_VALUES.get(notion_type)
 
 
-# ============================================================
-# Limites da API do Notion (validações server-side)
-# https://developers.notion.com/reference/request-limits
-# ============================================================
-
-# Cada elemento rich_text tem limite de 2000 chars
 NOTION_TEXT_CHUNK_SIZE = 2000
 
-# URL e phone_number têm limite menor, mas raramente atingidos
 NOTION_URL_MAX = 2000
 
 
 def _chunk_text(texto: str, tamanho: int = NOTION_TEXT_CHUNK_SIZE) -> list:
-    """
-    Quebra texto longo em pedaços <= tamanho.
-    Tenta quebrar em separadores naturais (parágrafo, linha, espaço)
-    pra não cortar palavras no meio.
-    """
     if len(texto) <= tamanho:
         return [texto]
 
     chunks = []
     restante = texto
     while len(restante) > tamanho:
-        # Procura o melhor ponto de corte: \n\n > \n > espaço > corte forçado
         corte = -1
-        # Tenta separador de parágrafo perto do limite
         for sep in ("\n\n", "\n", " "):
             idx = restante.rfind(sep, 0, tamanho)
-            if idx > tamanho * 0.6:  # exige corte minimamente próximo do limite
+            if idx > tamanho * 0.6:
                 corte = idx + len(sep)
                 break
 
         if corte == -1:
-            # Sem separador bom — corta no limite mesmo
             corte = tamanho
 
         chunks.append(restante[:corte].rstrip())
@@ -95,12 +61,7 @@ def _chunk_text(texto: str, tamanho: int = NOTION_TEXT_CHUNK_SIZE) -> list:
     return chunks
 
 
-# ============================================================
-# Builders por tipo (cada função sabe construir 1 tipo)
-# ============================================================
-
 def _build_title(value: Any) -> dict:
-    # Title também tem limite de 2000 — se vier maior, trunca
     texto = str(value)
     if len(texto) > NOTION_TEXT_CHUNK_SIZE:
         texto = texto[: NOTION_TEXT_CHUNK_SIZE - 3] + "..."
@@ -108,11 +69,6 @@ def _build_title(value: Any) -> dict:
 
 
 def _build_rich_text(value: Any) -> dict:
-    """
-    Constrói rich_text quebrando em múltiplos elementos se for longo.
-    Cada elemento aceita até 2000 chars; usando vários, o campo aceita
-    qualquer tamanho que tenhamos.
-    """
     texto = str(value)
     chunks = _chunk_text(texto)
     return {"rich_text": [{"text": {"content": c}} for c in chunks]}
@@ -136,7 +92,6 @@ def _build_multi_select(value: Any) -> dict:
 
 
 def _build_url(value: Any) -> dict:
-    """Trunca URL se passar do limite (raro, mas previne erro 400)."""
     texto = str(value)
     if len(texto) > NOTION_URL_MAX:
         texto = texto[:NOTION_URL_MAX]
@@ -174,10 +129,6 @@ def _build_people(value: Any) -> dict:
 def _build_files(value: Any) -> dict:
     return {"files": value if isinstance(value, list) else []}
 
-
-# ============================================================
-# Tabelas de despacho
-# ============================================================
 
 _BUILDERS = {
     "title": _build_title,
