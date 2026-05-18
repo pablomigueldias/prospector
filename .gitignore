@@ -1,137 +1,172 @@
-# ====================================
-# PYTHON
-# ====================================
+# =====================================================================
+#  Reativa Systems — .gitignore
+#  Monorepo: backend Python (FastAPI) + frontend Next.js (TS)
+# =====================================================================
+
+# ─────────────────────────────────────────────────────────────────────
+#  SECRETS — NUNCA VERSIONAR
+# ─────────────────────────────────────────────────────────────────────
+# Tokens do Notion, Gemini, etc. Sempre fora do Git.
+.env
+.env.local
+.env.*.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+.env.test
+.env.test.local
+
+# Mas mantém os exemplos versionados (ajudam quem clonar o repo)
+!.env.example
+!.env.local.example
+!.env.*.example
+
+# Chaves criptográficas
+*.pem
+*.key
+*.crt
+*.csr
+*.pfx
+*.p12
+
+# Configs sensíveis avulsas
+config.json
+secrets.json
+credentials.json
+service-account*.json
+
+# ─────────────────────────────────────────────────────────────────────
+#  DADOS DE NEGÓCIO — backend/data/
+# ─────────────────────────────────────────────────────────────────────
+
+backend/data/raw/
+backend/data/processed/
+backend/data/sent/
+backend/data/cache/
+backend/data/sessao/
+backend/data/unmapped_fields.json
+
+!backend/data/
+!backend/data/.gitkeep
+!backend/data/raw/.gitkeep
+!backend/data/processed/.gitkeep
+!backend/data/sent/.gitkeep
+!backend/data/cache/.gitkeep
+!backend/data/sessao/.gitkeep
+
+# ─────────────────────────────────────────────────────────────────────
+#  LOGS
+# ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+backend/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─────────────────────────────────────────────────────────────────────
+#  PYTHON
+# ─────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyd
 .Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / build
 build/
 develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
-parts/
 sdist/
-var/
 wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
-pip-log.txt
-pip-delete-this-directory.txt
+
+# Testes Python
+.pytest_cache/
 .tox/
 .coverage
 .coverage.*
-.cache
+.cache/
 nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
-.pytest_cache/
+htmlcov/
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Virtual Environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-.venv
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
 
-# Django
-*.log
-db.sqlite3
-/media
-/static
-.env
+# Jupyter
+.ipynb_checkpoints/
 
-# Flask
-instance/
-.webassets-cache
-
-# IDEs - Python
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# ====================================
-# NODE / NPM / YARN / REACT
-# ====================================
+# ─────────────────────────────────────────────────────────────────────
+#  NODE / NPM / YARN / PNPM
+# ─────────────────────────────────────────────────────────────────────
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 .npm
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
-.pnpm-debug.log*
+.pnp.*
+.pnpm-store/
 
-# ====================================
-# NEXT.JS
-# ====================================
+# ─────────────────────────────────────────────────────────────────────
+#  NEXT.JS
+# ─────────────────────────────────────────────────────────────────────
 .next/
 out/
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 .vercel/
 .turbo/
-dist/
-build/
 
-# Next.js specific
-.next/static/
-.next/cache/
 
-# ====================================
-# REACT
-# ====================================
-/build
-/dist
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+next-env.d.ts
 
-# ====================================
-# VARIÁVEIS DE AMBIENTE
-# ====================================
-.env
-.env.local
-.env.*.local
-.env.development
-.env.production
-.env.test
-config.json
-secrets.json
+# ─────────────────────────────────────────────────────────────────────
+#  TYPESCRIPT
+# ─────────────────────────────────────────────────────────────────────
+*.tsbuildinfo
+tsconfig.tsbuildinfo
 
-# ====================================
-# IDEs E EDITORES
-# ====================================
-# VSCode
-.vscode/
-.vscode-settings.json
-*.code-workspace
+# ─────────────────────────────────────────────────────────────────────
+#  IDEs E EDITORES
+# ─────────────────────────────────────────────────────────────────────
+# VSCode (mantém só o que pode ser compartilhado, se você criar)
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
 
-# JetBrains (PyCharm, WebStorm, etc)
+# JetBrains (PyCharm, WebStorm, etc.)
 .idea/
-.idea_modules
 *.iml
 *.iws
 *.ipr
-.gradle
+.gradle/
 
-# Sublime Text
+# Sublime
 *.sublime-project
 *.sublime-workspace
 
@@ -141,18 +176,17 @@ secrets.json
 [._]s[a-rt][a-z]
 Session.vim
 .exrc
+*.swp
+*.swo
 
 # Emacs
 *~
 \#*\#
 .\#*
 
-# Atom
-.atom/
-
-# ====================================
-# SISTEMA OPERACIONAL
-# ====================================
+# ─────────────────────────────────────────────────────────────────────
+#  SISTEMA OPERACIONAL
+# ─────────────────────────────────────────────────────────────────────
 # macOS
 .DS_Store
 .AppleDouble
@@ -160,7 +194,7 @@ Session.vim
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
+.TemporaryItems
 
 # Windows
 Thumbs.db
@@ -170,80 +204,28 @@ Desktop.ini
 # Linux
 .directory
 
-# ====================================
-# DEPENDÊNCIAS E BUILDS
-# ====================================
-# Lockfiles (opcional - descomente se preferir)
-# package-lock.json
-# yarn.lock
-# poetry.lock
-
-# Build outputs
-dist/
-build/
-.cache/
-*.tgz
-*.tar.gz
-
-# ====================================
-# TESTES
-# ====================================
-.nyc_output/
-coverage/
-.jest/
-htmlcov/
-
-# ====================================
-# LOGS
-# ====================================
-logs/
-*.log
-
-# ====================================
-# ARQUIVOS TEMPORÁRIOS
-# ====================================
+# ─────────────────────────────────────────────────────────────────────
+#  ARQUIVOS TEMPORÁRIOS
+# ─────────────────────────────────────────────────────────────────────
 tmp/
 temp/
 *.tmp
 *.bak
 *.backup
 *.orig
+*.rej
 
-# ====================================
-# OS X
-# ====================================
-.AppleDouble
-.LSOverride
-.TemporaryItems
-.Trashes
-
-# ====================================
-# DOCKER (Opcional)
-# ====================================
-.docker-compose.override.yml
+# ─────────────────────────────────────────────────────────────────────
+#  DOCKER (caso adicione depois)
+# ─────────────────────────────────────────────────────────────────────
 docker-compose.override.yml
+.docker-compose.override.yml
+.dockerignore.local
 
-# ====================================
-# MISTURAS ESPECÍFICAS
-# ====================================
-# Certbot
-certbot/
-
-# SSL/TLS
-*.pem
-*.key
-*.crt
-*.csr
-
-# ====================================
-# CUSTOM
-# ====================================
-# Adicione aqui arquivos específicos do seu projeto
-# exemplo:
-# config/local-config.json
-*data/temp/
-*.data
-data/
-*.data/
-*.sent
-*.sent/
+# ─────────────────────────────────────────────────────────────────────
+#  PLAYWRIGHT (cache de browsers — fica em ~/.cache/ms-playwright/
+#  mas se algum dia gerar artifacts no projeto:)
+# ─────────────────────────────────────────────────────────────────────
+playwright-report/
+test-results/
+playwright/.cache/

@@ -1,310 +1,271 @@
-# Prospector
+#  Reative Systems — Plataforma de Agentes
 
-Agente de prospecção automatizada que coleta dados públicos de empresas brasileiras
-e cadastra no Notion CRM com análise crítica gerada por IA — pronta pra
-pré-apresentação.
+Plataforma interna da Reative Systems pra orquestrar **agentes de IA** que automatizam processos comerciais e operacionais. O primeiro agente em produção é o **Prospector**; outros (Cobrança, Suporte, Onboarding) estão no roadmap.
 
-```
-CNPJ + Site → BrasilAPI + Scraping + Gemini → Notion CRM
-```
-
-**Status atual:** funcional via CLI, em fase de teste manual.
+> **Estado atual:** Prospector ativo. Backend Python + frontend Next.js rodando local.
+> **Próximo:** Cobrança, Suporte, Onboarding.
 
 ---
 
-## Comandos disponíveis
+## Visão geral
 
-### Pipeline completo (o que vai usar 90% das vezes)
+A plataforma é um **monorepo** com duas camadas que conversam por HTTP:
 
-```bash
-python run.py prospectar-full <CNPJ> [URL_DO_SITE]
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Frontend (Next.js 14 + TypeScript + Tailwind)              │
+│  • Dashboard de agentes — http://localhost:3000             │
+│  • Design system Reativa (OKLCH, Space Grotesk, Manrope)    │
+└──────────────────────────┬──────────────────────────────────┘
+                           │  HTTP/JSON (REST)
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Backend (FastAPI + Python 3.10+)                           │
+│  • API HTTP — http://localhost:8000                         │
+│  • Pipeline do Prospector: BrasilAPI → OpenCNPJ → site →    │
+│    análise IA (Gemini) → Notion                             │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │  Notion (CRM)        │
+                │  • DB Empresas       │
+                │  • DB Contatos       │
+                └──────────────────────┘
 ```
 
-Faz tudo de uma vez:
-1. Busca CNPJ na BrasilAPI (razão social, capital, sócios, CNAE, endereço)
-2. Acessa o site da empresa (se passado) e extrai email, WhatsApp, Instagram, Facebook
-3. Roda análise crítica com Gemini (score, dores, ganchos de venda, perguntas pra call)
-4. Cadastra Empresa + Contato(s) no Notion CRM com tudo formatado
+### O que o Prospector faz
 
-**Exemplo:**
-```bash
-python run.py prospectar-full 40165696000120 https://exemplo.com.br
-```
+Você passa um **CNPJ** (e opcionalmente um site, redes sociais ou contatos manuais) e o pipeline:
 
-### Comandos individuais (debug e granularidade)
+1. **Busca dados cadastrais** — BrasilAPI primeiro; se 404 ou erro, OpenCNPJ como fallback
+2. **Cria a Empresa + um Contato por sócio** (decisor) automaticamente
+3. **Faz scraping do site** — extrai email, WhatsApp, telefone, Instagram, Facebook, LinkedIn (e escala pro Playwright se for SPA)
+4. **Aplica overrides manuais** — se você passou `--whats`, `--email` etc, sobrescreve o que veio de fontes automáticas
+5. **Análise IA com Gemini** — gera resumo, classificação setor/tamanho, sinais de qualificação
+6. **Envia tudo pro Notion** — cria/atualiza páginas nos DBs de Empresas e Contatos
 
-| Comando | O que faz |
-|---|---|
-| `python run.py test-conexao` | Testa se Notion API responde |
-| `python run.py test-notion` | Cria empresa/contato fake (validar Notion) |
-| `python run.py buscar-cnpj <CNPJ>` | Mostra dados da BrasilAPI no terminal (não cadastra) |
-| `python run.py extrair-site <URL>` | Lista contatos achados no site |
-| `python run.py extrair-site <URL> --playwright` | Mesma coisa, mas força JS (sites WordPress complexos) |
-| `python run.py analisar-cnpj <CNPJ> [URL]` | Roda só a análise IA, mostra no terminal |
-| `python run.py prospectar-cnpj <CNPJ>` | CNPJ → Notion (sem site, sem IA) |
-| `python run.py prospectar-completo <CNPJ> [URL]` | CNPJ + site → Notion (sem IA) |
-| `python run.py list-leads` | Lista arquivos JSON de leads salvos |
+Tudo isso disponível por:
+- **CLI** — `python run.py prospectar-full <CNPJ> [URL] [flags]`
+- **API HTTP** — `POST /api/agents/prospector/manual`
+- **Frontend** — formulário visual em http://localhost:3000
 
 ---
 
-## Estrutura do projeto
+## Estrutura do monorepo
 
 ```
-prospector/backend/
-├── run.py                          # ponto de entrada (todos os comandos)
-├── requirements.txt
-├── .env                            # chaves
-├── .env.example                    # template
+prospector/
+├── README.md                  ← este arquivo (visão geral)
+├── .gitignore
 │
-├── app/
-│   ├── config.py                   # carrega .env + opções dos selects
-│   ├── models/lead.py              # Empresa, Contato, Lead, Socio (Pydantic)
-│   │
-│   ├── collectors/
-│   │   ├── brasilapi/              # CNPJ → Empresa
-│   │   │   ├── client.py           # chamada HTTP com retry
-│   │   │   ├── mappers.py          # JSON → Empresa + Contatos
-│   │   │   └── classifiers.py      # CNAE→Setor, capital→Tamanho
-│   │   │
-│   │   └── website/                # URL → contatos
-│   │       ├── client.py           # httpx + fallback Playwright
-│   │       ├── stealth.py          # anti-detecção
-│   │       ├── extractors.py       # regex email/tel/whats/redes
-│   │       ├── crawler.py          # decide quais páginas visitar
-│   │       └── cache.py            # cache 7 dias
-│   │
-│   ├── analyzers/
-│   │   └── gemini/                 # IA → análise crítica
-│   │       ├── client.py           # API do Gemini
-│   │       ├── prompt_builder.py   # constrói prompt rico
-│   │       └── parser.py           # JSON → AnaliseGemini (com reparo)
-│   │
-│   ├── exporters/
-│   │   └── notion/                 # Lead → Notion CRM
-│   │       ├── exporter.py         # orquestrador
-│   │       ├── repository.py       # find / create / update
-│   │       ├── mappers.py          # Empresa → propriedades Notion
-│   │       └── property_builder.py # JSON da API Notion por tipo
-│   │
-│   └── utils/
-│       ├── logger.py               # loguru (console + arquivo)
-│       └── storage.py              # leads em JSON local
+├── backend/                   ← Python / FastAPI (ver backend/README.md)
+│   ├── app/
+│   │   ├── api/               ← FastAPI (rotas, schemas, services)
+│   │   ├── collectors/        ← BrasilAPI, OpenCNPJ, site scraper, buscadores
+│   │   ├── analyzers/         ← Gemini (análise IA)
+│   │   ├── exporters/         ← Notion exporter
+│   │   ├── models/            ← Pydantic (Lead, Empresa, Contato)
+│   │   ├── services/          ← Overrides manuais e outros serviços
+│   │   └── utils/             ← Logger, storage, etc.
+│   ├── data/                  ← Backups locais (ignorado pelo Git)
+│   │   ├── raw/, processed/, sent/   ← snapshots do pipeline
+│   │   ├── cache/             ← cache HTTP do scraper
+│   │   └── sessao/            ← cookies dos buscadores
+│   ├── logs/                  ← Logs do servidor (ignorado)
+│   ├── run.py                 ← CLI + comando `serve` (sobe FastAPI)
+│   ├── requirements.txt
+│   └── .env                   ← Tokens (NÃO versionar)
 │
-├── data/
-│   ├── raw/                        # JSONs crus (antes de processar)
-│   ├── processed/                  # leads prontos pra revisar
-│   ├── sent/                       # leads já enviados pro Notion
-│   ├── cache/website/              # HTML cacheado (7 dias)
-│   ├── debug/gemini/               # respostas crus se IA falhar
-│   └── unmapped_fields.json        # valores que não bateram com select
-│
-└── logs/
-    └── prospector_YYYY-MM-DD.log   # log diário (7 dias de retenção)
+└── frontend/                  ← Next.js / TypeScript (ver frontend/README.md)
+    ├── pages/                 ← Rotas (_app, _document, index, agents/[slug])
+    ├── components/            ← Sidebar, Topbar, ProspectorForm, etc.
+    ├── hooks/                 ← useAgents, useProspector, useFetch
+    ├── lib/                   ← api.ts (cliente HTTP), types.ts, format.ts
+    ├── styles/                ← globals.css (Tailwind + componentes)
+    ├── tailwind.config.ts     ← Design system Reativa (OKLCH)
+    ├── package.json
+    └── .env.local             ← URL da API (NÃO versionar)
 ```
 
 ---
 
-## Instalação
+## Quickstart (primeiro uso)
+
+### Pré-requisitos
+- **Python 3.10+**
+- **Node.js 18.17+**
+- **Conta Notion** com dois bancos: `Empresas` e `Contatos` (schema descrito em [backend/README.md](backend/README.md))
+- **API key do Google Gemini**
+
+### 1. Clone e configure os secrets
 
 ```bash
-# 1. Cria ambiente virtual
-python -m venv venv
+git clone <seu-repo>
+cd prospector
 
-# 2. Ativa
+# Backend
+cd backend
+cp .env.example .env
+# Edita .env com seus tokens:
+#   NOTION_TOKEN=secret_xxx
+#   NOTION_DB_EMPRESAS=xxxxxx
+#   NOTION_DB_CONTATOS=xxxxxx
+#   GEMINI_API_KEY=xxxxxx
+
+# Frontend
+cd ../frontend
+cp .env.local.example .env.local
+# O default já aponta pra http://localhost:8000 — só mexa se a porta da API mudar
+```
+
+### 2. Instale as dependências
+
+```bash
+# Backend
+cd backend
+python3 -m venv venv
 source venv/bin/activate          # Linux/Mac
-# venv\Scripts\activate           # Windows
-
-# 3. Instala dependências
+# ou: venv\Scripts\activate       # Windows
 pip install -r requirements.txt
 
-# 4. Instala o navegador do Playwright
-playwright install chromium
-
-# 5. Configura .env
-cp .env.example .env
-# edita .env com as chaves reais
+# Frontend (em outro terminal)
+cd frontend
+npm install
 ```
 
----
+### 3. Rode os dois serviços (em terminais separados)
 
-## Configuração do .env
-
-```env
-# --- Notion ---
-NOTION_TOKEN=ntn_seu_token_aqui
-NOTION_DB_EMPRESAS= Seu codigo aqui
-NOTION_DB_CONTATOS= Seu codigo aqui
-
-# --- Gemini ---
-GEMINI_API_KEY=AIza_sua_chave_aqui
-
-# --- Rate Limiting (proteção anti-bloqueio em scraping) ---
-MAX_LEADS_PER_DAY=30
-MIN_DELAY_SECONDS=5
-MAX_DELAY_SECONDS=15
-
-# --- Comportamento ---
-LOG_LEVEL=INFO
-HEADLESS_BROWSER=false
-```
-
-### Onde pegar cada chave
-
-| Chave | Onde pegar |
-|---|---|
-| `NOTION_TOKEN` | notion.so/profile/integrations → Sua integração "Prospect" → Token |
-| `NOTION_DB_EMPRESAS` / `NOTION_DB_CONTATOS` | URL do database no Notion (os 32 caracteres antes do `?v=`) |
-| `GEMINI_API_KEY` | aistudio.google.com/apikey → "Create API key" |
-
----
-
-## O que vai pro Notion
-
-### Empresa (database "Empresas")
-- Nome, Razão Social, CNPJ formatado
-- Capital Social (R$)
-- Cidade, Estado (select), Endereço completo
-- Setor (mapeado do CNAE)
-- Tamanho (estimado por porte + capital)
-- Site, Instagram, Facebook
-- Sócios (texto único separado por vírgula)
-- Status: 🔵 Prospect (default)
-- Como conheceu: Outbound (default)
-- **Notas:** observações da BrasilAPI + extras do site + **análise da IA**
-
-### Contato (database "Contatos")
-- Nome (sócio ou "Empresa - Contato Comercial")
-- Cargo, Decisor? (Sim/Não)
-- E-mail, Telefone, WhatsApp, LinkedIn
-- Vinculado à Empresa via relação
-- Origem do contato: Network (default)
-
-### Notas da IA (exemplo real)
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🤖 ANÁLISE IA  |  ⚠️ Score: 45/100
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Empresa individual de advocacia sem presença digital...
-
-📋 RESUMO
-Escritório jurídico em Atibaia sem nenhuma presença digital...
-
-🏢 PERFIL
-Porte: Pequena sociedade individual de advocacia.
-
-⚡ DORES PROVÁVEIS
-1. Dificuldade em atrair novos clientes online
-   ↳ Ausência total de site e redes sociais
-2. Processos manuais de gestão de casos
-   ↳ Suposição (padrão do setor)
-
-💡 GANCHOS DE VENDA
-1. Site institucional profissional
-2. CRM jurídico básico
-
-❓ PERGUNTAS PRA CALL
-1. Como vocês atraem novos clientes hoje?
-2. Como organizam processos dos clientes?
-
-🚨 ALERTAS
-• Capital baixo (R$ 10k) — orçamento limitado
-• Empresa unipessoal — sócio único é o decisor
-```
-
----
-
-## Como o agente decide as coisas
-
-### Idempotência (não duplica)
-- **Empresa:** busca por CNPJ formatado no Notion antes de criar. Se existir, atualiza.
-- **Contato:** busca por (email na mesma empresa) → fallback (nome na mesma empresa).
-
-### Validação de selects
-- Nunca cria opção nova de Setor/Tamanho/etc. automaticamente.
-- Valores não mapeados vão pra `data/unmapped_fields.json` pra revisar.
-- Estratégia: ou adiciona a opção manualmente no Notion, ou aceita campo vazio.
-
-### Mapeamento CNAE → Setor (BrasilAPI)
-| Divisão CNAE | Setor |
-|---|---|
-| 62, 63, 61 | Tech |
-| 47, 46, 45 | Varejo |
-| 86, 87, 88 | Saúde |
-| 85 | Educação |
-| 69 | Jurídico |
-| 64-66 | Financeiro |
-| 41-43, 68 | Imobiliário |
-| 73, 58-60 | Marketing |
-| 10-33 | Indústria |
-| outros | Serviços ou vazio |
-
-### Tamanho (porte + capital social)
-- Porte=MEI → MEI
-- Porte=ME ou capital ≤ R$ 360k → Pequena (1-10)
-- Porte=EPP ou capital ≤ R$ 4,8M → Média (11-50)
-- Capital ≤ R$ 50M → Grande (51-200)
-- Capital > R$ 50M → Corporativa (200+)
-
-### Telefone vs WhatsApp
-- **wa.me / api.whatsapp.com** → sempre WhatsApp (override)
-- **Celular** (11 dígitos, 9 inicial) → WhatsApp por default
-- **Fixo** (10 dígitos, começa com 2-5) → Telefone
-- **"Telefone:"** explícito no contexto → força pra Telefone
-- DDDs inválidos (não existem na Anatel) → ignorados
-
-### Quando o site é JS-pesado (SPA)
-- Tenta httpx primeiro (rápido, 1-3s)
-- Se vier vazio / HTML pequeno / muitos scripts → escala automático pra Playwright (lento, 8-15s)
-- Pode forçar Playwright direto com `--playwright`
-
----
-
-##  Troubleshooting
-
-### "GEMINI_API_KEY não está no .env"
-Pega chave grátis em https://aistudio.google.com/apikey e adiciona no `.env`.
-
-### "unauthorized" no Notion
-- Confere o `NOTION_TOKEN` no `.env`
-- Confere se a integração "Prospect" está conectada ao CRM Reativa
-  (no Notion: abrir página → menu lateral direito → Conexões)
-
-### "Modelo gemini-2.5-flash não encontrado"
-Google trocou o nome. Edita `app/analyzers/gemini/client.py`, troca `MODEL` pelo modelo atual.
-Lista de modelos: https://ai.google.dev/gemini-api/docs/models
-
-### Cache atrapalhando teste
 ```bash
-rm data/cache/website/*.json
+# Terminal 1 — backend
+cd backend
+source venv/bin/activate
+python run.py serve
+# → API rodando em http://localhost:8000
+# → Swagger interativo em http://localhost:8000/docs
+
+# Terminal 2 — frontend
+cd frontend
+npm run dev
+# → Dashboard em http://localhost:3000
 ```
 
-### Site não responde / DNS inválido
-O agente detecta e aborta em 2-3s (`DominioInvalido`). Confere se a URL tá certa.
+### 4. Use!
 
-### Texto longo demais pra um campo do Notion
-Já tem proteção: rich_text é quebrado em pedaços <= 2000 chars. Title é truncado com "...".
-
-### Quando preciso revisar manualmente?
-- `data/unmapped_fields.json` — valores que não bateram com selects do Notion
-- `data/debug/gemini/` — respostas que a IA enviou e o parser não conseguiu processar
-- Estado da empresa fora de SP/RJ/MG/RS/PR/SC/BA/DF — vai vazio + warning
+Abra **http://localhost:3000** no navegador. Ele redireciona pra tela do Prospector — preencha o CNPJ e clique em "Pré-visualizar lead" ou "Prospectar e enviar pro Notion".
 
 ---
 
-## Boas práticas pra não tomar bloqueio
+## Testes rápidos
 
-1. **Limite-se a 30-50 leads por dia** (configurável em `MAX_LEADS_PER_DAY`)
-2. **Não rode múltiplas prospecções em paralelo** no mesmo dia
-3. Se tomar `403`/`429` muito → para por 24-48h
-4. **Não scrape Instagram/Facebook diretamente** — só pega os LINKS que aparecem no site
-5. Cache de 7 dias evita re-baixar o mesmo site
-6. Delay aleatório entre páginas (3-7s)
+### Saúde da API
+```bash
+curl http://localhost:8000/api/health
+# {"status":"ok","service":"reativa-agents-api"}
+```
+
+### Pipeline pelo CLI (sem o frontend)
+```bash
+cd backend
+source venv/bin/activate
+python run.py prospectar-full 52346129000150 https://climadiagnosticos.com.br/
+```
+
+### Diagnosticar site que não cede contatos
+```bash
+python run.py debug-site https://endolive.com.br/
+python run.py debug-site https://endolive.com.br/ --playwright   # força JS
+```
+
+### Diagnosticar conexão frontend → backend
+Abre **http://localhost:3000/diagnostico** no navegador (se você ainda não removeu o arquivo `pages/diagnostico.tsx`). Mostra cada endpoint ✅ ou ❌.
 
 ---
 
-## Próximas fases planejadas
+## Como adicionar um novo agente
 
-- ⏳ **— Google Maps**: buscar por "pizzarias em Santo André" e descobrir CNPJs automaticamente
+A arquitetura é **data-driven** — você não reescreve nada do dashboard pra plugar um novo agente:
 
+**1. Backend** — anexa em `backend/app/api/registry.py`:
+```python
+Agent(
+    slug="cobranca",
+    name="Cobrança",
+    description="Acompanha boletos e dispara lembretes no WhatsApp",
+    icon="ti-cash",
+    status="active",        # ← muda de "soon" pra "active" quando estiver pronto
+    order=20,
+),
+```
 
+**2. Backend** — crie a lógica em `backend/app/api/routers/cobranca.py` espelhando `prospector.py`.
+
+**3. Backend** — plugue no `backend/app/api/main.py`:
+```python
+from app.api.routers import cobranca as cobranca_router
+app.include_router(cobranca_router.router)
+```
+
+**4. Frontend** — em `frontend/pages/agents/[slug].tsx`, adicione o branch:
+```tsx
+{agent.slug === 'prospector' ? <ProspectorScreen ... />
+ : agent.slug === 'cobranca' ? <CobrancaScreen ... />
+ : <ComingSoonScreen ... />}
+```
+
+Pronto. A sidebar descobre sozinha via `GET /api/agents`.
+
+Detalhes específicos de cada parte:
+- **Backend** → [`backend/README.md`](backend/README.md)
+- **Frontend** → [`frontend/README.md`](frontend/README.md)
+
+---
+
+## Segurança e privacidade
+
+- **Nenhum token vai pro Git.** O `.gitignore` bloqueia `.env`, `.env.local`, chaves, certificados.
+- **Dados de prospects não vão pro Git.** Os backups locais em `backend/data/{raw,processed,sent,cache,sessao}/` são ignorados — eles contêm CNPJs, sócios, telefones e emails reais.
+- **CORS restrito a `localhost:3000`** em dev. Pra produção, edite `backend/app/api/main.py` e adicione o domínio real.
+- **Não há autenticação no backend hoje.** É local apenas. Pra publicar pra equipe, adicione middleware de auth (token Bearer ou OAuth) antes de subir.
+
+---
+
+## Stack
+
+| Camada | Tecnologia | Versão |
+|--------|-----------|--------|
+| Backend | Python + FastAPI + Pydantic | 3.10+ / 0.115+ |
+| Frontend | Next.js + React + TypeScript | 14 / 18 / 5 |
+| Estilos | Tailwind CSS + design system Reativa | 3.4 |
+| CRM | Notion (notion-client) | — |
+| IA | Google Gemini | — |
+| HTTP cliente | httpx + tenacity (retry) | — |
+| Scraping JS | Playwright Chromium (opcional) | — |
+
+---
+
+## Roadmap
+
+| Agente | Status |
+|--------|--------|
+| **Prospector** | ✅ Ativo |
+| Cobrança | 🗓️ Q3 |
+| Suporte | 🗓️ Q3 |
+| Onboarding | 🗓️ Q4 |
+
+### Backlog técnico
+
+- [ ] Página de detalhe do lead (`/agents/prospector/leads/[arquivo]`)
+- [ ] Filtros no histórico (setor, fonte, data)
+- [ ] Tela de Métricas (gráficos de leads/dia, taxa de uso por fonte)
+- [ ] Autenticação real (NextAuth + JWT no backend)
+- [ ] Deploy: Vercel (front) + Railway/Render (back)
+- [ ] Dark mode
+- [ ] Importação CSV em lote
+- [ ] Modo `--playwright` automático quando o site não cede dados
+
+---
+
+## 📜 Licença
+
+Propriedade da Reative Systems. Uso interno.
