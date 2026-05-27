@@ -11,13 +11,16 @@ SENT_DIR = DATA_DIR / "sent"
 LOGS_DIR = BASE_DIR / "logs"
 UNMAPPED_FIELDS_FILE = DATA_DIR / "unmapped_fields.json"
 
+
 class Settings(BaseSettings):
+
+    llm_provider: str = "gemini"      # "gemini" ou "ollama"
+    ollama_model: str = "llama3.1:8b"
 
     # Notion
     notion_token: str
     notion_db_empresas: str
     notion_db_contatos: str
-
 
     gemini_api_key: str = ""
 
@@ -30,10 +33,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     headless_browser: bool = False
 
-    # Stealth 
-    usar_tor: bool = False 
-    modo_stealth: bool = True 
-    aquecer_sessao: bool = True 
+    # Stealth
+    usar_tor: bool = False
+    modo_stealth: bool = True
+    aquecer_sessao: bool = True
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -42,7 +45,7 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings() #type: ignore
+settings = Settings()  # type: ignore
 
 
 SETOR_OPCOES = [

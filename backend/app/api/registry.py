@@ -38,6 +38,18 @@ _AGENTS: List[Agent] = [
         },
     ),
     Agent(
+        slug="copywriter",
+        name="Copywriter",
+        description=(
+            "Gera e-mails de prospecção persuasivos e personalizados "
+            "a partir dos dados do lead."
+        ),
+        icon="ti-mail",
+        status="active",
+        order=15,  # entre prospector (10) e cobrança (20)
+        capabilities={"gera_email": True, "usa_lead_existente": True},
+    ),
+    Agent(
         slug="cobranca",
         name="Cobrança",
         description=(
