@@ -1,10 +1,12 @@
 import { ApiError } from './types';
 import type {
   Agent,
+  CopywriterResponse,
   LeadHistoryResponse,
   ProspectorManualRequest,
   ProspectorPreviewResponse,
   ProspectorRunResponse,
+  CopywriterRequest,
 } from './types';
 
 const API_URL =
@@ -78,6 +80,8 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   return (await response.json()) as T;
 }
 
+
+
 export const api = {
   /** GET /api/health */
   healthcheck(): Promise<{ status: string; service: string }> {
@@ -109,6 +113,18 @@ export const api = {
         signal: opts?.signal,
       },
     );
+  },
+
+  copywriterGerar(
+  body: CopywriterRequest,
+  opts?: { signal?: AbortSignal },
+  ): Promise<CopywriterResponse> {
+  return request<CopywriterResponse>('/api/agents/copywriter/gerar', {
+    method: 'POST',
+    body,
+    timeoutMs: 120_000,
+    signal: opts?.signal,
+  });
   },
 
   prospectorRun(

@@ -2,14 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   Fontes — Space Grotesk + Manrope + JetBrains Mono
-   Carregadas via <link> em _document.tsx por performance.
-   ============================================================ */
-
-/* ============================================================
-   Base global
-   ============================================================ */
+/* ════════════════════════════════════════════════════════════
+   RESET & BASE
+   Estilos globais de elementos. Não usar @apply aqui — é CSS
+   puro, aplicado antes de qualquer classe utilitária.
+   ════════════════════════════════════════════════════════════ */
 
 * {
   box-sizing: border-box;
@@ -55,7 +52,10 @@ svg {
   max-width: 100%;
 }
 
-/* Scrollbar discreta (estilo Reativa) */
+/* ────────────────────────────────────────────────────────────
+   Scrollbar (estilo Reativa)
+   ──────────────────────────────────────────────────────────── */
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -72,12 +72,17 @@ svg {
   background: oklch(0.7 0.01 60);
 }
 
-/* ============================================================
-   Componentes reutilizáveis (atalhos de utility chains)
-   ============================================================ */
+/* ════════════════════════════════════════════════════════════
+   COMPONENTES
+   Atalhos para cadeias de utilitários repetidas em vários
+   lugares. Regra: só entra aqui o que é usado em 2+ telas.
+   Estilo de uma tela só fica no próprio componente .tsx.
+   ════════════════════════════════════════════════════════════ */
 
 @layer components {
-  /* Eyebrow — pequeno label monospaced com risco lateral */
+  /* ── Tipografia ─────────────────────────────────────────── */
+
+  /* Label monospaced com risco lateral */
   .eyebrow {
     @apply inline-flex items-center gap-2 font-mono uppercase tracking-[0.14em] text-[10px] font-medium text-brand;
   }
@@ -89,23 +94,29 @@ svg {
     background: oklch(0.68 0.19 38);
   }
 
-  /* Pill button — laranja primário */
+  /* ── Botões ─────────────────────────────────────────────── */
+
+  /* CTA pill laranja */
   .btn-primary {
     @apply inline-flex items-center gap-2 px-5 py-3 rounded-pill bg-brand text-white font-display font-medium text-sm tracking-tight shadow-brand-sm transition-all hover:bg-brand-deep hover:-translate-y-px;
   }
 
-  /* Pill button — ghost (borda fina) */
+  /* Botão secundário com borda fina */
   .btn-ghost {
     @apply inline-flex items-center gap-2 px-5 py-3 rounded-pill border border-line bg-transparent text-ink font-display font-medium text-sm tracking-tight transition-colors hover:border-ink-mute;
   }
+
+  /* ── Superfícies ────────────────────────────────────────── */
 
   /* Card — superfície branca com borda fina */
   .card {
     @apply bg-surface border border-line rounded-lg;
   }
 
-  /* Input padrão */
+  /* ── Formulários ────────────────────────────────────────── */
+
+  /* Input / select / textarea padrão */
   .input {
-    @apply h-10 w-full px-3 rounded border border-line bg-surface text-sm text-ink transition-all placeholder:text-ink-faint focus:outline-none focus:border-brand focus:shadow-focus;
+    @apply w-full px-3 py-2 rounded border border-line bg-surface text-sm text-ink transition-all placeholder:text-ink-faint focus:outline-none focus:border-brand focus:shadow-focus;
   }
 }

@@ -105,3 +105,30 @@ export class ApiError extends Error {
     return this.status >= 500 || this.status === 0;
   }
 }
+
+export interface CopywriterRequest {
+  empresa: string;
+  segmento?: string | null;
+  nome_contato?: string | null;
+  cargo?: string | null;
+  tipo: string;
+  canal?: string;
+  necessidade?: string | null;
+  servico?: string | null;
+  diferenciais?: string | null;
+  contexto_extra?: string | null;
+  lead_arquivo?: string | null;
+}
+
+export interface EmailGerado {
+  assunto: string;
+  corpo: string;
+  cta: string;
+  tom: string;
+}
+
+export interface CopywriterResponse {
+  success: boolean;
+  email: EmailGerado;
+  variantes: EmailGerado[];
+}
