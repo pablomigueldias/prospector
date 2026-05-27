@@ -10,6 +10,8 @@ import { ProspectorForm } from '@/components/ProspectorForm';
 import { StatCard } from '@/components/StatCard';
 import { useAgent, useAgents } from '@/hooks/useAgents';
 import { useProspectorHistory } from '@/hooks/useProspector';
+import  CopywriterScreen  from '@/components/CopywriterScreen';
+
 
 export default function AgentPage() {
   const router = useRouter();
@@ -42,10 +44,12 @@ export default function AgentPage() {
       </Head>
       <DashboardLayout currentAgentName={agent.name}>
         {agent.slug === 'prospector' ? (
-          <ProspectorScreen agents={agents} />
-        ) : (
-          <ComingSoonScreen agentName={agent.name} />
-        )}
+  <ProspectorScreen agents={agents} />
+) : agent.slug === 'copywriter' ? (
+  <CopywriterScreen />
+) : (
+  <ComingSoonScreen agentName={agent.name} />
+)}
       </DashboardLayout>
     </>
   );
