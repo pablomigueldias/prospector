@@ -1,14 +1,3 @@
-"""
-Serviço do agente Prospector — orquestra o pipeline existente
-(BrasilAPI/OpenCNPJ → site → IA → Notion) por trás de uma fachada
-simples consumível pela API HTTP.
-
-Esta camada existe pra:
-- Isolar a API do pipeline (se o pipeline mudar, só este arquivo mexe)
-- Capturar metadados úteis pra resposta HTTP (fonte do CNPJ, ids do Notion)
-- Tratar erros com mensagens amigáveis pro frontend
-"""
-
 from __future__ import annotations
 
 import contextlib
@@ -32,15 +21,8 @@ from app.utils.storage import save_lead
 
 
 logger = get_logger()
-
-
-# ─────────────────────────────────────────────────────────────────────
-# Erros traduzíveis pro frontend
-# ─────────────────────────────────────────────────────────────────────
-
-
 class ProspectorError(Exception):
-    """Erro de negócio do Prospector — vira HTTP 4xx/5xx com mensagem amigável."""
+  
 
     def __init__(self, message: str, *, status_code: int = 400, detail: Optional[str] = None):
         super().__init__(message)
@@ -141,10 +123,6 @@ def preview_lead(
     return lead, fonte
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Run completo — chama o pipeline e envia pro Notion
-# ─────────────────────────────────────────────────────────────────────
-
 
 def executar_pipeline_completo(
     cnpj: str,
@@ -157,25 +135,16 @@ def executar_pipeline_completo(
     telefone: Optional[str] = None,
     whatsapp: Optional[str] = None,
 ) -> Tuple[Lead, Optional[str]]:
-    """
-    Pipeline completo: CNPJ + site + overrides + análise IA + Notion.
 
-    Equivalente ao `cmd_prospectar_full` do CLI, mas com tratamento de
-    erros adequado pra HTTP. Devolve (lead, fonte_cnpj).
-    """
     digits = _digits_only(cnpj)
 
     if not _validate_cnpj_digits(digits):
         raise CnpjInvalido(cnpj)
 
-    # 1. CNPJ via orquestrador (BrasilAPI → OpenCNPJ)
-    # Usa a função pública pra ter o save_lead(raw) e os logs bonitos
     lead = _orchestrate(digits, salvar_raw=True)
     if lead is None:
         raise CnpjNaoEncontradoEmFonteAlguma(cnpj)
 
-    # Recupera a fonte usada — pequena duplicação porque o orquestrador
-    # não devolve isso, mas o overhead é zero (já está em cache da requisição)
     data, fonte = _consultar_com_fallback(digits)
 
     # 2. Site (opcional)
@@ -210,6 +179,15 @@ def executar_pipeline_completo(
     exporter = NotionExporter()
     lead = exporter.send_lead(lead)
     save_lead(lead, stage="sent")
+
+    try:
+        from app.db.lead_persistence import persist_lead_sync
+        persist_lead_sync(lead)
+    except Exception as e:
+        logger.warning(
+            f"Fala ao gravar no Postgres (Notion Ok)"
+            f"{type(e).__name__}: {e}"
+        )
 
     return lead, fonte
 

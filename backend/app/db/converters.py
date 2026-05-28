@@ -21,13 +21,14 @@ def empresa_to_orm(emp: EmpresaPydantic) -> EmpresaORM:
     sincronizado = datetime.now() if emp.notion_page_id else None
     return EmpresaORM(
         nome=emp.nome,
+        razao_social=emp.razao_social,
         cnpj=_cnpj_digits(emp.cnpj),
         cidade=emp.cidade,
         estado=emp.estado,
         local=emp.local,
         site=emp.site,
         instagram=emp.instagram,
-        faceboook=emp.facebook,
+        facebook=emp.facebook,
         capital_social=emp.capital_social,
         setor=emp.setor,
         tamanho=emp.tamanho,

@@ -348,11 +348,16 @@ def cmd_prospectar_full(
     lead = exporter.send_lead(lead)
     save_lead(lead, stage="sent")
 
+    try:
+        from app.db.lead_persistence import persist_lead_sync
+        persist_lead_sync(lead)
+    except Exception as e:
+        logger.warning(f" Falha ao gravar no Postgres (Notion OK): {e}")
+
     logger.info("=" * 60)
-    logger.success(f"✅ FULL CONCLUÍDO: {lead.empresa.nome}")
+    logger.success(f" FULL CONCLUÍDO: {lead.empresa.nome}")
     logger.info(f"   Empresa: {lead.empresa.notion_page_id}")
     logger.info(f"   Contatos: {len(lead.contatos)}")
-    logger.info(f"   👉 Vai no Notion ver a análise da IA nas Notas!")
     logger.info("=" * 60)
 
 

@@ -90,6 +90,20 @@ def prospector_history(
     items = leads_reader.ler_historico(limit=limit)
     return LeadHistoryResponse(items=items, total=len(items))
 
+@router.get(
+        "/db-stats",
+        summary="Contagem de registros no Postgres"
+)
+def prospector_db_stats() -> dict:
+    from app.db.lead_persistence import db_stats_sync
+    try:
+        return {"success": True, "postgres": db_stats_sync()}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Postgress indispinível {type(e).__name__}: {e}",
+        )
+
 
 def _lead_to_out(lead) -> LeadOut:
     emp = lead.empresa

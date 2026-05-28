@@ -58,7 +58,7 @@ class LeadPersistenceService:
         self.empresas = EmpresaRepository(session)
         self.contatos = ContatoRepository(session)
 
-    async def persit(self, lead: Lead) -> uuid.UUID:
+    async def persist(self, lead: Lead) -> uuid.UUID:
 
         empresa = await self.empresas.upsert_by_cnpj(empresa_to_orm(lead.empresa))
 
@@ -86,7 +86,7 @@ class LeadPersistenceService:
 
 async def _persist_async(lead: Lead) -> uuid.UUID:
     async with _bridge_session() as session:
-        return await LeadPersistenceService(session).persit(lead)
+        return await LeadPersistenceService(session).persist(lead)
     
 def persist_lead_sync(lead: Lead) -> Optional[uuid.UUID]:
     return asyncio.run(_persist_async(lead))
