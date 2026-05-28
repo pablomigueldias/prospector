@@ -1,12 +1,11 @@
 # =====================================================================
-#  Reativa Systems — .gitignore
+#  Reative Systems — .gitignore
 #  Monorepo: backend Python (FastAPI) + frontend Next.js (TS)
 # =====================================================================
 
 # ─────────────────────────────────────────────────────────────────────
 #  SECRETS — NUNCA VERSIONAR
 # ─────────────────────────────────────────────────────────────────────
-# Tokens do Notion, Gemini, etc. Sempre fora do Git.
 .env
 .env.local
 .env.*.local
@@ -17,7 +16,7 @@
 .env.test
 .env.test.local
 
-# Mas mantém os exemplos versionados (ajudam quem clonar o repo)
+# Mantém os exemplos versionados (ajudam quem clonar o repo)
 !.env.example
 !.env.local.example
 !.env.*.example
@@ -39,12 +38,13 @@ service-account*.json
 # ─────────────────────────────────────────────────────────────────────
 #  DADOS DE NEGÓCIO — backend/data/
 # ─────────────────────────────────────────────────────────────────────
-
 backend/data/raw/
 backend/data/processed/
 backend/data/sent/
 backend/data/cache/
 backend/data/sessao/
+backend/data/debug/
+backend/data/emails/
 backend/data/unmapped_fields.json
 
 !backend/data/
@@ -123,6 +123,18 @@ dmypy.json
 .ipynb_checkpoints/
 
 # ─────────────────────────────────────────────────────────────────────
+#  BANCO DE DADOS / ALEMBIC  (Passo 1+)
+# ─────────────────────────────────────────────────────────────────────
+# Os scripts de migration em alembic/versions/*.py DEVEM ir pro git.
+# Mas dumps, backups e SQL gerado local NÃO.
+*.sql.bak
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+backend/alembic/versions/*.sql      # SQL gerado por `alembic upgrade head --sql`
+
+# ─────────────────────────────────────────────────────────────────────
 #  NODE / NPM / YARN / PNPM
 # ─────────────────────────────────────────────────────────────────────
 node_modules/
@@ -141,8 +153,6 @@ node_modules/
 out/
 .vercel/
 .turbo/
-
-
 next-env.d.ts
 
 # ─────────────────────────────────────────────────────────────────────
@@ -154,23 +164,16 @@ tsconfig.tsbuildinfo
 # ─────────────────────────────────────────────────────────────────────
 #  IDEs E EDITORES
 # ─────────────────────────────────────────────────────────────────────
-# VSCode (mantém só o que pode ser compartilhado, se você criar)
 .vscode/*
 !.vscode/settings.json.example
 !.vscode/extensions.json
-
-# JetBrains (PyCharm, WebStorm, etc.)
 .idea/
 *.iml
 *.iws
 *.ipr
 .gradle/
-
-# Sublime
 *.sublime-project
 *.sublime-workspace
-
-# Vim
 [._]*.s[a-v][a-z]
 [._]*.sw[a-p]
 [._]s[a-rt][a-z]
@@ -178,8 +181,6 @@ Session.vim
 .exrc
 *.swp
 *.swo
-
-# Emacs
 *~
 \#*\#
 .\#*
@@ -187,7 +188,6 @@ Session.vim
 # ─────────────────────────────────────────────────────────────────────
 #  SISTEMA OPERACIONAL
 # ─────────────────────────────────────────────────────────────────────
-# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -195,13 +195,9 @@ Session.vim
 .Spotlight-V100
 .Trashes
 .TemporaryItems
-
-# Windows
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-
-# Linux
 .directory
 
 # ─────────────────────────────────────────────────────────────────────
@@ -216,15 +212,16 @@ temp/
 *.rej
 
 # ─────────────────────────────────────────────────────────────────────
-#  DOCKER (caso adicione depois)
+#  DOCKER
 # ─────────────────────────────────────────────────────────────────────
+# NOTA: docker-compose.yml DEVE ser versionado (não tem secret, só
+# config de dev local). Só ignoramos overrides e arquivos locais.
 docker-compose.override.yml
 .docker-compose.override.yml
 .dockerignore.local
 
 # ─────────────────────────────────────────────────────────────────────
-#  PLAYWRIGHT (cache de browsers — fica em ~/.cache/ms-playwright/
-#  mas se algum dia gerar artifacts no projeto:)
+#  PLAYWRIGHT
 # ─────────────────────────────────────────────────────────────────────
 playwright-report/
 test-results/
