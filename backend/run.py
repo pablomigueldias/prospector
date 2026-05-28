@@ -39,7 +39,7 @@ def test_notion():
     Salva em data/processed/ e move pra data/sent/ depois.
     """
     from app.exporters.notion import NotionExporter
-    from app.models.lead import Contato, Empresa, Lead, Socio
+    from backend.app.db.models.lead import Contato, Empresa, Lead, Socio
     from app.utils.logger import get_logger
     from app.utils.storage import save_lead
 
@@ -717,6 +717,60 @@ def cmd_serve(host: str = "127.0.0.1", port: int = 8000, reload: bool = True):
         log_level="info",
     )
 
+def cmd_db_init():
+    """
+    Sobe o schema do banco do zero — aplica TODAS as migrations.
+
+    Use depois de rodar `docker compose up -d`. Idempotente:
+    se o banco já está atualizado, não faz nada.
+    """
+    import subprocess
+    print("=" * 60)
+    print("🗄️  Aplicando migrations no Postgres...")
+    print("=" * 60)
+    result = subprocess.run(
+        ["alembic", "upgrade", "head"],
+        cwd=str(BASE_DIR := __import__("pathlib").Path(__file__).parent),
+        capture_output=False,
+    )
+    if result.returncode == 0:
+        print("\n✅ Schema atualizado.")
+    else:
+        print("\n❌ Falhou. Verifique se o Docker subiu o Postgres.")
+        sys.exit(result.returncode)
+
+
+def cmd_db_migrate(message: str):
+    """
+    Gera uma migration nova baseada nas mudanças dos modelos ORM.
+
+    Uso: python run.py db-migrate "adiciona tabela ai_calls"
+
+    O Alembic compara `app.db.models.*` com o banco e detecta
+    diferenças. SEMPRE revise o arquivo gerado em `alembic/versions/`
+    antes de commitar — autogenerate erra em casos sutis (renomes,
+    índices condicionais, etc).
+    """
+    import subprocess
+    print("=" * 60)
+    print(f"📝 Gerando migration: {message!r}")
+    print("=" * 60)
+    result = subprocess.run(
+        ["alembic", "revision", "--autogenerate", "-m", message],
+        cwd=str(__import__("pathlib").Path(__file__).parent),
+    )
+    if result.returncode == 0:
+        print("\n✅ Migration criada. Revise o arquivo em alembic/versions/")
+        print("   Depois aplique com: python run.py db-init")
+    else:
+        sys.exit(result.returncode)
+
+
+def cmd_db_smoke():
+    """Roda o teste de smoke do Passo 1."""
+    from tests.test_db_smoke import main as smoke_main
+    smoke_main()
+
 
 def main():
     if len(sys.argv) < 2:
@@ -808,8 +862,18 @@ def main():
             elif argv[i] == "--no-reload":
                 reload_flag = False; i += 1
             else:
-                i += 1
+                i += 1   
         cmd_serve(host=host, port=port, reload=reload_flag)
+    elif cmd == "db-init":
+        cmd_db_init()
+    elif cmd == "db-migrate":
+        if len(sys.argv) < 3:
+            print("Uso: python run.py db-migrate \"mensagem da migration\"")
+            sys.exit(1)
+        cmd_db_migrate(sys.argv[2])
+    elif cmd == "db-smoke":
+        cmd_db_smoke()
+        
     else:
         print(f"❌ Comando desconhecido: {cmd}")
         print(__doc__)

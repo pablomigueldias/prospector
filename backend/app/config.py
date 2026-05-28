@@ -14,6 +14,11 @@ UNMAPPED_FIELDS_FILE = DATA_DIR / "unmapped_fields.json"
 
 class Settings(BaseSettings):
 
+    database_url: str = (
+        "postgresql+asyncpg://reative:reative_dev@localhost:5433/reative"
+    )
+    db_echo: bool = False
+
     llm_provider: str = "gemini"      # "gemini" ou "ollama"
     ollama_model: str = "llama3.1:8b"
 
