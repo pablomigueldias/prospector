@@ -5,17 +5,18 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 
-def gerar_texto(prompt: str, *, json_mode: bool = True) -> str:
-    """Despacha para o provider configurado em settings.llm_provider."""
+def gerar_texto(
+    prompt: str, *, json_mode: bool = True,
+    agente: str = "desconhecido", operacao: str | None = None,
+) -> str:
     provider = getattr(settings, "llm_provider", "gemini")
-
     if provider == "gemini":
         from app.analyzers.gemini.client import gerar_conteudo
-        return gerar_conteudo(prompt, response_json=json_mode)
-
+        return gerar_conteudo(
+            prompt, response_json=json_mode, agente=agente, operacao=operacao
+        )
     if provider == "ollama":
         return _gerar_ollama(prompt, json_mode=json_mode)
-
     raise ValueError(f"Provider de LLM desconhecido: {provider}")
 
 

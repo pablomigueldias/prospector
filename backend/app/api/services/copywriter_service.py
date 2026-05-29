@@ -20,7 +20,7 @@ class CopywriterError(Exception):
 
 def _enriquecer_com_lead(req: CopywriterRequest) -> CopywriterRequest:
     """Preenche campos vazios do request com dados de um lead já coletado."""
-    from app.storage import load_lead  # ajuste ao import real do seu projeto
+    from app.utils.storage import load_lead  
 
     try:
         lead = load_lead(req.lead_arquivo)
@@ -89,7 +89,8 @@ def gerar_email(req: CopywriterRequest) -> CopywriterResponse:
     logger.debug("Copywriter: prompt montado (%d caracteres)", len(prompt))
 
     try:
-        texto_cru = gerar_texto(prompt, json_mode=True)
+        texto_cru = gerar_texto(prompt, json_mode=True,
+                                agente="copywriter", operacao="gerar_email")
     except Exception as e:
         logger.error("Copywriter: falha na chamada da LLM: %s", e)
         raise CopywriterError(

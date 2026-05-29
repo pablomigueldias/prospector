@@ -24,31 +24,10 @@ from app.models.lead import Lead
 from app.repositories.contato_repository import ContatoRepository
 from app.repositories.empresa_repository import EmpresaRepository
 from app.utils.logger import get_logger
+from app.db.sync_bridge import bridge_session
 
 logger = get_logger()
 
-_bridge_engine = create_async_engine(
-    settings.database_url,
-    poolclass=NullPool,
-    echo=settings.db_echo,
-)
-
-_BridgeSession = async_sessionmaker(
-    bind=_bridge_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
-
-@asynccontextmanager
-async def _bridge_session():
-    session = _BridgeSession()
-    try:
-        yield session
-    except Exception:
-        await session.rollback()
-        raise
-    finally:
-        await session.close()
 
 # O serviço
 
@@ -59,33 +38,34 @@ class LeadPersistenceService:
         self.contatos = ContatoRepository(session)
 
     async def persist(self, lead: Lead) -> uuid.UUID:
-
         empresa = await self.empresas.upsert_by_cnpj(empresa_to_orm(lead.empresa))
 
         await self.session.flush()
 
+
+        await self.session.refresh(empresa, ["socios"])
         nomes_existentes = {s.nome for s in empresa.socios}
         for s_pyd in lead.empresa.socios:
             if s_pyd.nome not in nomes_existentes:
                 empresa.socios.append(socio_to_orm(s_pyd))
-        
+
+
         for c_pyd in lead.contatos:
             contato = contato_to_orm(c_pyd)
-            contato.empresa_id =  empresa.id
+            contato.empresa_id = empresa.id
             await self.contatos.upsert(contato)
 
         await self.session.commit()
-
         logger.success(
-            f"Postgres: {empresa.nome}"
-            f"{len(lead.empresa.socios)} sócios(s), {len(lead.contatos)} contato(s)"
+            f" Postgres: {empresa.nome} "
+            f"({len(lead.empresa.socios)} sócio(s), {len(lead.contatos)} contato(s))"
         )
         return empresa.id
     
 # ponte sync -> async
 
 async def _persist_async(lead: Lead) -> uuid.UUID:
-    async with _bridge_session() as session:
+    async with bridge_session() as session:
         return await LeadPersistenceService(session).persist(lead)
     
 def persist_lead_sync(lead: Lead) -> Optional[uuid.UUID]:
@@ -95,7 +75,7 @@ def persist_lead_sync(lead: Lead) -> Optional[uuid.UUID]:
 
 async def _db_stats_async() -> dict:
 
-    async with _bridge_session() as session:
+    async with bridge_session() as session:
         return {
             "empresas": await session.scalar(select(func.count(EmpresaORM.id))) or 0,
             "socios": await session.scalar(select(func.count(SocioORM.id))) or 0,

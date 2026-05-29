@@ -68,15 +68,6 @@ def preview_lead(
     whatsapp: Optional[str] = None,
     run_ai: bool = False,
 ) -> Tuple[Lead, Optional[str]]:
-    """
-    Monta o Lead sem enviar pro Notion.
-
-    Útil pro botão "Pré-visualizar lead" do dashboard — o usuário vê
-    o que vai pro Notion antes de confirmar.
-
-    `run_ai=False` por padrão pra preview ser barato e rápido.
-    Devolve (lead, fonte_cnpj).
-    """
     digits = _digits_only(cnpj)
 
     if not _validate_cnpj_digits(digits):
@@ -180,13 +171,23 @@ def executar_pipeline_completo(
     lead = exporter.send_lead(lead)
     save_lead(lead, stage="sent")
 
+    from app.db.observability import registrar_evento
+    cnpj_digits = lead.empresa.cnpj
+
+    registrar_evento("notion_ok", detalhe=lead.empresa.nome, empresa_cnpj=cnpj_digits)
+
     try:
         from app.db.lead_persistence import persist_lead_sync
         persist_lead_sync(lead)
+        registrar_evento('postgres_ok', empresa_cnpj=cnpj_digits)
     except Exception as e:
         logger.warning(
             f"Fala ao gravar no Postgres (Notion Ok)"
             f"{type(e).__name__}: {e}"
+        )
+        registrar_evento(
+            "postgres_falha", status="error",
+            detalhe=f"{type(e).__name__}: {e}", empresa_cnpj=cnpj_digits
         )
 
     return lead, fonte

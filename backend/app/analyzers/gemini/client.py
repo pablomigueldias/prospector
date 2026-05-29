@@ -1,3 +1,5 @@
+import time
+
 import httpx
 from tenacity import (
     retry,
@@ -15,7 +17,6 @@ logger = get_logger()
 MODEL = "gemini-2.5-flash"
 BASE_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
 TIMEOUT_SECONDS = 60.0
-
 
 
 class GeminiError(Exception):
@@ -42,23 +43,8 @@ class GeminiIndisponivel(GeminiError):
     ),
     reraise=True,
 )
-def gerar_conteudo(prompt: str, response_json: bool = True) -> str:
-    """
-    Chama o Gemini com o prompt e devolve o texto da resposta.
+def _request_gemini(prompt: str, response_json: bool) -> tuple[str, dict]:
 
-    Args:
-        prompt: o prompt completo a enviar.
-        response_json: se True, força o modelo a devolver application/json.
-
-    Returns:
-        Texto da resposta (string JSON se response_json=True).
-
-    Raises:
-        GeminiSemChave: se GEMINI_API_KEY não está no .env.
-        GeminiRateLimit: bateu limite (após retries).
-        GeminiIndisponivel: API fora do ar (após retries).
-        GeminiError: outros erros.
-    """
     if not settings.gemini_api_key:
         raise GeminiSemChave(
             "GEMINI_API_KEY não está no .env. "
@@ -66,15 +52,9 @@ def gerar_conteudo(prompt: str, response_json: bool = True) -> str:
         )
 
     payload = {
-        "contents": [
-            {"parts": [{"text": prompt}]}
-        ],
-        "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": 4096,
-        },
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 4096},
     }
-
     if response_json:
         payload["generationConfig"]["responseMimeType"] = "application/json"
 
@@ -83,26 +63,26 @@ def gerar_conteudo(prompt: str, response_json: bool = True) -> str:
         "x-goog-api-key": settings.gemini_api_key,
     }
 
-    logger.info(f"🤖 Consultando Gemini ({MODEL})...")
+    logger.info(f" Consultando Gemini ({MODEL})...")
     try:
         with httpx.Client(timeout=TIMEOUT_SECONDS) as client:
             response = client.post(BASE_URL, json=payload, headers=headers)
     except httpx.TimeoutException:
-        logger.warning("⏱️  Timeout no Gemini")
+        logger.warning("Timeout no Gemini")
         raise
 
     if response.status_code == 429:
         body = response.text[:300]
-        logger.warning(f"🚦 Rate limit do Gemini atingido. Resposta: {body}")
+        logger.warning(f"Rate limit do Gemini atingido. Resposta: {body}")
         raise GeminiRateLimit(f"Rate limit (429): {body}")
 
     if response.status_code in (400, 401, 403, 404):
         msg = response.text[:400]
-        logger.error(f"❌ Gemini rejeitou ({response.status_code}): {msg}")
+        logger.error(f"Gemini rejeitou ({response.status_code}): {msg}")
         if response.status_code == 404:
             raise GeminiError(
-                f"Modelo '{MODEL}' não encontrado. "
-                f"Pode ter sido deprecated. Verifique em https://ai.google.dev/gemini-api/docs/models"
+                f"Modelo '{MODEL}' não encontrado. Pode ter sido deprecated. "
+                f"Verifique em https://ai.google.dev/gemini-api/docs/models"
             )
         if "api key" in msg.lower() or response.status_code in (401, 403):
             raise GeminiSemChave(f"Chave inválida ou expirada: {msg}")
@@ -112,7 +92,9 @@ def gerar_conteudo(prompt: str, response_json: bool = True) -> str:
         raise GeminiIndisponivel(f"Erro {response.status_code} no Gemini")
 
     if response.status_code != 200:
-        raise GeminiError(f"Status inesperado {response.status_code}: {response.text[:200]}")
+        raise GeminiError(
+            f"Status inesperado {response.status_code}: {response.text[:200]}"
+        )
 
     data = response.json()
 
@@ -137,12 +119,55 @@ def gerar_conteudo(prompt: str, response_json: bool = True) -> str:
 
         if finish_reason == "MAX_TOKENS":
             logger.warning(
-                f"⚠️  Resposta TRUNCADA (atingiu maxOutputTokens). "
+                f"Resposta TRUNCADA (atingiu maxOutputTokens). "
                 f"Parser vai tentar recuperar. {len(texto)} chars."
             )
         else:
-            logger.success(f"✅ Gemini respondeu ({len(texto)} chars)")
+            logger.success(f"Gemini respondeu ({len(texto)} chars)")
 
-        return texto
+        usage = data.get("usageMetadata", {}) or {}
+        meta = {
+            "tokens_input": usage.get("promptTokenCount"),
+            "tokens_output": usage.get("candidatesTokenCount"),
+            "finish_reason": finish_reason or None,
+        }
+        return texto, meta
     except (KeyError, IndexError) as e:
         raise GeminiError(f"Estrutura inesperada na resposta: {e}") from e
+
+
+def gerar_conteudo(
+    prompt: str,
+    response_json: bool = True,
+    *,
+    agente: str = "desconhecido",
+    operacao: str | None = None,
+    empresa_cnpj: str | None = None,
+) -> str:
+   
+    from app.db.observability import AiCallRecord, register_ai_call
+
+    inicio = time.perf_counter()
+    try:
+        texto, meta = _request_gemini(prompt, response_json)
+        
+    except Exception as e:
+        register_ai_call(AiCallRecord(
+            agente=agente, operacao=operacao, provider="gemini", modelo=MODEL,
+            prompt=prompt, resposta=None,
+            latencia_ms=int((time.perf_counter() - inicio) * 1000),
+            sucesso=False, erro=f"{type(e).__name__}: {e}"[:500],
+            empresa_cnpj=empresa_cnpj,
+        ))
+        raise
+
+    register_ai_call(AiCallRecord(
+        agente=agente, operacao=operacao, provider="gemini", modelo=MODEL,
+        prompt=prompt, resposta=texto,
+        tokens_input=meta.get("tokens_input"),
+        tokens_output=meta.get("tokens_output"),
+        latencia_ms=int((time.perf_counter() - inicio) * 1000),
+        sucesso=True, finish_reason=meta.get("finish_reason"),
+        empresa_cnpj=empresa_cnpj,
+    ))
+    return texto

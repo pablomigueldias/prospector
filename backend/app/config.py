@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     )
     db_echo: bool = False
 
+    observer_enabled: bool = True
+    observ_store_payloads: bool = True
+
     llm_provider: str = "gemini"      # "gemini" ou "ollama"
     ollama_model: str = "llama3.1:8b"
 

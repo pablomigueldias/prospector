@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers import agents as agents_router
 from app.api.routers import prospector as prospector_router
 from app.api.routers import copywriter as copywriter_router
+from app.api.routers import observability as observability_router
 from app.utils.logger import get_logger
 
 
@@ -49,3 +50,4 @@ def healthcheck() -> dict:
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)
 app.include_router(copywriter_router.router)
+app.include_router(observability_router.router)

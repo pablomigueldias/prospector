@@ -17,12 +17,13 @@ logger = get_logger()
 
 
 def analisar_lead(lead: Lead) -> Optional[AnaliseGemini]:
-   
+
     prompt = construir_prompt(lead)
     logger.debug(f"Prompt ({len(prompt)} chars) montado")
 
     try:
-        texto = gerar_conteudo(prompt, response_json=True)
+        texto = gerar_conteudo(prompt, response_json=True,
+                               agente="prospector", operacao="analise_lead")
     except GeminiSemChave as e:
         logger.error(f"❌ {e}")
         return None
@@ -43,7 +44,7 @@ def analisar_lead(lead: Lead) -> Optional[AnaliseGemini]:
 
 
 def enriquecer_lead_com_analise(lead: Lead) -> Lead:
-   
+
     analise = analisar_lead(lead)
     if analise is None:
         logger.warning("⚠️  Lead segue sem análise da IA (vide logs)")
