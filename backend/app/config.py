@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     notion_db_contatos: str
 
     gemini_api_key: str = ""
+    groq_api_key: str = ""
 
     # Rate limiting
     max_leads_per_day: int = 30
