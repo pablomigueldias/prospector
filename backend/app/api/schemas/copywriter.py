@@ -14,7 +14,7 @@ class CopywriterRequest(BaseModel):
         description="Canal de envio: email | whatsapp",
     )
     tipo: str = Field(
-        "negocio",
+        "prospeccao",
         description="prospeccao | vaga | parceria | freelancer",
     )
     necessidade: Optional[str] = Field(None, description="Dor identificada")
