@@ -3,6 +3,7 @@ from app.db.models.contato import Contato
 from app.db.models.socio import Socio
 from app.db.models.ai_call import AiCall
 from app.db.models.pipeline_event import PipelineEvent
+from app.db.models.email_outreach import EmailOutreach
 
 
-__all__ = ["Empresa", "Contato", "Socio", "AiCall", "PipelineEvent"]
+__all__ = ["Empresa", "Contato", "Socio", "AiCall", "PipelineEvent","EmailOutreach"]
