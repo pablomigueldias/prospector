@@ -18,6 +18,28 @@ _PRECOS_USD_1M = {
     'gemini-2.5-flash': {"input": 0.30, "output": 2.50},
 }
 
+def _rodar_async(coro_factory) -> None:
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.run(coro_factory())
+        return
+
+    import threading
+
+    erro: dict = {}
+
+    def _alvo():
+        try:
+            asyncio.run(coro_factory())
+        except Exception as e:
+            erro["e"] = e
+
+    t = threading.Thread(target=_alvo, daemon=True)
+    t.start()
+    t.join(timeout=15)
+    if "e" in erro:
+        raise erro["e"]
 
 def _estimar_custo(modelo: str, ti: Optional[int], to: Optional[int]) -> Optional[float]:
     p = _PRECOS_USD_1M.get(modelo)
@@ -108,9 +130,10 @@ def registrar_evento(
     if not settings.observer_enabled:
         return
     try:
-        asyncio.run(
-            _registrar_evento_async(
-                evento, status, detalhe, empresa_cnpj, duracao_ms)
+        _rodar_async(
+            lambda: _registrar_evento_async(
+                evento, status, detalhe, empresa_cnpj, duracao_ms
+            )
         )
     except Exception as e:
         logger.warning(
