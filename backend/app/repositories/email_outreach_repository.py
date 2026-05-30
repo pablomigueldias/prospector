@@ -44,35 +44,35 @@ class EmailOutreachRepository:
         return (await self.session.scalar(stmt) or 0) > 0
     
     async def candidatos_followup(
-    self,
-    dias: int = 3,
-    max_followups: int = 2,
-    limit: Optional[int] = None,
-) -> List[EmailOutreach]:
-        
-    cutoff = datetime.now() - timedelta(days=dias)
+        self,
+        dias: int = 3,
+        max_followups: int = 2,
+        limit: Optional[int] = None,
+    ) -> List[EmailOutreach]:
+       
+        cutoff = datetime.now() - timedelta(days=dias)
 
-    ja_tem_followup = select(EmailOutreach.parent_id).where(
-        EmailOutreach.parent_id.is_not(None)
-    )
-
-    stmt = (
-        select(EmailOutreach)
-        .where(
-            EmailOutreach.status == "enviado",
-            EmailOutreach.primeira_resposta_em.is_(None),
-            EmailOutreach.enviado_em.is_not(None),
-            EmailOutreach.enviado_em < cutoff,
-            EmailOutreach.follow_up_num < max_followups,
-            EmailOutreach.id.not_in(ja_tem_followup),
+        ja_tem_followup = select(EmailOutreach.parent_id).where(
+            EmailOutreach.parent_id.is_not(None)
         )
-        .order_by(EmailOutreach.enviado_em.asc())
-    )
-    if limit:
-        stmt = stmt.limit(limit)
 
-    result = await self.session.execute(stmt)
-    return list(result.scalars().all())
+        stmt = (
+            select(EmailOutreach)
+            .where(
+                EmailOutreach.status == "enviado",
+                EmailOutreach.primeira_resposta_em.is_(None),
+                EmailOutreach.enviado_em.is_not(None),
+                EmailOutreach.enviado_em < cutoff,
+                EmailOutreach.follow_up_num < max_followups,
+                EmailOutreach.id.not_in(ja_tem_followup),
+            )
+            .order_by(EmailOutreach.enviado_em.asc())
+        )
+        if limit:
+            stmt = stmt.limit(limit)
+
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
     def add(self, registro: EmailOutreach) -> EmailOutreach:
         self.session.add(registro)
