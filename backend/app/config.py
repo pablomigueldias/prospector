@@ -25,6 +25,15 @@ class Settings(BaseSettings):
     llm_provider: str = "gemini"      # "gemini" ou "ollama"
     ollama_model: str = "llama3.1:8b"
 
+    #Email
+    mail_user: str = ""
+    mail_password: str = ""
+    mail_imap_host: str = "imap.hostinger.com"
+    mail_imap_port: int = 993
+    mail_smtp_host: str = "smtp.hostinger.com"
+    mail_smtp_port: int = 465
+    mail_from_name: str = "Reative Systems"
+
     # Notion
     notion_token: str
     notion_db_empresas: str
