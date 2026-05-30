@@ -50,6 +50,18 @@ _AGENTS: List[Agent] = [
         capabilities={"gera_email": True, "usa_lead_existente": True},
     ),
     Agent(
+        slug="outreach",
+        name="Outreach",
+        description=(
+            "Gera rascunhos de e-mail pros contatos, acompanha envios "
+            "e detecta respostas pra follow-up."
+        ),
+        icon="ti-mail",
+        status="active",
+        order=18,
+        capabilities={"gera_rascunho": True, "sincroniza": True},
+    ),
+    Agent(
         slug="cobranca",
         name="Cobrança",
         description=(
