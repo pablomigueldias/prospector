@@ -11,6 +11,7 @@ import { StatCard } from '@/components/StatCard';
 import { useAgent, useAgents } from '@/hooks/useAgents';
 import { useProspectorHistory } from '@/hooks/useProspector';
 import  CopywriterScreen  from '@/components/CopywriterScreen';
+import OutreachScreen from '@/components/OutreachScreen';
 
 
 export default function AgentPage() {
@@ -38,7 +39,7 @@ export default function AgentPage() {
   }
 
   return (
-    <>
+ <>
       <Head>
         <title>{agent.name} · Reative Systems</title>
       </Head>
@@ -47,6 +48,8 @@ export default function AgentPage() {
   <ProspectorScreen agents={agents} />
 ) : agent.slug === 'copywriter' ? (
   <CopywriterScreen />
+) : agent.slug === 'outreach' ? (
+  <OutreachScreen />
 ) : (
   <ComingSoonScreen agentName={agent.name} />
 )}
