@@ -11,7 +11,7 @@ logger = get_logger()
 _gemini_bloqueado_em: Optional[date] = None
 
 def _gemini_esta_bloqueado() -> bool:
-    return _gemini_esta_bloqueado == date.today()
+    return _gemini_bloqueado_em == date.today()
 
 
 def _bloquear_gemini_hoje() -> None:
@@ -28,9 +28,8 @@ def gerar_texto(
 ) -> str:
     provider = getattr(settings, "llm_provider", "gemini")
     if provider == "gemini":
-        from app.analyzers.gemini.client import gerar_conteudo
-        return gerar_conteudo(
-            prompt, response_json=json_mode, agente=agente, operacao=operacao
+        return _gerar_com_fallback(
+            prompt, json_mode=json_mode, agente=agente, operacao=operacao
         )
     if provider == 'groq':
         from app.analyzers.groq.client import gerar_conteudo as groq_gerar
