@@ -7,6 +7,9 @@ import type {
   ProspectorPreviewResponse,
   ProspectorRunResponse,
   CopywriterRequest,
+  EmailHistoryResponse,
+  GerarRascunhosResponse,
+  SyncResponse,
 } from './types';
 
 const API_URL =
@@ -142,6 +145,33 @@ export const api = {
     return request<LeadHistoryResponse>(
       `/api/agents/prospector/leads?limit=${limit}`,
       { timeoutMs: 10000 },
+    );
+  },
+
+  outreachGerar(
+    body: { limit?: number | null; pausa?: number },
+    opts?: { signal?: AbortSignal },
+  ): Promise<GerarRascunhosResponse> {
+    return request<GerarRascunhosResponse>('/api/agents/outreach/gerar', {
+      method: 'POST',
+      body,
+      timeoutMs: 600_000,
+      signal: opts?.signal,
+    });
+  },
+
+  outreachSync(opts?: { signal?: AbortSignal }): Promise<SyncResponse> {
+    return request<SyncResponse>('/api/agents/outreach/sync', {
+      method: 'POST',
+      timeoutMs: 120_000,
+      signal: opts?.signal,
+    });
+  },
+
+  outreachEmails(limit: number = 50): Promise<EmailHistoryResponse> {
+    return request<EmailHistoryResponse>(
+      `/api/agents/outreach/emails?limit=${limit}`,
+      { timeoutMs: 15_000 },
     );
   },
 };
