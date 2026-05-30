@@ -1,9 +1,26 @@
 from __future__ import annotations
+
+from datetime import date
+from typing import Optional
+
 from app.config import settings
 from app.utils.logger import get_logger
 
 logger = get_logger()
 
+_gemini_bloqueado_em: Optional[date] = None
+
+def _gemini_esta_bloqueado() -> bool:
+    return _gemini_esta_bloqueado == date.today()
+
+
+def _bloquear_gemini_hoje() -> None:
+    global _gemini_bloqueado_em
+    _gemini_bloqueado_em = date.today()
+    logger.warning(
+        "Gemini marcado como esgotado por hoje"
+        "usando Groq agora"
+    )
 
 def gerar_texto(
     prompt: str, *, json_mode: bool = True,
@@ -15,9 +32,34 @@ def gerar_texto(
         return gerar_conteudo(
             prompt, response_json=json_mode, agente=agente, operacao=operacao
         )
+    if provider == 'groq':
+        from app.analyzers.groq.client import gerar_conteudo as groq_gerar
+        return groq_gerar(prompt, response_json=json_mode)
     if provider == "ollama":
         return _gerar_ollama(prompt, json_mode=json_mode)
     raise ValueError(f"Provider de LLM desconhecido: {provider}")
+
+def _gerar_com_fallback(
+        prompt: str, *,json_mode:bool,
+        agente: str, operacao: str | None,
+        ) -> str:
+    
+    from app.analyzers.groq.client import gerar_conteudo as groq_gerar
+
+    if _gemini_esta_bloqueado():
+        logger.info('Gemini bloqueado hoje - indo direto pro Groq')
+        return groq_gerar(prompt, response_json=json_mode)
+    
+    from app.analyzers.gemini.client import GeminiRateLimit, gerar_conteudo as gemini_gerar
+
+    try:
+        return gemini_gerar(
+            prompt, response_json=json_mode, agente=agente, operacao=operacao
+        )
+    except GeminiRateLimit:
+        _bloquear_gemini_hoje()
+        return groq_gerar(prompt,response_json=json_mode)
+
 
 
 def _gerar_ollama(prompt: str, *, json_mode: bool) -> str:
