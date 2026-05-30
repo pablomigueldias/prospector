@@ -132,3 +132,40 @@ export interface CopywriterResponse {
   email: EmailGerado;
   variantes: EmailGerado[];
 }
+
+export interface GerarRascunhosResponse {
+  success: boolean;
+  gerados: number;
+  falhas: number;
+  pulados: number;
+}
+
+export interface SyncResponse {
+  success: boolean;
+  enviados_confirmados: number;
+  respostas_detectadas: number;
+}
+
+export type EmailStatus =
+  | 'rascunho'
+  | 'enviado'
+  | 'respondido'
+  | 'sem_resposta'
+  | 'erro';
+
+export interface EmailItem {
+  id: string;
+  destinatario: string;
+  assunto: string;
+  tom: string | null;
+  status: EmailStatus;
+  follow_up_num: number;
+  draft_criado_em: string | null;
+  enviado_em: string | null;
+  primeira_resposta_em: string | null;
+}
+
+export interface EmailHistoryResponse {
+  items: EmailItem[];
+  total: number;
+}
