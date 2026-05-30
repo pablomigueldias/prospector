@@ -37,3 +37,15 @@ class EmailItem(BaseModel):
 class EmailHistoryResponse(BaseModel):
     items: List[EmailItem]
     total: int
+
+class GerarFollowupsRequest(BaseModel):
+    dias: int = Field(3, description="Só faz follow-up de e-mails enviados há mais de X dias")
+    max_followups: int = Field(2, description="Teto de toques por thread")
+    limit: Optional[int] = Field(None, description="Máx de follow-ups a gerar; None = todos")
+    pausa: float = Field(8.0, description="Segundos entre cada follow-up")
+
+
+class GerarFollowupsResponse(BaseModel):
+    success: bool = True
+    gerados: int
+    falhas: int

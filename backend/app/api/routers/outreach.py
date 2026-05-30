@@ -4,6 +4,8 @@ from app.api.schemas.outreach import (
     EmailHistoryResponse,
     GerarRascunhosRequest,
     GerarRascunhosResponse,
+    GerarFollowupsRequest,
+    GerarFollowupsResponse,
     SyncResponse,
 )
 from app.api.services import outreach_service
@@ -17,6 +19,20 @@ async def gerar(body: GerarRascunhosRequest) -> GerarRascunhosResponse:
     try:
         r = await outreach_service.gerar(limit=body.limit, pausa=body.pausa)
         return GerarRascunhosResponse(**r)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
+    
+@router.post("/followups", response_model=GerarFollowupsResponse,
+             summary="Gera rascunhos de follow-up pros e-mails sem resposta")
+async def followups(body: GerarFollowupsRequest) -> GerarFollowupsResponse:
+    try:
+        r = await outreach_service.gerar_followups(
+            dias=body.dias,
+            max_followups=body.max_followups,
+            limit=body.limit,
+            pausa=body.pausa,
+        )
+        return GerarFollowupsResponse(**r)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
