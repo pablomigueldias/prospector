@@ -6,9 +6,9 @@ from pydantic import BaseModel, Field
 class CopywriterRequest(BaseModel):
     """Entrada para gerar um e-mail. Todos os campos do seu prompt."""
     empresa: str = Field(..., description="Nome da empresa alvo")
-    segmento: Optional[str] = Field(None, description="Nicho/setor")
-    nome_contato: Optional[str] = Field(None, description="Nome do decisor")
-    cargo: Optional[str] = Field(None, description="Cargo do contato")
+    segmento: Optional[str] = Field(default=None, description="Nicho/setor")
+    nome_contato: Optional[str] = Field(default=None, description="Nome do decisor")
+    cargo: Optional[str] = Field(default=None, description="Cargo do contato")
     canal: str = Field(
         "email",
         description="Canal de envio: email | whatsapp",
