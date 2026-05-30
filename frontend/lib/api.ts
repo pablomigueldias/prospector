@@ -9,6 +9,8 @@ import type {
   CopywriterRequest,
   EmailHistoryResponse,
   GerarRascunhosResponse,
+  GerarFollowupsRequest,
+  GerarFollowupsResponse,
   SyncResponse,
 } from './types';
 
@@ -153,6 +155,18 @@ export const api = {
     opts?: { signal?: AbortSignal },
   ): Promise<GerarRascunhosResponse> {
     return request<GerarRascunhosResponse>('/api/agents/outreach/gerar', {
+      method: 'POST',
+      body,
+      timeoutMs: 600_000,
+      signal: opts?.signal,
+    });
+  },
+
+  outreachFollowups(
+    body: GerarFollowupsRequest,
+    opts?: { signal?: AbortSignal },
+  ): Promise<GerarFollowupsResponse> {
+    return request<GerarFollowupsResponse>('/api/agents/outreach/followups', {
       method: 'POST',
       body,
       timeoutMs: 600_000,

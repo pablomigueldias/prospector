@@ -132,7 +132,18 @@ export interface CopywriterResponse {
   email: EmailGerado;
   variantes: EmailGerado[];
 }
+export interface GerarFollowupsRequest {
+  dias?: number;
+  max_followups?: number;
+  limit?: number | null;
+  pausa?: number;
+}
 
+export interface GerarFollowupsResponse {
+  success: boolean;
+  gerados: number;
+  falhas: number;
+}
 export interface GerarRascunhosResponse {
   success: boolean;
   gerados: number;

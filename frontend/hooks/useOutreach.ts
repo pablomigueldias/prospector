@@ -6,6 +6,7 @@ import { ApiError } from '@/lib/types';
 import type {
   EmailItem,
   GerarRascunhosResponse,
+  GerarFollowupsResponse,
   SyncResponse,
 } from '@/lib/types';
 
@@ -65,4 +66,10 @@ export function useOutreachGerar(limit: number | null, pausa: number = 8) {
 
 export function useOutreachSync() {
   return useAction<SyncResponse>((signal) => api.outreachSync({ signal }));
+}
+
+export function useOutreachFollowups(dias: number = 3, limit: number | null = null) {
+  return useAction<GerarFollowupsResponse>((signal) =>
+    api.outreachFollowups({ dias, limit }, { signal }),
+  );
 }

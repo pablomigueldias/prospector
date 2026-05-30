@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StatCard } from './StatCard';
 import {
   useOutreachEmails,
+  useOutreachFollowups,
   useOutreachGerar,
   useOutreachSync,
 } from '@/hooks/useOutreach';
@@ -13,6 +14,8 @@ export default function OutreachScreen() {
   const sync = useOutreachSync();
   // Por segurança: a tela gera em lotes pequenos (5) por clique.
   const gerar = useOutreachGerar(5, 8);
+  const followups = useOutreachFollowups(3);
+  
 
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -22,6 +25,18 @@ export default function OutreachScreen() {
     if (r) {
       setAviso(
         `Gerados ${r.gerados} rascunho(s), ${r.falhas} falha(s), ${r.pulados} pulado(s). ` +
+          `Revise no webmail antes de enviar.`,
+      );
+      emails.refetch();
+    }
+  }
+
+  async function handleFollowups() {
+    setAviso(null);
+    const r = await followups.run();
+    if (r) {
+      setAviso(
+        `Gerados ${r.gerados} follow-up(s), ${r.falhas} falha(s). ` +
           `Revise no webmail antes de enviar.`,
       );
       emails.refetch();
@@ -41,7 +56,7 @@ export default function OutreachScreen() {
   }
 
   const stats = computeStats(emails.items);
-  const busy = gerar.loading || sync.loading;
+  const busy = gerar.loading || sync.loading || followups.loading;
 
   return (
     <div className="max-w-[1200px] mx-auto">
@@ -98,6 +113,14 @@ export default function OutreachScreen() {
             >
               {gerar.loading ? 'Gerando… (pode demorar)' : 'Gerar rascunhos (até 5)'}
             </button>
+            <button
+              type="button"
+              className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleFollowups}
+              disabled={busy}
+            >
+              {followups.loading ? 'Gerando follow-ups…' : 'Gerar follow-ups'}
+            </button>
           </div>
         </div>
 
@@ -106,9 +129,9 @@ export default function OutreachScreen() {
             {aviso}
           </div>
         )}
-        {(gerar.error || sync.error) && (
+        {(gerar.error || sync.error || followups.error) && (
           <div className="mt-4 text-[13px] text-brand-ink bg-brand-soft/60 border border-brand/30 rounded p-3">
-            {gerar.error?.message ?? sync.error?.message}
+            {gerar.error?.message ?? sync.error?.message ?? followups.error?.message}
           </div>
         )}
       </section>
