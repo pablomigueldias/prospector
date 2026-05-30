@@ -8,7 +8,7 @@ from app.api.schemas.copywriter import CopywriterRequest, CopywriterResponse
 from app.analyzers.copywriter.prompt_builder import construir_prompt
 from app.analyzers.copywriter.parser import parse_resposta
 from app.analyzers.llm_provider import gerar_texto
-from app.config import settings
+from app.config import settings, DATA_DIR
 from app.utils.logger import get_logger
 
 logger = get_logger()
@@ -23,7 +23,7 @@ def _enriquecer_com_lead(req: CopywriterRequest) -> CopywriterRequest:
     from app.utils.storage import load_lead  
 
     try:
-        lead = load_lead(req.lead_arquivo)
+        lead = load_lead(req.lead_arquivo) #type: ignore
     except FileNotFoundError:
         raise CopywriterError(
             f"Lead '{req.lead_arquivo}' não encontrado no histórico."
@@ -61,7 +61,7 @@ def _enriquecer_com_lead(req: CopywriterRequest) -> CopywriterRequest:
 def _salvar_email(req: CopywriterRequest, resp: CopywriterResponse) -> None:
     """Salva o e-mail gerado em data/emails/. Falha aqui não quebra a geração."""
     try:
-        pasta = Path(settings.data_dir) / "emails"
+        pasta = DATA_DIR / "emails"
         pasta.mkdir(parents=True, exist_ok=True)
 
         carimbo = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -73,7 +73,7 @@ def _salvar_email(req: CopywriterRequest, resp: CopywriterResponse) -> None:
         destino.write_text(resp.model_dump_json(indent=2), encoding="utf-8")
         logger.info("Copywriter: e-mail salvo em %s", destino)
     except Exception as e:
-        logger.warning("Copywriter: não foi possível salvar o e-mail: %s", e)
+        logger.warning(f"Copywriter: não foi possível salvar o e-mail: {e}")
 
 
 def gerar_email(req: CopywriterRequest) -> CopywriterResponse:

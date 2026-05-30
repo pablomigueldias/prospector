@@ -98,7 +98,7 @@ def register_ai_call(rec: AiCallRecord) -> None:
     if not settings.observer_enabled:
         return
     try:
-        asyncio.run(_registrar_ai_call_async(rec))
+        _rodar_async(lambda: _registrar_ai_call_async(rec))
     except Exception as e:
         logger.warning(
             f"Observabilidade: Falha ao gravar ai_call: {type(e).__name__}: {e}"
