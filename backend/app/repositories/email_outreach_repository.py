@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.models.empresa import Empresa
 from app.db.models.contato import Contato
 from app.db.models.email_outreach import EmailOutreach
 from app.utils.logger import get_logger
@@ -25,12 +26,13 @@ class EmailOutreachRepository:
         )
         stmt = (
             select(Contato)
+            .join(Empresa, Contato.empresa_id == Empresa.id)
             .where(
                 Contato.email.is_not(None),
                 Contato.email != "",
                 Contato.id.not_in(ja_contatados),
             )
-            .order_by(Contato.created_at.asc())
+            .order_by(Empresa.score.desc().nulls_last(), Contato.created_at.asc())
         )
         if limit:
             stmt = stmt.limit(limit)
@@ -42,14 +44,14 @@ class EmailOutreachRepository:
             EmailOutreach.contato_id == contato_id
         )
         return (await self.session.scalar(stmt) or 0) > 0
-    
+
     async def candidatos_followup(
         self,
         dias: int = 3,
         max_followups: int = 2,
         limit: Optional[int] = None,
     ) -> List[EmailOutreach]:
-       
+
         cutoff = datetime.now() - timedelta(days=dias)
 
         ja_tem_followup = select(EmailOutreach.parent_id).where(
@@ -77,7 +79,7 @@ class EmailOutreachRepository:
     def add(self, registro: EmailOutreach) -> EmailOutreach:
         self.session.add(registro)
         return registro
-    
+
     async def listar_recentes(self, limit: int = 50):
         from app.db.models.email_outreach import EmailOutreach
         stmt = (
