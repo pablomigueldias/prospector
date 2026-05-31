@@ -49,15 +49,32 @@ def _ordenar_por_ddd(numeros,estado):
     de_fora = [n for n in numeros if n[:2] not in ddds_esperados]
     return da_regiao + de_fora
 
+def _tem_contato(contatos: Dict[str, object]) -> bool:
+    """True se achou pelo menos um meio de contato real."""
+    return bool(
+        contatos.get("emails")
+        or contatos.get("whatsapps")
+        or contatos.get("telefones")
+        or contatos.get("instagram")
+        or contatos.get("facebook")
+        or contatos.get("linkedin")
+    )
+
 def enriquecer_lead_com_site(
     lead: Lead, url_site: str, salvar_url_na_empresa: bool = True
 ) -> Lead:
-
     url_norm = normalizar_url(url_site)
     contatos = coletar_do_site(url_norm)
 
-    _aplicar_na_empresa(lead.empresa, contatos,
-                        url_norm, salvar_url_na_empresa)
+    # Se o httpx não achou nada, renderizar contato via JS.
+    # Re-tenta com Playwright antes de desistir.
+    if not _tem_contato(contatos):
+        logger.info(
+            " Nenhum contato via httpx — re-tentando com Playwright (JS)"
+        )
+        contatos = coletar_do_site(url_norm, force_playwright=True)
+
+    _aplicar_na_empresa(lead.empresa, contatos, url_norm, salvar_url_na_empresa)
     _aplicar_nos_contatos(lead, contatos)
     _adicionar_extras_nas_notas(lead.empresa, contatos)
 

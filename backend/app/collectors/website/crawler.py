@@ -87,9 +87,10 @@ def _mesclar_contatos(
 
 
 def _fetch_com_cache(url: str, force_playwright: bool = False) -> Optional[str]:
-    cached = cache.get(url)
-    if cached:
-        return cached
+    if not force_playwright:
+        cached = cache.get(url)
+        if cached:
+            return cached
 
     html = fetch_html(url, force_playwright=force_playwright)
     if html:
