@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import Index, Numeric, String, Text,Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -39,6 +40,7 @@ class Empresa(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     setor: Mapped[Optional[str]] = mapped_column(String(100))
     tamanho: Mapped[Optional[str]] = mapped_column(String(50))
     score: Mapped[Optional[int]] = mapped_column(Integer)
+    analise_json: Mapped[Optional[dict]] = mapped_column(JSONB)
 
     # ── Pipeline (status, origem) ────────────────────────────────
     como_conheceu: Mapped[str] = mapped_column(

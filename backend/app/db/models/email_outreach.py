@@ -54,6 +54,7 @@ class EmailOutreach(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     enviado_em: Mapped[Optional[datetime]] = mapped_column()
     primeira_resposta_em: Mapped[Optional[datetime]] = mapped_column()
     resposta_trecho: Mapped[Optional[str]] = mapped_column(Text)
+    resposta_corpo: Mapped[Optional[str]] = mapped_column(Text)
 
     # Dados pra treino futuro da IA
     contexto: Mapped[Optional[dict]] = mapped_column(JSONB) 

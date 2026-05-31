@@ -87,6 +87,7 @@ async def _detectar_respostas(session, dias: int) -> int:
                 reg.status = "respondido"
                 reg.primeira_resposta_em = msg["date"] or datetime.now()
                 reg.resposta_trecho = (msg["subject"] or "")[:500]
+                reg.resposta_corpo = msg.get("corpo") or None
                 detectadas += 1
                 via = "thread" if casou_thread else "remetente"
                 logger.success(f"   💬 RESPOSTA de {remetente_alvo} (via {via})")

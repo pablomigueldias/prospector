@@ -141,7 +141,7 @@ def _ler_pasta(pasta_tipo: str, dias: int = 30) -> List[Dict[str, Any]]:
         mensagens: List[Dict[str, Any]] = []
 
         for num in ids:
-            status, msg_data = imap.fetch(num, "(BODY.PEEK[HEADER])")
+            status, msg_data = imap.fetch(num, "(BODY.PEEK[])")
             if status != "OK" or not msg_data or not msg_data[0]:
                 continue
             raw = msg_data[0][1]
@@ -156,6 +156,7 @@ def _ler_pasta(pasta_tipo: str, dias: int = 30) -> List[Dict[str, Any]]:
                 "subject": _decodificar(msg.get("Subject")),
                 "subject_norm": _normalizar_assunto(msg.get("Subject") or ""),
                 "date": _parse_data(msg.get("Date")),
+                "corpo": _remover_citacao(_extrair_corpo_texto(msg))
             })
         return mensagens
     finally:
@@ -180,3 +181,57 @@ def ler_inbox(dias: int = 30) -> List[Dict[str, Any]]:
 
 def _extrair_emails(campo: str) -> List[str]:
     return [e.lower() for e in re.findall(r"[\w\.\-\+]+@[\w\-\.]+", campo or "")]
+
+def _extrair_corpo_texto(msg: email.message.Message) -> str:
+    def _decode(part) -> str:
+        payload = part.get_payload(decode=True)
+        if payload is None:
+            return ""
+        charset = part.get_content_charset() or "utf-8"
+        try:
+            return payload.decode(charset, errors="replace")
+        except (LookupError, ValueError):
+            return payload.decode("utf-8", errors="replace")
+
+    if not msg.is_multipart():
+        return _decode(msg).strip()
+
+    texto_plano = ""
+    texto_html = ""
+    for part in msg.walk():
+        if part.get_content_maintype() == "multipart":
+            continue
+        disp = (part.get("Content-Disposition") or "").lower()
+        if "attachment" in disp:
+            continue
+        ctype = part.get_content_type()
+        if ctype == "text/plain" and not texto_plano:
+            texto_plano = _decode(part)
+        elif ctype == "text/html" and not texto_html:
+            texto_html = _decode(part)
+
+    if texto_plano.strip():
+        return texto_plano.strip()
+    if texto_html.strip():
+        sem_tags = re.sub(r"<[^>]+>", " ", texto_html)
+        sem_tags = re.sub(r"\s+", " ", sem_tags)
+        return sem_tags.strip()
+    return ""
+
+def _remover_citacao(corpo: str) -> str:
+    """Corta a thread citada embaixo da resposta."""
+    linhas = corpo.splitlines()
+    resultado = []
+    for linha in linhas:
+        l = linha.strip()
+        if l.startswith(">"):
+            break
+        if re.match(r"^(Em|On)\s.+\d", l):
+            break
+        if re.match(r"^-{2,}\s*Mensagem original", l, re.IGNORECASE):
+            break
+        if re.match(r"^De:\s", l) and resultado:
+            break
+        resultado.append(linha)
+    texto = "\n".join(resultado).strip()
+    return texto if texto else corpo.strip()
