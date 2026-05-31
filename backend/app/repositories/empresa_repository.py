@@ -71,7 +71,7 @@ class EmpresaRepository:
         campos_atualizaveis = [
             "nome", "razao_social", "cidade", "estado", "local",
             "site", "instagram", "facebook",
-            "capital_social", "setor", "tamanho",
+            "capital_social", "setor", "tamanho","score"
             "como_conheceu", "status", "notas",
             "notion_page_id", "notion_synced_at",
         ]

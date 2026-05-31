@@ -41,6 +41,8 @@ def enriquecer_lead_com_analise(lead: Lead) -> Lead:
     if analise is None:
         logger.warning("Lead segue sem análise da IA (vide logs)")
         return lead
+    
+    lead.empresa.score = analise.score
 
     bloco_ia = formatar_para_notas(analise)
     if lead.empresa.notas:

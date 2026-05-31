@@ -25,6 +25,7 @@ class Empresa(BaseModel):
     capital_social: Optional[float] = None
     setor: Optional[str] = None
     tamanho: Optional[str] = None
+    score: Optional[int] = None
 
     socios: List[Socio] = Field(default_factory=list)
 

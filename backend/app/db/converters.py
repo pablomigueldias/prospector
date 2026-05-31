@@ -32,6 +32,7 @@ def empresa_to_orm(emp: EmpresaPydantic) -> EmpresaORM:
         capital_social=emp.capital_social,
         setor=emp.setor,
         tamanho=emp.tamanho,
+        score=emp.score,
         como_conheceu=emp.como_conheceu,
         status=emp.status,
         notas=emp.notas,
