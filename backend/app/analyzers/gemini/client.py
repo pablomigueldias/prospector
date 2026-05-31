@@ -39,7 +39,7 @@ class GeminiIndisponivel(GeminiError):
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=2, min=4, max=20),
     retry=retry_if_exception_type(
-        (httpx.TimeoutException, httpx.NetworkError, GeminiIndisponivel, GeminiRateLimit)
+        (httpx.TimeoutException, httpx.NetworkError, GeminiIndisponivel)
     ),
     reraise=True,
 )
