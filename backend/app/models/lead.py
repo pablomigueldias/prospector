@@ -26,6 +26,7 @@ class Empresa(BaseModel):
     setor: Optional[str] = None
     tamanho: Optional[str] = None
     score: Optional[int] = None
+    analise_json: Optional[dict] = None
 
     socios: List[Socio] = Field(default_factory=list)
 

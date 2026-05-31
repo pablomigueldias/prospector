@@ -93,7 +93,7 @@ def salvar_rascunho(
     try:
         pasta = _achar_pasta(imap, "Drafts")
         logger.info(f"Pasta de rascunhos resolvida: {pasta!r}")
-        status, dados = imap.append(pasta, "(\\Draft)", None, msg.as_bytes())
+        status, dados = imap.append(pasta, "(\\Draft)", None, msg.as_bytes()) #type:ignore
         if status != "OK":
             raise MailerError(f"Append falhou em {pasta!r}: {status} {dados}")
         logger.success(f"📝 Rascunho salvo em '{pasta}' para {para}")

@@ -14,7 +14,7 @@ logger = get_logger()
 
 
 class EmpresaRepository:
-   
+
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -57,7 +57,7 @@ class EmpresaRepository:
         return empresa
 
     async def upsert_by_cnpj(self, empresa: Empresa) -> Empresa:
-      
+
         if not empresa.cnpj:
             self.session.add(empresa)
             return empresa
@@ -71,7 +71,7 @@ class EmpresaRepository:
         campos_atualizaveis = [
             "nome", "razao_social", "cidade", "estado", "local",
             "site", "instagram", "facebook",
-            "capital_social", "setor", "tamanho","score"
+            "capital_social", "setor", "tamanho", "score", "analise_json"
             "como_conheceu", "status", "notas",
             "notion_page_id", "notion_synced_at",
         ]

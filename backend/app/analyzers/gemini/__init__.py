@@ -43,6 +43,11 @@ def enriquecer_lead_com_analise(lead: Lead) -> Lead:
         return lead
     
     lead.empresa.score = analise.score
+    lead.empresa.score = analise.score
+    lead.empresa.analise_json = {
+        "dores": [d.model_dump() for d in analise.dores_provaveis],
+        "ganchos": [g.model_dump() for g in analise.ganchos_venda],
+    }
 
     bloco_ia = formatar_para_notas(analise)
     if lead.empresa.notas:

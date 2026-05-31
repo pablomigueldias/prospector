@@ -32,6 +32,7 @@ async def _carregar_contato_com_empresa(session, contato_id):
 
 def _montar_request(contato: Contato) -> CopywriterRequest:
     empresa = contato.empresa
+    contexto = _montar_contexto_analise(empresa) if empresa else None
     return CopywriterRequest(
         empresa=empresa.nome if empresa else "(empresa)",
         segmento=empresa.setor if empresa else None,
@@ -42,9 +43,39 @@ def _montar_request(contato: Contato) -> CopywriterRequest:
         necessidade=None,
         servico=None,
         diferenciais=None,
-        contexto_extra=None,
+        contexto_extra=contexto,
         lead_arquivo=None,
     )
+
+def _montar_contexto_analise(empresa) -> Optional[str]:
+    analise = getattr(empresa, "analise_json", None)
+    if not analise:
+        return None
+
+    linhas = []
+
+    dores = analise.get("dores") or []
+    if dores:
+        linhas.append("DORES IDENTIFICADAS NESTA EMPRESA:")
+        for d in dores:
+            texto = d.get("dor", "").strip()
+            if texto:
+                linhas.append(f"- {texto}")
+
+    ganchos = analise.get("ganchos") or []
+    if ganchos:
+        linhas.append("")
+        linhas.append("OPORTUNIDADES DE SERVIÇO:")
+        for g in ganchos:
+            servico = g.get("produto_servico", "").strip()
+            porque = g.get("porque_faz_sentido", "").strip()
+            if servico:
+                linha = f"- {servico}"
+                if porque:
+                    linha += f" ({porque})"
+                linhas.append(linha)
+
+    return "\n".join(linhas) if linhas else None
 
 def _montar_request_followup(original: EmailOutreach) -> CopywriterRequest:
     
@@ -244,3 +275,4 @@ async def gerar_followups_pendentes(
         f"Fim: {resumo['gerados']} follow-up(s), {resumo['falhas']} falha(s)."
     )
     return resumo
+
