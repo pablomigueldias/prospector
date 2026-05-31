@@ -74,6 +74,9 @@ def _email_eh_valido(email: str) -> bool:
     local, _, dominio = email.partition("@")
     if not local or not dominio or "." not in dominio:
         return False
+    tld = dominio.rsplit(".",1)[-1]
+    if not tld.isalpha() or len(tld) <2:
+        return False
     # Filtra extensões de arquivo
     for ext in EMAIL_BLACKLIST_EXTS:
         if email.endswith(ext):
