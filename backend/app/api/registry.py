@@ -12,7 +12,7 @@ class Agent:
     icon: str
     status: str  # "active" | "soon" | "experimental"
     order: int
-    category: str = "Agentes"
+    category: str = "Reative Systems"
     capabilities: Dict[str, bool] = field(default_factory=dict)
     roadmap_label: Optional[str] = None  # ex: "Roadmap Q3"
 
@@ -96,6 +96,42 @@ _AGENTS: List[Agent] = [
         status="soon",
         order=40,
         roadmap_label="Roadmap Q4",
+    ),
+
+    # ══════════════════════════════════════════════════════════════
+    # Área PESSOAL — meus agentes do dia a dia (tabelas pessoal_*).
+    # Separada da Reative pra não misturar o que é trabalho e o que
+    # é meu. Mesma tela, grupo próprio na sidebar.
+    # ══════════════════════════════════════════════════════════════
+    Agent(
+        slug="perfil-mestre",
+        name="Perfil Mestre",
+        description=(
+            "Quem EU sou: habilidades, projetos, experiência e tom de "
+            "escrita. Insumo central dos agentes pessoais."
+        ),
+        icon="ti-user-circle",
+        status="active",
+        order=100,
+        category="Pessoal",
+        capabilities={"edita_perfil": True},
+    ),
+    Agent(
+        slug="vagas",
+        name="Vagas",
+        description=(
+            "Registra a vaga, destrincha o que ela exige, mede seu match "
+            "e rascunha o e-mail de candidatura — você revisa e envia."
+        ),
+        icon="ti-briefcase",
+        status="active",
+        order=110,
+        category="Pessoal",
+        capabilities={
+            "cadastra_vaga": True,
+            "analisa_vaga": True,
+            "gera_rascunho": True,
+        },
     ),
 ]
 

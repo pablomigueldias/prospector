@@ -8,6 +8,8 @@ from app.api.routers import prospector as prospector_router
 from app.api.routers import copywriter as copywriter_router
 from app.api.routers import observability as observability_router
 from app.api.routers import outreach as outreach_router
+from app.api.routers import perfil as perfil_router
+from app.api.routers import vagas as vagas_router
 from app.utils.logger import get_logger
 
 
@@ -53,3 +55,7 @@ app.include_router(prospector_router.router)
 app.include_router(copywriter_router.router)
 app.include_router(observability_router.router)
 app.include_router(outreach_router.router)
+
+# ── Área pessoal (separada da Reative) ────────────────────────────
+app.include_router(perfil_router.router)
+app.include_router(vagas_router.router)

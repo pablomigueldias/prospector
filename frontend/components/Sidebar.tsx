@@ -11,12 +11,29 @@ import {
 import { useAgents } from '@/hooks/useAgents';
 import type { Agent } from '@/lib/types';
 
+// Ordem em que os grupos aparecem na sidebar. Categorias fora desta
+// lista vão pro fim, em ordem alfabética.
+const ORDEM_CATEGORIAS = ['Reative Systems', 'Pessoal'];
+
+function ordenarCategorias(cats: string[]): string[] {
+  return [...cats].sort((a, b) => {
+    const ia = ORDEM_CATEGORIAS.indexOf(a);
+    const ib = ORDEM_CATEGORIAS.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+}
+
 export function Sidebar() {
-  const { agents, loading } = useAgents();
+  const { grouped, loading } = useAgents();
   const router = useRouter();
 
   const currentSlug =
     typeof router.query.slug === 'string' ? router.query.slug : null;
+
+  const categorias = ordenarCategorias(Object.keys(grouped));
 
   return (
     <aside className="flex flex-col gap-6 bg-surface border-r border-line p-5">
@@ -29,26 +46,32 @@ export function Sidebar() {
         </span>
       </Link>
 
-      <div>
-        <div className="eyebrow mb-2 px-2">Agentes</div>
-        <nav className="flex flex-col gap-0.5">
-          {loading && (
-            <>
-              <SidebarSkeleton />
-              <SidebarSkeleton />
-              <SidebarSkeleton />
-            </>
-          )}
-          {!loading &&
-            agents.map((agent) => (
-              <SidebarAgentItem
-                key={agent.slug}
-                agent={agent}
-                active={currentSlug === agent.slug}
-              />
-            ))}
-        </nav>
-      </div>
+      {loading && (
+        <div>
+          <div className="eyebrow mb-2 px-2">Agentes</div>
+          <nav className="flex flex-col gap-0.5">
+            <SidebarSkeleton />
+            <SidebarSkeleton />
+            <SidebarSkeleton />
+          </nav>
+        </div>
+      )}
+
+      {!loading &&
+        categorias.map((categoria) => (
+          <div key={categoria}>
+            <div className="eyebrow mb-2 px-2">{categoria}</div>
+            <nav className="flex flex-col gap-0.5">
+              {grouped[categoria].map((agent) => (
+                <SidebarAgentItem
+                  key={agent.slug}
+                  agent={agent}
+                  active={currentSlug === agent.slug}
+                />
+              ))}
+            </nav>
+          </div>
+        ))}
 
       <div>
         <div className="eyebrow mb-2 px-2">Workspace</div>

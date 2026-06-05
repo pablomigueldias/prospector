@@ -12,6 +12,13 @@ import type {
   GerarFollowupsRequest,
   GerarFollowupsResponse,
   SyncResponse,
+  PerfilMestre,
+  Vaga,
+  VagaCreate,
+  VagaListResponse,
+  AnalisarVagaResponse,
+  GerarCandidaturaResponse,
+  CandidaturaEmailItem,
 } from './types';
 
 const API_URL =
@@ -22,7 +29,7 @@ const API_URL =
 const DEFAULT_TIMEOUT_MS = 180_000; // 3 min
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   timeoutMs?: number;
   signal?: AbortSignal;
@@ -186,6 +193,84 @@ export const api = {
     return request<EmailHistoryResponse>(
       `/api/agents/outreach/emails?limit=${limit}`,
       { timeoutMs: 15_000 },
+    );
+  },
+
+  // ── Área pessoal: Perfil Mestre ─────────────────────────────────
+  /** GET /api/pessoal/perfil — perfil ativo, ou null se não houver */
+  perfilGet(): Promise<PerfilMestre | null> {
+    return request<PerfilMestre | null>('/api/pessoal/perfil', {
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** PUT /api/pessoal/perfil — cria/atualiza o perfil */
+  perfilSalvar(body: PerfilMestre): Promise<PerfilMestre> {
+    return request<PerfilMestre>('/api/pessoal/perfil', {
+      method: 'PUT',
+      body,
+      timeoutMs: 15_000,
+    });
+  },
+
+  // ── Área pessoal: Vagas ─────────────────────────────────────────
+  vagasListar(status?: string): Promise<VagaListResponse> {
+    const q = status ? `?status=${encodeURIComponent(status)}` : '';
+    return request<VagaListResponse>(`/api/pessoal/vagas${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  vagaCriar(body: VagaCreate): Promise<Vaga> {
+    return request<Vaga>('/api/pessoal/vagas', {
+      method: 'POST',
+      body,
+      timeoutMs: 15_000,
+    });
+  },
+
+  vagaDetalhe(id: string): Promise<Vaga> {
+    return request<Vaga>(`/api/pessoal/vagas/${encodeURIComponent(id)}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  vagaAtualizar(id: string, body: Partial<Vaga>): Promise<Vaga> {
+    return request<Vaga>(`/api/pessoal/vagas/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body,
+      timeoutMs: 10_000,
+    });
+  },
+
+  vagaRemover(id: string): Promise<void> {
+    return request<void>(`/api/pessoal/vagas/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      timeoutMs: 10_000,
+    });
+  },
+
+  vagaAnalisar(id: string): Promise<AnalisarVagaResponse> {
+    return request<AnalisarVagaResponse>(
+      `/api/pessoal/vagas/${encodeURIComponent(id)}/analisar`,
+      { method: 'POST', timeoutMs: 120_000 },
+    );
+  },
+
+  vagaGerarCandidatura(
+    id: string,
+    body: { gerar_carta?: boolean; instrucoes_extra?: string | null },
+  ): Promise<GerarCandidaturaResponse> {
+    return request<GerarCandidaturaResponse>(
+      `/api/pessoal/vagas/${encodeURIComponent(id)}/candidatura`,
+      { method: 'POST', body, timeoutMs: 120_000 },
+    );
+  },
+
+  vagaRascunhos(id: string): Promise<CandidaturaEmailItem[]> {
+    return request<CandidaturaEmailItem[]>(
+      `/api/pessoal/vagas/${encodeURIComponent(id)}/rascunhos`,
+      { timeoutMs: 10_000 },
     );
   },
 };

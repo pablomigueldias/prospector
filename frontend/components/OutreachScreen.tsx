@@ -107,19 +107,19 @@ export default function OutreachScreen() {
             </button>
             <button
               type="button"
-              className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
-              onClick={handleGerar}
-              disabled={busy}
-            >
-              {gerar.loading ? 'Gerando… (pode demorar)' : 'Gerar rascunhos (até 5)'}
-            </button>
-            <button
-              type="button"
               className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
               onClick={handleFollowups}
               disabled={busy}
             >
               {followups.loading ? 'Gerando follow-ups…' : 'Gerar follow-ups'}
+            </button>
+            <button
+              type="button"
+              className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleGerar}
+              disabled={busy}
+            >
+              {gerar.loading ? 'Gerando… (pode demorar)' : 'Gerar rascunhos (até 5)'}
             </button>
           </div>
         </div>

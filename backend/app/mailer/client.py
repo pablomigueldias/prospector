@@ -96,7 +96,7 @@ def salvar_rascunho(
         status, dados = imap.append(pasta, "(\\Draft)", None, msg.as_bytes()) #type:ignore
         if status != "OK":
             raise MailerError(f"Append falhou em {pasta!r}: {status} {dados}")
-        logger.success(f"📝 Rascunho salvo em '{pasta}' para {para}")
+        logger.success(f"Rascunho salvo em '{pasta}' para {para}")
         return message_id
     finally:
         imap.logout()

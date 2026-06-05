@@ -12,6 +12,8 @@ import { useAgent, useAgents } from '@/hooks/useAgents';
 import { useProspectorHistory } from '@/hooks/useProspector';
 import  CopywriterScreen  from '@/components/CopywriterScreen';
 import OutreachScreen from '@/components/OutreachScreen';
+import PerfilMestreScreen from '@/components/PerfilMestreScreen';
+import VagasScreen from '@/components/VagasScreen';
 
 
 export default function AgentPage() {
@@ -50,6 +52,10 @@ export default function AgentPage() {
   <CopywriterScreen />
 ) : agent.slug === 'outreach' ? (
   <OutreachScreen />
+) : agent.slug === 'perfil-mestre' ? (
+  <PerfilMestreScreen />
+) : agent.slug === 'vagas' ? (
+  <VagasScreen />
 ) : (
   <ComingSoonScreen agentName={agent.name} />
 )}

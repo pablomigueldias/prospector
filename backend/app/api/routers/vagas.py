@@ -1,0 +1,98 @@
+from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException
+
+from app.api.schemas.pessoal import (
+    AnalisarVagaResponse,
+    CandidaturaEmailItem,
+    GerarCandidaturaRequest,
+    GerarCandidaturaResponse,
+    VagaCreate,
+    VagaListResponse,
+    VagaResponse,
+    VagaUpdate,
+)
+from app.api.services.pessoal import vaga_service
+from app.api.services.pessoal.vaga_service import VagaError
+
+router = APIRouter(prefix="/api/pessoal/vagas", tags=["pessoal:vagas"])
+
+
+def _handle(e: Exception) -> HTTPException:
+    if isinstance(e, VagaError):
+        # "não encontrada" → 404; resto → 400
+        msg = str(e)
+        status = 404 if "não encontrada" in msg.lower() else 400
+        return HTTPException(status_code=status, detail=msg)
+    return HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
+
+
+@router.get("", response_model=VagaListResponse, summary="Lista as vagas")
+async def listar(status: Optional[str] = None) -> VagaListResponse:
+    try:
+        return await vaga_service.listar_vagas(status=status)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("", response_model=VagaResponse, status_code=201,
+             summary="Registra uma vaga (cola a descrição)")
+async def criar(body: VagaCreate) -> VagaResponse:
+    try:
+        return await vaga_service.criar_vaga(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/{vaga_id}", response_model=VagaResponse, summary="Detalhe da vaga")
+async def detalhe(vaga_id: str) -> VagaResponse:
+    try:
+        return await vaga_service.get_vaga(vaga_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.patch("/{vaga_id}", response_model=VagaResponse,
+              summary="Atualiza campos/status da vaga")
+async def atualizar(vaga_id: str, body: VagaUpdate) -> VagaResponse:
+    try:
+        return await vaga_service.atualizar_vaga(vaga_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.delete("/{vaga_id}", status_code=204, summary="Remove a vaga")
+async def remover(vaga_id: str) -> None:
+    try:
+        await vaga_service.deletar_vaga(vaga_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/{vaga_id}/analisar", response_model=AnalisarVagaResponse,
+             summary="Destrincha a vaga e cruza com o Perfil Mestre")
+async def analisar(vaga_id: str) -> AnalisarVagaResponse:
+    try:
+        return await vaga_service.analisar_vaga(vaga_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/{vaga_id}/candidatura", response_model=GerarCandidaturaResponse,
+             summary="Rascunha e-mail + carta (PARA no rascunho, não envia)")
+async def gerar_candidatura(
+    vaga_id: str, body: GerarCandidaturaRequest
+) -> GerarCandidaturaResponse:
+    try:
+        return await vaga_service.gerar_candidatura(vaga_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/{vaga_id}/rascunhos", response_model=List[CandidaturaEmailItem],
+            summary="Rascunhos já gerados pra esta vaga")
+async def rascunhos(vaga_id: str) -> List[CandidaturaEmailItem]:
+    try:
+        return await vaga_service.listar_rascunhos(vaga_id)
+    except Exception as e:
+        raise _handle(e)
