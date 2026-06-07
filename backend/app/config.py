@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     groq_api_key: str = ""
 
+    # Storage S3-compatível (MinIO). Defaults batem com o compose de dev.
+    s3_endpoint: str = "http://localhost:9000"
+    s3_access_key: str = "minioadmin"
+    s3_secret_key: str = "minioadmin"
+    s3_region: str = "us-east-1"
+
     # Rate limiting
     max_leads_per_day: int = 30
     min_delay_seconds: int = 5

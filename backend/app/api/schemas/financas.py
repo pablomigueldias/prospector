@@ -292,6 +292,31 @@ class ProcessarRecorrenciasResponse(BaseModel):
 
 
 # ══════════════════════════════════════════════════════════════════
+# Comprovantes (arquivos no MinIO)
+# ══════════════════════════════════════════════════════════════════
+
+class ComprovanteResponse(BaseModel):
+    id: str
+    usuario_id: str
+    transacao_id: Optional[str] = None
+    tipo: str
+    bucket: str
+    arquivo_path: str
+    nome_original: Optional[str] = None
+    content_type: Optional[str] = None
+    tamanho: Optional[int] = None
+    hash: str
+    url: Optional[str] = None        # presigned, preenchida sob demanda
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class ComprovanteListResponse(BaseModel):
+    items: List[ComprovanteResponse]
+    total: int
+
+
+# ══════════════════════════════════════════════════════════════════
 # Leituras de consumo (água/gás/luz)
 # ══════════════════════════════════════════════════════════════════
 
