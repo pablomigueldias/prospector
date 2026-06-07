@@ -1,6 +1,11 @@
 from fastapi import APIRouter, HTTPException
 
-from app.api.schemas.financas import DespesaCreate, TransacaoResponse
+from app.api.schemas.financas import (
+    DespesaAutoSplitCreate,
+    DespesaCreate,
+    DespesaDivididaCreate,
+    TransacaoResponse,
+)
 from app.api.services.financas import transacao_service
 from app.api.services.financas.transacao_service import TransacaoError
 
@@ -20,6 +25,24 @@ def _handle(e: Exception) -> HTTPException:
 async def lancar_despesa(body: DespesaCreate) -> TransacaoResponse:
     try:
         return await transacao_service.lancar_despesa(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/despesa/dividida", response_model=TransacaoResponse, status_code=201,
+             summary="Lança despesa paga por N contas (split explícito)")
+async def lancar_despesa_dividida(body: DespesaDivididaCreate) -> TransacaoResponse:
+    try:
+        return await transacao_service.lancar_despesa_dividida(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/despesa/auto-split", response_model=TransacaoResponse, status_code=201,
+             summary="Esgota o VR/VA e joga o resto no dinheiro")
+async def lancar_despesa_auto_split(body: DespesaAutoSplitCreate) -> TransacaoResponse:
+    try:
+        return await transacao_service.lancar_despesa_auto_split(body)
     except Exception as e:
         raise _handle(e)
 

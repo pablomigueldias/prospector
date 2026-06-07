@@ -110,6 +110,38 @@ class DespesaCreate(BaseModel):
     notas: Optional[str] = None
 
 
+class PagamentoIn(BaseModel):
+    conta_id: str
+    valor: Decimal = Field(..., gt=0)
+
+
+class DespesaDivididaCreate(BaseModel):
+    """Despesa paga por N contas (split explícito). A soma dos pagamentos
+    precisa bater com valor_total."""
+    usuario_id: str
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    pagamentos: List[PagamentoIn] = Field(..., min_length=1)
+    categoria_id: Optional[str] = None
+    data_competencia: Optional[date] = None
+    data_pagamento: Optional[date] = None
+    status: str = "paga"
+    notas: Optional[str] = None
+
+
+class DespesaAutoSplitCreate(BaseModel):
+    """Despesa que esgota o VR/VA e joga o resto no dinheiro automaticamente.
+    Resolve o 'às vezes acaba o VR'. Sempre lançada como paga."""
+    usuario_id: str
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    conta_vr_id: str = Field(..., description="Conta que esgota primeiro (VR/VA)")
+    conta_fallback_id: str = Field(..., description="Conta que cobre o resto (dinheiro)")
+    categoria_id: Optional[str] = None
+    data_competencia: Optional[date] = None
+    notas: Optional[str] = None
+
+
 class TransacaoItemResponse(BaseModel):
     id: str
     categoria_id: Optional[str] = None
