@@ -447,3 +447,24 @@ export interface LeituraConsumoListResponse {
   items: LeituraConsumo[];
   total: number;
 }
+
+export interface Comprovante {
+  id: string;
+  usuario_id: string;
+  transacao_id?: string | null;
+  tipo: string;
+  bucket: string;
+  arquivo_path: string;
+  nome_original?: string | null;
+  content_type?: string | null;
+  tamanho?: number | null;
+  hash: string;
+  url?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ComprovanteListResponse {
+  items: Comprovante[];
+  total: number;
+}

@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { FINANCAS_USUARIO_ID } from '@/lib/financas';
 import type {
   Cartao,
+  Comprovante,
   FaturasCartao,
   Conta,
   LeituraConsumo,
@@ -48,4 +49,13 @@ export function useLeituras(tipo?: string) {
   );
   const leituras: LeituraConsumo[] = result.data?.items ?? [];
   return { ...result, leituras };
+}
+
+export function useComprovantes(tipo?: string) {
+  const result = useFetch(
+    () => api.financasComprovantes(FINANCAS_USUARIO_ID, tipo),
+    [tipo],
+  );
+  const comprovantes: Comprovante[] = result.data?.items ?? [];
+  return { ...result, comprovantes };
 }

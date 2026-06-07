@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { CartoesSection } from '@/components/CartoesSection';
 import { CategoriaDonut } from '@/components/CategoriaDonut';
+import { ComprovantesGaleria } from '@/components/ComprovantesGaleria';
 import { ConsumoSection } from '@/components/ConsumoSection';
 import { StatCard } from '@/components/StatCard';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
@@ -179,6 +180,14 @@ export default function FinancasScreen() {
           Cartões
         </h2>
         <CartoesSection />
+      </section>
+
+      {/* Comprovantes */}
+      <section className="mb-8">
+        <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0 mb-4">
+          Comprovantes
+        </h2>
+        <ComprovantesGaleria />
       </section>
     </div>
   );

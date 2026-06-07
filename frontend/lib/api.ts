@@ -24,6 +24,7 @@ import type {
   CartaoListResponse,
   FaturasCartao,
   LeituraConsumoListResponse,
+  ComprovanteListResponse,
 } from './types';
 
 const API_URL =
@@ -317,6 +318,14 @@ export const api = {
     const q = new URLSearchParams({ usuario_id: usuarioId });
     if (tipo) q.set('tipo', tipo);
     return request<LeituraConsumoListResponse>(`/api/financas/leituras?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasComprovantes(usuarioId: string, tipo?: string): Promise<ComprovanteListResponse> {
+    const q = new URLSearchParams({ usuario_id: usuarioId });
+    if (tipo) q.set('tipo', tipo);
+    return request<ComprovanteListResponse>(`/api/financas/comprovantes?${q}`, {
       timeoutMs: 10_000,
     });
   },

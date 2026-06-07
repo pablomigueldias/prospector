@@ -129,3 +129,22 @@ async def listar_por_transacao(transacao_id: str) -> ComprovanteListResponse:
         comps = (await session.execute(stmt)).scalars().all()
         items = [_to_response(c, com_url=True) for c in comps]
     return ComprovanteListResponse(items=items, total=len(items))
+
+
+async def listar_por_usuario(
+    usuario_id: str, *, tipo: Optional[str] = None
+) -> ComprovanteListResponse:
+    uid = _uuid(usuario_id, campo="usuario_id")
+    if tipo is not None and tipo not in TIPOS_COMPROVANTE:
+        raise ComprovanteError(f"Tipo inválido: {tipo!r}.")
+    async with get_session() as session:
+        stmt = (
+            select(Comprovante)
+            .where(Comprovante.usuario_id == uid)
+            .order_by(Comprovante.created_at.desc())
+        )
+        if tipo is not None:
+            stmt = stmt.where(Comprovante.tipo == tipo)
+        comps = (await session.execute(stmt)).scalars().all()
+        items = [_to_response(c, com_url=True) for c in comps]
+    return ComprovanteListResponse(items=items, total=len(items))

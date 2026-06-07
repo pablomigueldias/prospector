@@ -40,9 +40,19 @@ async def upload(
 
 
 @router.get("", response_model=ComprovanteListResponse,
-            summary="Lista comprovantes de uma transação (com URL pré-assinada)")
-async def listar(transacao_id: str) -> ComprovanteListResponse:
+            summary="Lista comprovantes por transação OU por usuário (galeria)")
+async def listar(
+    transacao_id: Optional[str] = None,
+    usuario_id: Optional[str] = None,
+    tipo: Optional[str] = None,
+) -> ComprovanteListResponse:
     try:
-        return await comprovante_service.listar_por_transacao(transacao_id)
+        if transacao_id:
+            return await comprovante_service.listar_por_transacao(transacao_id)
+        if usuario_id:
+            return await comprovante_service.listar_por_usuario(usuario_id, tipo=tipo)
+        raise HTTPException(status_code=400, detail="Informe transacao_id ou usuario_id.")
+    except HTTPException:
+        raise
     except Exception as e:
         raise _handle(e)
