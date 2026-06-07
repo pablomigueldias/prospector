@@ -5,6 +5,7 @@ pessoais (perfil/vagas).
 """
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
@@ -86,3 +87,55 @@ class CategoriaTreeResponse(BaseModel):
 
 
 CategoriaTreeItem.model_rebuild()
+
+
+# ══════════════════════════════════════════════════════════════════
+# Transações
+# ══════════════════════════════════════════════════════════════════
+
+class DespesaCreate(BaseModel):
+    """Lançamento de despesa simples (uma conta, uma categoria opcional)."""
+    usuario_id: str
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    conta_id: str = Field(..., description="Conta de onde o dinheiro saiu")
+    categoria_id: Optional[str] = None
+    data_competencia: Optional[date] = Field(
+        None, description="Mês de competência. Default: hoje."
+    )
+    data_pagamento: Optional[date] = Field(
+        None, description="Quando saiu de fato. Default: hoje se status=paga."
+    )
+    status: str = Field("paga", description="prevista/paga/atrasada")
+    notas: Optional[str] = None
+
+
+class TransacaoItemResponse(BaseModel):
+    id: str
+    categoria_id: Optional[str] = None
+    descricao: str
+    valor: Decimal
+
+
+class TransacaoPagamentoResponse(BaseModel):
+    id: str
+    conta_id: str
+    valor: Decimal
+
+
+class TransacaoResponse(BaseModel):
+    id: str
+    usuario_id: str
+    tipo: str
+    descricao: str
+    valor_total: Decimal
+    data_competencia: date
+    data_pagamento: Optional[date] = None
+    status: str
+    origem: str
+    categoria_id: Optional[str] = None
+    notas: Optional[str] = None
+    itens: List[TransacaoItemResponse] = Field(default_factory=list)
+    pagamentos: List[TransacaoPagamentoResponse] = Field(default_factory=list)
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
