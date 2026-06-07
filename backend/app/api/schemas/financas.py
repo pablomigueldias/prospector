@@ -174,6 +174,72 @@ class TransacaoResponse(BaseModel):
 
 
 # ══════════════════════════════════════════════════════════════════
+# Cartões, faturas, compras parceladas e parcelas
+# ══════════════════════════════════════════════════════════════════
+
+class CartaoCreate(BaseModel):
+    usuario_id: str
+    nome: str
+    bandeira: Optional[str] = None
+    dia_fechamento: int = Field(..., ge=1, le=31)
+    dia_vencimento: int = Field(..., ge=1, le=31)
+    limite: Optional[Decimal] = Field(None, ge=0)
+
+
+class CartaoResponse(BaseModel):
+    id: str
+    usuario_id: str
+    nome: str
+    bandeira: Optional[str] = None
+    dia_fechamento: int
+    dia_vencimento: int
+    limite: Optional[Decimal] = None
+    ativo: bool
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class CompraParceladaCreate(BaseModel):
+    """Compra no cartão parcelada em N vezes."""
+    usuario_id: str
+    cartao_id: str
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0, description="Total a pagar (já com juros)")
+    total_parcelas: int = Field(..., ge=1, le=120)
+    data_compra: Optional[date] = None
+    categoria_id: Optional[str] = None
+    valor_juros_total: Decimal = Field(
+        Decimal("0"), ge=0, description="Quanto do total é juro (distribuído nas parcelas)"
+    )
+
+
+class ParcelaResponse(BaseModel):
+    id: str
+    numero: int
+    total_parcelas: int
+    valor: Decimal
+    tem_juros: bool
+    valor_juros: Decimal
+    vencimento: date
+    fatura_id: Optional[str] = None
+
+
+class CompraResponse(BaseModel):
+    id: str
+    usuario_id: str
+    cartao_id: Optional[str] = None
+    descricao: str
+    valor_total: Decimal
+    total_parcelas: int
+    data_compra: date
+    origem: str
+    categoria_id: Optional[str] = None
+    parcelas: List[ParcelaResponse] = Field(default_factory=list)
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+# ══════════════════════════════════════════════════════════════════
 # Resumo do mês
 # ══════════════════════════════════════════════════════════════════
 

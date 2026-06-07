@@ -16,6 +16,10 @@ from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.transacao import Transacao
 from app.db.models.financas.transacao_item import TransacaoItem
 from app.db.models.financas.transacao_pagamento import TransacaoPagamento
+from app.db.models.financas.cartao import Cartao
+from app.db.models.financas.fatura import Fatura
+from app.db.models.financas.compra import Compra
+from app.db.models.financas.parcela import Parcela
 
 
 __all__ = [
@@ -35,4 +39,8 @@ __all__ = [
     "Transacao",
     "TransacaoItem",
     "TransacaoPagamento",
+    "Cartao",
+    "Fatura",
+    "Compra",
+    "Parcela",
 ]
