@@ -11,6 +11,7 @@ from app.api.routers import outreach as outreach_router
 from app.api.routers import perfil as perfil_router
 from app.api.routers import vagas as vagas_router
 from app.api.routers import contas as contas_router
+from app.api.routers import categorias as categorias_router
 from app.utils.logger import get_logger
 
 
@@ -63,3 +64,4 @@ app.include_router(vagas_router.router)
 
 # ── Organizador Financeiro (domínio pessoal) ──────────────────────
 app.include_router(contas_router.router)
+app.include_router(categorias_router.router)
