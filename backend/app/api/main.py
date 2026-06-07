@@ -22,6 +22,7 @@ from app.api.routers import comprovantes as comprovantes_router
 from app.api.routers import importador as importador_router
 from app.api.routers import nlu as nlu_router
 from app.api.routers import telegram as telegram_router
+from app.api.routers import eventos as eventos_router
 from app.utils.logger import get_logger
 
 
@@ -85,3 +86,4 @@ app.include_router(comprovantes_router.router)
 app.include_router(importador_router.router)
 app.include_router(nlu_router.router)
 app.include_router(telegram_router.router)
+app.include_router(eventos_router.router)

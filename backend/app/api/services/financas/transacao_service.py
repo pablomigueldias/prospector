@@ -21,7 +21,7 @@ from app.api.schemas.financas import (
     TransacaoPagamentoResponse,
     TransacaoResponse,
 )
-from app.api.services.financas import saldo_service
+from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
 from app.db.models.financas.transacao import STATUS_TRANSACAO, Transacao
@@ -137,6 +137,8 @@ async def _finalizar_transacao(
         for conta, valor in pagamentos:
             saldo_service.aplicar_movimento(conta, tipo, valor)
 
+    # Avisa o dashboard em tempo real (entregue no commit).
+    await eventos.notificar(session, usuario_id, "transacao_criada")
     await session.commit()
     return _to_response(await repo.get(transacao.id))
 
