@@ -21,6 +21,8 @@ import type {
   CandidaturaEmailItem,
   ContaListResponse,
   ResumoMes,
+  CartaoListResponse,
+  FaturasCartao,
 } from './types';
 
 const API_URL =
@@ -294,5 +296,19 @@ export const api = {
       mes: String(mes),
     });
     return request<ResumoMes>(`/api/financas/resumo?${q}`, { timeoutMs: 10_000 });
+  },
+
+  financasCartoes(usuarioId: string): Promise<CartaoListResponse> {
+    const q = new URLSearchParams({ usuario_id: usuarioId });
+    return request<CartaoListResponse>(`/api/financas/cartoes?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCartaoFaturas(cartaoId: string): Promise<FaturasCartao> {
+    return request<FaturasCartao>(
+      `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas`,
+      { timeoutMs: 10_000 },
+    );
   },
 };

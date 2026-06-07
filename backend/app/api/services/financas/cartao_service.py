@@ -2,10 +2,22 @@
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 from typing import Optional
 
-from app.api.schemas.financas import CartaoCreate, CartaoResponse
+from sqlalchemy import func, select
+
+from app.api.schemas.financas import (
+    CartaoCreate,
+    CartaoListResponse,
+    CartaoResponse,
+    FaturaResponse,
+    FaturasCartaoResponse,
+)
 from app.db.models.financas.cartao import Cartao
+from app.db.models.financas.compra import Compra
+from app.db.models.financas.fatura import Fatura
+from app.db.models.financas.parcela import Parcela
 from app.db.session import get_session
 
 
@@ -63,3 +75,58 @@ async def get_cartao(cartao_id: str) -> CartaoResponse:
         if cartao is None:
             raise CartaoError("Cartão não encontrado.")
         return _to_response(cartao)
+
+
+async def listar_cartoes(usuario_id: str) -> CartaoListResponse:
+    uid = _uuid(usuario_id, campo="usuario_id")
+    async with get_session() as session:
+        stmt = (
+            select(Cartao)
+            .where(Cartao.usuario_id == uid)
+            .order_by(Cartao.nome)
+        )
+        cartoes = (await session.execute(stmt)).scalars().all()
+        items = [_to_response(c) for c in cartoes]
+    return CartaoListResponse(items=items, total=len(items))
+
+
+async def faturas_do_cartao(cartao_id: str) -> FaturasCartaoResponse:
+    cid = _uuid(cartao_id)
+    async with get_session() as session:
+        if await session.get(Cartao, cid) is None:
+            raise CartaoError("Cartão não encontrado.")
+
+        faturas = (await session.execute(
+            select(Fatura)
+            .where(Fatura.cartao_id == cid)
+            .order_by(Fatura.mes_referencia.desc())
+        )).scalars().all()
+
+        em_aberto = await session.scalar(
+            select(func.coalesce(func.sum(Fatura.valor_total), 0))
+            .where(Fatura.cartao_id == cid, Fatura.status != "paga")
+        )
+        # juros: parcelas das compras desse cartão
+        juros = await session.scalar(
+            select(func.coalesce(func.sum(Parcela.valor_juros), 0))
+            .select_from(Parcela)
+            .join(Compra, Compra.id == Parcela.compra_id)
+            .where(Compra.cartao_id == cid)
+        )
+
+    return FaturasCartaoResponse(
+        cartao_id=str(cid),
+        faturas=[
+            FaturaResponse(
+                id=str(f.id),
+                cartao_id=str(f.cartao_id),
+                mes_referencia=f.mes_referencia,
+                valor_total=f.valor_total,
+                vencimento=f.vencimento,
+                status=f.status,
+            )
+            for f in faturas
+        ],
+        total_em_aberto=Decimal(em_aberto),
+        total_juros=Decimal(juros),
+    )

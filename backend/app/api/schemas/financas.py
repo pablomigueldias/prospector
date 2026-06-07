@@ -213,6 +213,27 @@ class CartaoResponse(BaseModel):
     updated_at: Optional[str] = None
 
 
+class CartaoListResponse(BaseModel):
+    items: List["CartaoResponse"]
+    total: int
+
+
+class FaturaResponse(BaseModel):
+    id: str
+    cartao_id: str
+    mes_referencia: date
+    valor_total: Decimal
+    vencimento: date
+    status: str
+
+
+class FaturasCartaoResponse(BaseModel):
+    cartao_id: str
+    faturas: List[FaturaResponse]
+    total_em_aberto: Decimal       # soma das faturas não pagas
+    total_juros: Decimal           # soma de valor_juros das parcelas do cartão
+
+
 class CompraParceladaCreate(BaseModel):
     """Compra no cartão parcelada em N vezes."""
     usuario_id: str

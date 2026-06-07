@@ -398,3 +398,35 @@ export interface ResumoMes {
   saldo: string;
   por_categoria: CategoriaResumoItem[];
 }
+
+export interface Cartao {
+  id: string;
+  usuario_id: string;
+  nome: string;
+  bandeira?: string | null;
+  dia_fechamento: number;
+  dia_vencimento: number;
+  limite?: string | null;
+  ativo: boolean;
+}
+
+export interface CartaoListResponse {
+  items: Cartao[];
+  total: number;
+}
+
+export interface Fatura {
+  id: string;
+  cartao_id: string;
+  mes_referencia: string;
+  valor_total: string;
+  vencimento: string;
+  status: string;
+}
+
+export interface FaturasCartao {
+  cartao_id: string;
+  faturas: Fatura[];
+  total_em_aberto: string;
+  total_juros: string;
+}
