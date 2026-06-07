@@ -10,6 +10,10 @@ from app.db.models.pessoal.perfil_mestre import PerfilMestre
 from app.db.models.pessoal.vaga import Vaga
 from app.db.models.pessoal.candidatura_email import CandidaturaEmail
 
+# ── Organizador Financeiro (schema financas) — domínio pessoal ─────
+from app.db.models.financas.conta import Conta
+from app.db.models.financas.categoria import Categoria
+
 
 __all__ = [
     "Empresa",
@@ -22,4 +26,7 @@ __all__ = [
     "PerfilMestre",
     "Vaga",
     "CandidaturaEmail",
+    # financas
+    "Conta",
+    "Categoria",
 ]
