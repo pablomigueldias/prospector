@@ -1,0 +1,32 @@
+# ────────────────────────────────────────────────────────────────────────────
+#  Caddyfile — HTTPS automático (Let's Encrypt) + roteamento
+#
+#  - {$DOMAIN}        → front Next.js (web:3000)
+#  - {$DOMAIN}/api/*  → API FastAPI (api:8000), com o /api removido no caminho
+#  - {$DOMAIN}/telegram/*  → API (webhook do bot)
+#
+#  Caddy emite e renova o certificado sozinho na primeira visita HTTPS.
+# ────────────────────────────────────────────────────────────────────────────
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip zstd
+
+	# Webhook do Telegram vai direto pra API (caminho preservado)
+	handle /telegram/* {
+		reverse_proxy api:8000
+	}
+
+	# Tudo sob /api/* vai pra API, removendo o prefixo /api
+	handle_path /api/* {
+		reverse_proxy api:8000
+	}
+
+	# Resto: front Next.js
+	handle {
+		reverse_proxy web:3000
+	}
+}
