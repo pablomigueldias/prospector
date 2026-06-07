@@ -21,6 +21,7 @@ from app.db.models.financas.fatura import Fatura
 from app.db.models.financas.compra import Compra
 from app.db.models.financas.parcela import Parcela
 from app.db.models.financas.recorrencia import Recorrencia
+from app.db.models.financas.leitura_consumo import LeituraConsumo
 
 
 __all__ = [
@@ -45,4 +46,5 @@ __all__ = [
     "Compra",
     "Parcela",
     "Recorrencia",
+    "LeituraConsumo",
 ]
