@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 
+import { CategoriaDonut } from '@/components/CategoriaDonut';
 import { StatCard } from '@/components/StatCard';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
 import { formatBRL, formatMesAno } from '@/lib/format';
@@ -99,6 +100,17 @@ export default function FinancasScreen() {
           loading={resumoLoading}
         />
       </div>
+
+      {/* Despesas por categoria */}
+      <section className="mb-8">
+        <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0 mb-4">
+          Despesas por categoria
+        </h2>
+        <CategoriaDonut
+          items={resumo?.por_categoria ?? []}
+          loading={resumoLoading}
+        />
+      </section>
 
       {/* Contas */}
       <section className="mb-8">
