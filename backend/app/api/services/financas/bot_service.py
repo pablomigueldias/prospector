@@ -17,6 +17,7 @@ from app.api.services.financas import (
     conta_service,
     importador_service,
     nlu_service,
+    resumo_service,
     transacao_service,
 )
 from app.api.services.financas.nlu_service import NLUError
@@ -79,10 +80,55 @@ async def processar_update(update: dict) -> dict:
         return await _cmd_gasto(chat_id, usuario_id, texto)
 
     if texto and not texto.startswith("/"):
+        intent = _consulta_intent(texto)
+        if intent == "saldo":
+            return await _saldos(chat_id, usuario_id)
+        if intent == "resumo":
+            return await _resumo_mes(chat_id, usuario_id)
         return await _texto_livre(chat_id, usuario_id, texto)
 
     await _responder(chat_id, "Não entendi 🤔\n\n" + AJUDA)
     return {"ok": True, "comando": None}
+
+
+def _consulta_intent(texto: str) -> Optional[str]:
+    """Distingue uma PERGUNTA de um lançamento. 'gastei 50 no mercado' não é
+    consulta; 'quanto gastei?' / 'qual meu saldo?' são."""
+    t = texto.lower()
+    if "saldo" in t:
+        return "saldo"
+    if any(k in t for k in ("quanto", "resumo", "sobrou", "sobra", "balanço", "balanco")):
+        return "resumo"
+    return None
+
+
+async def _saldos(chat_id: str, usuario_id: str) -> dict:
+    contas = (await conta_service.listar_contas(usuario_id, apenas_ativas=True)).items
+    if not contas:
+        await _responder(chat_id, "Você ainda não tem contas cadastradas.")
+        return {"ok": True, "consulta": "saldo"}
+    linhas = [f"• {c.nome}: R$ {c.saldo_atual}" for c in contas]
+    total = sum(Decimal(c.saldo_atual) for c in contas)
+    await _responder(chat_id, "🏦 <b>Saldos</b>\n" + "\n".join(linhas) + f"\n\n<b>Total:</b> R$ {total}")
+    return {"ok": True, "consulta": "saldo"}
+
+
+async def _resumo_mes(chat_id: str, usuario_id: str) -> dict:
+    hoje = date.today()
+    r = await resumo_service.resumo_mes(usuario_id, hoje.year, hoje.month)
+    sinal = "🟢" if r.saldo >= 0 else "🔴"
+    linhas = [
+        f"📊 <b>{r.mes:02d}/{r.ano}</b>",
+        f"💰 Receitas: R$ {r.total_receitas}",
+        f"💸 Despesas: R$ {r.total_despesas}",
+        f"{sinal} Sobra/Déficit: R$ {r.saldo}",
+    ]
+    if r.por_categoria:
+        linhas.append("\n<b>Maiores categorias:</b>")
+        for c in r.por_categoria[:3]:
+            linhas.append(f"• {c.categoria_nome}: R$ {c.total}")
+    await _responder(chat_id, "\n".join(linhas))
+    return {"ok": True, "consulta": "resumo"}
 
 
 async def _arquivo(chat_id: str, usuario_id: str, msg: dict) -> dict:
