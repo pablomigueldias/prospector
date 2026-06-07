@@ -13,7 +13,12 @@ from datetime import date
 from typing import Optional
 
 from app.api.schemas.financas import DespesaCreate, ReceitaCreate
-from app.api.services.financas import conta_service, nlu_service, transacao_service
+from app.api.services.financas import (
+    conta_service,
+    importador_service,
+    nlu_service,
+    transacao_service,
+)
 from app.api.services.financas.nlu_service import NLUError
 from app.config import settings
 from app.db.models.financas.bot_rascunho import BotRascunho
@@ -60,6 +65,10 @@ async def processar_update(update: dict) -> dict:
         await _responder(chat_id, "🚫 Bot privado. Você não está autorizado.")
         return {"ok": True, "autorizado": False}
 
+    # Foto ou PDF → importador de boleto.
+    if msg.get("photo") or msg.get("document"):
+        return await _arquivo(chat_id, usuario_id, msg)
+
     texto = (msg.get("text") or "").strip()
 
     if texto.startswith("/start"):
@@ -74,6 +83,32 @@ async def processar_update(update: dict) -> dict:
 
     await _responder(chat_id, "Não entendi 🤔\n\n" + AJUDA)
     return {"ok": True, "comando": None}
+
+
+async def _arquivo(chat_id: str, usuario_id: str, msg: dict) -> dict:
+    """Baixa o arquivo do Telegram e manda pro importador de boleto."""
+    if msg.get("document"):
+        doc = msg["document"]
+        file_id = doc["file_id"]
+        nome = doc.get("file_name") or "documento"
+        mime = doc.get("mime_type") or "application/pdf"
+    else:  # photo: lista de tamanhos, pega o maior
+        foto = msg["photo"][-1]
+        file_id = foto["file_id"]
+        nome, mime = "foto.jpg", "image/jpeg"
+
+    await _responder(chat_id, "📎 Recebi, lendo o boleto...")
+    caminho = await asyncio.to_thread(tg.get_file_path, file_id)
+    conteudo = await asyncio.to_thread(tg.download_file, caminho)
+
+    resp = await importador_service.importar_boleto(
+        usuario_id=usuario_id, conteudo=conteudo,
+        nome_original=nome, content_type=mime,
+    )
+    prefixo = "✅" if resp.conferido else ("⚠️" if resp.success else "❌")
+    await _responder(chat_id, f"{prefixo} {resp.mensagem}")
+    return {"ok": True, "tipo": "arquivo", "conferido": resp.conferido,
+            "transacao_id": resp.transacao_id}
 
 
 def _card_keyboard(rid: str) -> dict:
