@@ -41,6 +41,20 @@ config.set_main_option("sqlalchemy.url", _sync_url(settings.database_url))
 target_metadata = Base.metadata
 
 
+# Schemas que o Alembic gerencia. Como o módulo `financas` vive num schema
+# próprio (não no public), ligamos include_schemas=True — mas aí o autogenerate
+# passa a enxergar TODOS os schemas do banco e quereria dropar tabelas de
+# schemas que não são nossos (extensões etc.). O filtro abaixo restringe a
+# comparação só ao public + financas. (None = schema default = public.)
+MANAGED_SCHEMAS = {None, "public", "financas"}
+
+
+def include_name(name, type_, parent_names):  # noqa: ANN001, ANN201
+    if type_ == "schema":
+        return name in MANAGED_SCHEMAS
+    return True
+
+
 def run_migrations_offline() -> None:
     """
     Modo offline: gera SQL sem conectar no banco. Útil pra revisar
@@ -56,6 +70,8 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         compare_server_default=True,
+        include_schemas=True,
+        include_name=include_name,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -77,6 +93,8 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,
+            include_schemas=True,
+            include_name=include_name,
         )
         with context.begin_transaction():
             context.run_migrations()
