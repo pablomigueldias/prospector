@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { CartoesSection } from '@/components/CartoesSection';
 import { CategoriaDonut } from '@/components/CategoriaDonut';
@@ -6,6 +6,8 @@ import { ComprovantesGaleria } from '@/components/ComprovantesGaleria';
 import { ConsumoSection } from '@/components/ConsumoSection';
 import { StatCard } from '@/components/StatCard';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
+import { useFinancasEventos } from '@/hooks/useFinancasEventos';
+import { FINANCAS_USUARIO_ID } from '@/lib/financas';
 import { formatBRL, formatMesAno } from '@/lib/format';
 import type { Conta } from '@/lib/types';
 
@@ -32,8 +34,17 @@ export default function FinancasScreen() {
     hoje.getMonth() + 1,
   ]);
 
-  const { resumo, loading: resumoLoading } = useResumoMes(ano, mes);
-  const { contas, loading: contasLoading } = useContas(true);
+  const { resumo, loading: resumoLoading, refetch: refetchResumo } = useResumoMes(ano, mes);
+  const { contas, loading: contasLoading, refetch: refetchContas } = useContas(true);
+
+  // Atualiza sozinho quando algo muda (ex.: gasto lançado pelo Telegram).
+  const aoVivo = useFinancasEventos(
+    FINANCAS_USUARIO_ID,
+    useCallback(() => {
+      void refetchResumo();
+      void refetchContas();
+    }, [refetchResumo, refetchContas]),
+  );
 
   const saldoTotal = useMemo(
     () => contas.reduce((acc, c) => acc + Number(c.saldo_atual), 0),
@@ -89,6 +100,15 @@ export default function FinancasScreen() {
         >
           ›
         </button>
+        {aoVivo && (
+          <span
+            className="ml-auto inline-flex items-center gap-1.5 text-[11px] text-success"
+            title="Atualizando em tempo real"
+          >
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            ao vivo
+          </span>
+        )}
       </div>
 
       {/* Cards do mês */}
