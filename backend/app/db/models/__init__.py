@@ -13,6 +13,9 @@ from app.db.models.pessoal.candidatura_email import CandidaturaEmail
 # ── Organizador Financeiro (schema financas) — domínio pessoal ─────
 from app.db.models.financas.conta import Conta
 from app.db.models.financas.categoria import Categoria
+from app.db.models.financas.transacao import Transacao
+from app.db.models.financas.transacao_item import TransacaoItem
+from app.db.models.financas.transacao_pagamento import TransacaoPagamento
 
 
 __all__ = [
@@ -29,4 +32,7 @@ __all__ = [
     # financas
     "Conta",
     "Categoria",
+    "Transacao",
+    "TransacaoItem",
+    "TransacaoPagamento",
 ]
