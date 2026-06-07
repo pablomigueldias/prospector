@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException
 
-from app.api.schemas.financas import CompraParceladaCreate, CompraResponse
+from app.api.schemas.financas import (
+    BoletoParceladoCreate,
+    CompraParceladaCreate,
+    CompraResponse,
+)
 from app.api.services.financas import compra_service
 from app.api.services.financas.compra_service import CompraError
 
@@ -20,6 +24,15 @@ def _handle(e: Exception) -> HTTPException:
 async def criar_parcelada(body: CompraParceladaCreate) -> CompraResponse:
     try:
         return await compra_service.criar_compra_parcelada(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/boleto", response_model=CompraResponse, status_code=201,
+             summary="Boleto parcelado (sem cartão) → gera N parcelas mensais")
+async def criar_boleto_parcelado(body: BoletoParceladoCreate) -> CompraResponse:
+    try:
+        return await compra_service.criar_compra_boleto_parcelada(body)
     except Exception as e:
         raise _handle(e)
 

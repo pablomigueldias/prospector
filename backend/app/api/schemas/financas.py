@@ -213,6 +213,18 @@ class CompraParceladaCreate(BaseModel):
     )
 
 
+class BoletoParceladoCreate(BaseModel):
+    """Despesa parcelada em boleto (sem cartão/fatura), ex.: reforma do
+    condomínio em 6x. As parcelas vencem mês a mês a partir de primeiro_vencimento."""
+    usuario_id: str
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    total_parcelas: int = Field(..., ge=1, le=120)
+    primeiro_vencimento: date
+    categoria_id: Optional[str] = None
+    valor_juros_total: Decimal = Field(Decimal("0"), ge=0)
+
+
 class ParcelaResponse(BaseModel):
     id: str
     numero: int

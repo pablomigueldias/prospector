@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.schemas.financas import (
+    BoletoParceladoCreate,
     CompraParceladaCreate,
     CompraResponse,
     ParcelaResponse,
@@ -212,6 +213,62 @@ async def criar_compra_parcelada(payload: CompraParceladaCreate) -> CompraRespon
 
         await session.commit()
 
+        return _to_response(await _carregar_compra(session, compra.id))
+
+
+async def criar_compra_boleto_parcelada(
+    payload: BoletoParceladoCreate,
+) -> CompraResponse:
+    """Boleto parcelado (sem cartão/fatura): parcelas vencem mês a mês a partir
+    de primeiro_vencimento. Mesmo conceito de parcela do cartão."""
+    if not payload.descricao.strip():
+        raise CompraError("A compra precisa de uma descrição.")
+    if payload.valor_juros_total > payload.valor_total:
+        raise CompraError("O juro não pode ser maior que o total.")
+
+    usuario_id = _uuid(payload.usuario_id, campo="usuario_id")
+    categoria_id = (
+        _uuid(payload.categoria_id, campo="categoria_id")
+        if payload.categoria_id else None
+    )
+    n = payload.total_parcelas
+    primeiro = payload.primeiro_vencimento
+
+    valores = distribuir(payload.valor_total, n)
+    juros = distribuir(payload.valor_juros_total, n) if payload.valor_juros_total > 0 \
+        else [Decimal("0")] * n
+
+    async with get_session() as session:
+        if categoria_id is not None and await session.get(Categoria, categoria_id) is None:
+            raise CompraError("Categoria não encontrada.")
+
+        compra = Compra(
+            usuario_id=usuario_id,
+            descricao=payload.descricao.strip(),
+            valor_total=payload.valor_total,
+            total_parcelas=n,
+            data_compra=date.today(),
+            origem="boleto",
+            cartao_id=None,
+            categoria_id=categoria_id,
+        )
+        session.add(compra)
+        await session.flush()
+
+        for i in range(n):
+            ano_i, mes_i = add_meses(primeiro.year, primeiro.month, i)
+            session.add(Parcela(
+                compra_id=compra.id,
+                numero=i + 1,
+                total_parcelas=n,
+                valor=valores[i],
+                tem_juros=juros[i] > 0,
+                valor_juros=juros[i],
+                vencimento=date(ano_i, mes_i, dia_valido(ano_i, mes_i, primeiro.day)),
+                fatura_id=None,  # boleto não tem fatura
+            ))
+
+        await session.commit()
         return _to_response(await _carregar_compra(session, compra.id))
 
 
