@@ -226,3 +226,36 @@ docker-compose.override.yml
 playwright-report/
 test-results/
 playwright/.cache/
+
+# ─────────────────────────────────────────────────────────────────────
+#  DEPLOY (VPS) — segredos e artefatos locais. Repo é PÚBLICO.
+#  O pacote deploy/ pode ser versionado, MAS nunca o .env preenchido,
+#  backups de banco nem logs gerados na máquina.
+# ─────────────────────────────────────────────────────────────────────
+deploy/.env
+deploy/**/.env
+deploy/backups/
+deploy/**/*.log
+deploy/caddy_data/
+deploy/caddy_config/
+
+# ─────────────────────────────────────────────────────────────────────
+#  STORAGE / UPLOADS LOCAIS (financas) — comprovantes/boletos/notas
+#  ficam no MinIO (volume Docker), nunca no repo.
+# ─────────────────────────────────────────────────────────────────────
+backend/data/comprovantes/
+backend/data/boletos/
+backend/data/notas/
+minio_data/
+*.pdf.local
+
+# ─────────────────────────────────────────────────────────────────────
+#  CHAVES / CERTIFICADOS soltos (reforço — repo público)
+# ─────────────────────────────────────────────────────────────────────
+*.key
+*.crt
+*.p12
+id_ed25519
+id_rsa
+service-account*.json
+gcp-*.json
