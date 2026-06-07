@@ -41,6 +41,8 @@ class Transacao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     data_competencia: Mapped[date] = mapped_column(Date, nullable=False)
     data_pagamento: Mapped[Optional[date]] = mapped_column(Date)
+    # Vencimento (usado pelas previstas de recorrência pra marcar atraso).
+    data_vencimento: Mapped[Optional[date]] = mapped_column(Date)
 
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="prevista", server_default="prevista"
@@ -55,10 +57,15 @@ class Transacao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=True,
     )
 
-    # FK ligada no step 12 (quando a tabela recorrencias existir). Por ora,
-    # só a coluna nullable.
+    # De qual recorrência esta transação nasceu (previstas geradas pelo job).
     recorrencia_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=True
+        PG_UUID(as_uuid=True),
+        ForeignKey(
+            "financas.recorrencias.id",
+            ondelete="SET NULL",
+            name="fk_fin_transacoes_recorrencia",
+        ),
+        nullable=True,
     )
 
     notas: Mapped[Optional[str]] = mapped_column(Text)

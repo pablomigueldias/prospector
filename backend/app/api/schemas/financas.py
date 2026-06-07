@@ -252,6 +252,46 @@ class CompraResponse(BaseModel):
 
 
 # ══════════════════════════════════════════════════════════════════
+# Recorrências (despesas/receitas fixas)
+# ══════════════════════════════════════════════════════════════════
+
+class RecorrenciaCreate(BaseModel):
+    usuario_id: str
+    descricao: str
+    tipo: str = Field("despesa", description="despesa/receita")
+    valor_estimado: Decimal = Field(..., gt=0)
+    dia_vencimento: int = Field(..., ge=1, le=31)
+    categoria_id: Optional[str] = None
+    conta_id: Optional[str] = None
+    frequencia: str = "mensal"
+
+
+class RecorrenciaResponse(BaseModel):
+    id: str
+    usuario_id: str
+    descricao: str
+    tipo: str
+    valor_estimado: Decimal
+    dia_vencimento: int
+    frequencia: str
+    categoria_id: Optional[str] = None
+    conta_id: Optional[str] = None
+    ativa: bool
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class RecorrenciaListResponse(BaseModel):
+    items: List[RecorrenciaResponse]
+    total: int
+
+
+class ProcessarRecorrenciasResponse(BaseModel):
+    previstas_criadas: int
+    marcadas_atrasadas: int
+
+
+# ══════════════════════════════════════════════════════════════════
 # Resumo do mês
 # ══════════════════════════════════════════════════════════════════
 

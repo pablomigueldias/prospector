@@ -16,6 +16,7 @@ from app.api.routers import transacoes as transacoes_router
 from app.api.routers import resumo as resumo_router
 from app.api.routers import cartoes as cartoes_router
 from app.api.routers import compras as compras_router
+from app.api.routers import recorrencias as recorrencias_router
 from app.utils.logger import get_logger
 
 
@@ -73,3 +74,4 @@ app.include_router(transacoes_router.router)
 app.include_router(resumo_router.router)
 app.include_router(cartoes_router.router)
 app.include_router(compras_router.router)
+app.include_router(recorrencias_router.router)
