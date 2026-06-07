@@ -48,6 +48,15 @@ class Settings(BaseSettings):
     s3_secret_key: str = "minioadmin"
     s3_region: str = "us-east-1"
 
+    # Telegram (Organizador Financeiro). chat_id → usuario_id mapeia quem fala
+    # no bot pro perfil do financas (você / Sandra). Sem tabela usuarios ainda.
+    telegram_bot_token: str = ""
+    telegram_webhook_secret: str = ""
+    telegram_chat_id: str = ""
+    telegram_usuario_id: str = ""
+    telegram_chat_id_sandra: str = ""
+    telegram_usuario_id_sandra: str = ""
+
     # Rate limiting
     max_leads_per_day: int = 30
     min_delay_seconds: int = 5
