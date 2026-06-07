@@ -1,0 +1,132 @@
+"""Importador de boleto — o 'pulo do gato'.
+
+Recebe o arquivo (PDF/foto), sobe pro MinIO, manda pro LLM multimodal, valida
+o JSON e — se a soma das verbas bate com o total — cria a despesa com os itens
+(subverbas) e as leituras de consumo automaticamente. Se não bate, marca pra
+revisão manual (não cria nada, só guarda o extraído).
+"""
+from __future__ import annotations
+
+import asyncio
+import uuid
+from datetime import date
+from decimal import Decimal
+from typing import Optional
+
+from app.analyzers.boleto import extrator
+from app.analyzers.boleto.parser import parse_boleto
+from app.api.schemas.financas import ImportarBoletoResponse
+from app.api.services.financas.comprovante_service import salvar_comprovante
+from app.db.models.financas.comprovante import Comprovante
+from app.db.models.financas.leitura_consumo import TIPOS_CONSUMO, LeituraConsumo
+from app.db.models.financas.transacao import Transacao
+from app.db.models.financas.transacao_item import TransacaoItem
+from app.db.session import get_session
+
+
+class ImportadorError(Exception):
+    """Erro de negócio do importador — vira HTTP 400/404 no router."""
+
+
+def _uuid(valor: str, *, campo: str = "id") -> uuid.UUID:
+    try:
+        return uuid.UUID(str(valor))
+    except (ValueError, AttributeError):
+        raise ImportadorError(f"{campo} inválido: {valor!r}")
+
+
+async def importar_boleto(
+    *,
+    usuario_id: str,
+    conteudo: bytes,
+    nome_original: Optional[str] = None,
+    content_type: Optional[str] = None,
+    categoria_id: Optional[str] = None,
+) -> ImportarBoletoResponse:
+    uid = _uuid(usuario_id, campo="usuario_id")
+    cat_id = _uuid(categoria_id, campo="categoria_id") if categoria_id else None
+
+    # 1. Guarda o arquivo (upload + dedup).
+    comp = await salvar_comprovante(
+        usuario_id=usuario_id, tipo="boleto", conteudo=conteudo,
+        nome_original=nome_original, content_type=content_type,
+    )
+
+    # 2. Extrai via LLM multimodal (boto3/httpx síncrono → thread).
+    texto = await asyncio.to_thread(extrator.extrair_boleto_llm, conteudo, content_type)
+    extraido = parse_boleto(texto)
+    if extraido is None:
+        return ImportarBoletoResponse(
+            success=False, conferido=False, comprovante_id=comp.id,
+            mensagem="Não consegui ler o boleto. Tente uma foto mais nítida.",
+        )
+
+    soma = sum((v.valor for v in extraido.verbas), Decimal("0"))
+    conferido = bool(extraido.verbas) and soma == extraido.valor_total
+
+    competencia = (
+        date(extraido.vencimento.year, extraido.vencimento.month, 1)
+        if extraido.vencimento else date.today().replace(day=1)
+    )
+
+    transacao_id = None
+    async with get_session() as session:
+        comp_row = await session.get(Comprovante, _uuid(comp.id))
+        comp_row.extraido_json = extraido.model_dump(mode="json")
+
+        if conferido:
+            tx = Transacao(
+                usuario_id=uid,
+                tipo="despesa",
+                descricao=extraido.beneficiario or "Boleto",
+                valor_total=extraido.valor_total,
+                data_competencia=competencia,
+                data_vencimento=extraido.vencimento,
+                status="prevista",          # boleto importado = a pagar
+                origem="importacao_boleto",
+                categoria_id=cat_id,
+                itens=[
+                    TransacaoItem(descricao=v.descricao, valor=v.valor)
+                    for v in extraido.verbas
+                ],
+            )
+            session.add(tx)
+            await session.flush()
+            comp_row.transacao_id = tx.id
+            transacao_id = tx.id
+
+            for le in extraido.leituras:
+                if le.tipo not in TIPOS_CONSUMO or le.leitura_atual is None:
+                    continue
+                session.add(LeituraConsumo(
+                    usuario_id=uid,
+                    tipo=le.tipo,
+                    mes_referencia=competencia,
+                    leitura_atual=le.leitura_atual,
+                    leitura_anterior=le.leitura_anterior,
+                    consumo=le.consumo,
+                    valor=le.valor,
+                    transacao_id=tx.id,
+                ))
+
+        await session.commit()
+
+    if conferido:
+        msg = (
+            f"Boleto importado: despesa de R${extraido.valor_total} "
+            f"com {len(extraido.verbas)} verba(s)."
+        )
+    else:
+        msg = (
+            f"Verbas (R${soma}) não batem com o total (R${extraido.valor_total}). "
+            "Guardei o boleto pra revisão manual."
+        )
+
+    return ImportarBoletoResponse(
+        success=True,
+        conferido=conferido,
+        mensagem=msg,
+        comprovante_id=comp.id,
+        transacao_id=str(transacao_id) if transacao_id else None,
+        extraido=extraido,
+    )

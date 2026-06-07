@@ -53,6 +53,7 @@ def _to_response(t: Transacao) -> TransacaoResponse:
         valor_total=t.valor_total,
         data_competencia=t.data_competencia,
         data_pagamento=t.data_pagamento,
+        data_vencimento=t.data_vencimento,
         status=t.status,
         origem=t.origem,
         categoria_id=str(t.categoria_id) if t.categoria_id else None,

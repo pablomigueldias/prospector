@@ -19,6 +19,7 @@ from app.api.routers import compras as compras_router
 from app.api.routers import recorrencias as recorrencias_router
 from app.api.routers import leituras as leituras_router
 from app.api.routers import comprovantes as comprovantes_router
+from app.api.routers import importador as importador_router
 from app.utils.logger import get_logger
 
 
@@ -79,3 +80,4 @@ app.include_router(compras_router.router)
 app.include_router(recorrencias_router.router)
 app.include_router(leituras_router.router)
 app.include_router(comprovantes_router.router)
+app.include_router(importador_router.router)

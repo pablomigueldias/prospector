@@ -163,6 +163,7 @@ class TransacaoResponse(BaseModel):
     valor_total: Decimal
     data_competencia: date
     data_pagamento: Optional[date] = None
+    data_vencimento: Optional[date] = None
     status: str
     origem: str
     categoria_id: Optional[str] = None
@@ -289,6 +290,40 @@ class RecorrenciaListResponse(BaseModel):
 class ProcessarRecorrenciasResponse(BaseModel):
     previstas_criadas: int
     marcadas_atrasadas: int
+
+
+# ══════════════════════════════════════════════════════════════════
+# Importador de boleto (LLM multimodal)
+# ══════════════════════════════════════════════════════════════════
+
+class VerbaBoleto(BaseModel):
+    descricao: str
+    valor: Decimal
+
+
+class LeituraBoleto(BaseModel):
+    tipo: str                              # agua/gas/luz
+    leitura_atual: Optional[Decimal] = None
+    leitura_anterior: Optional[Decimal] = None
+    consumo: Optional[Decimal] = None
+    valor: Optional[Decimal] = None
+
+
+class BoletoExtraido(BaseModel):
+    beneficiario: Optional[str] = None
+    vencimento: Optional[date] = None
+    valor_total: Decimal
+    verbas: List[VerbaBoleto] = Field(default_factory=list)
+    leituras: List[LeituraBoleto] = Field(default_factory=list)
+
+
+class ImportarBoletoResponse(BaseModel):
+    success: bool                          # conseguiu ler o arquivo?
+    conferido: bool                        # soma das verbas == total?
+    mensagem: str
+    comprovante_id: Optional[str] = None
+    transacao_id: Optional[str] = None     # criada só quando conferido
+    extraido: Optional[BoletoExtraido] = None
 
 
 # ══════════════════════════════════════════════════════════════════
