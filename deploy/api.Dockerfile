@@ -2,7 +2,7 @@
 # api.Dockerfile — imagem da API FastAPI (Prospector + financas)
 # Build context = raiz do repo (ver docker-compose: context: ..)
 #
-# No start: roda 'alembic upgrade head' e sobe uvicorn em app.main:app.
+# No start: roda 'alembic upgrade head' e sobe uvicorn em app.api.main:app.
 # =============================================================================
 FROM python:3.12-slim
 
@@ -32,5 +32,5 @@ COPY backend/ ./
 
 EXPOSE 8000
 
-# Migrações + servidor. app.main:app é o ASGI app do FastAPI.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Migrações + servidor. app.api.main:app é o ASGI app do FastAPI.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.api.main:app --host 0.0.0.0 --port 8000"]
