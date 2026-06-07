@@ -430,3 +430,20 @@ export interface FaturasCartao {
   total_em_aberto: string;
   total_juros: string;
 }
+
+export interface LeituraConsumo {
+  id: string;
+  usuario_id: string;
+  tipo: string;
+  mes_referencia: string;
+  leitura_atual: string;
+  leitura_anterior?: string | null;
+  consumo?: string | null;
+  valor?: string | null;
+  transacao_id?: string | null;
+}
+
+export interface LeituraConsumoListResponse {
+  items: LeituraConsumo[];
+  total: number;
+}

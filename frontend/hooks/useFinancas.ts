@@ -1,7 +1,13 @@
 import { useFetch } from './useFetch';
 import { api } from '@/lib/api';
 import { FINANCAS_USUARIO_ID } from '@/lib/financas';
-import type { Cartao, FaturasCartao, Conta, ResumoMes } from '@/lib/types';
+import type {
+  Cartao,
+  FaturasCartao,
+  Conta,
+  LeituraConsumo,
+  ResumoMes,
+} from '@/lib/types';
 
 export function useResumoMes(ano: number, mes: number) {
   const result = useFetch<ResumoMes>(
@@ -33,4 +39,13 @@ export function useCartaoFaturas(cartaoId: string) {
     [cartaoId],
   );
   return { ...result, dados: result.data };
+}
+
+export function useLeituras(tipo?: string) {
+  const result = useFetch(
+    () => api.financasLeituras(FINANCAS_USUARIO_ID, tipo),
+    [tipo],
+  );
+  const leituras: LeituraConsumo[] = result.data?.items ?? [];
+  return { ...result, leituras };
 }

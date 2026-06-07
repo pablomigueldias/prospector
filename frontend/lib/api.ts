@@ -23,6 +23,7 @@ import type {
   ResumoMes,
   CartaoListResponse,
   FaturasCartao,
+  LeituraConsumoListResponse,
 } from './types';
 
 const API_URL =
@@ -310,5 +311,13 @@ export const api = {
       `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas`,
       { timeoutMs: 10_000 },
     );
+  },
+
+  financasLeituras(usuarioId: string, tipo?: string): Promise<LeituraConsumoListResponse> {
+    const q = new URLSearchParams({ usuario_id: usuarioId });
+    if (tipo) q.set('tipo', tipo);
+    return request<LeituraConsumoListResponse>(`/api/financas/leituras?${q}`, {
+      timeoutMs: 10_000,
+    });
   },
 };

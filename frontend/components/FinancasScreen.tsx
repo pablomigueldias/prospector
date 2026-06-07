@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { CartoesSection } from '@/components/CartoesSection';
 import { CategoriaDonut } from '@/components/CategoriaDonut';
+import { ConsumoSection } from '@/components/ConsumoSection';
 import { StatCard } from '@/components/StatCard';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
 import { formatBRL, formatMesAno } from '@/lib/format';
@@ -36,6 +37,19 @@ export default function FinancasScreen() {
   const saldoTotal = useMemo(
     () => contas.reduce((acc, c) => acc + Number(c.saldo_atual), 0),
     [contas],
+  );
+
+  const contasNormais = useMemo(
+    () => contas.filter((c) => c.tipo !== 'reserva'),
+    [contas],
+  );
+  const reservas = useMemo(
+    () => contas.filter((c) => c.tipo === 'reserva'),
+    [contas],
+  );
+  const totalGuardado = useMemo(
+    () => reservas.reduce((acc, c) => acc + Number(c.saldo_atual), 0),
+    [reservas],
   );
 
   const saldoMes = Number(resumo?.saldo ?? 0);
@@ -125,7 +139,38 @@ export default function FinancasScreen() {
             </span>
           )}
         </div>
-        <ContasList contas={contas} loading={contasLoading} />
+        <ContasList contas={contasNormais} loading={contasLoading} />
+      </section>
+
+      {/* Reservas (dinheiro guardado) */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
+            Reservas
+          </h2>
+          {reservas.length > 0 && (
+            <span className="text-[12.5px] text-ink-mute">
+              guardado: {formatBRL(totalGuardado)}
+            </span>
+          )}
+        </div>
+        {contasLoading ? (
+          <div className="card p-4 h-[84px] animate-pulse" />
+        ) : reservas.length === 0 ? (
+          <div className="card p-6 text-center text-ink-soft text-sm">
+            Sem reservas. Crie uma conta do tipo “reserva” pra guardar dinheiro.
+          </div>
+        ) : (
+          <ContasList contas={reservas} loading={false} />
+        )}
+      </section>
+
+      {/* Consumo (água/gás/luz) */}
+      <section className="mb-8">
+        <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0 mb-4">
+          Consumo
+        </h2>
+        <ConsumoSection />
       </section>
 
       {/* Cartões */}
