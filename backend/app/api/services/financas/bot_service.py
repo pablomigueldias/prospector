@@ -7,12 +7,17 @@ Sandra). As chamadas de saída ao Telegram (tg.*) são síncronas → asyncio.to
 from __future__ import annotations
 
 import asyncio
+import uuid
 from decimal import Decimal, InvalidOperation
+from datetime import date
 from typing import Optional
 
-from app.api.schemas.financas import DespesaCreate
-from app.api.services.financas import conta_service, transacao_service
+from app.api.schemas.financas import DespesaCreate, ReceitaCreate
+from app.api.services.financas import conta_service, nlu_service, transacao_service
+from app.api.services.financas.nlu_service import NLUError
 from app.config import settings
+from app.db.models.financas.bot_rascunho import BotRascunho
+from app.db.session import get_session
 from app.integrations import telegram as tg
 from app.utils.logger import get_logger
 
@@ -41,9 +46,13 @@ async def _responder(chat_id: str, texto: str, reply_markup: Optional[dict] = No
 
 
 async def processar_update(update: dict) -> dict:
+    # Clique num botão do card de confirmação.
+    if "callback_query" in update:
+        return await _callback(update["callback_query"])
+
     msg = update.get("message") or update.get("edited_message")
     if not msg:
-        return {"ok": True, "ignorado": True}  # callback_query etc. (Fase 5+)
+        return {"ok": True, "ignorado": True}
 
     chat_id = str(msg.get("chat", {}).get("id", ""))
     usuario_id = mapa_chat_usuario().get(chat_id)
@@ -60,8 +69,129 @@ async def processar_update(update: dict) -> dict:
     if texto.startswith("/gasto"):
         return await _cmd_gasto(chat_id, usuario_id, texto)
 
+    if texto and not texto.startswith("/"):
+        return await _texto_livre(chat_id, usuario_id, texto)
+
     await _responder(chat_id, "Não entendi 🤔\n\n" + AJUDA)
     return {"ok": True, "comando": None}
+
+
+def _card_keyboard(rid: str) -> dict:
+    return {"inline_keyboard": [
+        [{"text": "✅ Confirmar", "callback_data": f"confirmar:{rid}"},
+         {"text": "❌ Cancelar", "callback_data": f"cancelar:{rid}"}],
+        [{"text": "✏️ Editar", "callback_data": f"editar:{rid}"}],
+    ]}
+
+
+async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
+    """Interpreta a frase (NLU) e manda um card de confirmação."""
+    try:
+        interp = await nlu_service.interpretar_texto(usuario_id, texto)
+    except NLUError as e:
+        await _responder(chat_id, f"🤔 {e}")
+        return {"ok": True, "nlu": False}
+
+    payload = {
+        "tipo": interp.tipo,
+        "valor": str(interp.valor),
+        "descricao": interp.descricao,
+        "data": interp.data.isoformat(),
+        "conta_id": interp.conta_id,
+        "conta_nome": interp.conta_nome,
+        "categoria_id": interp.categoria_id,
+        "categoria_nome": interp.categoria_nome,
+    }
+    async with get_session() as session:
+        rascunho = BotRascunho(
+            usuario_id=uuid.UUID(usuario_id), chat_id=chat_id, payload=payload
+        )
+        session.add(rascunho)
+        await session.commit()
+        await session.refresh(rascunho)
+        rid = str(rascunho.id)
+
+    emoji = "💸" if interp.tipo == "despesa" else "💰"
+    linhas = [
+        f"{emoji} <b>{interp.tipo}</b>: R$ {interp.valor}",
+        f"📝 {interp.descricao}",
+        f"📅 {interp.data.isoformat()}",
+    ]
+    if interp.conta_nome:
+        linhas.append(f"🏦 {interp.conta_nome}")
+    if interp.categoria_nome:
+        linhas.append(f"🏷️ {interp.categoria_nome}")
+    linhas.append("\nConfirma?")
+    await _responder(chat_id, "\n".join(linhas), _card_keyboard(rid))
+    return {"ok": True, "rascunho_id": rid}
+
+
+async def _callback(cq: dict) -> dict:
+    cq_id = cq.get("id")
+    chat_id = str(cq.get("message", {}).get("chat", {}).get("id", ""))
+    if cq_id:
+        await asyncio.to_thread(tg.answer_callback_query, cq_id)
+
+    usuario_id = mapa_chat_usuario().get(chat_id)
+    if usuario_id is None:
+        return {"ok": True, "autorizado": False}
+
+    acao, _, rid = (cq.get("data") or "").partition(":")
+    try:
+        rid_uuid = uuid.UUID(rid)
+    except ValueError:
+        await _responder(chat_id, "Botão inválido 🤷")
+        return {"ok": True, "erro": "callback"}
+
+    async with get_session() as session:
+        rascunho = await session.get(BotRascunho, rid_uuid)
+        if rascunho is None or str(rascunho.usuario_id) != usuario_id:
+            await _responder(chat_id, "Esse rascunho expirou 🤷")
+            return {"ok": True, "rascunho": "expirado"}
+        payload = dict(rascunho.payload)
+        await session.delete(rascunho)   # consumido (confirmar/cancelar/editar)
+        await session.commit()
+
+    if acao == "cancelar":
+        await _responder(chat_id, "❌ Cancelado.")
+        return {"ok": True, "acao": "cancelar"}
+    if acao == "editar":
+        await _responder(chat_id, "✏️ Manda a frase corrigida que eu refaço.")
+        return {"ok": True, "acao": "editar"}
+    if acao == "confirmar":
+        return await _confirmar(chat_id, usuario_id, payload)
+
+    await _responder(chat_id, "Ação desconhecida 🤷")
+    return {"ok": True, "acao": acao}
+
+
+async def _confirmar(chat_id: str, usuario_id: str, payload: dict) -> dict:
+    valor = Decimal(payload["valor"])
+    tipo = payload["tipo"]
+    descricao = payload["descricao"]
+    competencia = date.fromisoformat(payload["data"])
+    conta_id = payload.get("conta_id")
+    categoria_id = payload.get("categoria_id")
+
+    if not conta_id:
+        contas = (await conta_service.listar_contas(usuario_id, apenas_ativas=True)).items
+        if not contas:
+            await _responder(chat_id, "Você não tem contas. Cadastre uma primeiro.")
+            return {"ok": True, "acao": "confirmar", "erro": "sem_conta"}
+        conta_id = contas[0].id
+
+    if tipo == "receita":
+        resp = await transacao_service.lancar_receita(ReceitaCreate(
+            usuario_id=usuario_id, descricao=descricao, valor_total=valor,
+            conta_id=conta_id, categoria_id=categoria_id, data_competencia=competencia,
+        ))
+    else:
+        resp = await transacao_service.lancar_despesa(DespesaCreate(
+            usuario_id=usuario_id, descricao=descricao, valor_total=valor,
+            conta_id=conta_id, categoria_id=categoria_id, data_competencia=competencia,
+        ))
+    await _responder(chat_id, f"✅ Lançado: <b>{descricao}</b> R$ {valor}.")
+    return {"ok": True, "acao": "confirmar", "transacao_id": resp.id}
 
 
 async def _cmd_gasto(chat_id: str, usuario_id: str, texto: str) -> dict:

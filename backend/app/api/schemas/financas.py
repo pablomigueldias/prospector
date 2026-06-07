@@ -142,6 +142,19 @@ class DespesaAutoSplitCreate(BaseModel):
     notas: Optional[str] = None
 
 
+class ReceitaCreate(BaseModel):
+    """Lançamento de receita simples (entra dinheiro numa conta)."""
+    usuario_id: str
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    conta_id: str = Field(..., description="Conta que recebeu o dinheiro")
+    categoria_id: Optional[str] = None
+    data_competencia: Optional[date] = None
+    data_pagamento: Optional[date] = None
+    status: str = Field("paga", description="prevista/paga/atrasada")
+    notas: Optional[str] = None
+
+
 class TransacaoItemResponse(BaseModel):
     id: str
     categoria_id: Optional[str] = None

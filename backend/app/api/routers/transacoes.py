@@ -4,6 +4,7 @@ from app.api.schemas.financas import (
     DespesaAutoSplitCreate,
     DespesaCreate,
     DespesaDivididaCreate,
+    ReceitaCreate,
     TransacaoResponse,
 )
 from app.api.services.financas import transacao_service
@@ -25,6 +26,15 @@ def _handle(e: Exception) -> HTTPException:
 async def lancar_despesa(body: DespesaCreate) -> TransacaoResponse:
     try:
         return await transacao_service.lancar_despesa(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/receita", response_model=TransacaoResponse, status_code=201,
+             summary="Lança uma receita simples (uma conta)")
+async def lancar_receita(body: ReceitaCreate) -> TransacaoResponse:
+    try:
+        return await transacao_service.lancar_receita(body)
     except Exception as e:
         raise _handle(e)
 

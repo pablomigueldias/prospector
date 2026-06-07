@@ -23,6 +23,7 @@ from app.db.models.financas.parcela import Parcela
 from app.db.models.financas.recorrencia import Recorrencia
 from app.db.models.financas.leitura_consumo import LeituraConsumo
 from app.db.models.financas.comprovante import Comprovante
+from app.db.models.financas.bot_rascunho import BotRascunho
 
 
 __all__ = [
@@ -49,4 +50,5 @@ __all__ = [
     "Recorrencia",
     "LeituraConsumo",
     "Comprovante",
+    "BotRascunho",
 ]

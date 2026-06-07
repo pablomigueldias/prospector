@@ -16,6 +16,7 @@ from app.api.schemas.financas import (
     DespesaAutoSplitCreate,
     DespesaCreate,
     DespesaDivididaCreate,
+    ReceitaCreate,
     TransacaoItemResponse,
     TransacaoPagamentoResponse,
     TransacaoResponse,
@@ -97,9 +98,10 @@ async def _validar_categoria(
             raise TransacaoError("Categoria não encontrada.")
 
 
-async def _finalizar_despesa(
+async def _finalizar_transacao(
     session: AsyncSession,
     *,
+    tipo: str,
     usuario_id: uuid.UUID,
     descricao: str,
     valor_total: Decimal,
@@ -110,11 +112,11 @@ async def _finalizar_despesa(
     notas: Optional[str],
     pagamentos: List[Tuple[Conta, Decimal]],
 ) -> TransacaoResponse:
-    """Núcleo: cria a despesa com N pagamentos e ajusta o saldo de cada conta
-    (só quando paga). Assume contas/categoria já validadas."""
+    """Núcleo: cria a transação (despesa/receita) com N pagamentos e ajusta o
+    saldo de cada conta (só quando paga). Assume contas/categoria já validadas."""
     transacao = Transacao(
         usuario_id=usuario_id,
-        tipo="despesa",
+        tipo=tipo,
         descricao=descricao,
         valor_total=valor_total,
         data_competencia=competencia,
@@ -133,7 +135,7 @@ async def _finalizar_despesa(
 
     if status == "paga":
         for conta, valor in pagamentos:
-            saldo_service.aplicar_movimento(conta, "despesa", valor)
+            saldo_service.aplicar_movimento(conta, tipo, valor)
 
     await session.commit()
     return _to_response(await repo.get(transacao.id))
@@ -166,8 +168,42 @@ async def lancar_despesa(payload: DespesaCreate) -> TransacaoResponse:
     async with get_session() as session:
         conta = await _buscar_conta(session, conta_id, usuario_id)
         await _validar_categoria(session, categoria_id)
-        return await _finalizar_despesa(
+        return await _finalizar_transacao(
             session,
+            tipo="despesa",
+            usuario_id=usuario_id,
+            descricao=payload.descricao.strip(),
+            valor_total=payload.valor_total,
+            categoria_id=categoria_id,
+            competencia=competencia,
+            pagamento_em=pagamento_em,
+            status=payload.status,
+            notas=payload.notas,
+            pagamentos=[(conta, payload.valor_total)],
+        )
+
+
+async def lancar_receita(payload: ReceitaCreate) -> TransacaoResponse:
+    if not payload.descricao.strip():
+        raise TransacaoError("A receita precisa de uma descrição.")
+    _checar_status(payload.status)
+
+    usuario_id = _uuid(payload.usuario_id, campo="usuario_id")
+    conta_id = _uuid(payload.conta_id, campo="conta_id")
+    categoria_id = (
+        _uuid(payload.categoria_id, campo="categoria_id")
+        if payload.categoria_id else None
+    )
+    competencia = payload.data_competencia or date.today()
+    paga = payload.status == "paga"
+    pagamento_em = payload.data_pagamento or (date.today() if paga else None)
+
+    async with get_session() as session:
+        conta = await _buscar_conta(session, conta_id, usuario_id)
+        await _validar_categoria(session, categoria_id)
+        return await _finalizar_transacao(
+            session,
+            tipo="receita",
             usuario_id=usuario_id,
             descricao=payload.descricao.strip(),
             valor_total=payload.valor_total,
@@ -212,8 +248,9 @@ async def lancar_despesa_dividida(
             )
             pagamentos.append((conta, p.valor))
 
-        return await _finalizar_despesa(
+        return await _finalizar_transacao(
             session,
+            tipo="despesa",
             usuario_id=usuario_id,
             descricao=payload.descricao.strip(),
             valor_total=payload.valor_total,
@@ -262,8 +299,9 @@ async def lancar_despesa_auto_split(
         if parte_fallback > 0:
             pagamentos.append((fallback, parte_fallback))
 
-        return await _finalizar_despesa(
+        return await _finalizar_transacao(
             session,
+            tipo="despesa",
             usuario_id=usuario_id,
             descricao=payload.descricao.strip(),
             valor_total=total,
