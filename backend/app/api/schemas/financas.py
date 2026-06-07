@@ -171,3 +171,22 @@ class TransacaoResponse(BaseModel):
     pagamentos: List[TransacaoPagamentoResponse] = Field(default_factory=list)
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+
+
+# ══════════════════════════════════════════════════════════════════
+# Resumo do mês
+# ══════════════════════════════════════════════════════════════════
+
+class CategoriaResumoItem(BaseModel):
+    categoria_id: Optional[str] = None
+    categoria_nome: str            # "Sem categoria" quando null
+    total: Decimal
+
+
+class ResumoMesResponse(BaseModel):
+    ano: int
+    mes: int
+    total_receitas: Decimal
+    total_despesas: Decimal
+    saldo: Decimal                 # receitas − despesas (sobra/déficit)
+    por_categoria: List[CategoriaResumoItem]   # despesas, maior → menor
