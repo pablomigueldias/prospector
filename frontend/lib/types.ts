@@ -366,3 +366,35 @@ export interface CandidaturaEmailItem {
   status: string;
   created_at?: string | null;
 }
+
+// ── Finanças (Organizador Financeiro pessoal) ──────────────────────
+export interface Conta {
+  id: string;
+  usuario_id: string;
+  nome: string;
+  tipo: string;
+  saldo_atual: string;
+  ativa: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ContaListResponse {
+  items: Conta[];
+  total: number;
+}
+
+export interface CategoriaResumoItem {
+  categoria_id?: string | null;
+  categoria_nome: string;
+  total: string;
+}
+
+export interface ResumoMes {
+  ano: number;
+  mes: number;
+  total_receitas: string;
+  total_despesas: string;
+  saldo: string;
+  por_categoria: CategoriaResumoItem[];
+}

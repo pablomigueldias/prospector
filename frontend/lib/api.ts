@@ -19,6 +19,8 @@ import type {
   AnalisarVagaResponse,
   GerarCandidaturaResponse,
   CandidaturaEmailItem,
+  ContaListResponse,
+  ResumoMes,
 } from './types';
 
 const API_URL =
@@ -272,5 +274,25 @@ export const api = {
       `/api/pessoal/vagas/${encodeURIComponent(id)}/rascunhos`,
       { timeoutMs: 10_000 },
     );
+  },
+
+  // ── Finanças ────────────────────────────────────────────────────
+  financasContas(usuarioId: string, apenasAtivas = false): Promise<ContaListResponse> {
+    const q = new URLSearchParams({
+      usuario_id: usuarioId,
+      apenas_ativas: String(apenasAtivas),
+    });
+    return request<ContaListResponse>(`/api/financas/contas?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasResumo(usuarioId: string, ano: number, mes: number): Promise<ResumoMes> {
+    const q = new URLSearchParams({
+      usuario_id: usuarioId,
+      ano: String(ano),
+      mes: String(mes),
+    });
+    return request<ResumoMes>(`/api/financas/resumo?${q}`, { timeoutMs: 10_000 });
   },
 };

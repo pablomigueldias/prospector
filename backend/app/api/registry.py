@@ -133,6 +133,23 @@ _AGENTS: List[Agent] = [
             "gera_rascunho": True,
         },
     ),
+    Agent(
+        slug="financas",
+        name="Finanças",
+        description=(
+            "Organizador financeiro pessoal: contas, despesas, cartões e "
+            "boletos. Importa o boleto por foto e lança gasto pelo Telegram."
+        ),
+        icon="ti-wallet",
+        status="active",
+        order=120,
+        category="Pessoal",
+        capabilities={
+            "resumo_mes": True,
+            "importa_boleto": True,
+            "bot_telegram": True,
+        },
+    ),
 ]
 
 
