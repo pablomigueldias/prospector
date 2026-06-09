@@ -1,7 +1,8 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.dependencies.auth import require_permission
 from app.api.schemas.pessoal import (
     AnalisarVagaResponse,
     CandidaturaEmailItem,
@@ -15,7 +16,11 @@ from app.api.schemas.pessoal import (
 from app.api.services.pessoal import vaga_service
 from app.api.services.pessoal.vaga_service import VagaError
 
-router = APIRouter(prefix="/api/pessoal/vagas", tags=["pessoal:vagas"])
+router = APIRouter(
+    prefix="/api/pessoal/vagas",
+    tags=["pessoal:vagas"],
+    dependencies=[Depends(require_permission("pessoal.ver"))],
+)
 
 
 def _handle(e: Exception) -> HTTPException:

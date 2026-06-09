@@ -9,6 +9,8 @@ import { MoreAgentsSection } from '@/components/MoreAgentsSection';
 import { ProspectorForm } from '@/components/ProspectorForm';
 import { StatCard } from '@/components/StatCard';
 import { useAgent, useAgents } from '@/hooks/useAgents';
+import { useAuth } from '@/contexts/AuthContext';
+import { permissaoDoAgente } from '@/lib/permissions';
 import { useProspectorHistory } from '@/hooks/useProspector';
 import  CopywriterScreen  from '@/components/CopywriterScreen';
 import OutreachScreen from '@/components/OutreachScreen';
@@ -24,6 +26,7 @@ export default function AgentPage() {
 
   const { agent, loading: agentLoading } = useAgent(slug);
   const { agents } = useAgents();
+  const { hasPermission } = useAuth();
 
   if (agentLoading) {
     return (
@@ -37,6 +40,25 @@ export default function AgentPage() {
     return (
       <DashboardLayout>
         <div className="text-ink">Agente não encontrado.</div>
+      </DashboardLayout>
+    );
+  }
+
+  // Guarda de permissão (UX). O backend é quem barra de verdade — se alguém
+  // burlar isto, as chamadas da tela voltam 403.
+  const need = permissaoDoAgente(agent.slug);
+  if (need && !hasPermission(need)) {
+    return (
+      <DashboardLayout currentAgentName={agent.name}>
+        <div className="max-w-md mx-auto pt-20 text-center">
+          <div className="eyebrow justify-center mb-3">Acesso negado</div>
+          <h1 className="font-display font-semibold text-2xl tracking-tight text-ink mb-2">
+            Você não tem acesso a {agent.name}
+          </h1>
+          <p className="text-[15px] text-ink-soft">
+            Fale com o administrador se precisar dessa permissão.
+          </p>
+        </div>
       </DashboardLayout>
     );
   }

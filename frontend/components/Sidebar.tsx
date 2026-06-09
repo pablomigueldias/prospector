@@ -9,6 +9,8 @@ import {
   IconSettings,
 } from './Icon';
 import { useAgents } from '@/hooks/useAgents';
+import { useAuth } from '@/contexts/AuthContext';
+import { permissaoDoAgente } from '@/lib/permissions';
 import type { Agent } from '@/lib/types';
 
 // Ordem em que os grupos aparecem na sidebar. Categorias fora desta
@@ -28,10 +30,17 @@ function ordenarCategorias(cats: string[]): string[] {
 
 export function Sidebar() {
   const { grouped, loading } = useAgents();
+  const { usuario, logout, hasPermission } = useAuth();
   const router = useRouter();
 
   const currentSlug =
     typeof router.query.slug === 'string' ? router.query.slug : null;
+
+  // UX: esconde agentes que o usuário não pode acessar (backend é quem trava).
+  const podeVer = (agent: Agent) => {
+    const need = permissaoDoAgente(agent.slug);
+    return !need || hasPermission(need);
+  };
 
   const categorias = ordenarCategorias(Object.keys(grouped));
 
@@ -58,20 +67,24 @@ export function Sidebar() {
       )}
 
       {!loading &&
-        categorias.map((categoria) => (
-          <div key={categoria}>
-            <div className="eyebrow mb-2 px-2">{categoria}</div>
-            <nav className="flex flex-col gap-0.5">
-              {grouped[categoria].map((agent) => (
-                <SidebarAgentItem
-                  key={agent.slug}
-                  agent={agent}
-                  active={currentSlug === agent.slug}
-                />
-              ))}
-            </nav>
-          </div>
-        ))}
+        categorias.map((categoria) => {
+          const visiveis = grouped[categoria].filter(podeVer);
+          if (visiveis.length === 0) return null;
+          return (
+            <div key={categoria}>
+              <div className="eyebrow mb-2 px-2">{categoria}</div>
+              <nav className="flex flex-col gap-0.5">
+                {visiveis.map((agent) => (
+                  <SidebarAgentItem
+                    key={agent.slug}
+                    agent={agent}
+                    active={currentSlug === agent.slug}
+                  />
+                ))}
+              </nav>
+            </div>
+          );
+        })}
 
       <div>
         <div className="eyebrow mb-2 px-2">Workspace</div>
@@ -93,12 +106,25 @@ export function Sidebar() {
 
       <div className="flex items-center gap-2.5 p-2.5 bg-bg-alt rounded">
         <div className="w-8 h-8 rounded-full bg-ink text-white flex items-center justify-center font-display font-semibold text-[13px]">
-          P
+          {(usuario?.nome ?? '?').charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-medium text-ink">Pablo</div>
-          <div className="text-[11px] text-ink-mute">Reative Systems</div>
+          <div className="text-[13px] font-medium text-ink truncate">
+            {usuario?.nome ?? '—'}
+          </div>
+          <div className="text-[11px] text-ink-mute truncate">
+            {usuario?.email ?? ''}
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => void logout()}
+          title="Sair"
+          aria-label="Sair"
+          className="text-[11px] font-medium text-ink-mute hover:text-brand transition-colors px-1.5 py-1"
+        >
+          Sair
+        </button>
       </div>
     </aside>
   );
