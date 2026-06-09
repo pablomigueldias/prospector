@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routers import auth as auth_router
 from app.api.routers import agents as agents_router
 from app.api.routers import prospector as prospector_router
 from app.api.routers import copywriter as copywriter_router
@@ -62,6 +63,9 @@ app.add_middleware(
 def healthcheck() -> dict:
     return {"status": "ok", "service": "reativa-agents-api"}
 
+
+# ── Autenticação (portão de entrada) ──────────────────────────────
+app.include_router(auth_router.router)
 
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)

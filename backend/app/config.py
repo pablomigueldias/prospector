@@ -57,6 +57,17 @@ class Settings(BaseSettings):
     telegram_chat_id_sandra: str = ""
     telegram_usuario_id_sandra: str = ""
 
+    # Auth / sessão (portão de entrada). Cookie opaco httpOnly; o token vai
+    # hasheado no Postgres (ver app.api.services.auth). Em produção o Caddy
+    # serve tudo em HTTPS → cookie Secure + prefixo __Host-. Em dev http puro,
+    # ponha SESSION_COOKIE_SECURE=false (aí o cookie vira só "sessao").
+    session_cookie_secure: bool = True
+    session_dias_absoluto: int = 7      # expiração absoluta
+    session_horas_inatividade: int = 24  # expira se ficar parado tanto tempo
+    # Seed do admin (script seed_admin.py). Nunca hardcoded no código.
+    admin_email: str = ""
+    admin_senha_inicial: str = ""
+
     # Rate limiting
     max_leads_per_day: int = 30
     min_delay_seconds: int = 5
