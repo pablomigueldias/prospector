@@ -9,7 +9,12 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from app.api.services.auth import rate_limit, senha_service, sessao_service
+from app.api.services.auth import (
+    auditoria_service,
+    rate_limit,
+    senha_service,
+    sessao_service,
+)
 from app.api.services.auth.rate_limit import Bloqueado  # noqa: F401 (re-export pro router)
 from app.db.models.auth.usuario import Usuario
 from app.db.session import get_session
@@ -48,6 +53,10 @@ async def login(
         )
         await rate_limit.registrar(session, email_norm, ip, sucesso=ok)
         if not ok:
+            await auditoria_service.registrar(
+                session, auditoria_service.LOGIN_FALHA,
+                ip=ip, user_agent=user_agent, detalhe={"email": email_norm},
+            )
             await session.commit()  # persiste a tentativa falha (pro lockout)
             raise CredenciaisInvalidas("Email ou senha inválidos.")
 
@@ -58,6 +67,10 @@ async def login(
         usuario.ultimo_login = sessao_service._agora()
         token = await sessao_service.criar_sessao(
             session, usuario.id, ip=ip, user_agent=user_agent
+        )
+        await auditoria_service.registrar(
+            session, auditoria_service.LOGIN_OK,
+            usuario_id=usuario.id, ip=ip, user_agent=user_agent,
         )
         await session.commit()
         await session.refresh(usuario)

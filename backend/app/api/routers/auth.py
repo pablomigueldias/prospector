@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.dependencies.auth import usuario_atual
 from app.api.schemas.auth import LoginRequest, MensagemResponse, UsuarioResponse
-from app.api.services.auth import login_service, sessao_service, usuario_service
+from app.api.services.auth import (
+    auditoria_service,
+    login_service,
+    sessao_service,
+    usuario_service,
+)
 from app.api.services.auth import permissoes as permissoes_service
 from app.api.services.auth.cookie import clear_session_cookie, cookie_name, set_session_cookie
 from app.api.services.auth.csrf import set_csrf_cookie
@@ -54,7 +59,13 @@ async def logout(request: Request, response: Response) -> MensagemResponse:
     token = request.cookies.get(cookie_name())
     if token:
         async with get_session() as session:
-            await sessao_service.revogar_token(session, token)
+            uid = await sessao_service.revogar_token(session, token)
+            if uid:
+                await auditoria_service.registrar(
+                    session, auditoria_service.LOGOUT, usuario_id=uid,
+                    ip=usuario_service.ip_do_request(request),
+                    user_agent=usuario_service.user_agent_do_request(request),
+                )
             await session.commit()
     clear_session_cookie(response)
     return MensagemResponse(ok=True, mensagem="Sessão encerrada.")
@@ -63,10 +74,16 @@ async def logout(request: Request, response: Response) -> MensagemResponse:
 @router.post("/logout-all", response_model=MensagemResponse,
              summary="Sai de todos os dispositivos")
 async def logout_all(
-    response: Response, usuario: Usuario = Depends(usuario_atual)
+    request: Request, response: Response, usuario: Usuario = Depends(usuario_atual)
 ) -> MensagemResponse:
     async with get_session() as session:
         n = await sessao_service.revogar_todas(session, usuario.id)
+        await auditoria_service.registrar(
+            session, auditoria_service.LOGOUT_ALL, usuario_id=usuario.id,
+            ip=usuario_service.ip_do_request(request),
+            user_agent=usuario_service.user_agent_do_request(request),
+            detalhe={"sessoes": n},
+        )
         await session.commit()
     clear_session_cookie(response)
     return MensagemResponse(ok=True, mensagem=f"{n} sessão(ões) encerrada(s).")

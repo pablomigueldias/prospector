@@ -91,16 +91,16 @@ async def validar_token(
     return usuario
 
 
-async def revogar_token(session: AsyncSession, token: str) -> bool:
-    """Revoga a sessão do token (logout). True se achou e revogou."""
+async def revogar_token(session: AsyncSession, token: str) -> Optional[uuid.UUID]:
+    """Revoga a sessão do token (logout). Devolve o usuario_id revogado, ou None."""
     sessao = await session.scalar(
         select(Sessao).where(Sessao.token_hash == hash_token(token))
     )
     if sessao is None or sessao.revogada:
-        return False
+        return None
     sessao.revogada = True
     await session.flush()
-    return True
+    return sessao.usuario_id
 
 
 async def revogar_todas(session: AsyncSession, usuario_id: uuid.UUID) -> int:
