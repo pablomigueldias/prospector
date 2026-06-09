@@ -1,3 +1,7 @@
+# ── Autenticação/Autorização (schema auth) — portão de entrada ─────
+from app.db.models.auth.usuario import Usuario
+from app.db.models.auth.sessao import Sessao
+
 from app.db.models.empresa import Empresa
 from app.db.models.contato import Contato
 from app.db.models.socio import Socio
@@ -27,6 +31,9 @@ from app.db.models.financas.bot_rascunho import BotRascunho
 
 
 __all__ = [
+    # auth
+    "Usuario",
+    "Sessao",
     "Empresa",
     "Contato",
     "Socio",

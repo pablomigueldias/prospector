@@ -46,7 +46,7 @@ target_metadata = Base.metadata
 # passa a enxergar TODOS os schemas do banco e quereria dropar tabelas de
 # schemas que não são nossos (extensões etc.). O filtro abaixo restringe a
 # comparação só ao public + financas. (None = schema default = public.)
-MANAGED_SCHEMAS = {None, "public", "financas"}
+MANAGED_SCHEMAS = {None, "public", "financas", "auth"}
 
 
 def include_name(name, type_, parent_names):  # noqa: ANN001, ANN201
