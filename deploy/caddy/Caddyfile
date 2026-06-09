@@ -7,13 +7,29 @@
 #
 #  Caddy emite e renova o certificado sozinho na primeira visita HTTPS.
 # ────────────────────────────────────────────────────────────────────────────
-
 {
 	email {$ACME_EMAIL}
 }
 
 {$DOMAIN} {
 	encode gzip zstd
+
+	# ── Headers de segurança (aplicados a todas as respostas) ──────────
+	header {
+		# Força HTTPS por 1 ano (inclui subdomínios; elegível a preload)
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		# Anti-MIME-sniffing
+		X-Content-Type-Options "nosniff"
+		# Anti-clickjacking (redundante com frame-ancestors, mas cobre browsers antigos)
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# CSP: front e API são same-origin (via Caddy), então 'self' cobre fetch/SSE.
+		# 'unsafe-inline' no script é pragmático pro Next (Pages Router); dá pra
+		# trocar por nonce no futuro sem mexer no resto.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+		# Não revela a versão do servidor
+		-Server
+	}
 
 	# Webhook do Telegram vai direto pra API (caminho preservado)
 	handle /telegram/* {
