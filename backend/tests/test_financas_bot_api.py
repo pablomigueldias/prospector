@@ -59,8 +59,10 @@ def smoke_test() -> None:
 
     orig_map = bot_service.mapa_chat_usuario
     orig_send = tg.send_message
+    orig_secret = settings.telegram_webhook_secret
     bot_service.mapa_chat_usuario = lambda: {CHAT: usuario_id}
     tg.send_message = lambda chat_id, text_, reply_markup=None: enviadas.append((str(chat_id), text_)) or {"ok": True}
+    settings.telegram_webhook_secret = ""  # teste não envia o header do secret
 
     with TestClient(app) as client:
         try:
@@ -111,6 +113,7 @@ def smoke_test() -> None:
         finally:
             bot_service.mapa_chat_usuario = orig_map
             tg.send_message = orig_send
+            settings.telegram_webhook_secret = orig_secret
             asyncio.run(_cleanup(usuario_id))
 
     print("\n" + "━" * 60)

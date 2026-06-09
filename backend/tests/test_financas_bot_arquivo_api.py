@@ -73,6 +73,8 @@ def smoke_test() -> None:
     orig_send = tg.send_message
     orig_path, orig_dl = tg.get_file_path, tg.download_file
     orig_llm = boleto_extrator.extrair_boleto_llm
+    orig_secret = settings.telegram_webhook_secret
+    settings.telegram_webhook_secret = ""  # teste não envia o header do secret
     bot_service.mapa_chat_usuario = lambda: {CHAT: usuario_id}
     tg.send_message = lambda c, t, rm=None: enviadas.append(t) or {"ok": True}
     tg.get_file_path = lambda fid: "boletos/file.pdf"
@@ -109,6 +111,7 @@ def smoke_test() -> None:
             tg.send_message = orig_send
             tg.get_file_path, tg.download_file = orig_path, orig_dl
             boleto_extrator.extrair_boleto_llm = orig_llm
+            settings.telegram_webhook_secret = orig_secret
             asyncio.run(_cleanup(usuario_id))
 
     print("\n" + "━" * 60)

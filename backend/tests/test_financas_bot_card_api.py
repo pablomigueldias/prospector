@@ -69,6 +69,8 @@ def smoke_test() -> None:
     orig_map = bot_service.mapa_chat_usuario
     orig_send, orig_ans = tg.send_message, tg.answer_callback_query
     orig_llm = extrator.interpretar_llm
+    orig_secret = settings.telegram_webhook_secret
+    settings.telegram_webhook_secret = ""  # teste não envia o header do secret
     bot_service.mapa_chat_usuario = lambda: {CHAT: usuario_id}
     tg.send_message = lambda c, t, rm=None: enviadas.append((str(c), t, rm)) or {"ok": True}
     tg.answer_callback_query = lambda cid, text_=None: {"ok": True}
@@ -127,6 +129,7 @@ def smoke_test() -> None:
         finally:
             bot_service.mapa_chat_usuario = orig_map
             tg.send_message, tg.answer_callback_query = orig_send, orig_ans
+            settings.telegram_webhook_secret = orig_secret
             extrator.interpretar_llm = orig_llm
             asyncio.run(_cleanup(usuario_id))
 
