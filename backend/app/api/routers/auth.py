@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.dependencies.auth import usuario_atual
 from app.api.schemas.auth import LoginRequest, MensagemResponse, UsuarioResponse
 from app.api.services.auth import login_service, sessao_service, usuario_service
+from app.api.services.auth import permissoes as permissoes_service
 from app.api.services.auth.cookie import clear_session_cookie, cookie_name, set_session_cookie
 from app.api.services.auth.login_service import CredenciaisInvalidas
 from app.db.models.auth.usuario import Usuario
@@ -33,7 +34,9 @@ async def login(body: LoginRequest, request: Request, response: Response) -> Usu
 
 @router.get("/me", response_model=UsuarioResponse, summary="Usuário logado + permissões")
 async def me(usuario: Usuario = Depends(usuario_atual)) -> UsuarioResponse:
-    return usuario_service.to_response(usuario)
+    async with get_session() as session:
+        codigos = await permissoes_service.listar_codigos(session, usuario.id)
+    return usuario_service.to_response(usuario, permissoes=codigos)
 
 
 @router.post("/logout", response_model=MensagemResponse, summary="Encerra a sessão atual")
