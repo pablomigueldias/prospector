@@ -26,6 +26,8 @@ import type {
   LeituraConsumoListResponse,
   ComprovanteListResponse,
   Usuario,
+  UsuarioAdminItem,
+  PapelItem,
 } from './types';
 
 const API_URL =
@@ -389,6 +391,35 @@ export const api = {
     return request('/api/auth/senha', {
       method: 'POST',
       body: { senha_atual: senhaAtual, senha_nova: senhaNova },
+      timeoutMs: 15_000,
+    });
+  },
+
+  // ── Admin de usuários (exige usuarios.gerenciar) ─────────────────
+  adminListarPapeis(): Promise<PapelItem[]> {
+    return request('/api/admin/papeis', { timeoutMs: 10_000 });
+  },
+
+  adminListarUsuarios(): Promise<{ items: UsuarioAdminItem[]; total: number }> {
+    return request('/api/admin/usuarios', { timeoutMs: 10_000 });
+  },
+
+  adminCriarUsuario(body: {
+    email: string;
+    nome: string;
+    senha: string;
+    papeis: string[];
+  }): Promise<UsuarioAdminItem> {
+    return request('/api/admin/usuarios', { method: 'POST', body, timeoutMs: 15_000 });
+  },
+
+  adminAtualizarUsuario(
+    id: string,
+    body: { nome?: string; ativo?: boolean; papeis?: string[] },
+  ): Promise<UsuarioAdminItem> {
+    return request(`/api/admin/usuarios/${id}`, {
+      method: 'PATCH',
+      body,
       timeoutMs: 15_000,
     });
   },

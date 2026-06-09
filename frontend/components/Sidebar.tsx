@@ -89,6 +89,17 @@ export function Sidebar() {
       <div>
         <div className="eyebrow mb-2 px-2">Workspace</div>
         <nav className="flex flex-col gap-0.5">
+          {hasPermission('usuarios.gerenciar') && (
+            <Link
+              href="/admin/usuarios"
+              className="flex items-center gap-2.5 px-2.5 py-2.5 rounded text-[13.5px] font-medium text-ink-soft hover:bg-bg-alt hover:text-ink transition-colors"
+            >
+              <span className="text-base text-ink-mute w-4">
+                <IconSettings />
+              </span>
+              <span>Usuários</span>
+            </Link>
+          )}
           <SidebarStaticItem icon={<IconChartBar />} label="Métricas" disabled />
           <SidebarStaticItem icon={<IconSettings />} label="Conexões" disabled />
         </nav>

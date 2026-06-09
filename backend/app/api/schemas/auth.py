@@ -30,3 +30,38 @@ class UsuarioResponse(BaseModel):
 class MensagemResponse(BaseModel):
     ok: bool = True
     mensagem: str = ""
+
+
+# ── Admin de usuários ──────────────────────────────────────────────
+class PapelItem(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+
+
+class UsuarioAdminItem(BaseModel):
+    id: str
+    email: str
+    nome: str
+    ativo: bool
+    twofa_ativado: bool
+    papeis: List[str]
+    ultimo_login: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class UsuarioAdminListResponse(BaseModel):
+    items: List[UsuarioAdminItem]
+    total: int
+
+
+class UsuarioAdminCreate(BaseModel):
+    email: str
+    nome: str
+    senha: str = Field(..., description="Senha inicial (validada por força)")
+    papeis: List[str] = Field(default_factory=lambda: ["padrao"])
+
+
+class UsuarioAdminUpdate(BaseModel):
+    nome: Optional[str] = None
+    ativo: Optional[bool] = None
+    papeis: Optional[List[str]] = None

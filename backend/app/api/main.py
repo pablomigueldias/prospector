@@ -8,6 +8,7 @@ from app.api.services.auth.cookie import cookie_name
 from app.api.services.auth.csrf import valido as csrf_valido
 
 from app.api.routers import auth as auth_router
+from app.api.routers import admin_usuarios as admin_usuarios_router
 from app.api.routers import agents as agents_router
 from app.api.routers import prospector as prospector_router
 from app.api.routers import copywriter as copywriter_router
@@ -89,6 +90,7 @@ def healthcheck() -> dict:
 
 # ── Autenticação (portão de entrada) ──────────────────────────────
 app.include_router(auth_router.router)
+app.include_router(admin_usuarios_router.router)
 
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)
