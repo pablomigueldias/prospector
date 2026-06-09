@@ -8,6 +8,7 @@ from app.api.schemas.auth import LoginRequest, MensagemResponse, UsuarioResponse
 from app.api.services.auth import login_service, sessao_service, usuario_service
 from app.api.services.auth import permissoes as permissoes_service
 from app.api.services.auth.cookie import clear_session_cookie, cookie_name, set_session_cookie
+from app.api.services.auth.csrf import set_csrf_cookie
 from app.api.services.auth.login_service import Bloqueado, CredenciaisInvalidas
 from app.db.models.auth.usuario import Usuario
 from app.db.session import get_session
@@ -32,13 +33,17 @@ async def login(body: LoginRequest, request: Request, response: Response) -> Usu
         raise HTTPException(status_code=401, detail=str(e))
 
     set_session_cookie(response, token)
+    set_csrf_cookie(response)  # par do double-submit, legível pelo JS
     async with get_session() as session:
         codigos = await permissoes_service.listar_codigos(session, usuario.id)
     return usuario_service.to_response(usuario, permissoes=codigos)
 
 
 @router.get("/me", response_model=UsuarioResponse, summary="Usuário logado + permissões")
-async def me(usuario: Usuario = Depends(usuario_atual)) -> UsuarioResponse:
+async def me(
+    response: Response, usuario: Usuario = Depends(usuario_atual)
+) -> UsuarioResponse:
+    set_csrf_cookie(response)  # garante o cookie CSRF a cada carga do app
     async with get_session() as session:
         codigos = await permissoes_service.listar_codigos(session, usuario.id)
     return usuario_service.to_response(usuario, permissoes=codigos)

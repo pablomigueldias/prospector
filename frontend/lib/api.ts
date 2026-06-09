@@ -35,6 +35,18 @@ const API_URL =
 
 const DEFAULT_TIMEOUT_MS = 180_000; // 3 min
 
+/** Lê o cookie CSRF (legível pelo JS) — nomes dev/prod. */
+function lerCookieCsrf(): string | null {
+  if (typeof document === 'undefined') return null;
+  for (const nome of ['__Host-csrf', 'csrf_token']) {
+    const m = document.cookie.match(
+      new RegExp('(?:^|; )' + nome.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'),
+    );
+    if (m) return decodeURIComponent(m[1]);
+  }
+  return null;
+}
+
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
@@ -52,11 +64,20 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     else signal.addEventListener('abort', () => controller.abort());
   }
 
+  const headers: Record<string, string> = {};
+  if (body) headers['Content-Type'] = 'application/json';
+  // CSRF (double-submit): em mutações, reenvia o cookie CSRF como header. O
+  // backend só exige isso quando há cookie de sessão.
+  if (method !== 'GET') {
+    const csrf = lerCookieCsrf();
+    if (csrf) headers['X-CSRF-Token'] = csrf;
+  }
+
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers,
       body: body ? JSON.stringify(body) : undefined,
       // Sempre manda o cookie de sessão (auth). Em prod é first-party (mesmo
       // domínio via Caddy); em dev é cross-port mas same-site, então o cookie

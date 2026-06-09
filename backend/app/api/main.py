@@ -1,7 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.api.services.auth.cookie import cookie_name
+from app.api.services.auth.csrf import valido as csrf_valido
 
 from app.api.routers import auth as auth_router
 from app.api.routers import agents as agents_router
@@ -57,6 +61,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+_METODOS_MUTACAO = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+@app.middleware("http")
+async def csrf_middleware(request: Request, call_next):
+    """Exige CSRF só quando a mutação vem autenticada por cookie de sessão.
+
+    Requests sem cookie de sessão (login, webhook do Telegram com secret, clientes
+    de API) não são alvo de CSRF e passam direto.
+    """
+    if request.method in _METODOS_MUTACAO and request.cookies.get(cookie_name()):
+        if not csrf_valido(request):
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "CSRF token inválido ou ausente."},
+            )
+    return await call_next(request)
 
 
 @app.get("/api/health", tags=["meta"])
