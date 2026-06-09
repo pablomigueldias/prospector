@@ -25,6 +25,7 @@ import type {
   FaturasCartao,
   LeituraConsumoListResponse,
   ComprovanteListResponse,
+  Usuario,
 } from './types';
 
 const API_URL =
@@ -57,6 +58,10 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
       method,
       headers: body ? { 'Content-Type': 'application/json' } : undefined,
       body: body ? JSON.stringify(body) : undefined,
+      // Sempre manda o cookie de sessão (auth). Em prod é first-party (mesmo
+      // domínio via Caddy); em dev é cross-port mas same-site, então o cookie
+      // viaja com credentials:'include' + CORS allow_credentials no backend.
+      credentials: 'include',
       signal: controller.signal,
     });
   } catch (err) {
@@ -328,5 +333,25 @@ export const api = {
     return request<ComprovanteListResponse>(`/api/financas/comprovantes?${q}`, {
       timeoutMs: 10_000,
     });
+  },
+
+  // ── Auth ────────────────────────────────────────────────────────
+  /** POST /api/auth/login — seta o cookie de sessão e devolve o usuário */
+  authLogin(email: string, senha: string): Promise<Usuario> {
+    return request<Usuario>('/api/auth/login', {
+      method: 'POST',
+      body: { email, senha },
+      timeoutMs: 15_000,
+    });
+  },
+
+  /** GET /api/auth/me — usuário logado + permissões (401 se sem sessão) */
+  authMe(): Promise<Usuario> {
+    return request<Usuario>('/api/auth/me', { timeoutMs: 10_000 });
+  },
+
+  /** POST /api/auth/logout — encerra a sessão atual */
+  authLogout(): Promise<{ ok: boolean; mensagem: string }> {
+    return request('/api/auth/logout', { method: 'POST', timeoutMs: 10_000 });
   },
 };

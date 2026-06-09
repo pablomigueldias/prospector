@@ -87,6 +87,17 @@ export interface LeadHistoryResponse {
   total: number;
 }
 
+// ── Auth (login / sessão / permissões) ─────────────────────────────
+export interface Usuario {
+  id: string;
+  email: string;
+  nome: string;
+  ativo: boolean;
+  twofa_ativado: boolean;
+  ultimo_login: string | null;
+  permissoes: string[];
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,

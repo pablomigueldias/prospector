@@ -97,7 +97,10 @@ def smoke_test() -> None:
             # ── 2. admin: tem tudo, passa na rota ─────────────────────
             print("\n→ Test 2: usuário 'admin' — permissões e 200")
             client.cookies.clear()
-            assert client.post(LOGIN, json={"email": EMAIL_ADMIN, "senha": SENHA}).status_code == 200
+            rlogin = client.post(LOGIN, json={"email": EMAIL_ADMIN, "senha": SENHA})
+            assert rlogin.status_code == 200
+            # o próprio login já devolve as permissões (não só o /me)
+            assert "pessoal.ver" in rlogin.json()["permissoes"], rlogin.json()["permissoes"]
             perms_admin = client.get(ME).json()["permissoes"]
             assert "pessoal.ver" in perms_admin
             assert "usuarios.gerenciar" in perms_admin
