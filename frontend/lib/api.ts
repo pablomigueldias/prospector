@@ -19,6 +19,15 @@ import type {
   AnalisarVagaResponse,
   GerarCandidaturaResponse,
   CandidaturaEmailItem,
+  ContaListResponse,
+  ResumoMes,
+  CartaoListResponse,
+  FaturasCartao,
+  LeituraConsumoListResponse,
+  ComprovanteListResponse,
+  Usuario,
+  UsuarioAdminItem,
+  PapelItem,
 } from './types';
 
 const API_URL =
@@ -27,6 +36,18 @@ const API_URL =
 
 
 const DEFAULT_TIMEOUT_MS = 180_000; // 3 min
+
+/** Lê o cookie CSRF (legível pelo JS) — nomes dev/prod. */
+function lerCookieCsrf(): string | null {
+  if (typeof document === 'undefined') return null;
+  for (const nome of ['__Host-csrf', 'csrf_token']) {
+    const m = document.cookie.match(
+      new RegExp('(?:^|; )' + nome.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'),
+    );
+    if (m) return decodeURIComponent(m[1]);
+  }
+  return null;
+}
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -45,12 +66,25 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     else signal.addEventListener('abort', () => controller.abort());
   }
 
+  const headers: Record<string, string> = {};
+  if (body) headers['Content-Type'] = 'application/json';
+  // CSRF (double-submit): em mutações, reenvia o cookie CSRF como header. O
+  // backend só exige isso quando há cookie de sessão.
+  if (method !== 'GET') {
+    const csrf = lerCookieCsrf();
+    if (csrf) headers['X-CSRF-Token'] = csrf;
+  }
+
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers,
       body: body ? JSON.stringify(body) : undefined,
+      // Sempre manda o cookie de sessão (auth). Em prod é first-party (mesmo
+      // domínio via Caddy); em dev é cross-port mas same-site, então o cookie
+      // viaja com credentials:'include' + CORS allow_credentials no backend.
+      credentials: 'include',
       signal: controller.signal,
     });
   } catch (err) {
@@ -272,5 +306,121 @@ export const api = {
       `/api/pessoal/vagas/${encodeURIComponent(id)}/rascunhos`,
       { timeoutMs: 10_000 },
     );
+  },
+
+  // ── Finanças ────────────────────────────────────────────────────
+  financasContas(usuarioId: string, apenasAtivas = false): Promise<ContaListResponse> {
+    const q = new URLSearchParams({
+      usuario_id: usuarioId,
+      apenas_ativas: String(apenasAtivas),
+    });
+    return request<ContaListResponse>(`/api/financas/contas?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasResumo(usuarioId: string, ano: number, mes: number): Promise<ResumoMes> {
+    const q = new URLSearchParams({
+      usuario_id: usuarioId,
+      ano: String(ano),
+      mes: String(mes),
+    });
+    return request<ResumoMes>(`/api/financas/resumo?${q}`, { timeoutMs: 10_000 });
+  },
+
+  financasCartoes(usuarioId: string): Promise<CartaoListResponse> {
+    const q = new URLSearchParams({ usuario_id: usuarioId });
+    return request<CartaoListResponse>(`/api/financas/cartoes?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCartaoFaturas(cartaoId: string): Promise<FaturasCartao> {
+    return request<FaturasCartao>(
+      `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  financasLeituras(usuarioId: string, tipo?: string): Promise<LeituraConsumoListResponse> {
+    const q = new URLSearchParams({ usuario_id: usuarioId });
+    if (tipo) q.set('tipo', tipo);
+    return request<LeituraConsumoListResponse>(`/api/financas/leituras?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasComprovantes(usuarioId: string, tipo?: string): Promise<ComprovanteListResponse> {
+    const q = new URLSearchParams({ usuario_id: usuarioId });
+    if (tipo) q.set('tipo', tipo);
+    return request<ComprovanteListResponse>(`/api/financas/comprovantes?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  // ── Auth ────────────────────────────────────────────────────────
+  /** POST /api/auth/login — seta o cookie de sessão e devolve o usuário */
+  authLogin(email: string, senha: string): Promise<Usuario> {
+    return request<Usuario>('/api/auth/login', {
+      method: 'POST',
+      body: { email, senha },
+      timeoutMs: 15_000,
+    });
+  },
+
+  /** GET /api/auth/me — usuário logado + permissões (401 se sem sessão) */
+  authMe(): Promise<Usuario> {
+    return request<Usuario>('/api/auth/me', { timeoutMs: 10_000 });
+  },
+
+  /** POST /api/auth/logout — encerra a sessão atual */
+  authLogout(): Promise<{ ok: boolean; mensagem: string }> {
+    return request('/api/auth/logout', { method: 'POST', timeoutMs: 10_000 });
+  },
+
+  /** POST /api/auth/logout-all — sai de todos os dispositivos */
+  authLogoutAll(): Promise<{ ok: boolean; mensagem: string }> {
+    return request('/api/auth/logout-all', { method: 'POST', timeoutMs: 10_000 });
+  },
+
+  /** POST /api/auth/senha — troca a senha (revoga as outras sessões) */
+  authTrocarSenha(
+    senhaAtual: string,
+    senhaNova: string,
+  ): Promise<{ ok: boolean; mensagem: string }> {
+    return request('/api/auth/senha', {
+      method: 'POST',
+      body: { senha_atual: senhaAtual, senha_nova: senhaNova },
+      timeoutMs: 15_000,
+    });
+  },
+
+  // ── Admin de usuários (exige usuarios.gerenciar) ─────────────────
+  adminListarPapeis(): Promise<PapelItem[]> {
+    return request('/api/admin/papeis', { timeoutMs: 10_000 });
+  },
+
+  adminListarUsuarios(): Promise<{ items: UsuarioAdminItem[]; total: number }> {
+    return request('/api/admin/usuarios', { timeoutMs: 10_000 });
+  },
+
+  adminCriarUsuario(body: {
+    email: string;
+    nome: string;
+    senha: string;
+    papeis: string[];
+  }): Promise<UsuarioAdminItem> {
+    return request('/api/admin/usuarios', { method: 'POST', body, timeoutMs: 15_000 });
+  },
+
+  adminAtualizarUsuario(
+    id: string,
+    body: { nome?: string; ativo?: boolean; papeis?: string[] },
+  ): Promise<UsuarioAdminItem> {
+    return request(`/api/admin/usuarios/${id}`, {
+      method: 'PATCH',
+      body,
+      timeoutMs: 15_000,
+    });
   },
 };

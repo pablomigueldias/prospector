@@ -1,8 +1,14 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from app.api.services.auth.cookie import cookie_name
+from app.api.services.auth.csrf import valido as csrf_valido
+
+from app.api.routers import auth as auth_router
+from app.api.routers import admin_usuarios as admin_usuarios_router
 from app.api.routers import agents as agents_router
 from app.api.routers import prospector as prospector_router
 from app.api.routers import copywriter as copywriter_router
@@ -10,6 +16,19 @@ from app.api.routers import observability as observability_router
 from app.api.routers import outreach as outreach_router
 from app.api.routers import perfil as perfil_router
 from app.api.routers import vagas as vagas_router
+from app.api.routers import contas as contas_router
+from app.api.routers import categorias as categorias_router
+from app.api.routers import transacoes as transacoes_router
+from app.api.routers import resumo as resumo_router
+from app.api.routers import cartoes as cartoes_router
+from app.api.routers import compras as compras_router
+from app.api.routers import recorrencias as recorrencias_router
+from app.api.routers import leituras as leituras_router
+from app.api.routers import comprovantes as comprovantes_router
+from app.api.routers import importador as importador_router
+from app.api.routers import nlu as nlu_router
+from app.api.routers import telegram as telegram_router
+from app.api.routers import eventos as eventos_router
 from app.utils.logger import get_logger
 
 
@@ -45,10 +64,33 @@ app.add_middleware(
 )
 
 
+_METODOS_MUTACAO = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+@app.middleware("http")
+async def csrf_middleware(request: Request, call_next):
+    """Exige CSRF só quando a mutação vem autenticada por cookie de sessão.
+
+    Requests sem cookie de sessão (login, webhook do Telegram com secret, clientes
+    de API) não são alvo de CSRF e passam direto.
+    """
+    if request.method in _METODOS_MUTACAO and request.cookies.get(cookie_name()):
+        if not csrf_valido(request):
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "CSRF token inválido ou ausente."},
+            )
+    return await call_next(request)
+
+
 @app.get("/api/health", tags=["meta"])
 def healthcheck() -> dict:
     return {"status": "ok", "service": "reativa-agents-api"}
 
+
+# ── Autenticação (portão de entrada) ──────────────────────────────
+app.include_router(auth_router.router)
+app.include_router(admin_usuarios_router.router)
 
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)
@@ -59,3 +101,18 @@ app.include_router(outreach_router.router)
 # ── Área pessoal (separada da Reative) ────────────────────────────
 app.include_router(perfil_router.router)
 app.include_router(vagas_router.router)
+
+# ── Organizador Financeiro (domínio pessoal) ──────────────────────
+app.include_router(contas_router.router)
+app.include_router(categorias_router.router)
+app.include_router(transacoes_router.router)
+app.include_router(resumo_router.router)
+app.include_router(cartoes_router.router)
+app.include_router(compras_router.router)
+app.include_router(recorrencias_router.router)
+app.include_router(leituras_router.router)
+app.include_router(comprovantes_router.router)
+app.include_router(importador_router.router)
+app.include_router(nlu_router.router)
+app.include_router(telegram_router.router)
+app.include_router(eventos_router.router)

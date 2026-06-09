@@ -1,0 +1,153 @@
+# ────────────────────────────────────────────────────────────────────────────
+#  Reative — stack de produção (VPS Hetzner CX32)
+#  postgres + minio + caddy + api + web
+#
+#  Subir só a infra:   ./scripts/02-deploy.sh infra   (db + minio + caddy)
+#  Subir tudo:         ./scripts/02-deploy.sh         (build de api + web também)
+#
+#  api e web SÓ buildam quando o código FastAPI/Next existir (ver RUNBOOK Etapa 7).
+#  Até lá, use o modo 'infra'.
+# ────────────────────────────────────────────────────────────────────────────
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: reative-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C.UTF-8"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # Sem 'ports' — o banco só é acessível pela rede interna do compose.
+    # (Pra acessar de fora, use túnel SSH.)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  minio:
+    image: minio/minio:latest
+    container_name: reative-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    # Exposto SÓ no localhost do VPS — console e API S3 via túnel SSH.
+    #   ssh -L 9001:localhost:9001 deploy@SEU_IP  (console)
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: reative-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    image: reative-api:latest
+    container_name: reative-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DB_ECHO: "false"
+      # Notion
+      NOTION_TOKEN: ${NOTION_TOKEN}
+      NOTION_DB_EMPRESAS: ${NOTION_DB_EMPRESAS}
+      NOTION_DB_CONTATOS: ${NOTION_DB_CONTATOS}
+      # LLMs
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      # E-mail
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_IMAP_HOST: ${MAIL_IMAP_HOST}
+      MAIL_IMAP_PORT: ${MAIL_IMAP_PORT}
+      MAIL_SMTP_HOST: ${MAIL_SMTP_HOST}
+      MAIL_SMTP_PORT: ${MAIL_SMTP_PORT}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      # MinIO / S3
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      # Telegram
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      TELEGRAM_USUARIO_ID: ${TELEGRAM_USUARIO_ID}
+      TELEGRAM_CHAT_ID_SANDRA: ${TELEGRAM_CHAT_ID_SANDRA}
+      TELEGRAM_USUARIO_ID_SANDRA: ${TELEGRAM_USUARIO_ID_SANDRA}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
+      # Auth / login (produção é HTTPS → cookie Secure + __Host-)
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_SENHA_INICIAL: ${ADMIN_SENHA_INICIAL}
+      # Produção: navegador headless
+      HEADLESS_BROWSER: "true"
+    networks:
+      - internal
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    image: reative-web:latest
+    container_name: reative-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  db_data:
+    name: reative_db_data
+  minio_data:
+    name: reative_minio_data
+  caddy_data:
+    name: reative_caddy_data
+  caddy_config:
+    name: reative_caddy_config

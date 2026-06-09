@@ -87,6 +87,33 @@ export interface LeadHistoryResponse {
   total: number;
 }
 
+// ── Auth (login / sessão / permissões) ─────────────────────────────
+export interface Usuario {
+  id: string;
+  email: string;
+  nome: string;
+  ativo: boolean;
+  twofa_ativado: boolean;
+  ultimo_login: string | null;
+  permissoes: string[];
+}
+
+export interface PapelItem {
+  nome: string;
+  descricao: string | null;
+}
+
+export interface UsuarioAdminItem {
+  id: string;
+  email: string;
+  nome: string;
+  ativo: boolean;
+  twofa_ativado: boolean;
+  papeis: string[];
+  ultimo_login: string | null;
+  created_at: string | null;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -365,4 +392,106 @@ export interface CandidaturaEmailItem {
   tom?: string | null;
   status: string;
   created_at?: string | null;
+}
+
+// ── Finanças (Organizador Financeiro pessoal) ──────────────────────
+export interface Conta {
+  id: string;
+  usuario_id: string;
+  nome: string;
+  tipo: string;
+  saldo_atual: string;
+  ativa: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ContaListResponse {
+  items: Conta[];
+  total: number;
+}
+
+export interface CategoriaResumoItem {
+  categoria_id?: string | null;
+  categoria_nome: string;
+  total: string;
+}
+
+export interface ResumoMes {
+  ano: number;
+  mes: number;
+  total_receitas: string;
+  total_despesas: string;
+  saldo: string;
+  por_categoria: CategoriaResumoItem[];
+}
+
+export interface Cartao {
+  id: string;
+  usuario_id: string;
+  nome: string;
+  bandeira?: string | null;
+  dia_fechamento: number;
+  dia_vencimento: number;
+  limite?: string | null;
+  ativo: boolean;
+}
+
+export interface CartaoListResponse {
+  items: Cartao[];
+  total: number;
+}
+
+export interface Fatura {
+  id: string;
+  cartao_id: string;
+  mes_referencia: string;
+  valor_total: string;
+  vencimento: string;
+  status: string;
+}
+
+export interface FaturasCartao {
+  cartao_id: string;
+  faturas: Fatura[];
+  total_em_aberto: string;
+  total_juros: string;
+}
+
+export interface LeituraConsumo {
+  id: string;
+  usuario_id: string;
+  tipo: string;
+  mes_referencia: string;
+  leitura_atual: string;
+  leitura_anterior?: string | null;
+  consumo?: string | null;
+  valor?: string | null;
+  transacao_id?: string | null;
+}
+
+export interface LeituraConsumoListResponse {
+  items: LeituraConsumo[];
+  total: number;
+}
+
+export interface Comprovante {
+  id: string;
+  usuario_id: string;
+  transacao_id?: string | null;
+  tipo: string;
+  bucket: string;
+  arquivo_path: string;
+  nome_original?: string | null;
+  content_type?: string | null;
+  tamanho?: number | null;
+  hash: string;
+  url?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ComprovanteListResponse {
+  items: Comprovante[];
+  total: number;
 }

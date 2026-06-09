@@ -1,0 +1,17 @@
+# Segredos — NUNCA versionar
+.env
+
+# Backups locais do Postgres
+backups/
+*.sql
+*.sql.gz
+*.dump
+
+# Logs
+*.log
+logs/
+
+# Dados de volumes (caso alguém monte bind local por engano)
+data/
+caddy_data/
+caddy_config/

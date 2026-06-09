@@ -33,6 +33,30 @@ services:
       timeout: 5s
       retries: 10
 
+  # MinIO (S3 self-hosted) — storage de comprovantes/boletos/notas.
+  # Console em http://localhost:9001 (login minioadmin/minioadmin).
+  # API S3 em http://localhost:9000 (é o que a API usa via S3_ENDPOINT).
+  minio:
+    image: minio/minio:latest
+    container_name: reative-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - reative_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   reative_db_data:
     name: reative_db_data
+  reative_minio_data:
+    name: reative_minio_data

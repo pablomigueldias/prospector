@@ -1,10 +1,17 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.dependencies.auth import require_permission
 from app.api.schemas.pessoal import PerfilMestreResponse, PerfilMestreUpsert
 from app.api.services.pessoal import perfil_service
 from app.api.services.pessoal.perfil_service import PerfilError
 
-router = APIRouter(prefix="/api/pessoal/perfil", tags=["pessoal:perfil"])
+# Área pessoal: exige pessoal.ver (segurança REAL — o front esconder a aba é
+# só UX). Sem a permissão → 403 em qualquer rota deste router.
+router = APIRouter(
+    prefix="/api/pessoal/perfil",
+    tags=["pessoal:perfil"],
+    dependencies=[Depends(require_permission("pessoal.ver"))],
+)
 
 
 @router.get("", summary="Retorna o Perfil Mestre ativo (ou null)")
