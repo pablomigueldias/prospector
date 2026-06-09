@@ -11,6 +11,11 @@ class LoginRequest(BaseModel):
     senha: str = Field(..., description="Senha em texto (vai por HTTPS)")
 
 
+class TrocaSenhaRequest(BaseModel):
+    senha_atual: str = Field(..., description="Senha atual (confirmação)")
+    senha_nova: str = Field(..., description="Nova senha (validada por força)")
+
+
 class UsuarioResponse(BaseModel):
     id: str
     email: str

@@ -375,4 +375,21 @@ export const api = {
   authLogout(): Promise<{ ok: boolean; mensagem: string }> {
     return request('/api/auth/logout', { method: 'POST', timeoutMs: 10_000 });
   },
+
+  /** POST /api/auth/logout-all — sai de todos os dispositivos */
+  authLogoutAll(): Promise<{ ok: boolean; mensagem: string }> {
+    return request('/api/auth/logout-all', { method: 'POST', timeoutMs: 10_000 });
+  },
+
+  /** POST /api/auth/senha — troca a senha (revoga as outras sessões) */
+  authTrocarSenha(
+    senhaAtual: string,
+    senhaNova: string,
+  ): Promise<{ ok: boolean; mensagem: string }> {
+    return request('/api/auth/senha', {
+      method: 'POST',
+      body: { senha_atual: senhaAtual, senha_nova: senhaNova },
+      timeoutMs: 15_000,
+    });
+  },
 };

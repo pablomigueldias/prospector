@@ -4,7 +4,14 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.dependencies.auth import usuario_atual
-from app.api.schemas.auth import LoginRequest, MensagemResponse, UsuarioResponse
+from app.api.schemas.auth import (
+    LoginRequest,
+    MensagemResponse,
+    TrocaSenhaRequest,
+    UsuarioResponse,
+)
+from app.api.services.auth import senha_service
+from app.api.services.auth.senha_service import SenhaFraca
 from app.api.services.auth import (
     auditoria_service,
     login_service,
@@ -52,6 +59,37 @@ async def me(
     async with get_session() as session:
         codigos = await permissoes_service.listar_codigos(session, usuario.id)
     return usuario_service.to_response(usuario, permissoes=codigos)
+
+
+@router.post("/senha", response_model=MensagemResponse,
+             summary="Troca a senha (revoga as outras sessões)")
+async def trocar_senha(
+    body: TrocaSenhaRequest,
+    request: Request,
+    usuario: Usuario = Depends(usuario_atual),
+) -> MensagemResponse:
+    async with get_session() as session:
+        u = await session.get(Usuario, usuario.id)
+        if u is None or not senha_service.conferir_senha(u.senha_hash, body.senha_atual):
+            raise HTTPException(status_code=400, detail="Senha atual incorreta.")
+        try:
+            senha_service.validar_forca(body.senha_nova)
+        except SenhaFraca as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        u.senha_hash = senha_service.hash_senha(body.senha_nova)
+        token_atual = request.cookies.get(cookie_name())
+        n = await sessao_service.revogar_outras(session, u.id, token_atual)
+        await auditoria_service.registrar(
+            session, auditoria_service.SENHA_ALTERADA, usuario_id=u.id,
+            ip=usuario_service.ip_do_request(request),
+            user_agent=usuario_service.user_agent_do_request(request),
+            detalhe={"sessoes_revogadas": n},
+        )
+        await session.commit()
+    return MensagemResponse(
+        ok=True, mensagem=f"Senha alterada. {n} outra(s) sessão(ões) encerrada(s)."
+    )
 
 
 @router.post("/logout", response_model=MensagemResponse, summary="Encerra a sessão atual")

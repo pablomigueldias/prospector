@@ -105,17 +105,19 @@ export function Sidebar() {
       </button>
 
       <div className="flex items-center gap-2.5 p-2.5 bg-bg-alt rounded">
-        <div className="w-8 h-8 rounded-full bg-ink text-white flex items-center justify-center font-display font-semibold text-[13px]">
-          {(usuario?.nome ?? '?').charAt(0).toUpperCase()}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-medium text-ink truncate">
-            {usuario?.nome ?? '—'}
+        <Link href="/conta" className="flex items-center gap-2.5 min-w-0 flex-1" title="Conta">
+          <div className="w-8 h-8 rounded-full bg-ink text-white flex items-center justify-center font-display font-semibold text-[13px]">
+            {(usuario?.nome ?? '?').charAt(0).toUpperCase()}
           </div>
-          <div className="text-[11px] text-ink-mute truncate">
-            {usuario?.email ?? ''}
+          <div className="min-w-0 flex-1">
+            <div className="text-[13px] font-medium text-ink truncate">
+              {usuario?.nome ?? '—'}
+            </div>
+            <div className="text-[11px] text-ink-mute truncate">
+              {usuario?.email ?? ''}
+            </div>
           </div>
-        </div>
+        </Link>
         <button
           type="button"
           onClick={() => void logout()}

@@ -103,6 +103,20 @@ async def revogar_token(session: AsyncSession, token: str) -> Optional[uuid.UUID
     return sessao.usuario_id
 
 
+async def revogar_outras(
+    session: AsyncSession, usuario_id: uuid.UUID, token_atual: Optional[str]
+) -> int:
+    """Revoga todas as sessões do usuário MENOS a do token atual (troca de senha)."""
+    stmt = update(Sessao).where(
+        Sessao.usuario_id == usuario_id, Sessao.revogada.is_(False)
+    )
+    if token_atual:
+        stmt = stmt.where(Sessao.token_hash != hash_token(token_atual))
+    res = await session.execute(stmt.values(revogada=True))
+    await session.flush()
+    return res.rowcount or 0
+
+
 async def revogar_todas(session: AsyncSession, usuario_id: uuid.UUID) -> int:
     """Revoga TODAS as sessões ativas do usuário ('sair de todos os dispositivos')."""
     res = await session.execute(
