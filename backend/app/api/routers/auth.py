@@ -8,7 +8,7 @@ from app.api.schemas.auth import LoginRequest, MensagemResponse, UsuarioResponse
 from app.api.services.auth import login_service, sessao_service, usuario_service
 from app.api.services.auth import permissoes as permissoes_service
 from app.api.services.auth.cookie import clear_session_cookie, cookie_name, set_session_cookie
-from app.api.services.auth.login_service import CredenciaisInvalidas
+from app.api.services.auth.login_service import Bloqueado, CredenciaisInvalidas
 from app.db.models.auth.usuario import Usuario
 from app.db.session import get_session
 
@@ -24,6 +24,9 @@ async def login(body: LoginRequest, request: Request, response: Response) -> Usu
             ip=usuario_service.ip_do_request(request),
             user_agent=usuario_service.user_agent_do_request(request),
         )
+    except Bloqueado as e:
+        # 429 — excesso de tentativas (rate limit / lockout).
+        raise HTTPException(status_code=429, detail=str(e))
     except CredenciaisInvalidas as e:
         # 401 genérico — não vaza se o email existe.
         raise HTTPException(status_code=401, detail=str(e))
