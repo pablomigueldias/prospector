@@ -27,3 +27,8 @@ def delta_por_tipo(tipo: str, valor: Decimal) -> Decimal:
 def aplicar_movimento(conta: Conta, tipo: str, valor: Decimal) -> None:
     """Aplica o movimento no saldo da conta (muta o objeto ORM)."""
     conta.saldo_atual = Decimal(conta.saldo_atual) + delta_por_tipo(tipo, valor)
+
+
+def reverter_movimento(conta: Conta, tipo: str, valor: Decimal) -> None:
+    """Desfaz um movimento já aplicado (ao excluir uma transação paga)."""
+    conta.saldo_atual = Decimal(conta.saldo_atual) - delta_por_tipo(tipo, valor)

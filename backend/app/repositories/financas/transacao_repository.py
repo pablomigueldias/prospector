@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.transacao import Transacao
+from app.db.models.financas.transacao_pagamento import TransacaoPagamento
 
 
 class TransacaoRepository:
@@ -32,6 +33,58 @@ class TransacaoRepository:
             .where(Transacao.id == transacao_id)
         )
         return await self.session.scalar(stmt)
+
+    # ── Listagem filtrável (para a tela de transações no dashboard) ───
+    async def listar(
+        self,
+        usuario_id: uuid.UUID,
+        *,
+        inicio: Optional[date] = None,
+        proximo_mes: Optional[date] = None,
+        conta_id: Optional[uuid.UUID] = None,
+        categoria_id: Optional[uuid.UUID] = None,
+        tipo: Optional[str] = None,
+        busca: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Tuple[List[Transacao], int]:
+        """Transações do usuário aplicando os filtros, mais novas primeiro.
+        Retorna ``(itens, total)`` — total ignora limit/offset (paginação)."""
+        cond = [Transacao.usuario_id == usuario_id]
+        if inicio is not None:
+            cond.append(Transacao.data_competencia >= inicio)
+        if proximo_mes is not None:
+            cond.append(Transacao.data_competencia < proximo_mes)
+        if categoria_id is not None:
+            cond.append(Transacao.categoria_id == categoria_id)
+        if tipo is not None:
+            cond.append(Transacao.tipo == tipo)
+        if busca:
+            cond.append(Transacao.descricao.ilike(f"%{busca}%"))
+        if conta_id is not None:
+            sub = select(TransacaoPagamento.transacao_id).where(
+                TransacaoPagamento.conta_id == conta_id
+            )
+            cond.append(Transacao.id.in_(sub))
+
+        total = await self.session.scalar(
+            select(func.count()).select_from(
+                select(Transacao.id).where(*cond).subquery()
+            )
+        )
+        stmt = (
+            select(Transacao)
+            .options(selectinload(Transacao.pagamentos))
+            .where(*cond)
+            .order_by(
+                Transacao.data_competencia.desc(),
+                Transacao.created_at.desc(),
+            )
+            .limit(limit)
+            .offset(offset)
+        )
+        itens = list((await self.session.scalars(stmt)).all())
+        return itens, int(total or 0)
 
     # ── Agregados do resumo do mês (filtro por data_competencia) ──────
     async def total_por_tipo(

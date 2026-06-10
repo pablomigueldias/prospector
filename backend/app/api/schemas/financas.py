@@ -187,6 +187,28 @@ class TransacaoResponse(BaseModel):
     updated_at: Optional[str] = None
 
 
+class TransacaoListItem(BaseModel):
+    """Linha enxuta para a lista filtrável do dashboard (sem itens/pagamentos
+    completos — só os nomes das contas pagadoras e da categoria)."""
+    id: str
+    tipo: str
+    descricao: str
+    valor_total: Decimal
+    data_competencia: date
+    data_pagamento: Optional[date] = None
+    status: str
+    categoria_id: Optional[str] = None
+    categoria_nome: Optional[str] = None
+    contas: List[str] = Field(default_factory=list)
+
+
+class TransacaoListResponse(BaseModel):
+    items: List[TransacaoListItem]
+    total: int
+    limit: int
+    offset: int
+
+
 # ══════════════════════════════════════════════════════════════════
 # Cartões, faturas, compras parceladas e parcelas
 # ══════════════════════════════════════════════════════════════════
