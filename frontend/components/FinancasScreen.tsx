@@ -2,23 +2,16 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { CartoesSection } from '@/components/CartoesSection';
 import { CategoriaDonut } from '@/components/CategoriaDonut';
+import { CategoriasSection } from '@/components/CategoriasSection';
 import { ComprovantesGaleria } from '@/components/ComprovantesGaleria';
 import { ConsumoSection } from '@/components/ConsumoSection';
+import { ContasSection } from '@/components/ContasSection';
 import { StatCard } from '@/components/StatCard';
+import { TransacoesSection } from '@/components/TransacoesSection';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
 import { useFinancasEventos } from '@/hooks/useFinancasEventos';
 import { FINANCAS_USUARIO_ID } from '@/lib/financas';
 import { formatBRL, formatMesAno } from '@/lib/format';
-import type { Conta } from '@/lib/types';
-
-const TIPO_LABEL: Record<string, string> = {
-  corrente: 'Conta corrente',
-  dinheiro: 'Dinheiro',
-  vr: 'Vale-refeição',
-  va: 'Vale-alimentação',
-  reserva: 'Reserva',
-  cartao_credito: 'Cartão de crédito',
-};
 
 function mesAnterior(ano: number, mes: number): [number, number] {
   return mes === 1 ? [ano - 1, 12] : [ano, mes - 1];
@@ -51,18 +44,10 @@ export default function FinancasScreen() {
     [contas],
   );
 
-  const contasNormais = useMemo(
-    () => contas.filter((c) => c.tipo !== 'reserva'),
-    [contas],
-  );
-  const reservas = useMemo(
-    () => contas.filter((c) => c.tipo === 'reserva'),
-    [contas],
-  );
-  const totalGuardado = useMemo(
-    () => reservas.reduce((acc, c) => acc + Number(c.saldo_atual), 0),
-    [reservas],
-  );
+  const recarregarTudo = useCallback(() => {
+    void refetchResumo();
+    void refetchContas();
+  }, [refetchResumo, refetchContas]);
 
   const saldoMes = Number(resumo?.saldo ?? 0);
 
@@ -148,43 +133,20 @@ export default function FinancasScreen() {
         />
       </section>
 
-      {/* Contas */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
-            Contas
-          </h2>
-          {contas.length > 0 && (
-            <span className="text-[12.5px] text-ink-mute">
-              {contas.length} {contas.length === 1 ? 'conta' : 'contas'}
-            </span>
-          )}
-        </div>
-        <ContasList contas={contasNormais} loading={contasLoading} />
-      </section>
+      {/* Contas + Reservas (com criar/editar/excluir) */}
+      <ContasSection
+        contas={contas}
+        loading={contasLoading}
+        onChanged={refetchContas}
+      />
 
-      {/* Reservas (dinheiro guardado) */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
-            Reservas
-          </h2>
-          {reservas.length > 0 && (
-            <span className="text-[12.5px] text-ink-mute">
-              guardado: {formatBRL(totalGuardado)}
-            </span>
-          )}
-        </div>
-        {contasLoading ? (
-          <div className="card p-4 h-[84px] animate-pulse" />
-        ) : reservas.length === 0 ? (
-          <div className="card p-6 text-center text-ink-soft text-sm">
-            Sem reservas. Crie uma conta do tipo “reserva” pra guardar dinheiro.
-          </div>
-        ) : (
-          <ContasList contas={reservas} loading={false} />
-        )}
-      </section>
+      {/* Transações: lista filtrável + lançar/excluir */}
+      <TransacoesSection
+        ano={ano}
+        mes={mes}
+        contas={contas}
+        onMutate={recarregarTudo}
+      />
 
       {/* Consumo (água/gás/luz) */}
       <section className="mb-8">
@@ -202,6 +164,9 @@ export default function FinancasScreen() {
         <CartoesSection />
       </section>
 
+      {/* Categorias (criar/editar/excluir) */}
+      <CategoriasSection />
+
       {/* Comprovantes */}
       <section className="mb-8">
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0 mb-4">
@@ -209,40 +174,6 @@ export default function FinancasScreen() {
         </h2>
         <ComprovantesGaleria />
       </section>
-    </div>
-  );
-}
-
-function ContasList({ contas, loading }: { contas: Conta[]; loading: boolean }) {
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="card p-4 h-[84px] animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-  if (contas.length === 0) {
-    return (
-      <div className="card p-6 text-center text-ink-soft text-sm">
-        Nenhuma conta ainda. Cadastre uma conta pra começar a lançar.
-      </div>
-    );
-  }
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      {contas.map((c) => (
-        <div key={c.id} className="card p-4">
-          <div className="font-mono uppercase tracking-[0.1em] text-[10px] text-ink-mute mb-1">
-            {TIPO_LABEL[c.tipo] ?? c.tipo}
-          </div>
-          <div className="font-medium text-ink mb-1.5">{c.nome}</div>
-          <div className="font-display font-semibold tracking-tight text-xl text-ink leading-none">
-            {formatBRL(c.saldo_atual)}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

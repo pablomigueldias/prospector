@@ -29,8 +29,8 @@ boleto por IA, NLU, bot e dashboard ao vivo). O que falta é, sobretudo,
 
 ## 3. Dashboard web & relatórios
 
-- 🔴 **Telas de CRUD que faltam no front** — criar/editar **conta**, **categoria**, **cartão**, **recorrência** e **transação** pela interface (boa parte hoje só existe via API/bot).
-- 🟡 **Lista de transações filtrável** — por mês, conta, categoria, tipo, com busca e edição inline.
+- ✅ **CRUD de conta, categoria e transação no front** (2026-06-10) — criar/editar/excluir **conta** e **categoria** por modal, e **lançar despesa/receita** + **excluir** transação (com reversão de saldo) pela interface. Falta ainda CRUD de **cartão** e **recorrência**.
+- ✅ **Lista de transações filtrável** (2026-06-10) — por mês, conta, categoria, tipo e busca na descrição. Edição é por excluir + relançar (não há edição inline ainda).
 - 🟡 **Relatório mensal** — comparativo mês a mês, evolução de saldo, top categorias, exportar PDF/CSV.
 - 🟢 **Detalhe de cartão** — extrato da fatura, parcelas futuras, projeção de quanto vai pesar nos próximos meses.
 
