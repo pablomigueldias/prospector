@@ -38,6 +38,7 @@ curl -fsS -X POST \
   -H "Content-Type: application/json" \
   -d '{"commands":[
     {"command":"gasto","description":"Lançar um gasto: /gasto 50 mercado"},
+    {"command":"ganho","description":"Lançar uma entrada: /ganho 2000 salário"},
     {"command":"saldo","description":"Ver o saldo das contas"},
     {"command":"resumo","description":"Receitas x despesas do mês"},
     {"command":"help","description":"Como usar o bot"},
