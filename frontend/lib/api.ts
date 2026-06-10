@@ -1,6 +1,18 @@
 import { ApiError } from './types';
+import { FINANCAS_USUARIO_ID } from './financas';
 import type {
   Agent,
+  Conta,
+  ContaCreateInput,
+  ContaUpdateInput,
+  CategoriaCreateInput,
+  CategoriaResponse,
+  CategoriaTreeResponse,
+  CategoriaUpdateInput,
+  LancamentoInput,
+  TransacaoFiltro,
+  TransacaoListResponse,
+  TransacaoResponse,
   CopywriterResponse,
   LeadHistoryResponse,
   ProspectorManualRequest,
@@ -356,6 +368,113 @@ export const api = {
     return request<ComprovanteListResponse>(`/api/financas/comprovantes?${q}`, {
       timeoutMs: 10_000,
     });
+  },
+
+  // ── Finanças · escrita (CRUD pela web) ──────────────────────────
+  /** POST /api/financas/contas — cria conta. O `usuario_id` do corpo é
+   *  ignorado pelo backend (dono = sessão), mas precisa estar presente. */
+  financasCriarConta(body: ContaCreateInput): Promise<Conta> {
+    return request<Conta>('/api/financas/contas', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** PATCH /api/financas/contas/{id} — renomeia / muda tipo / ativa-inativa */
+  financasAtualizarConta(id: string, body: ContaUpdateInput): Promise<Conta> {
+    return request<Conta>(`/api/financas/contas/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body,
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** DELETE /api/financas/contas/{id} — remove a conta (204) */
+  financasExcluirConta(id: string): Promise<void> {
+    return request<void>(`/api/financas/contas/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** GET /api/financas/transacoes — lista filtrável (mês/conta/categoria/tipo/busca) */
+  financasTransacoes(filtro: TransacaoFiltro = {}): Promise<TransacaoListResponse> {
+    const q = new URLSearchParams();
+    if (filtro.ano) q.set('ano', String(filtro.ano));
+    if (filtro.mes) q.set('mes', String(filtro.mes));
+    if (filtro.conta_id) q.set('conta_id', filtro.conta_id);
+    if (filtro.categoria_id) q.set('categoria_id', filtro.categoria_id);
+    if (filtro.tipo) q.set('tipo', filtro.tipo);
+    if (filtro.busca) q.set('busca', filtro.busca);
+    if (filtro.limit != null) q.set('limit', String(filtro.limit));
+    if (filtro.offset != null) q.set('offset', String(filtro.offset));
+    const qs = q.toString();
+    return request<TransacaoListResponse>(
+      `/api/financas/transacoes${qs ? `?${qs}` : ''}`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  /** POST /api/financas/transacoes/despesa — lança despesa simples */
+  financasLancarDespesa(body: LancamentoInput): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>('/api/financas/transacoes/despesa', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/transacoes/receita — lança receita simples */
+  financasLancarReceita(body: LancamentoInput): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>('/api/financas/transacoes/receita', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** DELETE /api/financas/transacoes/{id} — exclui e reverte saldo (204) */
+  financasExcluirTransacao(id: string): Promise<void> {
+    return request<void>(`/api/financas/transacoes/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** GET /api/financas/categorias — árvore de categorias */
+  financasCategorias(): Promise<CategoriaTreeResponse> {
+    return request<CategoriaTreeResponse>('/api/financas/categorias', {
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/categorias — cria categoria (raiz ou subverba) */
+  financasCriarCategoria(body: CategoriaCreateInput): Promise<CategoriaResponse> {
+    return request<CategoriaResponse>('/api/financas/categorias', {
+      method: 'POST',
+      body,
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** PATCH /api/financas/categorias/{id} — renomeia / move / ativa-inativa */
+  financasAtualizarCategoria(
+    id: string,
+    body: CategoriaUpdateInput,
+  ): Promise<CategoriaResponse> {
+    return request<CategoriaResponse>(
+      `/api/financas/categorias/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body, timeoutMs: 10_000 },
+    );
+  },
+
+  /** DELETE /api/financas/categorias/{id} — remove a categoria (204) */
+  financasExcluirCategoria(id: string): Promise<void> {
+    return request<void>(
+      `/api/financas/categorias/${encodeURIComponent(id)}`,
+      { method: 'DELETE', timeoutMs: 10_000 },
+    );
   },
 
   // ── Auth ────────────────────────────────────────────────────────

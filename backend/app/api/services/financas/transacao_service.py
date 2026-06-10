@@ -10,6 +10,7 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.financas import (
@@ -18,6 +19,8 @@ from app.api.schemas.financas import (
     DespesaDivididaCreate,
     ReceitaCreate,
     TransacaoItemResponse,
+    TransacaoListItem,
+    TransacaoListResponse,
     TransacaoPagamentoResponse,
     TransacaoResponse,
 )
@@ -322,3 +325,109 @@ async def get_transacao(transacao_id: str) -> TransacaoResponse:
         if transacao is None:
             raise TransacaoError("Transação não encontrada.")
         return _to_response(transacao)
+
+
+def _intervalo_mes(ano: Optional[int], mes: Optional[int]) -> Tuple[
+    Optional[date], Optional[date]
+]:
+    """(inicio, proximo_mes) para filtrar por competência; (None, None) se
+    ano/mes não vierem juntos."""
+    if not ano or not mes:
+        return None, None
+    if mes < 1 or mes > 12:
+        raise TransacaoError(f"Mês inválido: {mes}.")
+    inicio = date(ano, mes, 1)
+    proximo = date(ano + 1, 1, 1) if mes == 12 else date(ano, mes + 1, 1)
+    return inicio, proximo
+
+
+async def listar_transacoes(
+    usuario_id: str,
+    *,
+    ano: Optional[int] = None,
+    mes: Optional[int] = None,
+    conta_id: Optional[str] = None,
+    categoria_id: Optional[str] = None,
+    tipo: Optional[str] = None,
+    busca: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> TransacaoListResponse:
+    """Lista filtrável de transações para o dashboard (mais novas primeiro)."""
+    uid = _uuid(usuario_id, campo="usuario_id")
+    inicio, proximo = _intervalo_mes(ano, mes)
+    cid = _uuid(conta_id, campo="conta_id") if conta_id else None
+    catid = _uuid(categoria_id, campo="categoria_id") if categoria_id else None
+    if tipo is not None and tipo not in ("despesa", "receita"):
+        raise TransacaoError(f"Tipo inválido: {tipo!r}. Use despesa ou receita.")
+    limit = max(1, min(int(limit), 200))
+    offset = max(0, int(offset))
+    termo = busca.strip() if busca and busca.strip() else None
+
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        itens, total = await repo.listar(
+            uid,
+            inicio=inicio,
+            proximo_mes=proximo,
+            conta_id=cid,
+            categoria_id=catid,
+            tipo=tipo,
+            busca=termo,
+            limit=limit,
+            offset=offset,
+        )
+
+        conta_ids = {p.conta_id for t in itens for p in t.pagamentos}
+        cat_ids = {t.categoria_id for t in itens if t.categoria_id}
+        contas_nome: dict = {}
+        if conta_ids:
+            rows = await session.execute(
+                select(Conta.id, Conta.nome).where(Conta.id.in_(conta_ids))
+            )
+            contas_nome = {cid_: nome for cid_, nome in rows.all()}
+        cat_nome: dict = {}
+        if cat_ids:
+            rows = await session.execute(
+                select(Categoria.id, Categoria.nome).where(Categoria.id.in_(cat_ids))
+            )
+            cat_nome = {cid_: nome for cid_, nome in rows.all()}
+
+        items = [
+            TransacaoListItem(
+                id=str(t.id),
+                tipo=t.tipo,
+                descricao=t.descricao,
+                valor_total=t.valor_total,
+                data_competencia=t.data_competencia,
+                data_pagamento=t.data_pagamento,
+                status=t.status,
+                categoria_id=str(t.categoria_id) if t.categoria_id else None,
+                categoria_nome=cat_nome.get(t.categoria_id),
+                contas=[contas_nome.get(p.conta_id, "?") for p in t.pagamentos],
+            )
+            for t in itens
+        ]
+
+    return TransacaoListResponse(
+        items=items, total=total, limit=limit, offset=offset
+    )
+
+
+async def excluir_transacao(transacao_id: str) -> None:
+    """Remove a transação e reverte o saldo das contas (se estava paga).
+    Cascateia pagamentos/itens/comprovantes; zera leituras ligadas."""
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        transacao = await repo.get(_uuid(transacao_id))
+        if transacao is None:
+            raise TransacaoError("Transação não encontrada.")
+        usuario_id = transacao.usuario_id
+        if transacao.status == "paga":
+            for p in transacao.pagamentos:
+                conta = await session.get(Conta, p.conta_id)
+                if conta is not None:
+                    saldo_service.reverter_movimento(conta, transacao.tipo, p.valor)
+        await session.delete(transacao)
+        await eventos.notificar(session, usuario_id, "transacao_excluida")
+        await session.commit()

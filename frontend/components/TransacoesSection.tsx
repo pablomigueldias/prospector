@@ -1,0 +1,486 @@
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+
+import { Modal } from '@/components/Modal';
+import { useCategorias, useTransacoes } from '@/hooks/useFinancas';
+import { api } from '@/lib/api';
+import { achatarCategorias, type CategoriaPlana } from '@/lib/categorias';
+import { formatBRL, formatMesAno } from '@/lib/format';
+import {
+  ApiError,
+  type Conta,
+  type TransacaoFiltro,
+  type TransacaoListItem,
+} from '@/lib/types';
+
+interface Props {
+  /** Mês "atual" selecionado no topo do dashboard (filtro padrão da lista). */
+  ano: number;
+  mes: number;
+  contas: Conta[];
+  /** Recarrega resumo/contas do dashboard após lançar ou excluir. */
+  onMutate: () => void;
+}
+
+function dataCurta(iso: string): string {
+  // "2026-06-10" → "10/06"
+  const [, m, d] = iso.split('-');
+  return d && m ? `${d}/${m}` : iso;
+}
+
+export function TransacoesSection({ ano, mes, contas, onMutate }: Props) {
+  const [soEsteMes, setSoEsteMes] = useState(true);
+  const [tipo, setTipo] = useState<'' | 'despesa' | 'receita'>('');
+  const [contaId, setContaId] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
+  const [buscaInput, setBuscaInput] = useState('');
+  const [busca, setBusca] = useState('');
+  const [novoAberto, setNovoAberto] = useState(false);
+
+  // Debounce da busca (evita um request por tecla).
+  useEffect(() => {
+    const t = setTimeout(() => setBusca(buscaInput.trim()), 400);
+    return () => clearTimeout(t);
+  }, [buscaInput]);
+
+  const { arvore } = useCategorias();
+  const categoriasPlanas = useMemo(() => achatarCategorias(arvore), [arvore]);
+
+  const filtro: TransacaoFiltro = useMemo(
+    () => ({
+      ano: soEsteMes ? ano : undefined,
+      mes: soEsteMes ? mes : undefined,
+      tipo: tipo || undefined,
+      conta_id: contaId || undefined,
+      categoria_id: categoriaId || undefined,
+      busca: busca || undefined,
+      limit: 100,
+    }),
+    [soEsteMes, ano, mes, tipo, contaId, categoriaId, busca],
+  );
+
+  const { transacoes, total, loading, refetch } = useTransacoes(filtro);
+
+  const recarregar = () => {
+    void refetch();
+    onMutate();
+  };
+
+  const algumFiltro =
+    !soEsteMes || !!tipo || !!contaId || !!categoriaId || !!busca;
+
+  function limparFiltros() {
+    setSoEsteMes(true);
+    setTipo('');
+    setContaId('');
+    setCategoriaId('');
+    setBuscaInput('');
+    setBusca('');
+  }
+
+  return (
+    <section className="mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
+          Transações
+        </h2>
+        <button
+          type="button"
+          onClick={() => setNovoAberto(true)}
+          className="btn-primary px-4 py-1.5 text-sm"
+          disabled={contas.length === 0}
+          title={
+            contas.length === 0
+              ? 'Crie uma conta antes de lançar'
+              : 'Lançar despesa ou receita'
+          }
+        >
+          + Novo lançamento
+        </button>
+      </div>
+
+      {/* Filtros */}
+      <div className="card p-3 mb-3 flex flex-wrap items-center gap-2">
+        <select
+          className="input w-auto py-1.5 text-sm"
+          value={soEsteMes ? 'mes' : 'todos'}
+          onChange={(e) => setSoEsteMes(e.target.value === 'mes')}
+        >
+          <option value="mes">{formatMesAno(ano, mes)}</option>
+          <option value="todos">Todos os meses</option>
+        </select>
+
+        <select
+          className="input w-auto py-1.5 text-sm"
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value as typeof tipo)}
+        >
+          <option value="">Tipo: todos</option>
+          <option value="despesa">Despesas</option>
+          <option value="receita">Receitas</option>
+        </select>
+
+        <select
+          className="input w-auto py-1.5 text-sm"
+          value={contaId}
+          onChange={(e) => setContaId(e.target.value)}
+        >
+          <option value="">Conta: todas</option>
+          {contas.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nome}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="input w-auto py-1.5 text-sm"
+          value={categoriaId}
+          onChange={(e) => setCategoriaId(e.target.value)}
+        >
+          <option value="">Categoria: todas</option>
+          {categoriasPlanas.map((c) => (
+            <option key={c.id} value={c.id}>
+              {`${'  '.repeat(c.depth)}${c.nome}`}
+            </option>
+          ))}
+        </select>
+
+        <input
+          className="input flex-1 min-w-[140px] py-1.5 text-sm"
+          value={buscaInput}
+          onChange={(e) => setBuscaInput(e.target.value)}
+          placeholder="Buscar na descrição…"
+        />
+
+        {algumFiltro && (
+          <button
+            type="button"
+            onClick={limparFiltros}
+            className="text-sm text-ink-mute hover:text-ink px-2"
+          >
+            limpar
+          </button>
+        )}
+      </div>
+
+      <TransacoesLista
+        transacoes={transacoes}
+        loading={loading}
+        total={total}
+        onExcluiu={recarregar}
+      />
+
+      {novoAberto && (
+        <LancamentoForm
+          contas={contas}
+          categorias={categoriasPlanas}
+          onClose={() => setNovoAberto(false)}
+          onSaved={() => {
+            setNovoAberto(false);
+            recarregar();
+          }}
+        />
+      )}
+    </section>
+  );
+}
+
+function TransacoesLista({
+  transacoes,
+  loading,
+  total,
+  onExcluiu,
+}: {
+  transacoes: TransacaoListItem[];
+  loading: boolean;
+  total: number;
+  onExcluiu: () => void;
+}) {
+  const [excluindo, setExcluindo] = useState<string | null>(null);
+  const [erro, setErro] = useState('');
+
+  async function excluir(t: TransacaoListItem) {
+    if (
+      !window.confirm(
+        `Excluir “${t.descricao}” (${formatBRL(t.valor_total)})? ` +
+          'Se já estava paga, o saldo da conta volta.',
+      )
+    ) {
+      return;
+    }
+    setErro('');
+    setExcluindo(t.id);
+    try {
+      await api.financasExcluirTransacao(t.id);
+      onExcluiu();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Falha ao excluir.');
+    } finally {
+      setExcluindo(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="card p-4 h-[58px] animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (transacoes.length === 0) {
+    return (
+      <div className="card p-6 text-center text-ink-soft text-sm">
+        Nenhuma transação com esses filtros.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {erro && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
+          {erro}
+        </div>
+      )}
+      <div className="card divide-y divide-line">
+        {transacoes.map((t) => {
+          const despesa = t.tipo === 'despesa';
+          return (
+            <div
+              key={t.id}
+              className="flex items-center gap-3 px-4 py-2.5 group"
+            >
+              <div className="w-12 shrink-0 font-mono text-[11px] text-ink-mute">
+                {dataCurta(t.data_competencia)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm text-ink truncate">
+                  {t.descricao}
+                  {t.status !== 'paga' && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wide text-ink-mute border border-line rounded px-1 py-0.5">
+                      {t.status}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11.5px] text-ink-mute truncate">
+                  {[t.categoria_nome, ...(t.contas ?? [])]
+                    .filter(Boolean)
+                    .join(' · ') || 'sem categoria'}
+                </div>
+              </div>
+              <div
+                className={`shrink-0 font-display font-semibold tracking-tight text-sm ${
+                  despesa ? 'text-ink' : 'text-success'
+                }`}
+              >
+                {despesa ? '−' : '+'}
+                {formatBRL(t.valor_total)}
+              </div>
+              <button
+                type="button"
+                onClick={() => excluir(t)}
+                disabled={excluindo === t.id}
+                className="shrink-0 text-ink-faint hover:text-red-600 text-sm px-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                title="Excluir"
+                aria-label="Excluir transação"
+              >
+                ✕
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-[12px] text-ink-mute mt-2">
+        {total} {total === 1 ? 'transação' : 'transações'}
+      </div>
+    </>
+  );
+}
+
+function LancamentoForm({
+  contas,
+  categorias,
+  onClose,
+  onSaved,
+}: {
+  contas: Conta[];
+  categorias: CategoriaPlana[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const hojeIso = new Date().toISOString().slice(0, 10);
+  const [tipo, setTipo] = useState<'despesa' | 'receita'>('despesa');
+  const [descricao, setDescricao] = useState('');
+  const [valor, setValor] = useState('');
+  const [contaId, setContaId] = useState(contas[0]?.id ?? '');
+  const [categoriaId, setCategoriaId] = useState('');
+  const [data, setData] = useState(hojeIso);
+  const [prevista, setPrevista] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  async function salvar(e: FormEvent) {
+    e.preventDefault();
+    setErro('');
+    if (!descricao.trim()) return setErro('Descreva o lançamento.');
+    if (!contaId) return setErro('Escolha a conta.');
+    const valorNum = Number(valor.replace(',', '.'));
+    if (!Number.isFinite(valorNum) || valorNum <= 0) {
+      return setErro('Informe um valor maior que zero.');
+    }
+
+    const body = {
+      descricao: descricao.trim(),
+      valor_total: String(valorNum),
+      conta_id: contaId,
+      categoria_id: categoriaId || null,
+      data_competencia: data || null,
+      status: prevista ? ('prevista' as const) : ('paga' as const),
+    };
+
+    setSalvando(true);
+    try {
+      if (tipo === 'despesa') await api.financasLancarDespesa(body);
+      else await api.financasLancarReceita(body);
+      onSaved();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Falha ao lançar.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Novo lançamento">
+      <form onSubmit={salvar} className="space-y-4">
+        {/* Toggle despesa / receita */}
+        <div className="grid grid-cols-2 gap-2">
+          {(['despesa', 'receita'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTipo(t)}
+              className={`py-2 rounded-lg border text-sm font-medium transition-colors ${
+                tipo === t
+                  ? 'border-brand bg-brand-soft text-brand-ink'
+                  : 'border-line text-ink-soft hover:border-ink-mute'
+              }`}
+            >
+              {t === 'despesa' ? 'Despesa' : 'Receita'}
+            </button>
+          ))}
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+            Descrição
+          </label>
+          <input
+            className="input"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            placeholder={tipo === 'despesa' ? 'ex: Mercado' : 'ex: Salário'}
+            autoFocus
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+              Valor
+            </label>
+            <input
+              className="input"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              inputMode="decimal"
+              placeholder="0,00"
+            />
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+              Data
+            </label>
+            <input
+              type="date"
+              className="input"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+              {tipo === 'despesa' ? 'Conta (saiu de)' : 'Conta (entrou em)'}
+            </label>
+            <select
+              className="input"
+              value={contaId}
+              onChange={(e) => setContaId(e.target.value)}
+            >
+              {contas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+              Categoria
+            </label>
+            <select
+              className="input"
+              value={categoriaId}
+              onChange={(e) => setCategoriaId(e.target.value)}
+            >
+              <option value="">Sem categoria</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {`${'  '.repeat(c.depth)}${c.nome}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm text-ink-soft">
+          <input
+            type="checkbox"
+            checked={prevista}
+            onChange={(e) => setPrevista(e.target.checked)}
+          />
+          Lançar como prevista (não mexe no saldo ainda)
+        </label>
+
+        {erro && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {erro}
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-ghost px-4 py-2 text-sm"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={salvando}
+            className="btn-primary px-5 py-2 text-sm disabled:opacity-50"
+          >
+            {salvando ? 'Lançando…' : 'Lançar'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}

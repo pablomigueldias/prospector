@@ -3,11 +3,14 @@ import { api } from '@/lib/api';
 import { FINANCAS_USUARIO_ID } from '@/lib/financas';
 import type {
   Cartao,
+  CategoriaTreeItem,
   Comprovante,
   FaturasCartao,
   Conta,
   LeituraConsumo,
   ResumoMes,
+  TransacaoFiltro,
+  TransacaoListItem,
 } from '@/lib/types';
 
 export function useResumoMes(ano: number, mes: number) {
@@ -49,6 +52,31 @@ export function useLeituras(tipo?: string) {
   );
   const leituras: LeituraConsumo[] = result.data?.items ?? [];
   return { ...result, leituras };
+}
+
+export function useTransacoes(filtro: TransacaoFiltro) {
+  const result = useFetch(
+    () => api.financasTransacoes(filtro),
+    [
+      filtro.ano,
+      filtro.mes,
+      filtro.conta_id,
+      filtro.categoria_id,
+      filtro.tipo,
+      filtro.busca,
+      filtro.limit,
+      filtro.offset,
+    ],
+  );
+  const transacoes: TransacaoListItem[] = result.data?.items ?? [];
+  const total: number = result.data?.total ?? 0;
+  return { ...result, transacoes, total };
+}
+
+export function useCategorias() {
+  const result = useFetch(() => api.financasCategorias(), []);
+  const arvore: CategoriaTreeItem[] = result.data?.items ?? [];
+  return { ...result, arvore };
 }
 
 export function useComprovantes(tipo?: string) {

@@ -8,6 +8,8 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
+from sqlalchemy.exc import IntegrityError
+
 from app.api.schemas.financas import (
     ContaCreate,
     ContaListResponse,
@@ -109,7 +111,14 @@ async def atualizar_conta(conta_id: str, payload: ContaUpdate) -> ContaResponse:
 
 async def deletar_conta(conta_id: str) -> bool:
     async with get_session() as session:
-        ok = await ContaRepository(session).delete(_uuid(conta_id))
+        try:
+            ok = await ContaRepository(session).delete(_uuid(conta_id))
+        except IntegrityError:
+            # Tem transações/pagamentos apontando pra essa conta (FK).
+            raise ContaError(
+                "Essa conta tem lançamentos. Exclua ou mova as transações "
+                "antes de remover a conta (ou inative-a)."
+            )
         if not ok:
             raise ContaError("Conta não encontrada.")
         return True
