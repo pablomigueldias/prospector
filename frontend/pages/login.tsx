@@ -2,11 +2,14 @@ import Head from 'next/head';
 import { useState, type FormEvent } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { ApiError } from '@/lib/types';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [codigo, setCodigo] = useState('');
+  const [precisa2fa, setPrecisa2fa] = useState(false);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
@@ -15,12 +18,19 @@ export default function LoginPage() {
     setErro('');
     setEnviando(true);
     try {
-      await login(email.trim(), senha);
+      await login(email.trim(), senha, precisa2fa ? codigo.trim() : undefined);
       // O AuthProvider redireciona pra "/" assim que o usuário entra.
-    } catch {
-      // Mensagem sempre genérica (anti-enumeração) — não dizemos se o email
-      // existe ou se foi só a senha.
-      setErro('Email ou senha inválidos.');
+    } catch (err) {
+      if (err instanceof ApiError && err.detail === '2fa_requerido') {
+        // Senha OK; agora pede o 2º fator (não revela isso antes da senha certa).
+        setPrecisa2fa(true);
+        setErro('');
+      } else if (precisa2fa) {
+        setErro('Código de verificação inválido.');
+      } else {
+        // Genérica (anti-enumeração) — não dizemos se foi email ou senha.
+        setErro('Email ou senha inválidos.');
+      }
       setEnviando(false);
     }
   }
@@ -64,8 +74,31 @@ export default function LoginPage() {
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   required
+                  disabled={precisa2fa}
                 />
               </label>
+
+              {precisa2fa && (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-ink-mute">
+                    Código de verificação (2FA)
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    className="input tracking-widest"
+                    placeholder="123456 ou backup code"
+                    value={codigo}
+                    onChange={(e) => setCodigo(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                  <span className="text-xs text-ink-mute">
+                    Abra seu app autenticador, ou use um código de backup.
+                  </span>
+                </label>
+              )}
 
               {erro && (
                 <p className="text-sm text-red-600" role="alert">
@@ -78,7 +111,11 @@ export default function LoginPage() {
                 className="btn-primary justify-center mt-2"
                 disabled={enviando}
               >
-                {enviando ? 'Entrando…' : 'Entrar'}
+                {enviando
+                  ? 'Entrando…'
+                  : precisa2fa
+                    ? 'Verificar código'
+                    : 'Entrar'}
               </button>
             </form>
           </div>

@@ -359,11 +359,13 @@ export const api = {
   },
 
   // ── Auth ────────────────────────────────────────────────────────
-  /** POST /api/auth/login — seta o cookie de sessão e devolve o usuário */
-  authLogin(email: string, senha: string): Promise<Usuario> {
+  /** POST /api/auth/login — seta o cookie de sessão e devolve o usuário.
+   *  Se o usuário tiver 2FA, a 1ª chamada (sem codigo2fa) responde 401 com
+   *  detail "2fa_requerido"; reenvie com o código. */
+  authLogin(email: string, senha: string, codigo2fa?: string): Promise<Usuario> {
     return request<Usuario>('/api/auth/login', {
       method: 'POST',
-      body: { email, senha },
+      body: { email, senha, codigo_2fa: codigo2fa || null },
       timeoutMs: 15_000,
     });
   },
@@ -391,6 +393,37 @@ export const api = {
     return request('/api/auth/senha', {
       method: 'POST',
       body: { senha_atual: senhaAtual, senha_nova: senhaNova },
+      timeoutMs: 15_000,
+    });
+  },
+
+  // ── 2FA (TOTP) ──────────────────────────────────────────────────
+  /** POST /api/auth/2fa/setup — gera secret + QR (ainda não ativa) */
+  authTwofaSetup(): Promise<{
+    secret: string;
+    otpauth_uri: string;
+    qr_data_uri: string;
+  }> {
+    return request('/api/auth/2fa/setup', { method: 'POST', timeoutMs: 15_000 });
+  },
+
+  /** POST /api/auth/2fa/ativar — confirma o código e devolve os backup codes */
+  authTwofaAtivar(codigo: string): Promise<{ ok: boolean; backup_codes: string[] }> {
+    return request('/api/auth/2fa/ativar', {
+      method: 'POST',
+      body: { codigo },
+      timeoutMs: 15_000,
+    });
+  },
+
+  /** POST /api/auth/2fa/desativar — exige senha + código */
+  authTwofaDesativar(
+    senha: string,
+    codigo: string,
+  ): Promise<{ ok: boolean; mensagem: string }> {
+    return request('/api/auth/2fa/desativar', {
+      method: 'POST',
+      body: { senha, codigo },
       timeoutMs: 15_000,
     });
   },
