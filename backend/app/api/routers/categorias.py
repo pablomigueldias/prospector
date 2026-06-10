@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.dependencies.financas import exige_editar, usuario_financas
 from app.api.schemas.financas import (
     CategoriaCreate,
     CategoriaResponse,
@@ -9,7 +10,13 @@ from app.api.schemas.financas import (
 from app.api.services.financas import categoria_service
 from app.api.services.financas.categoria_service import CategoriaError
 
-router = APIRouter(prefix="/api/financas/categorias", tags=["financas:categorias"])
+# Categorias são globais (árvore compartilhada); exigem login + financas.ver
+# em tudo (router-level) e financas.editar nas mutações.
+router = APIRouter(
+    prefix="/api/financas/categorias",
+    tags=["financas:categorias"],
+    dependencies=[Depends(usuario_financas)],
+)
 
 
 def _handle(e: Exception) -> HTTPException:
@@ -30,7 +37,8 @@ async def listar() -> CategoriaTreeResponse:
 
 
 @router.post("", response_model=CategoriaResponse, status_code=201,
-             summary="Cria uma categoria (raiz ou subverba)")
+             summary="Cria uma categoria (raiz ou subverba)",
+             dependencies=[Depends(exige_editar)])
 async def criar(body: CategoriaCreate) -> CategoriaResponse:
     try:
         return await categoria_service.criar_categoria(body)
@@ -48,7 +56,8 @@ async def detalhe(categoria_id: str) -> CategoriaResponse:
 
 
 @router.patch("/{categoria_id}", response_model=CategoriaResponse,
-              summary="Atualiza nome/pai/ativa (com checagem de ciclo)")
+              summary="Atualiza nome/pai/ativa (com checagem de ciclo)",
+              dependencies=[Depends(exige_editar)])
 async def atualizar(categoria_id: str, body: CategoriaUpdate) -> CategoriaResponse:
     try:
         return await categoria_service.atualizar_categoria(categoria_id, body)
@@ -57,7 +66,8 @@ async def atualizar(categoria_id: str, body: CategoriaUpdate) -> CategoriaRespon
 
 
 @router.delete("/{categoria_id}", status_code=204,
-               summary="Remove a categoria (filhos somem por cascata)")
+               summary="Remove a categoria (filhos somem por cascata)",
+               dependencies=[Depends(exige_editar)])
 async def remover(categoria_id: str) -> None:
     try:
         await categoria_service.deletar_categoria(categoria_id)

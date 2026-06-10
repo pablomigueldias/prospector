@@ -2,17 +2,16 @@
 
 > Documento para retomar o trabalho exatamente de onde parou. Leia junto com
 > `AUTH_STATUS.md` (visão geral). Branch: `feat/financas`.
-> Última parada: **acabei o Step E18 (admin de usuários)**. Próximo: **2FA** e/ou
-> o endurecimento do `usuario_id` no financas.
+> Última parada: **fiz o Step B (financas deriva `usuario_id` da sessão)** — ver
+> §4, agora marcado ✅. Próximo: **2FA (TOTP, §3)** e/ou o **deploy (§5)**.
 
 ---
 
 ## 0. Onde exatamente parei
 
-- Último commit: `auth: admin de usuários (...) (Step E18)`.
-- Tudo verde (16 smoke tests de auth + frontend `typecheck`/`build`).
-- **Falta**: 2FA (D15–D17), derivar `usuario_id` da sessão no `financas`, e o deploy (Step 30).
-- Ainda **não foi feito push** quando este doc foi escrito (vai ser feito em seguida).
+- Último commit: `auth: financas deriva usuario_id da sessão (Step B)`.
+- Verde: bateria de financas (incl. novo `test_financas_auth_api`) + frontend `typecheck`/`build`. Auth: 10/11 verdes — `test_auth_me_logout_api` falha por motivo **pré-existente** (logout sem CSRF; ver §4).
+- **Falta**: 2FA (D15–D17, §3) e o deploy (Step 30, §5).
 
 ---
 
@@ -125,17 +124,22 @@ Objetivo: 2º fator opcional, ligado já no admin. **Não refaz nada** do que ex
 
 ---
 
-## 4. PRÓXIMO PASSO B — financas deriva `usuario_id` da sessão
+## 4. ✅ FEITO — financas deriva `usuario_id` da sessão (Step B)
 
-**Por quê:** hoje `/api/financas/*` recebe `usuario_id` por query string. Com só o Pablo, ok. Mas a Sandra poderia trocar o parâmetro e ver dados de outro perfil. Fazer **antes de criar a Sandra de verdade**.
+**Por quê:** antes `/api/financas/*` recebia `usuario_id` por query string / corpo. Com só o Pablo, ok; mas a Sandra poderia trocar o parâmetro e ver dados de outro perfil. Agora o dono é **sempre o logado**.
 
-**Como (sugestão):**
-- Criar dependency `financas_usuario_id` que retorna `str(usuario_atual.id)` (exige login).
-- Nos routers de `financas/*`, trocar o parâmetro `usuario_id: str` (query) por `usuario_id: str = Depends(financas_usuario_id)`.
-- Exigir também `require_permission("financas.ver")` (leitura) e `financas.editar` (mutações) nesses routers.
-- O **bot do Telegram** continua passando `usuario_id` direto pelo `mapa_chat_usuario` (não usa cookie) — não mexer no caminho do bot.
-- Ajustar o front: `lib/financas.ts` hoje usa `FINANCAS_USUARIO_ID` fixo; passar a usar `usuario.id` do AuthContext (ou deixar o backend ignorar o query param e usar a sessão).
-- Atualizar os smoke tests de financas que passam `usuario_id` por query (vão precisar logar e mandar cookie).
+**O que foi feito:**
+- Nova dependency `app/api/dependencies/financas.py`: `usuario_financas` (login + `financas.ver`), `financas_usuario_id` (→ `str(usuario.id)` da sessão) e `exige_editar` (`financas.editar`).
+- Todos os 13 routers de `financas/*` endurecidos: GET de listagem usa `Depends(financas_usuario_id)`; POST/Form **sobrescrevem `body.usuario_id`** com o da sessão (corpo forjado é ignorado) e exigem `exige_editar`; GET/PATCH/DELETE por id exigem login+permissão.
+- **Bot do Telegram intacto** (chama os services direto, com `usuario_id` do `mapa_chat_usuario`; não passa pelos routers HTTP).
+- Front (`lib/financas.ts`): valor `FINANCAS_USUARIO_ID` agora é só payload — o backend ignora. Build/typecheck verdes, sem mudança funcional.
+- Testes: helper `tests/_financas_auth.py` (override de auth via `app.dependency_overrides`) aplicado nos ~16 smoke tests de financas; novo `tests/test_financas_auth_api.py` cobre o fluxo real (login/cookie/CSRF, 401, forja ignorada, 403).
+
+**Exceções deliberadas (não feitas de propósito):**
+- `POST /api/financas/recorrencias/processar` é endpoint de **job** (cron, `usuario_id=None` = todos os perfis) → segue **sem** derivar da sessão. Se um dia for exposto publicamente, endurecer à parte.
+- GET/PATCH/DELETE **por id** (`/contas/{id}`, `/cartoes/{id}`, `/transacoes/{id}`, `/compras/{id}`) exigem login+permissão mas **não checam ownership** do recurso pelo `usuario_id` (id é UUID aleatório). Endurecer (checar dono no service) se a Sandra precisar de garantia mais forte.
+
+**Pendência pré-existente avistada:** `tests/test_auth_me_logout_api.py` (Step 4) falha em isolamento — faz `logout` sem `X-CSRF-Token`, que o B8 passou a exigir. É só atualizar o teste pra mandar o header. Não tocado aqui.
 
 ---
 

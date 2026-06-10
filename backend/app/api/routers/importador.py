@@ -1,7 +1,8 @@
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from app.api.dependencies.financas import exige_editar, financas_usuario_id
 from app.api.schemas.financas import ImportarBoletoResponse
 from app.api.services.financas import importador_service
 from app.api.services.financas.importador_service import ImportadorError
@@ -18,11 +19,12 @@ def _handle(e: Exception) -> HTTPException:
 
 
 @router.post("/boleto", response_model=ImportarBoletoResponse,
-             summary="Lê um boleto (PDF/foto) e cria a despesa com as verbas")
+             summary="Lê um boleto (PDF/foto) e cria a despesa com as verbas",
+             dependencies=[Depends(exige_editar)])
 async def importar_boleto(
-    usuario_id: str = Form(...),
     file: UploadFile = File(...),
     categoria_id: Optional[str] = Form(None),
+    usuario_id: str = Depends(financas_usuario_id),
 ) -> ImportarBoletoResponse:
     try:
         conteudo = await file.read()

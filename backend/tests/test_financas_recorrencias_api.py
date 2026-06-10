@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.config import settings
 
 REC = "/api/financas/recorrencias"
@@ -69,6 +70,7 @@ def smoke_test() -> None:
     conta_ids: list[str] = []
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             conta_id = client.post(CONTAS, json={
                 "usuario_id": usuario_id, "nome": "Nubank",

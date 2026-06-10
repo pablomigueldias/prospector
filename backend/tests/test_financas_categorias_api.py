@@ -5,6 +5,7 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 
 BASE = "/api/financas/categorias"
 
@@ -23,6 +24,7 @@ def smoke_test() -> None:
 
     raiz_id = filho_id = None
     with TestClient(app) as client:
+        usar_usuario(str(uuid.uuid4()))  # categorias são globais; só precisa logar
         try:
             # ── 1. Árvore do seed: Condomínio com 7 subverbas ─────────
             print("\n→ Test 1: GET árvore (seed)")

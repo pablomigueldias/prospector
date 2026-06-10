@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.analyzers.nlu import extrator
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.api.services.financas import bot_service
 from app.config import settings
 from app.integrations import telegram as tg
@@ -76,6 +77,7 @@ def smoke_test() -> None:
     tg.answer_callback_query = lambda cid, text_=None: {"ok": True}
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             client.post(CONTAS, json={
                 "usuario_id": usuario_id, "nome": "Carteira",

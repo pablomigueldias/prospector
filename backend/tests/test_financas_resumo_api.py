@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.config import settings
 
 RESUMO = "/api/financas/resumo"
@@ -71,6 +72,7 @@ def smoke_test() -> None:
     usuario_id = str(uuid.uuid4())
     ids: list[str] = []
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             transporte = _root_id(client, "Transporte")
             alimentacao = _root_id(client, "Alimentação")
