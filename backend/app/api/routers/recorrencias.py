@@ -9,6 +9,7 @@ from app.api.schemas.financas import (
     RecorrenciaCreate,
     RecorrenciaListResponse,
     RecorrenciaResponse,
+    RecorrenciaUpdate,
 )
 from app.api.services.financas import recorrencia_service
 from app.api.services.financas.recorrencia_service import RecorrenciaError
@@ -46,6 +47,26 @@ async def criar(
     body.usuario_id = usuario_id  # dono = sessão
     try:
         return await recorrencia_service.criar_recorrencia(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.patch("/{recorrencia_id}", response_model=RecorrenciaResponse,
+              summary="Edita uma recorrência (valor, dia, conta/categoria, ativa)",
+              dependencies=[Depends(exige_editar)])
+async def atualizar(recorrencia_id: str, body: RecorrenciaUpdate) -> RecorrenciaResponse:
+    try:
+        return await recorrencia_service.atualizar_recorrencia(recorrencia_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.delete("/{recorrencia_id}", status_code=204,
+               summary="Remove uma recorrência (transações geradas ficam, sem o vínculo)",
+               dependencies=[Depends(exige_editar)])
+async def remover(recorrencia_id: str) -> None:
+    try:
+        await recorrencia_service.excluir_recorrencia(recorrencia_id)
     except Exception as e:
         raise _handle(e)
 

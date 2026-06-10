@@ -10,6 +10,7 @@ from app.api.schemas.financas import (
     RecorrenciaCreate,
     RecorrenciaListResponse,
     RecorrenciaResponse,
+    RecorrenciaUpdate,
 )
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
@@ -90,6 +91,56 @@ async def criar_recorrencia(payload: RecorrenciaCreate) -> RecorrenciaResponse:
         await session.commit()
         await session.refresh(rec)
         return _to_response(rec)
+
+
+async def atualizar_recorrencia(
+    recorrencia_id: str, payload: RecorrenciaUpdate
+) -> RecorrenciaResponse:
+    dados = payload.model_dump(exclude_unset=True)
+    if "tipo" in dados and dados["tipo"] is not None:
+        if dados["tipo"] not in TIPOS_RECORRENCIA:
+            raise RecorrenciaError(
+                f"Tipo inválido: {dados['tipo']!r}. Use 'despesa' ou 'receita'."
+            )
+    if "descricao" in dados and dados["descricao"] is not None:
+        if not dados["descricao"].strip():
+            raise RecorrenciaError("A descrição não pode ficar vazia.")
+        dados["descricao"] = dados["descricao"].strip()
+
+    async with get_session() as session:
+        rec = await session.get(Recorrencia, _uuid(recorrencia_id))
+        if rec is None:
+            raise RecorrenciaError("Recorrência não encontrada.")
+
+        if dados.get("categoria_id"):
+            cid = _uuid(dados["categoria_id"], campo="categoria_id")
+            if await session.get(Categoria, cid) is None:
+                raise RecorrenciaError("Categoria não encontrada.")
+            dados["categoria_id"] = cid
+        if dados.get("conta_id"):
+            coid = _uuid(dados["conta_id"], campo="conta_id")
+            conta = await session.get(Conta, coid)
+            if conta is None:
+                raise RecorrenciaError("Conta não encontrada.")
+            if conta.usuario_id != rec.usuario_id:
+                raise RecorrenciaError("A conta não pertence a esse usuário.")
+            dados["conta_id"] = coid
+
+        for campo, valor in dados.items():
+            setattr(rec, campo, valor)
+        await session.commit()
+        await session.refresh(rec)
+        return _to_response(rec)
+
+
+async def excluir_recorrencia(recorrencia_id: str) -> None:
+    async with get_session() as session:
+        rec = await session.get(Recorrencia, _uuid(recorrencia_id))
+        if rec is None:
+            raise RecorrenciaError("Recorrência não encontrada.")
+        # Transações já geradas ficam (recorrencia_id vira NULL pela FK).
+        await session.delete(rec)
+        await session.commit()
 
 
 async def listar_recorrencias(usuario_id: str) -> RecorrenciaListResponse:
