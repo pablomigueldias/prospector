@@ -411,10 +411,118 @@ export interface ContaListResponse {
   total: number;
 }
 
+/** Tipos de conta aceitos pelo backend (TIPOS_CONTA). */
+export type TipoConta =
+  | 'corrente'
+  | 'dinheiro'
+  | 'vr'
+  | 'va'
+  | 'reserva'
+  | 'cartao_credito';
+
+export interface ContaCreateInput {
+  nome: string;
+  tipo: TipoConta;
+  saldo_atual?: string;
+}
+
+export interface ContaUpdateInput {
+  nome?: string;
+  tipo?: TipoConta;
+  ativa?: boolean;
+}
+
 export interface CategoriaResumoItem {
   categoria_id?: string | null;
   categoria_nome: string;
   total: string;
+}
+
+// ── Transações (lista filtrável + lançamento pela web) ──────────────
+export interface TransacaoListItem {
+  id: string;
+  tipo: string;
+  descricao: string;
+  valor_total: string;
+  data_competencia: string;
+  data_pagamento?: string | null;
+  status: string;
+  categoria_id?: string | null;
+  categoria_nome?: string | null;
+  contas: string[];
+}
+
+export interface TransacaoListResponse {
+  items: TransacaoListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** Resposta de detalhe/criação de transação (campos principais; o front
+ *  hoje só usa o `id` após lançar e recarrega a lista). */
+export interface TransacaoResponse {
+  id: string;
+  usuario_id: string;
+  tipo: string;
+  descricao: string;
+  valor_total: string;
+  data_competencia: string;
+  data_pagamento?: string | null;
+  status: string;
+  categoria_id?: string | null;
+}
+
+export interface TransacaoFiltro {
+  ano?: number;
+  mes?: number;
+  conta_id?: string;
+  categoria_id?: string;
+  tipo?: 'despesa' | 'receita';
+  busca?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/** Payload pra lançar despesa ou receita pela web. O `usuario_id` é injetado
+ *  no api.ts (ignorado pelo backend, que usa a sessão). */
+export interface LancamentoInput {
+  descricao: string;
+  valor_total: string;
+  conta_id: string;
+  categoria_id?: string | null;
+  data_competencia?: string | null;
+  status?: 'paga' | 'prevista';
+}
+
+export interface CategoriaTreeItem {
+  id: string;
+  nome: string;
+  ativa: boolean;
+  filhos: CategoriaTreeItem[];
+}
+
+export interface CategoriaTreeResponse {
+  items: CategoriaTreeItem[];
+  total: number;
+}
+
+export interface CategoriaResponse {
+  id: string;
+  nome: string;
+  categoria_pai_id?: string | null;
+  ativa: boolean;
+}
+
+export interface CategoriaCreateInput {
+  nome: string;
+  categoria_pai_id?: string | null;
+}
+
+export interface CategoriaUpdateInput {
+  nome?: string;
+  categoria_pai_id?: string | null;
+  ativa?: boolean;
 }
 
 export interface ResumoMes {
