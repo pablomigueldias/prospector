@@ -117,6 +117,9 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_SENHA_INICIAL: ${ADMIN_SENHA_INICIAL}
+      # 2FA TOTP — chave Fernet pra cifrar o secret no banco (NÃO trocar depois
+      # de gente ativar 2FA, senão os secrets viram ilegíveis).
+      TOTP_ENC_KEY: ${TOTP_ENC_KEY}
       # Produção: navegador headless
       HEADLESS_BROWSER: "true"
     networks:

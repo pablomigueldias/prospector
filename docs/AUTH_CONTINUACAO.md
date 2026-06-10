@@ -2,16 +2,16 @@
 
 > Documento para retomar o trabalho exatamente de onde parou. Leia junto com
 > `AUTH_STATUS.md` (visão geral). Branch: `feat/financas`.
-> Última parada: **fiz o Step B (financas deriva `usuario_id` da sessão)** — ver
-> §4, agora marcado ✅. Próximo: **2FA (TOTP, §3)** e/ou o **deploy (§5)**.
+> Última parada: **fiz o Step B (§4) e o 2FA TOTP D15–D17 (§3)** — ambos ✅.
+> Próximo: **deploy (§5)**.
 
 ---
 
 ## 0. Onde exatamente parei
 
-- Último commit: `auth: financas deriva usuario_id da sessão (Step B)`.
-- Verde: bateria de financas (incl. novo `test_financas_auth_api`) + frontend `typecheck`/`build`. Auth: 10/11 verdes — `test_auth_me_logout_api` falha por motivo **pré-existente** (logout sem CSRF; ver §4).
-- **Falta**: 2FA (D15–D17, §3) e o deploy (Step 30, §5).
+- Últimos commits: `auth: 2FA TOTP … (D15/D16)` + `auth: login em 2 etapas com 2FA … (D17)` (e antes `Step B`).
+- Verde: toda a bateria de financas + os 2FA (`test_auth_2fa_api`, `test_auth_2fa_login_api`) + `test_financas_auth_api` + frontend `typecheck`/`build`. ⚠️ `test_auth_me_logout_api` falha por motivo **pré-existente** (logout sem CSRF; ver §4 — não relacionado ao 2FA).
+- **Falta**: só o **deploy (Step 30, §5)**.
 
 ---
 
@@ -93,7 +93,20 @@ pages/agents/[slug].tsx    guarda de permissão por agente
 
 ---
 
-## 3. PRÓXIMO PASSO A — 2FA (TOTP) [D15–D17]
+## 3. ✅ FEITO — 2FA (TOTP) [D15–D17]
+
+**Implementado** (commits `c173bb7` D15/D16 + `ccba280` D17). O que ficou no código:
+- Model `app/db/models/auth/usuario_2fa.py` (PK = usuario_id, FK CASCADE); secret cifrado com **Fernet** (`TOTP_ENC_KEY`); `backup_codes_hash` = ARRAY de sha256 (uso único); `ativado_em`.
+- `app/api/services/auth/twofa_service.py`: `gerar_setup` (otpauth URI + **QR PNG data-URI** gerado no backend), `confirmar_ativacao`, `validar_codigo` (TOTP `valid_window=1` **ou** consome backup), `desativar`. Exceção `TwoFAError`.
+- Rotas `/api/auth/2fa/{setup,ativar,desativar}` em `auth.py`; auditoria `2fa_ativado`/`2fa_desativado`.
+- Login 2 etapas: `login_service` levanta `DoisFatoresRequerido` → router devolve 401 `detail="2fa_requerido"`. Código errado conta no rate limit. `LoginRequest.codigo_2fa`.
+- Front: `pages/login.tsx` (2º passo), `pages/conta.tsx` (`SecaoDoisFatores`: QR + secret manual + backup codes uma vez; desativar com senha+código), `lib/api.ts` + `AuthContext`.
+- Deps: `pyotp==2.9.0`, `qrcode[pil]==7.4.2` no `requirements.txt`. Settings `totp_enc_key`. `TOTP_ENC_KEY` no `.env`/`.env.example` (dev) e injetado no `deploy/docker-compose.yml` + `deploy/.env.example`.
+- Testes: `test_auth_2fa_api.py` (gestão) e `test_auth_2fa_login_api.py` (login 2 etapas) — ambos calculam o TOTP com `pyotp`, como o app autenticador.
+
+> Pegadinha encontrada: o cookie CSRF **rotaciona a cada `/me`** (a rota chama `set_csrf_cookie`); nos testes, releia `csrf_token` do jar antes de cada mutação em vez de guardar o valor do login.
+
+<details><summary>Plano original (referência)</summary>
 
 Objetivo: 2º fator opcional, ligado já no admin. **Não refaz nada** do que existe.
 
@@ -122,6 +135,8 @@ Objetivo: 2º fator opcional, ligado já no admin. **Não refaz nada** do que ex
 - Frontend: `pages/login.tsx` ganha o 2º passo (campo de código). `pages/conta.tsx` ganha a seção "Ativar 2FA" (mostra QR via lib JS de QR a partir da URI, confirma código, mostra backup codes).
 - Teste: `tests/test_auth_2fa_api.py` (setup→ativar→login 2 etapas→backup code).
 
+</details>
+
 ---
 
 ## 4. ✅ FEITO — financas deriva `usuario_id` da sessão (Step B)
@@ -147,7 +162,7 @@ Objetivo: 2º fator opcional, ligado já no admin. **Não refaz nada** do que ex
 
 Banco: **um Postgres só** (`reative-db`), database `reative`, schemas `public`/`financas`/`auth`. Não há banco novo.
 
-1. No VPS, em `deploy/.env`: conferir `ADMIN_EMAIL`, `ADMIN_SENHA_INICIAL`, `SESSION_COOKIE_SECURE=true`, `TELEGRAM_USUARIO_ID`, e (quando houver) `TOTP_ENC_KEY`.
+1. No VPS, em `deploy/.env`: conferir `ADMIN_EMAIL`, `ADMIN_SENHA_INICIAL`, `SESSION_COOKIE_SECURE=true`, `TELEGRAM_USUARIO_ID`, e **gerar `TOTP_ENC_KEY`** (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`). ⚠️ Não troque essa chave depois que alguém ativar o 2FA. O compose já injeta a var.
 2. `./scripts/02-deploy.sh` (build api+web). O container da API roda `alembic upgrade head` no start → cria os schemas/tabelas sozinho.
 3. Uma vez: `docker compose exec api python -m app.jobs.seed_admin`.
 4. `./scripts/set-telegram-webhook.sh` (liga o webhook HTTPS do bot).
