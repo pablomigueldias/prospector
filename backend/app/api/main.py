@@ -66,15 +66,25 @@ app.add_middleware(
 
 _METODOS_MUTACAO = {"POST", "PUT", "PATCH", "DELETE"}
 
+# Rotas isentas de CSRF mesmo com cookie de sessão presente. O login
+# estabelece uma sessão nova (rotaciona sessão + token CSRF), então não faz
+# sentido — e quebra o onboarding — exigir CSRF aqui: um cookie de sessão
+# velho/expirado no navegador trava a re-autenticação.
+_CSRF_ISENTAS = {"/api/auth/login"}
+
 
 @app.middleware("http")
 async def csrf_middleware(request: Request, call_next):
     """Exige CSRF só quando a mutação vem autenticada por cookie de sessão.
 
-    Requests sem cookie de sessão (login, webhook do Telegram com secret, clientes
-    de API) não são alvo de CSRF e passam direto.
+    Requests sem cookie de sessão (webhook do Telegram com secret, clientes de
+    API) e as rotas de ``_CSRF_ISENTAS`` (login) passam direto.
     """
-    if request.method in _METODOS_MUTACAO and request.cookies.get(cookie_name()):
+    if (
+        request.method in _METODOS_MUTACAO
+        and request.url.path not in _CSRF_ISENTAS
+        and request.cookies.get(cookie_name())
+    ):
         if not csrf_valido(request):
             return JSONResponse(
                 status_code=403,
