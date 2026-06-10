@@ -13,6 +13,7 @@ from app.api.routers import agents as agents_router
 from app.api.routers import prospector as prospector_router
 from app.api.routers import copywriter as copywriter_router
 from app.api.routers import observability as observability_router
+from app.api.routers import dev_tools as dev_tools_router
 from app.api.routers import outreach as outreach_router
 from app.api.routers import perfil as perfil_router
 from app.api.routers import vagas as vagas_router
@@ -126,3 +127,6 @@ app.include_router(importador_router.router)
 app.include_router(nlu_router.router)
 app.include_router(telegram_router.router)
 app.include_router(eventos_router.router)
+
+# ── Ferramentas de dev (rotas guardadas por DEV_TOOLS_ENABLED) ────
+app.include_router(dev_tools_router.router)

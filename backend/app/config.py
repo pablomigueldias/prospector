@@ -86,6 +86,11 @@ class Settings(BaseSettings):
     modo_stealth: bool = True
     aquecer_sessao: bool = True
 
+    # Ferramentas de DEV (NUNCA ligar em produção). Habilita rotas perigosas
+    # como o sync produção→dev (que APAGA o banco de dev). Default desligado;
+    # só o .env de dev seta DEV_TOOLS_ENABLED=true.
+    dev_tools_enabled: bool = False
+
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
         env_file_encoding="utf-8",

@@ -31,8 +31,11 @@ bold ">> sync produção → dev"
 echo "   origem : $VPS  (container $PROD_CONTAINER)  [somente leitura]"
 echo "   destino: container local $DEV_CONTAINER, banco '$DEV_DB'"
 red  "   Isto APAGA o banco de dev e o substitui pela produção."
-read -r -p "   Continuar? [s/N] " ok
-[ "${ok:-}" = "s" ] || [ "${ok:-}" = "S" ] || { echo "   abortado."; exit 1; }
+# ASSUME_YES=1 pula o prompt (usado pelo botão de dev no dashboard).
+if [ "${ASSUME_YES:-}" != "1" ]; then
+  read -r -p "   Continuar? [s/N] " ok
+  [ "${ok:-}" = "s" ] || [ "${ok:-}" = "S" ] || { echo "   abortado."; exit 1; }
+fi
 
 # 1) Dump da produção (pg_dump roda DENTRO do container do VPS; só leitura).
 DUMP="$(mktemp -t prod_dump.XXXXXX.sql)"

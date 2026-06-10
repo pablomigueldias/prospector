@@ -477,6 +477,16 @@ export const api = {
     );
   },
 
+  // ── Dev tools (só habilitado fora de produção) ──────────────────
+  /** POST /api/dev/sync-prod-to-dev — copia os dados da produção pro dev.
+   *  DESTRUTIVO: substitui o banco de dev inteiro. 404 em produção. */
+  devSyncProdToDev(): Promise<{ ok: boolean; mensagem: string; log: string }> {
+    return request('/api/dev/sync-prod-to-dev', {
+      method: 'POST',
+      timeoutMs: 320_000,
+    });
+  },
+
   // ── Auth ────────────────────────────────────────────────────────
   /** POST /api/auth/login — seta o cookie de sessão e devolve o usuário.
    *  Se o usuário tiver 2FA, a 1ª chamada (sem codigo2fa) responde 401 com
