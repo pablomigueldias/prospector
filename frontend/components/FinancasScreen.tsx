@@ -6,6 +6,7 @@ import { CategoriasSection } from '@/components/CategoriasSection';
 import { ComprovantesGaleria } from '@/components/ComprovantesGaleria';
 import { ConsumoSection } from '@/components/ConsumoSection';
 import { ContasSection } from '@/components/ContasSection';
+import { DevSyncButton } from '@/components/DevSyncButton';
 import { StatCard } from '@/components/StatCard';
 import { TransacoesSection } from '@/components/TransacoesSection';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
@@ -174,6 +175,9 @@ export default function FinancasScreen() {
         </h2>
         <ComprovantesGaleria />
       </section>
+
+      {/* Ferramenta de dev (some em produção) */}
+      <DevSyncButton />
     </div>
   );
 }
