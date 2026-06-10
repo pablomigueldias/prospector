@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.config import settings
 from app.utils.s3_storage import get_storage
 
@@ -43,6 +44,7 @@ def smoke_test() -> None:
 
     usuario_id = str(uuid.uuid4())
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             client.post(COMP, data={"usuario_id": usuario_id, "tipo": "boleto"},
                         files={"file": ("b.pdf", b"%PDF boleto", "application/pdf")})
@@ -64,10 +66,12 @@ def smoke_test() -> None:
             assert rb.json()["items"][0]["tipo"] == "boleto"
             print("   1 boleto")
 
-            # ── 3. Sem usuario_id nem transacao_id → 400 ──────────────
-            print("\n→ Test 3: sem filtro → 400")
-            assert client.get(COMP).status_code == 400
-            print("   400 ok")
+            # ── 3. Sem transacao_id → galeria do usuário logado (sessão)
+            print("\n→ Test 3: sem transacao_id → galeria do logado")
+            rg = client.get(COMP)
+            assert rg.status_code == 200, rg.text
+            assert rg.json()["total"] == 2, rg.json()["total"]
+            print("   lista a galeria do usuário da sessão ok")
 
         finally:
             asyncio.run(_cleanup(usuario_id))

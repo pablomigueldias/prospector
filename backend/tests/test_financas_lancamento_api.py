@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import limpar_override, usar_usuario
 from app.config import settings
 
 CONTAS = "/api/financas/contas"
@@ -51,6 +52,7 @@ def smoke_test() -> None:
     tx_ids: list[str] = []
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             # ── Conta com saldo de abertura 1000 ──────────────────────
             r = client.post(CONTAS, json={
@@ -111,12 +113,14 @@ def smoke_test() -> None:
                 "valor_total": 10, "conta_id": str(uuid.uuid4()),
             })
             assert r404.status_code == 404, r404.status_code
-            # conta de outro usuário → 400
+            # outra sessão não lança na conta deste usuário → 400
+            usar_usuario(outro_usuario)
             rmix = client.post(f"{TX}/despesa", json={
                 "usuario_id": outro_usuario, "descricao": "x",
                 "valor_total": 10, "conta_id": conta_id,
             })
             assert rmix.status_code == 400, rmix.status_code
+            usar_usuario(usuario_id)  # volta pro dono
             # status inválido → 400
             rst = client.post(f"{TX}/despesa", json={
                 "usuario_id": usuario_id, "descricao": "x",
@@ -126,6 +130,7 @@ def smoke_test() -> None:
             print("   422 valor<=0 ; 404 conta ; 400 dono errado ; 400 status")
 
         finally:
+            limpar_override()
             asyncio.run(_cleanup(conta_ids, tx_ids))
 
     print("\n" + "━" * 60)

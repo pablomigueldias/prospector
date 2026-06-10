@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.config import settings
 
 LEITURAS = "/api/financas/leituras"
@@ -33,6 +34,7 @@ def smoke_test() -> None:
 
     usuario_id = str(uuid.uuid4())
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             # ── 1. Consumo calculado (atual − anterior) ───────────────
             print("\n→ Test 1: consumo calculado")

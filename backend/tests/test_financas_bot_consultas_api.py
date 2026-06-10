@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.api.services.financas import bot_service
 from app.config import settings
 from app.integrations import telegram as tg
@@ -55,6 +56,7 @@ def smoke_test() -> None:
     settings.telegram_webhook_secret = ""  # teste não envia o header do secret
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             conta_id = client.post(CONTAS, json={
                 "usuario_id": usuario_id, "nome": "Carteira",

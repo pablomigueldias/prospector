@@ -30,11 +30,28 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 AJUDA = (
-    "Manda assim:\n"
-    "• <code>/gasto 50 mercado</code> (lança rápido)\n"
-    "• <code>/gasto 50 mercado vr</code> (escolhe a conta)\n"
-    "• ou um boleto (PDF/foto) que eu importo."
+    "💰 <b>Seu organizador financeiro</b> — o que dá pra fazer:\n"
+    "\n"
+    "💸 <b>Lançar na hora</b>\n"
+    "• <code>/gasto 50 mercado</code> (saída)\n"
+    "• <code>/ganho 2000 salário</code> (entrada)\n"
+    "• acrescente a conta no fim: <code>/gasto 50 mercado vr</code>\n"
+    "\n"
+    "💬 <b>Falar normal</b> (eu monto um card pra você confirmar)\n"
+    "• <i>gastei 80 no posto</i>\n"
+    "• <i>recebi 2000 de salário</i>\n"
+    "\n"
+    "📎 <b>Boleto ou comprovante</b>\n"
+    "• manda o PDF ou a foto que eu leio e lanço sozinho\n"
+    "\n"
+    "📊 <b>Consultar</b>\n"
+    "• /saldo — saldo das suas contas\n"
+    "• /resumo — receitas x despesas do mês\n"
+    "\n"
+    "ℹ️ Reveja isto quando quiser com /help."
 )
+
+BOAS_VINDAS = "👋 <b>Tudo certo, bot no ar!</b>\n\n"
 
 
 def mapa_chat_usuario() -> dict[str, str]:
@@ -63,8 +80,13 @@ async def processar_update(update: dict) -> dict:
     chat_id = str(msg.get("chat", {}).get("id", ""))
     usuario_id = mapa_chat_usuario().get(chat_id)
     if usuario_id is None:
-        await _responder(chat_id, "🚫 Bot privado. Você não está autorizado.")
-        return {"ok": True, "autorizado": False}
+        await _responder(
+            chat_id,
+            "🚫 Este bot é privado.\n\n"
+            "Se você deve ter acesso, passe este código pro dono te liberar:\n"
+            f"<code>{chat_id}</code>",
+        )
+        return {"ok": True, "autorizado": False, "chat_id": chat_id}
 
     # Foto ou PDF → importador de boleto.
     if msg.get("photo") or msg.get("document"):
@@ -73,11 +95,24 @@ async def processar_update(update: dict) -> dict:
     texto = (msg.get("text") or "").strip()
 
     if texto.startswith("/start"):
-        await _responder(chat_id, "💰 Organizador financeiro no ar.\n\n" + AJUDA)
+        await _responder(chat_id, BOAS_VINDAS + AJUDA)
         return {"ok": True, "comando": "start"}
 
+    if texto.startswith(("/help", "/ajuda")):
+        await _responder(chat_id, AJUDA)
+        return {"ok": True, "comando": "help"}
+
     if texto.startswith("/gasto"):
-        return await _cmd_gasto(chat_id, usuario_id, texto)
+        return await _cmd_lancar(chat_id, usuario_id, texto, tipo="despesa")
+
+    if texto.startswith(("/ganho", "/receita")):
+        return await _cmd_lancar(chat_id, usuario_id, texto, tipo="receita")
+
+    if texto.startswith("/saldo"):
+        return await _saldos(chat_id, usuario_id)
+
+    if texto.startswith("/resumo"):
+        return await _resumo_mes(chat_id, usuario_id)
 
     if texto and not texto.startswith("/"):
         intent = _consulta_intent(texto)
@@ -87,7 +122,7 @@ async def processar_update(update: dict) -> dict:
             return await _resumo_mes(chat_id, usuario_id)
         return await _texto_livre(chat_id, usuario_id, texto)
 
-    await _responder(chat_id, "Não entendi 🤔\n\n" + AJUDA)
+    await _responder(chat_id, "Não entendi esse comando 🤔\n\n" + AJUDA)
     return {"ok": True, "comando": None}
 
 
@@ -275,26 +310,36 @@ async def _confirmar(chat_id: str, usuario_id: str, payload: dict) -> dict:
     return {"ok": True, "acao": "confirmar", "transacao_id": resp.id}
 
 
-async def _cmd_gasto(chat_id: str, usuario_id: str, texto: str) -> dict:
+async def _cmd_lancar(chat_id: str, usuario_id: str, texto: str, *, tipo: str) -> dict:
+    """Lança rápido despesa (/gasto) ou receita (/ganho): <valor> <descrição> [conta]."""
+    eh_receita = tipo == "receita"
+    cmd = "/ganho" if eh_receita else "/gasto"
+    rotulo = "ganho" if eh_receita else "gasto"
+
     partes = texto.split()
     if len(partes) < 3:
-        await _responder(chat_id, "Uso: <code>/gasto &lt;valor&gt; &lt;descrição&gt; [conta]</code>")
-        return {"ok": True, "comando": "gasto", "erro": "uso"}
+        exemplo = "/ganho 2000 salário" if eh_receita else "/gasto 50 mercado"
+        await _responder(
+            chat_id,
+            f"Uso: <code>{cmd} &lt;valor&gt; &lt;descrição&gt; [conta]</code>\n"
+            f"Ex.: <code>{exemplo}</code>",
+        )
+        return {"ok": True, "comando": rotulo, "erro": "uso"}
 
     try:
         valor = Decimal(partes[1].replace(",", "."))
     except InvalidOperation:
         await _responder(chat_id, f"Valor inválido: {partes[1]!r}")
-        return {"ok": True, "comando": "gasto", "erro": "valor"}
+        return {"ok": True, "comando": rotulo, "erro": "valor"}
     if valor <= 0:
         await _responder(chat_id, "O valor precisa ser maior que zero.")
-        return {"ok": True, "comando": "gasto", "erro": "valor"}
+        return {"ok": True, "comando": rotulo, "erro": "valor"}
 
     resto = partes[2:]
     contas = (await conta_service.listar_contas(usuario_id, apenas_ativas=True)).items
     if not contas:
         await _responder(chat_id, "Você ainda não tem contas. Cadastre uma primeiro.")
-        return {"ok": True, "comando": "gasto", "erro": "sem_conta"}
+        return {"ok": True, "comando": rotulo, "erro": "sem_conta"}
 
     # Último token pode ser o nome/tipo de uma conta.
     conta = None
@@ -308,13 +353,23 @@ async def _cmd_gasto(chat_id: str, usuario_id: str, texto: str) -> dict:
     if conta is None:
         conta = contas[0]  # default: primeira conta ativa
 
-    descricao = " ".join(resto) or "gasto"
-    resp = await transacao_service.lancar_despesa(DespesaCreate(
-        usuario_id=usuario_id, descricao=descricao,
-        valor_total=valor, conta_id=conta.id,
-    ))
-    await _responder(
-        chat_id,
-        f"✅ R$ {valor} em <b>{descricao}</b> na conta <b>{conta.nome}</b>.",
-    )
-    return {"ok": True, "comando": "gasto", "transacao_id": resp.id, "conta": conta.nome}
+    descricao = " ".join(resto) or rotulo
+    if eh_receita:
+        resp = await transacao_service.lancar_receita(ReceitaCreate(
+            usuario_id=usuario_id, descricao=descricao,
+            valor_total=valor, conta_id=conta.id,
+        ))
+        await _responder(
+            chat_id,
+            f"💰 Entrou R$ {valor}: <b>{descricao}</b> na conta <b>{conta.nome}</b>.",
+        )
+    else:
+        resp = await transacao_service.lancar_despesa(DespesaCreate(
+            usuario_id=usuario_id, descricao=descricao,
+            valor_total=valor, conta_id=conta.id,
+        ))
+        await _responder(
+            chat_id,
+            f"✅ R$ {valor} em <b>{descricao}</b> na conta <b>{conta.nome}</b>.",
+        )
+    return {"ok": True, "comando": rotulo, "transacao_id": resp.id, "conta": conta.nome}

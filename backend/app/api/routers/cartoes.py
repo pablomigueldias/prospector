@@ -1,5 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.dependencies.financas import (
+    exige_editar,
+    financas_usuario_id,
+    usuario_financas,
+)
 from app.api.schemas.financas import (
     CartaoCreate,
     CartaoListResponse,
@@ -21,8 +26,10 @@ def _handle(e: Exception) -> HTTPException:
 
 
 @router.get("", response_model=CartaoListResponse,
-            summary="Lista os cartões de um usuário")
-async def listar(usuario_id: str) -> CartaoListResponse:
+            summary="Lista os cartões do usuário logado")
+async def listar(
+    usuario_id: str = Depends(financas_usuario_id),
+) -> CartaoListResponse:
     try:
         return await cartao_service.listar_cartoes(usuario_id)
     except Exception as e:
@@ -30,8 +37,13 @@ async def listar(usuario_id: str) -> CartaoListResponse:
 
 
 @router.post("", response_model=CartaoResponse, status_code=201,
-             summary="Cadastra um cartão de crédito")
-async def criar(body: CartaoCreate) -> CartaoResponse:
+             summary="Cadastra um cartão de crédito",
+             dependencies=[Depends(exige_editar)])
+async def criar(
+    body: CartaoCreate,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> CartaoResponse:
+    body.usuario_id = usuario_id  # dono = sessão
     try:
         return await cartao_service.criar_cartao(body)
     except Exception as e:
@@ -39,7 +51,8 @@ async def criar(body: CartaoCreate) -> CartaoResponse:
 
 
 @router.get("/{cartao_id}/faturas", response_model=FaturasCartaoResponse,
-            summary="Faturas do cartão + total em aberto e total de juros")
+            summary="Faturas do cartão + total em aberto e total de juros",
+            dependencies=[Depends(usuario_financas)])
 async def faturas(cartao_id: str) -> FaturasCartaoResponse:
     try:
         return await cartao_service.faturas_do_cartao(cartao_id)
@@ -47,7 +60,8 @@ async def faturas(cartao_id: str) -> FaturasCartaoResponse:
         raise _handle(e)
 
 
-@router.get("/{cartao_id}", response_model=CartaoResponse, summary="Detalhe do cartão")
+@router.get("/{cartao_id}", response_model=CartaoResponse, summary="Detalhe do cartão",
+            dependencies=[Depends(usuario_financas)])
 async def detalhe(cartao_id: str) -> CartaoResponse:
     try:
         return await cartao_service.get_cartao(cartao_id)

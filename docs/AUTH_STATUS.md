@@ -3,7 +3,8 @@
 > Portão de entrada do app (login, sessão, permissões). Construído na branch
 > `feat/financas`, antes do deploy, como pré-requisito do módulo `financas`.
 > Build em "1 step = 1 commit, smoke test verde entre cada".
-> Última atualização: 2026-06-09.
+> Última atualização: 2026-06-10 (inclui Step B — isolamento do financas — e
+> D15–D17 — 2FA TOTP).
 
 ---
 
@@ -41,6 +42,13 @@
 - **B9** Auditoria (`auth.auditoria`): grava `login_ok`, `login_falha`, `logout`, `logout_all`, `senha_alterada`, `usuario_criado`, `papeis_alterados`.
 - **B10** Troca de senha (`POST /api/auth/senha`): exige senha atual + valida força + **revoga as outras sessões**. Tela `pages/conta.tsx` (trocar senha + "sair de todos os dispositivos").
 
+### Fase B (continuação) — isolamento de dados do financas
+- **B-financas** As rotas `/api/financas/*` passaram a **derivar o `usuario_id` da sessão** (dependency `app/api/dependencies/financas.py`), em vez de aceitá-lo por query string / corpo. Leitura exige `financas.ver`, mutação exige `financas.editar`; o `usuario_id` mandado no corpo é **ignorado** (sobrescrito pelo logado) → ninguém troca o parâmetro pra ver dados de outro perfil. O **bot do Telegram** não é afetado (chama os services direto). Teste e2e: `tests/test_financas_auth_api.py` (401 sem cookie, dono = sessão, 403 sem permissão, CSRF). **Exceções deliberadas:** (a) `POST /api/financas/recorrencias/processar` é endpoint de **job** (cron, `usuario_id=None` = todos) e segue sem derivar da sessão; (b) os GET/PATCH/DELETE **por id** (ex.: `/contas/{id}`) exigem login+permissão mas ainda não checam *ownership* do recurso pelo `usuario_id` — id é UUID aleatório; endurecer à parte se virar necessário.
+
+### Fase D — 2FA (TOTP)
+- **D15/D16** Segundo fator opcional por TOTP. Model `auth.usuario_2fa` (1:1 com usuarios): secret **cifrado com Fernet** (`TOTP_ENC_KEY`), backup codes só como hash sha256 (uso único), `ativado_em`. `twofa_service`: `gerar_setup` (otpauth URI + QR PNG base64), `confirmar_ativacao` (valida 1º código → 10 backup codes mostrados uma vez), `validar_codigo` (TOTP **ou** consome backup), `desativar`. Rotas `/api/auth/2fa/{setup,ativar,desativar}` (desativar exige senha + código). Deps `pyotp` + `qrcode[pil]`. Migration `f504abb8fb1f`.
+- **D17** Login em 2 etapas: se o usuário tem 2FA, senha correta **sem** código → 401 `detail="2fa_requerido"` (não abre sessão); o front pede o código e reenvia (`LoginRequest.codigo_2fa`). Código errado conta como falha (rate limit). Telas: `login.tsx` (2º passo) e `conta.tsx` (ativar com QR/secret/backup codes, desativar). QR vem como PNG data-URI do backend (secret não vaza pra terceiros). Auditoria `2fa_ativado`/`2fa_desativado`.
+
 ### Fase E / G
 - **E18** Admin de usuários: `/api/admin/usuarios` (criar/listar/editar + atribuir papéis) e `/api/admin/papeis`, só com `usuarios.gerenciar`. Tela `pages/admin/usuarios.tsx` + link no Sidebar. Trava de segurança: admin não desativa nem remove o próprio papel admin.
 - **G24** Headers de segurança no Caddy: HSTS, X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy, CSP, `-Server`.
@@ -55,12 +63,13 @@
 ## 3. O que FALTA
 
 ### Auth
-- **D15–D17 — 2FA (TOTP)** *(não feito; é o próximo passo natural)*: tabela `usuario_2fa` (secret cifrado + backup codes hasheados), setup com QR, ativar/desativar, login em 2 etapas. Lib `pyotp`. Detalhes no `AUTH_CONTINUACAO.md`.
-- **Endurecimento extra opcional**: o `financas` ainda recebe `usuario_id` por **query string** (não deriva da sessão). Hoje só o Pablo existe, então funciona; mas quando a Sandra entrar, ela poderia ler dados de outro `usuario_id` trocando o parâmetro. **Antes de criar a Sandra**, derivar `usuario_id` da sessão nas rotas `/api/financas/*`. (Ver continuação.)
+- ~~D15–D17 — 2FA (TOTP)~~ ✅ **FEITO** (Fase D acima).
+- ~~Derivar `usuario_id` da sessão no financas~~ ✅ **FEITO** (Fase B — continuação acima). Já dá pra criar a Sandra com segurança de isolamento de dados.
+- *(pré-existente, não-bloqueante)* `tests/test_auth_me_logout_api.py` (Step 4) falha em isolamento: faz `logout` sem header CSRF, que o B8 passou a exigir → 403. É só atualizar o teste pra mandar `X-CSRF-Token` nos `logout`/`logout-all`. Não tocado aqui (fora do escopo do isolamento do financas).
 
 ### Deploy (Step 30 do financas, ainda pendente)
 - Subir no VPS Hetzner. Migrations rodam sozinhas no start do container (`alembic upgrade head`). Depois, **uma vez**: `docker compose exec api python -m app.jobs.seed_admin`.
-- `deploy/.env` já recebe as vars de auth (commit `e79f828`). Conferir `ADMIN_EMAIL`/`ADMIN_SENHA_INICIAL`/`SESSION_COOKIE_SECURE=true` lá.
+- `deploy/.env` recebe as vars de auth. Conferir `ADMIN_EMAIL`/`ADMIN_SENHA_INICIAL`/`SESSION_COOKIE_SECURE=true` e gerar **`TOTP_ENC_KEY`** (compose já injeta — commit do 2FA). ⚠️ Nunca trocar `TOTP_ENC_KEY` depois que alguém ativar o 2FA (os secrets viram ilegíveis).
 
 ---
 
@@ -81,7 +90,7 @@ cd backend && source venv/bin/activate
 for t in test_auth_models test_auth_senha test_auth_login_api test_auth_me_logout_api \
          test_auth_rbac_api test_auth_pessoal_protegido_api test_auth_rate_limit_api \
          test_auth_csrf_api test_auth_auditoria_api test_auth_troca_senha_api \
-         test_auth_admin_usuarios_api; do
+         test_auth_admin_usuarios_api test_auth_2fa_api test_auth_2fa_login_api; do
   python -m tests.$t 2>&1 | grep -E "TUDO OK|AssertionError" ; done
 ```
 
@@ -101,5 +110,5 @@ cd backend && source venv/bin/activate && python -m app.jobs.seed_admin
 - [x] Toda rota pessoal valida permissão no backend; rotação de sessão no login
 - [x] Logout revoga de verdade; troca de senha revoga as outras sessões
 - [x] Auditoria gravando eventos
-- [ ] **2FA no admin** (pendente)
-- [ ] **`/api/financas/*` derivar `usuario_id` da sessão** (pendente, antes da Sandra)
+- [x] **`/api/financas/*` deriva `usuario_id` da sessão** (isolamento entre perfis garantido no backend)
+- [x] **2FA TOTP** (opcional, com backup codes; secret cifrado com Fernet)

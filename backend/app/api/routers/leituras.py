@@ -1,7 +1,8 @@
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.dependencies.financas import exige_editar, financas_usuario_id
 from app.api.schemas.financas import (
     LeituraConsumoCreate,
     LeituraConsumoListResponse,
@@ -21,7 +22,10 @@ def _handle(e: Exception) -> HTTPException:
 
 @router.get("", response_model=LeituraConsumoListResponse,
             summary="Lista leituras de consumo (tendência), opcional por tipo")
-async def listar(usuario_id: str, tipo: Optional[str] = None) -> LeituraConsumoListResponse:
+async def listar(
+    tipo: Optional[str] = None,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> LeituraConsumoListResponse:
     try:
         return await leitura_service.listar_leituras(usuario_id, tipo=tipo)
     except Exception as e:
@@ -29,8 +33,13 @@ async def listar(usuario_id: str, tipo: Optional[str] = None) -> LeituraConsumoL
 
 
 @router.post("", response_model=LeituraConsumoResponse, status_code=201,
-             summary="Registra uma leitura de consumo")
-async def criar(body: LeituraConsumoCreate) -> LeituraConsumoResponse:
+             summary="Registra uma leitura de consumo",
+             dependencies=[Depends(exige_editar)])
+async def criar(
+    body: LeituraConsumoCreate,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> LeituraConsumoResponse:
+    body.usuario_id = usuario_id  # dono = sessão
     try:
         return await leitura_service.criar_leitura(body)
     except Exception as e:

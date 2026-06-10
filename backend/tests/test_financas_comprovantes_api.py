@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import limpar_override, usar_usuario
 from app.config import settings
 from app.utils.s3_storage import get_storage
 
@@ -51,6 +52,7 @@ def smoke_test() -> None:
     objetos: list[tuple[str, str]] = []
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             conta_id = client.post(CONTAS, json={
                 "usuario_id": usuario_id, "nome": "Nubank",
@@ -92,15 +94,18 @@ def smoke_test() -> None:
             # essa subiu pro MinIO antes de validar? não — dedup/validação antes do put.
             print("   404 ok")
 
-            # ── 4. Transação de outro usuário → 400 ───────────────────
+            # ── 4. Outra sessão anexando à transação deste usuário → 400
             print("\n→ Test 4: transação de outro usuário → 400")
+            usar_usuario(outro)
             rmix = client.post(COMP, data={
                 "usuario_id": outro, "tipo": "comprovante", "transacao_id": tx_id,
             }, files={"file": ("y.png", b"img2", "image/png")})
             assert rmix.status_code == 400, rmix.status_code
+            usar_usuario(usuario_id)  # volta pro dono
             print("   400 ok")
 
         finally:
+            limpar_override()
             asyncio.run(_cleanup(usuario_id, objetos))
 
     print("\n" + "━" * 60)

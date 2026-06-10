@@ -5,6 +5,7 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.api.main import app
+from tests._financas_auth import limpar_override, usar_usuario
 
 BASE = "/api/financas/contas"
 
@@ -18,6 +19,7 @@ def smoke_test() -> None:
     criadas: list[str] = []
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono dos dados = sessão (override de auth)
         try:
             # ── 1. Cria duas contas ───────────────────────────────────
             print("\n→ Test 1: POST cria contas")
@@ -60,10 +62,12 @@ def smoke_test() -> None:
             assert nomes == ["Carteira", "Nubank"], nomes
             print(f"   {body['total']} contas: {nomes}")
 
-            # outro usuário não enxerga essas contas
-            ro = client.get(BASE, params={"usuario_id": str(uuid.uuid4())})
+            # outro usuário (outra sessão) não enxerga essas contas
+            usar_usuario(str(uuid.uuid4()))
+            ro = client.get(BASE)
             assert ro.json()["total"] == 0
-            print("   isolamento por usuario_id ok")
+            usar_usuario(usuario_id)  # volta pro dono
+            print("   isolamento por usuario_id (sessão) ok")
 
             # ── 4. Detalhe ────────────────────────────────────────────
             print("\n→ Test 4: GET detalhe")
@@ -98,6 +102,7 @@ def smoke_test() -> None:
         finally:
             for cid in criadas:
                 client.delete(f"{BASE}/{cid}")
+            limpar_override()
 
     print("\n" + "━" * 60)
     print("TUDO OK — financas Step 4 funcionando!")

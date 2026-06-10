@@ -32,6 +32,20 @@ curl -fsS -X POST \
   -d "drop_pending_updates=true"
 echo ""
 
+echo ">> Registrando o menu de comandos (botão '/' do Telegram)..."
+curl -fsS -X POST \
+  "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setMyCommands" \
+  -H "Content-Type: application/json" \
+  -d '{"commands":[
+    {"command":"gasto","description":"Lançar um gasto: /gasto 50 mercado"},
+    {"command":"ganho","description":"Lançar uma entrada: /ganho 2000 salário"},
+    {"command":"saldo","description":"Ver o saldo das contas"},
+    {"command":"resumo","description":"Receitas x despesas do mês"},
+    {"command":"help","description":"Como usar o bot"},
+    {"command":"start","description":"Reiniciar / mensagem de boas-vindas"}
+  ]}'
+echo ""
+
 echo ">> Status atual do webhook:"
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo"
 echo ""

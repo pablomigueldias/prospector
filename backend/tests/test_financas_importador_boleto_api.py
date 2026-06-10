@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.analyzers.boleto import extrator
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.config import settings
 from app.utils.s3_storage import get_storage
 
@@ -78,6 +79,7 @@ def smoke_test() -> None:
     usuario_id = str(uuid.uuid4())
     original = extrator.extrair_boleto_llm
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             condominio = _condominio_id(client)
 

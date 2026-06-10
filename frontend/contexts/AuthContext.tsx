@@ -19,7 +19,7 @@ import type { Usuario } from '@/lib/types';
 interface AuthState {
   usuario: Usuario | null;
   loading: boolean;
-  login: (email: string, senha: string) => Promise<void>;
+  login: (email: string, senha: string, codigo2fa?: string) => Promise<void>;
   logout: () => Promise<void>;
   /** UX only — a trava de verdade é no backend (require_permission). */
   hasPermission: (codigo: string) => boolean;
@@ -71,10 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loading, usuario, isPublic, router]);
 
-  const login = useCallback(async (email: string, senha: string) => {
-    const u = await api.authLogin(email, senha);
-    setUsuario(u);
-  }, []);
+  const login = useCallback(
+    async (email: string, senha: string, codigo2fa?: string) => {
+      const u = await api.authLogin(email, senha, codigo2fa);
+      setUsuario(u);
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     try {

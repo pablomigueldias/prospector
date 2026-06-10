@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.config import settings
 
 CARTOES = "/api/financas/cartoes"
@@ -37,6 +38,7 @@ def smoke_test() -> None:
     compra_ids: list[str] = []
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             cartao_id = client.post(CARTOES, json={
                 "usuario_id": usuario_id, "nome": "Nubank",

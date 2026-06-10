@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import usar_usuario
 from app.config import settings
 
 CONTAS = "/api/financas/contas"
@@ -43,6 +44,7 @@ def smoke_test() -> None:
         return float(client.get(f"{CONTAS}/{cid}").json()["saldo_atual"])
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             rv = client.post(CONTAS, json={
                 "usuario_id": usuario_id, "nome": "VR Caju",

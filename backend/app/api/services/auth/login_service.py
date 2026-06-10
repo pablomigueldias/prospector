@@ -14,6 +14,7 @@ from app.api.services.auth import (
     rate_limit,
     senha_service,
     sessao_service,
+    twofa_service,
 )
 from app.api.services.auth.rate_limit import Bloqueado  # noqa: F401 (re-export pro router)
 from app.db.models.auth.usuario import Usuario
@@ -24,17 +25,25 @@ class CredenciaisInvalidas(Exception):
     """Login falhou. Vira HTTP 401 com mensagem genérica."""
 
 
+class DoisFatoresRequerido(Exception):
+    """Senha OK mas falta o 2º fator. Vira HTTP 401 com marcador 2fa_requerido."""
+
+
 async def login(
     email: str,
     senha: str,
     *,
+    codigo_2fa: Optional[str] = None,
     ip: Optional[str] = None,
     user_agent: Optional[str] = None,
 ) -> tuple[str, Usuario]:
-    """Valida email+senha e devolve (token_de_sessão, usuario).
+    """Valida email+senha (+2FA se ativo) e devolve (token_de_sessão, usuario).
 
-    Levanta CredenciaisInvalidas em qualquer falha (email não existe, senha
-    errada, usuário inativo) — sempre a mesma mensagem.
+    Levanta CredenciaisInvalidas em falha de senha (mensagem genérica, anti-
+    enumeração). Se o 2FA estiver ativo e ``codigo_2fa`` faltar, levanta
+    DoisFatoresRequerido (o front então pede o código e reenvia). Código de
+    2FA errado conta como falha (rate limit) — aí a senha já foi provada, então
+    a mensagem pode ser específica sem vazar a existência da conta.
     """
     email_norm = (email or "").strip().lower()
     async with get_session() as session:
@@ -46,19 +55,38 @@ async def login(
         )
         # Anti-timing: conferir_senha gasta CPU mesmo com hash None.
         hash_armazenado = usuario.senha_hash if usuario else None
-        ok = (
+        senha_ok = (
             senha_service.conferir_senha(hash_armazenado, senha)
             and usuario is not None
             and usuario.ativo
         )
-        await rate_limit.registrar(session, email_norm, ip, sucesso=ok)
-        if not ok:
+        if not senha_ok:
+            await rate_limit.registrar(session, email_norm, ip, sucesso=False)
             await auditoria_service.registrar(
                 session, auditoria_service.LOGIN_FALHA,
                 ip=ip, user_agent=user_agent, detalhe={"email": email_norm},
             )
             await session.commit()  # persiste a tentativa falha (pro lockout)
             raise CredenciaisInvalidas("Email ou senha inválidos.")
+
+        # ── 2º fator (se ligado) ──────────────────────────────────────
+        if usuario.twofa_ativado:
+            if not (codigo_2fa or "").strip():
+                # 1ª etapa: senha certa, mas falta o código. NÃO registra
+                # (não é falha de senha nem login completo) e não abre sessão.
+                raise DoisFatoresRequerido("2fa_requerido")
+            if not await twofa_service.validar_codigo(session, usuario.id, codigo_2fa):
+                await rate_limit.registrar(session, email_norm, ip, sucesso=False)
+                await auditoria_service.registrar(
+                    session, auditoria_service.LOGIN_FALHA,
+                    usuario_id=usuario.id, ip=ip, user_agent=user_agent,
+                    detalhe={"motivo": "2fa"},
+                )
+                await session.commit()
+                raise CredenciaisInvalidas("Código de verificação inválido.")
+
+        # autenticado de fato — limpa o contador de tentativas
+        await rate_limit.registrar(session, email_norm, ip, sucesso=True)
 
         # Rehash transparente se os parâmetros do Argon2 mudaram.
         if senha_service.precisa_rehash(usuario.senha_hash):

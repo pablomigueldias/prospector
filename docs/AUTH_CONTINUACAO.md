@@ -2,17 +2,16 @@
 
 > Documento para retomar o trabalho exatamente de onde parou. Leia junto com
 > `AUTH_STATUS.md` (visão geral). Branch: `feat/financas`.
-> Última parada: **acabei o Step E18 (admin de usuários)**. Próximo: **2FA** e/ou
-> o endurecimento do `usuario_id` no financas.
+> Última parada: **fiz o Step B (§4) e o 2FA TOTP D15–D17 (§3)** — ambos ✅.
+> Próximo: **deploy (§5)**.
 
 ---
 
 ## 0. Onde exatamente parei
 
-- Último commit: `auth: admin de usuários (...) (Step E18)`.
-- Tudo verde (16 smoke tests de auth + frontend `typecheck`/`build`).
-- **Falta**: 2FA (D15–D17), derivar `usuario_id` da sessão no `financas`, e o deploy (Step 30).
-- Ainda **não foi feito push** quando este doc foi escrito (vai ser feito em seguida).
+- Últimos commits: `auth: 2FA TOTP … (D15/D16)` + `auth: login em 2 etapas com 2FA … (D17)` (e antes `Step B`).
+- Verde: toda a bateria de financas + os 2FA (`test_auth_2fa_api`, `test_auth_2fa_login_api`) + `test_financas_auth_api` + frontend `typecheck`/`build`. ⚠️ `test_auth_me_logout_api` falha por motivo **pré-existente** (logout sem CSRF; ver §4 — não relacionado ao 2FA).
+- **Falta**: só o **deploy (Step 30, §5)**.
 
 ---
 
@@ -94,7 +93,20 @@ pages/agents/[slug].tsx    guarda de permissão por agente
 
 ---
 
-## 3. PRÓXIMO PASSO A — 2FA (TOTP) [D15–D17]
+## 3. ✅ FEITO — 2FA (TOTP) [D15–D17]
+
+**Implementado** (commits `c173bb7` D15/D16 + `ccba280` D17). O que ficou no código:
+- Model `app/db/models/auth/usuario_2fa.py` (PK = usuario_id, FK CASCADE); secret cifrado com **Fernet** (`TOTP_ENC_KEY`); `backup_codes_hash` = ARRAY de sha256 (uso único); `ativado_em`.
+- `app/api/services/auth/twofa_service.py`: `gerar_setup` (otpauth URI + **QR PNG data-URI** gerado no backend), `confirmar_ativacao`, `validar_codigo` (TOTP `valid_window=1` **ou** consome backup), `desativar`. Exceção `TwoFAError`.
+- Rotas `/api/auth/2fa/{setup,ativar,desativar}` em `auth.py`; auditoria `2fa_ativado`/`2fa_desativado`.
+- Login 2 etapas: `login_service` levanta `DoisFatoresRequerido` → router devolve 401 `detail="2fa_requerido"`. Código errado conta no rate limit. `LoginRequest.codigo_2fa`.
+- Front: `pages/login.tsx` (2º passo), `pages/conta.tsx` (`SecaoDoisFatores`: QR + secret manual + backup codes uma vez; desativar com senha+código), `lib/api.ts` + `AuthContext`.
+- Deps: `pyotp==2.9.0`, `qrcode[pil]==7.4.2` no `requirements.txt`. Settings `totp_enc_key`. `TOTP_ENC_KEY` no `.env`/`.env.example` (dev) e injetado no `deploy/docker-compose.yml` + `deploy/.env.example`.
+- Testes: `test_auth_2fa_api.py` (gestão) e `test_auth_2fa_login_api.py` (login 2 etapas) — ambos calculam o TOTP com `pyotp`, como o app autenticador.
+
+> Pegadinha encontrada: o cookie CSRF **rotaciona a cada `/me`** (a rota chama `set_csrf_cookie`); nos testes, releia `csrf_token` do jar antes de cada mutação em vez de guardar o valor do login.
+
+<details><summary>Plano original (referência)</summary>
 
 Objetivo: 2º fator opcional, ligado já no admin. **Não refaz nada** do que existe.
 
@@ -123,19 +135,26 @@ Objetivo: 2º fator opcional, ligado já no admin. **Não refaz nada** do que ex
 - Frontend: `pages/login.tsx` ganha o 2º passo (campo de código). `pages/conta.tsx` ganha a seção "Ativar 2FA" (mostra QR via lib JS de QR a partir da URI, confirma código, mostra backup codes).
 - Teste: `tests/test_auth_2fa_api.py` (setup→ativar→login 2 etapas→backup code).
 
+</details>
+
 ---
 
-## 4. PRÓXIMO PASSO B — financas deriva `usuario_id` da sessão
+## 4. ✅ FEITO — financas deriva `usuario_id` da sessão (Step B)
 
-**Por quê:** hoje `/api/financas/*` recebe `usuario_id` por query string. Com só o Pablo, ok. Mas a Sandra poderia trocar o parâmetro e ver dados de outro perfil. Fazer **antes de criar a Sandra de verdade**.
+**Por quê:** antes `/api/financas/*` recebia `usuario_id` por query string / corpo. Com só o Pablo, ok; mas a Sandra poderia trocar o parâmetro e ver dados de outro perfil. Agora o dono é **sempre o logado**.
 
-**Como (sugestão):**
-- Criar dependency `financas_usuario_id` que retorna `str(usuario_atual.id)` (exige login).
-- Nos routers de `financas/*`, trocar o parâmetro `usuario_id: str` (query) por `usuario_id: str = Depends(financas_usuario_id)`.
-- Exigir também `require_permission("financas.ver")` (leitura) e `financas.editar` (mutações) nesses routers.
-- O **bot do Telegram** continua passando `usuario_id` direto pelo `mapa_chat_usuario` (não usa cookie) — não mexer no caminho do bot.
-- Ajustar o front: `lib/financas.ts` hoje usa `FINANCAS_USUARIO_ID` fixo; passar a usar `usuario.id` do AuthContext (ou deixar o backend ignorar o query param e usar a sessão).
-- Atualizar os smoke tests de financas que passam `usuario_id` por query (vão precisar logar e mandar cookie).
+**O que foi feito:**
+- Nova dependency `app/api/dependencies/financas.py`: `usuario_financas` (login + `financas.ver`), `financas_usuario_id` (→ `str(usuario.id)` da sessão) e `exige_editar` (`financas.editar`).
+- Todos os 13 routers de `financas/*` endurecidos: GET de listagem usa `Depends(financas_usuario_id)`; POST/Form **sobrescrevem `body.usuario_id`** com o da sessão (corpo forjado é ignorado) e exigem `exige_editar`; GET/PATCH/DELETE por id exigem login+permissão.
+- **Bot do Telegram intacto** (chama os services direto, com `usuario_id` do `mapa_chat_usuario`; não passa pelos routers HTTP).
+- Front (`lib/financas.ts`): valor `FINANCAS_USUARIO_ID` agora é só payload — o backend ignora. Build/typecheck verdes, sem mudança funcional.
+- Testes: helper `tests/_financas_auth.py` (override de auth via `app.dependency_overrides`) aplicado nos ~16 smoke tests de financas; novo `tests/test_financas_auth_api.py` cobre o fluxo real (login/cookie/CSRF, 401, forja ignorada, 403).
+
+**Exceções deliberadas (não feitas de propósito):**
+- `POST /api/financas/recorrencias/processar` é endpoint de **job** (cron, `usuario_id=None` = todos os perfis) → segue **sem** derivar da sessão. Se um dia for exposto publicamente, endurecer à parte.
+- GET/PATCH/DELETE **por id** (`/contas/{id}`, `/cartoes/{id}`, `/transacoes/{id}`, `/compras/{id}`) exigem login+permissão mas **não checam ownership** do recurso pelo `usuario_id` (id é UUID aleatório). Endurecer (checar dono no service) se a Sandra precisar de garantia mais forte.
+
+**Pendência pré-existente avistada:** `tests/test_auth_me_logout_api.py` (Step 4) falha em isolamento — faz `logout` sem `X-CSRF-Token`, que o B8 passou a exigir. É só atualizar o teste pra mandar o header. Não tocado aqui.
 
 ---
 
@@ -143,7 +162,7 @@ Objetivo: 2º fator opcional, ligado já no admin. **Não refaz nada** do que ex
 
 Banco: **um Postgres só** (`reative-db`), database `reative`, schemas `public`/`financas`/`auth`. Não há banco novo.
 
-1. No VPS, em `deploy/.env`: conferir `ADMIN_EMAIL`, `ADMIN_SENHA_INICIAL`, `SESSION_COOKIE_SECURE=true`, `TELEGRAM_USUARIO_ID`, e (quando houver) `TOTP_ENC_KEY`.
+1. No VPS, em `deploy/.env`: conferir `ADMIN_EMAIL`, `ADMIN_SENHA_INICIAL`, `SESSION_COOKIE_SECURE=true`, `TELEGRAM_USUARIO_ID`, e **gerar `TOTP_ENC_KEY`** (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`). ⚠️ Não troque essa chave depois que alguém ativar o 2FA. O compose já injeta a var.
 2. `./scripts/02-deploy.sh` (build api+web). O container da API roda `alembic upgrade head` no start → cria os schemas/tabelas sozinho.
 3. Uma vez: `docker compose exec api python -m app.jobs.seed_admin`.
 4. `./scripts/set-telegram-webhook.sh` (liga o webhook HTTPS do bot).

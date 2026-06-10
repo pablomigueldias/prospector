@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.main import app
+from tests._financas_auth import limpar_override, usar_usuario
 from app.config import settings
 
 CARTOES = "/api/financas/cartoes"
@@ -42,6 +43,7 @@ def smoke_test() -> None:
     compra_ids: list[str] = []
 
     with TestClient(app) as client:
+        usar_usuario(usuario_id)  # dono = sessão (override de auth)
         try:
             # ── Cartão: fecha dia 20, vence dia 10 (→ vencimento no mês seguinte) ─
             rc = client.post(CARTOES, json={
@@ -109,11 +111,13 @@ def smoke_test() -> None:
                 "descricao": "x", "valor_total": 50, "total_parcelas": 2,
             })
             assert r404.status_code == 404, r404.status_code
+            usar_usuario(outro)  # outra sessão não compra no cartão deste usuário
             rmix = client.post(COMPRAS, json={
                 "usuario_id": outro, "cartao_id": cartao_id,
                 "descricao": "x", "valor_total": 50, "total_parcelas": 2,
             })
             assert rmix.status_code == 400, rmix.status_code
+            usar_usuario(usuario_id)  # volta pro dono
             rjuros = client.post(COMPRAS, json={
                 "usuario_id": usuario_id, "cartao_id": cartao_id,
                 "descricao": "x", "valor_total": 50, "total_parcelas": 2,
@@ -123,6 +127,7 @@ def smoke_test() -> None:
             print("   404 cartão ; 400 dono errado ; 400 juros>total")
 
         finally:
+            limpar_override()
             asyncio.run(_cleanup(cartao_ids, compra_ids))
 
     print("\n" + "━" * 60)

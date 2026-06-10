@@ -8,6 +8,10 @@ from app.api.schemas.auth import (
     LoginRequest,
     MensagemResponse,
     TrocaSenhaRequest,
+    TwoFAAtivarResponse,
+    TwoFACodigoRequest,
+    TwoFADesativarRequest,
+    TwoFASetupResponse,
     UsuarioResponse,
 )
 from app.api.services.auth import senha_service
@@ -16,12 +20,18 @@ from app.api.services.auth import (
     auditoria_service,
     login_service,
     sessao_service,
+    twofa_service,
     usuario_service,
 )
+from app.api.services.auth.twofa_service import TwoFAError
 from app.api.services.auth import permissoes as permissoes_service
 from app.api.services.auth.cookie import clear_session_cookie, cookie_name, set_session_cookie
 from app.api.services.auth.csrf import set_csrf_cookie
-from app.api.services.auth.login_service import Bloqueado, CredenciaisInvalidas
+from app.api.services.auth.login_service import (
+    Bloqueado,
+    CredenciaisInvalidas,
+    DoisFatoresRequerido,
+)
 from app.db.models.auth.usuario import Usuario
 from app.db.session import get_session
 
@@ -34,12 +44,16 @@ async def login(body: LoginRequest, request: Request, response: Response) -> Usu
         token, usuario = await login_service.login(
             body.email,
             body.senha,
+            codigo_2fa=body.codigo_2fa,
             ip=usuario_service.ip_do_request(request),
             user_agent=usuario_service.user_agent_do_request(request),
         )
     except Bloqueado as e:
         # 429 — excesso de tentativas (rate limit / lockout).
         raise HTTPException(status_code=429, detail=str(e))
+    except DoisFatoresRequerido:
+        # 401 com marcador: o front mostra o campo de código e reenvia.
+        raise HTTPException(status_code=401, detail="2fa_requerido")
     except CredenciaisInvalidas as e:
         # 401 genérico — não vaza se o email existe.
         raise HTTPException(status_code=401, detail=str(e))
@@ -125,3 +139,66 @@ async def logout_all(
         await session.commit()
     clear_session_cookie(response)
     return MensagemResponse(ok=True, mensagem=f"{n} sessão(ões) encerrada(s).")
+
+
+# ── 2FA (TOTP) ─────────────────────────────────────────────────────
+@router.post("/2fa/setup", response_model=TwoFASetupResponse,
+             summary="Inicia o 2FA: devolve secret + QR (ainda não ativa)")
+async def twofa_setup(
+    usuario: Usuario = Depends(usuario_atual),
+) -> TwoFASetupResponse:
+    async with get_session() as session:
+        u = await session.get(Usuario, usuario.id)
+        try:
+            dados = await twofa_service.gerar_setup(session, u)
+        except TwoFAError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        await session.commit()
+    return TwoFASetupResponse(**dados)
+
+
+@router.post("/2fa/ativar", response_model=TwoFAAtivarResponse,
+             summary="Confirma o 1º código e ativa o 2FA (devolve backup codes)")
+async def twofa_ativar(
+    body: TwoFACodigoRequest,
+    request: Request,
+    usuario: Usuario = Depends(usuario_atual),
+) -> TwoFAAtivarResponse:
+    async with get_session() as session:
+        u = await session.get(Usuario, usuario.id)
+        try:
+            codes = await twofa_service.confirmar_ativacao(session, u, body.codigo)
+        except TwoFAError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        await auditoria_service.registrar(
+            session, auditoria_service.TWOFA_ATIVADO, usuario_id=u.id,
+            ip=usuario_service.ip_do_request(request),
+            user_agent=usuario_service.user_agent_do_request(request),
+        )
+        await session.commit()
+    return TwoFAAtivarResponse(ok=True, backup_codes=codes)
+
+
+@router.post("/2fa/desativar", response_model=MensagemResponse,
+             summary="Desativa o 2FA (exige senha + código)")
+async def twofa_desativar(
+    body: TwoFADesativarRequest,
+    request: Request,
+    usuario: Usuario = Depends(usuario_atual),
+) -> MensagemResponse:
+    async with get_session() as session:
+        u = await session.get(Usuario, usuario.id)
+        if u is None or not u.twofa_ativado:
+            raise HTTPException(status_code=400, detail="2FA não está ativo.")
+        if not senha_service.conferir_senha(u.senha_hash, body.senha):
+            raise HTTPException(status_code=400, detail="Senha atual incorreta.")
+        if not await twofa_service.validar_codigo(session, u.id, body.codigo):
+            raise HTTPException(status_code=400, detail="Código de verificação inválido.")
+        await twofa_service.desativar(session, u)
+        await auditoria_service.registrar(
+            session, auditoria_service.TWOFA_DESATIVADO, usuario_id=u.id,
+            ip=usuario_service.ip_do_request(request),
+            user_agent=usuario_service.user_agent_do_request(request),
+        )
+        await session.commit()
+    return MensagemResponse(ok=True, mensagem="2FA desativado.")
