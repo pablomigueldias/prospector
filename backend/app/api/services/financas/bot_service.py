@@ -30,11 +30,27 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 AJUDA = (
-    "Manda assim:\n"
-    "• <code>/gasto 50 mercado</code> (lança rápido)\n"
+    "💰 <b>Seu organizador financeiro</b> — o que dá pra fazer:\n"
+    "\n"
+    "💸 <b>Lançar gasto na hora</b>\n"
+    "• <code>/gasto 50 mercado</code>\n"
     "• <code>/gasto 50 mercado vr</code> (escolhe a conta)\n"
-    "• ou um boleto (PDF/foto) que eu importo."
+    "\n"
+    "💬 <b>Falar normal</b> (eu monto um card pra você confirmar)\n"
+    "• <i>gastei 80 no posto</i>\n"
+    "• <i>recebi 2000 de salário</i>\n"
+    "\n"
+    "📎 <b>Boleto ou comprovante</b>\n"
+    "• manda o PDF ou a foto que eu leio e lanço sozinho\n"
+    "\n"
+    "📊 <b>Consultar</b>\n"
+    "• /saldo — saldo das suas contas\n"
+    "• /resumo — receitas x despesas do mês\n"
+    "\n"
+    "ℹ️ Reveja isto quando quiser com /help."
 )
+
+BOAS_VINDAS = "👋 <b>Tudo certo, bot no ar!</b>\n\n"
 
 
 def mapa_chat_usuario() -> dict[str, str]:
@@ -73,11 +89,21 @@ async def processar_update(update: dict) -> dict:
     texto = (msg.get("text") or "").strip()
 
     if texto.startswith("/start"):
-        await _responder(chat_id, "💰 Organizador financeiro no ar.\n\n" + AJUDA)
+        await _responder(chat_id, BOAS_VINDAS + AJUDA)
         return {"ok": True, "comando": "start"}
+
+    if texto.startswith(("/help", "/ajuda")):
+        await _responder(chat_id, AJUDA)
+        return {"ok": True, "comando": "help"}
 
     if texto.startswith("/gasto"):
         return await _cmd_gasto(chat_id, usuario_id, texto)
+
+    if texto.startswith("/saldo"):
+        return await _saldos(chat_id, usuario_id)
+
+    if texto.startswith("/resumo"):
+        return await _resumo_mes(chat_id, usuario_id)
 
     if texto and not texto.startswith("/"):
         intent = _consulta_intent(texto)
@@ -87,7 +113,7 @@ async def processar_update(update: dict) -> dict:
             return await _resumo_mes(chat_id, usuario_id)
         return await _texto_livre(chat_id, usuario_id, texto)
 
-    await _responder(chat_id, "Não entendi 🤔\n\n" + AJUDA)
+    await _responder(chat_id, "Não entendi esse comando 🤔\n\n" + AJUDA)
     return {"ok": True, "comando": None}
 
 
