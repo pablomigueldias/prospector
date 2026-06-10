@@ -2,7 +2,8 @@
 #  Caddyfile — HTTPS automático (Let's Encrypt) + roteamento
 #
 #  - {$DOMAIN}        → front Next.js (web:3000)
-#  - {$DOMAIN}/api/*  → API FastAPI (api:8000), com o /api removido no caminho
+#  - {$DOMAIN}/api/*  → API FastAPI (api:8000), caminho preservado (os routers
+#                       já têm o prefixo /api, então NÃO se remove o /api aqui)
 #  - {$DOMAIN}/telegram/*  → API (webhook do bot)
 #
 #  Caddy emite e renova o certificado sozinho na primeira visita HTTPS.
@@ -36,8 +37,8 @@
 		reverse_proxy api:8000
 	}
 
-	# Tudo sob /api/* vai pra API, removendo o prefixo /api
-	handle_path /api/* {
+	# Tudo sob /api/* vai pra API, com o caminho preservado (sem remover /api).
+	handle /api/* {
 		reverse_proxy api:8000
 	}
 
