@@ -7,6 +7,7 @@ from app.db.models.auth.usuario_papel import UsuarioPapel
 from app.db.models.auth.papel_permissao import PapelPermissao
 from app.db.models.auth.tentativa_login import TentativaLogin
 from app.db.models.auth.auditoria import Auditoria
+from app.db.models.auth.usuario_2fa import UsuarioTwoFA
 
 from app.db.models.empresa import Empresa
 from app.db.models.contato import Contato
@@ -46,6 +47,7 @@ __all__ = [
     "PapelPermissao",
     "TentativaLogin",
     "Auditoria",
+    "UsuarioTwoFA",
     "Empresa",
     "Contato",
     "Socio",

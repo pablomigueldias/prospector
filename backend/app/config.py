@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     # Seed do admin (script seed_admin.py). Nunca hardcoded no código.
     admin_email: str = ""
     admin_senha_inicial: str = ""
+    # 2FA (TOTP): chave Fernet pra cifrar o secret TOTP no banco. Gere com
+    # `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
+    # e ponha em TOTP_ENC_KEY no .env. Vazia = 2FA desabilitado (setup recusa).
+    totp_enc_key: str = ""
 
     # Rate limiting
     max_leads_per_day: int = 30

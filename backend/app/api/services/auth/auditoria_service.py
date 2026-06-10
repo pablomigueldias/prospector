@@ -16,6 +16,8 @@ LOGOUT_ALL = "logout_all"
 SENHA_ALTERADA = "senha_alterada"
 USUARIO_CRIADO = "usuario_criado"
 PAPEIS_ALTERADOS = "papeis_alterados"
+TWOFA_ATIVADO = "2fa_ativado"
+TWOFA_DESATIVADO = "2fa_desativado"
 
 
 async def registrar(

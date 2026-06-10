@@ -29,6 +29,10 @@ alembic==1.13.3
 
 # Auth — hashing de senha Argon2id (login)
 argon2-cffi==23.1.0
+# Auth — 2FA TOTP (pyotp) + QR do setup (qrcode/pillow). O secret TOTP é
+# cifrado com Fernet (cryptography, já presente nas deps transitivas).
+pyotp==2.9.0
+qrcode[pil]==7.4.2
 
 # Utilitários
 tenacity==9.0.0

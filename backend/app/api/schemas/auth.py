@@ -9,6 +9,9 @@ from pydantic import BaseModel, Field
 class LoginRequest(BaseModel):
     email: str = Field(..., description="Email do usuário")
     senha: str = Field(..., description="Senha em texto (vai por HTTPS)")
+    codigo_2fa: Optional[str] = Field(
+        None, description="Código TOTP ou backup code (2ª etapa, se 2FA ativo)"
+    )
 
 
 class TrocaSenhaRequest(BaseModel):
@@ -30,6 +33,29 @@ class UsuarioResponse(BaseModel):
 class MensagemResponse(BaseModel):
     ok: bool = True
     mensagem: str = ""
+
+
+# ── 2FA (TOTP) ─────────────────────────────────────────────────────
+class TwoFASetupResponse(BaseModel):
+    secret: str = Field(..., description="Secret base32 (entrada manual no app)")
+    otpauth_uri: str = Field(..., description="URI otpauth:// pro app autenticador")
+    qr_data_uri: str = Field(..., description="PNG do QR em data: URI (mostrar no <img>)")
+
+
+class TwoFACodigoRequest(BaseModel):
+    codigo: str = Field(..., description="Código TOTP de 6 dígitos do app")
+
+
+class TwoFAAtivarResponse(BaseModel):
+    ok: bool = True
+    backup_codes: List[str] = Field(
+        ..., description="Códigos de backup — guarde agora; não aparecem de novo"
+    )
+
+
+class TwoFADesativarRequest(BaseModel):
+    senha: str = Field(..., description="Senha atual (confirmação)")
+    codigo: str = Field(..., description="Código TOTP ou backup code")
 
 
 # ── Admin de usuários ──────────────────────────────────────────────
