@@ -80,8 +80,13 @@ async def processar_update(update: dict) -> dict:
     chat_id = str(msg.get("chat", {}).get("id", ""))
     usuario_id = mapa_chat_usuario().get(chat_id)
     if usuario_id is None:
-        await _responder(chat_id, "🚫 Bot privado. Você não está autorizado.")
-        return {"ok": True, "autorizado": False}
+        await _responder(
+            chat_id,
+            "🚫 Este bot é privado.\n\n"
+            "Se você deve ter acesso, passe este código pro dono te liberar:\n"
+            f"<code>{chat_id}</code>",
+        )
+        return {"ok": True, "autorizado": False, "chat_id": chat_id}
 
     # Foto ou PDF → importador de boleto.
     if msg.get("photo") or msg.get("document"):
