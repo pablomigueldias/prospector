@@ -588,6 +588,23 @@ export interface CartaoListResponse {
   total: number;
 }
 
+export interface CartaoCreateInput {
+  nome: string;
+  bandeira?: string | null;
+  dia_fechamento: number;
+  dia_vencimento: number;
+  limite?: string | null;
+}
+
+export interface CartaoUpdateInput {
+  nome?: string;
+  bandeira?: string | null;
+  dia_fechamento?: number;
+  dia_vencimento?: number;
+  limite?: string | null;
+  ativo?: boolean;
+}
+
 export interface Fatura {
   id: string;
   cartao_id: string;

@@ -2,6 +2,9 @@ import { ApiError } from './types';
 import { FINANCAS_USUARIO_ID } from './financas';
 import type {
   Agent,
+  Cartao,
+  CartaoCreateInput,
+  CartaoUpdateInput,
   Conta,
   ContaCreateInput,
   ContaUpdateInput,
@@ -356,6 +359,29 @@ export const api = {
       `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas`,
       { timeoutMs: 10_000 },
     );
+  },
+
+  financasCriarCartao(body: CartaoCreateInput): Promise<Cartao> {
+    return request<Cartao>('/api/financas/cartoes', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasAtualizarCartao(id: string, body: CartaoUpdateInput): Promise<Cartao> {
+    return request<Cartao>(`/api/financas/cartoes/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body,
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasExcluirCartao(id: string): Promise<void> {
+    return request<void>(`/api/financas/cartoes/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      timeoutMs: 10_000,
+    });
   },
 
   financasLeituras(usuarioId: string, tipo?: string): Promise<LeituraConsumoListResponse> {

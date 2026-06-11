@@ -158,13 +158,8 @@ export default function FinancasScreen() {
         <ConsumoSection />
       </section>
 
-      {/* Cartões */}
-      <section className="mb-8">
-        <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0 mb-4">
-          Cartões
-        </h2>
-        <CartoesSection />
-      </section>
+      {/* Cartões (criar/editar/excluir) */}
+      <CartoesSection />
 
       {/* Contas fixas (recorrências: criar/editar/excluir) */}
       <RecorrenciasSection contas={contas} onMutate={recarregarTudo} />
