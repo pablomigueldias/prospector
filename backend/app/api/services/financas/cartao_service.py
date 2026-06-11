@@ -11,6 +11,7 @@ from app.api.schemas.financas import (
     CartaoCreate,
     CartaoListResponse,
     CartaoResponse,
+    CartaoUpdate,
     FaturaResponse,
     FaturasCartaoResponse,
 )
@@ -75,6 +76,36 @@ async def get_cartao(cartao_id: str) -> CartaoResponse:
         if cartao is None:
             raise CartaoError("Cartão não encontrado.")
         return _to_response(cartao)
+
+
+async def atualizar_cartao(
+    cartao_id: str, payload: CartaoUpdate
+) -> CartaoResponse:
+    dados = payload.model_dump(exclude_unset=True)
+    if "nome" in dados and dados["nome"] is not None:
+        if not dados["nome"].strip():
+            raise CartaoError("O nome do cartão não pode ficar vazio.")
+        dados["nome"] = dados["nome"].strip()
+    async with get_session() as session:
+        cartao = await session.get(Cartao, _uuid(cartao_id))
+        if cartao is None:
+            raise CartaoError("Cartão não encontrado.")
+        for campo, valor in dados.items():
+            setattr(cartao, campo, valor)
+        await session.commit()
+        await session.refresh(cartao)
+        return _to_response(cartao)
+
+
+async def excluir_cartao(cartao_id: str) -> None:
+    """Remove o cartão. As faturas vão junto (cascade); as compras parceladas
+    ficam, perdendo o vínculo com o cartão (FK ondelete=SET NULL)."""
+    async with get_session() as session:
+        cartao = await session.get(Cartao, _uuid(cartao_id))
+        if cartao is None:
+            raise CartaoError("Cartão não encontrado.")
+        await session.delete(cartao)
+        await session.commit()
 
 
 async def listar_cartoes(usuario_id: str) -> CartaoListResponse:
