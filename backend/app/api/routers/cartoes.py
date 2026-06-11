@@ -9,6 +9,7 @@ from app.api.schemas.financas import (
     CartaoCreate,
     CartaoListResponse,
     CartaoResponse,
+    CartaoUpdate,
     FaturasCartaoResponse,
 )
 from app.api.services.financas import cartao_service
@@ -65,5 +66,25 @@ async def faturas(cartao_id: str) -> FaturasCartaoResponse:
 async def detalhe(cartao_id: str) -> CartaoResponse:
     try:
         return await cartao_service.get_cartao(cartao_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.patch("/{cartao_id}", response_model=CartaoResponse,
+              summary="Edita o cartão (nome, bandeira, dias, limite, ativo)",
+              dependencies=[Depends(exige_editar)])
+async def atualizar(cartao_id: str, body: CartaoUpdate) -> CartaoResponse:
+    try:
+        return await cartao_service.atualizar_cartao(cartao_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.delete("/{cartao_id}", status_code=204,
+               summary="Remove o cartão (faturas vão junto; compras ficam sem vínculo)",
+               dependencies=[Depends(exige_editar)])
+async def remover(cartao_id: str) -> None:
+    try:
+        await cartao_service.excluir_cartao(cartao_id)
     except Exception as e:
         raise _handle(e)

@@ -222,6 +222,15 @@ class CartaoCreate(BaseModel):
     limite: Optional[Decimal] = Field(None, ge=0)
 
 
+class CartaoUpdate(BaseModel):
+    nome: Optional[str] = None
+    bandeira: Optional[str] = None
+    dia_fechamento: Optional[int] = Field(None, ge=1, le=31)
+    dia_vencimento: Optional[int] = Field(None, ge=1, le=31)
+    limite: Optional[Decimal] = Field(None, ge=0)
+    ativo: Optional[bool] = None
+
+
 class CartaoResponse(BaseModel):
     id: str
     usuario_id: str
