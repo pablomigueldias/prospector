@@ -4,8 +4,11 @@ Backlog de evolução do Organizador Financeiro. Não é obrigação — é um c
 de ideias, com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o
 *porquê*. O módulo hoje já cobre o essencial (contas, categorias, despesas/
 receitas, cartões/parcelas, recorrências, consumo, comprovantes, importador de
-boleto por IA, NLU, bot e dashboard ao vivo). O que falta é, sobretudo,
-**fechar o loop de gestão** (orçar, alertar, relatar) e polir as bordas.
+boleto por IA, NLU, bot e dashboard ao vivo) e agora também o **CRUD completo
+pela web** (conta, categoria, transação, recorrência e cartão — criar/editar/
+excluir sem depender de API/bot). O que falta é, sobretudo, **fechar o loop de
+gestão** (orçar, alertar, relatar), **deixar de ser registrador e virar
+copiloto** (§8–§10) e polir as bordas.
 
 Última revisão: 2026-06-10.
 
@@ -30,9 +33,11 @@ boleto por IA, NLU, bot e dashboard ao vivo). O que falta é, sobretudo,
 ## 3. Dashboard web & relatórios
 
 - ✅ **CRUD completo no front** (2026-06-10) — criar/editar/excluir **conta**, **categoria**, **cartão** e **recorrência** (contas fixas) por modal, e **lançar despesa/receita** + **excluir** transação (com reversão de saldo) pela interface. Tudo gerenciável sem depender de API/bot.
-- ✅ **Lista de transações filtrável** (2026-06-10) — por mês, conta, categoria, tipo e busca na descrição. Edição é por excluir + relançar (não há edição inline ainda).
+- ✅ **Lista de transações filtrável** (2026-06-10) — por mês, conta, categoria, tipo e busca na descrição.
 - 🟡 **Relatório mensal** — comparativo mês a mês, evolução de saldo, top categorias, exportar PDF/CSV.
+- 🟡 **Edição inline de transação** — hoje é excluir + relançar; editar valor/categoria/conta/data direto na linha (recalculando saldo) é mais fluido.
 - 🟢 **Detalhe de cartão** — extrato da fatura, parcelas futuras, projeção de quanto vai pesar nos próximos meses.
+- 🟢 **Atalhos & produtividade** — lançar com atalho de teclado, busca global, lembrar últimos filtros, dark mode.
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
@@ -62,14 +67,45 @@ boleto por IA, NLU, bot e dashboard ao vivo). O que falta é, sobretudo,
 - 🟢 **Exportar meus dados** — botão "baixar tudo" (LGPD-friendly), CSV/JSON de transações.
 - 🟢 **Trilha de auditoria no front** — visualizar os eventos de segurança (login, troca de senha, 2FA) numa tela.
 
+## 8. Inteligência do agente (de registrador a copiloto)
+
+O módulo registra bem; o salto é ele **entender e antecipar**. Tudo aqui é
+território de IA (Gemini/Groq, que já estão no stack) + as consultas que já existem.
+
+- 🔴 **Perguntas em linguagem natural sobre os dados** — *"quanto gastei com mercado nos últimos 3 meses?"*, *"qual meu maior gasto de junho?"*, *"dá pra parcelar isso?"*. Um agente com *tool calling* sobre os endpoints de resumo/transações responde sem o usuário virar relatório. Vale no dashboard e no bot.
+- 🔴 **Categorização automática que aprende** — sugerir a categoria pela descrição usando o histórico do próprio usuário (e confirmar com 1 toque). Reduz drasticamente o atrito de lançar. (Hoje o §5 cita; aqui é prioridade.)
+- 🟡 **Insights proativos (digest)** — resumo semanal/mensal automático no Telegram: "essa semana você gastou R$ X (−12% vs. média), top categoria: delivery". Transforma o bot em assistente, não só caixa de entrada.
+- 🟡 **Detector de assinaturas/recorrências não cadastradas** — achar cobranças que se repetem ("parece que você paga Spotify todo mês — quer cadastrar como conta fixa?") e oferecer virar recorrência.
+- 🟡 **Alerta de anomalia** — gasto muito fora do padrão da categoria/mês dispara um aviso ("R$ 800 em farmácia, 4x sua média").
+- 🟢 **Áudio no bot** — mandar um áudio ("gastei trinta no uber") → transcrição (Whisper/Groq) → NLU → card. Mais rápido que digitar.
+- 🟢 **Coach de metas** — quando houver orçamento (§4), o agente comenta o ritmo ("no dia 10 você já usou 60% do teto de mercado").
+
+## 9. Integrações bancárias (matar o lançamento manual)
+
+O maior atrito é digitar cada gasto. Puxar do banco resolve isso de vez.
+
+- 🔴 **Open Finance (Pluggy/Belvo)** — conectar a conta/cartão e importar transações automaticamente, com conciliação contra o que já foi lançado. É o "santo graal" do organizador.
+- 🟡 **Importar fatura de cartão (PDF/CSV)** — ler a fatura inteira e gerar as compras/parcelas de uma vez, conciliando com a fatura já existente.
+- 🟡 **Ler comprovante de PIX / nota fiscal** — estender o importador de boleto pra PIX e NF (QR/imagem) — já citado no §5, encaixa aqui.
+- 🟢 **Pix copia-e-cola** — colar o código PIX e o agente extrai valor/beneficiário e pré-preenche o lançamento.
+
+## 10. Patrimônio e planejamento (além do fluxo de caixa)
+
+- 🟡 **Patrimônio líquido** — somar contas + reservas − dívidas (faturas/parcelas em aberto) e acompanhar a evolução mês a mês. Sai do "quanto entrou/saiu" pro "quanto eu tenho".
+- 🟢 **Investimentos** — registrar aportes/saldo de investimentos (mesmo manual) pra ter a foto completa, não só o dia a dia.
+- 🟢 **Relatório anual / IRPF** — consolidado do ano por categoria, exportável, pensando no imposto de renda.
+- 🟢 **Multi-perfil/visão** — quando a atribuição por pessoa (§2) existir, alternar entre "casal" e "Pablo/Monique" nos relatórios e metas.
+
 ---
 
 ## Sugestão de ordem (se for tocar)
-1. **Cadastrar conta + desfazer no bot** (§1) — tira o atrito do dia a dia.
+0. ✅ **CRUD no front + lista de transações** (§3) — feito (2026-06-10).
+1. **Cadastrar conta + desfazer no bot** (§1) — tira o atrito do dia a dia (o CRUD web já alivia o cadastro de conta, mas o "desfazer" no card ainda falta).
 2. **MinIO atrás do Caddy** (§6) — destrava ver comprovante no site.
 3. **Orçamento por categoria + alertas** (§4) — vira "organizador" de verdade, não só "registrador".
-4. **CRUD no front + lista de transações** (§3) — autonomia sem depender de API/bot.
-5. **Cron das recorrências** (§6) — automação que já está 90% pronta.
+4. **Cron das recorrências** (§6) — automação que já está 90% pronta.
+5. **Categorização automática + perguntas em linguagem natural** (§8) — o salto de "registrador" pra "copiloto"; alto valor percebido.
+6. **Open Finance / importar fatura** (§9) — quando quiser matar o lançamento manual de vez.
 
 > Cada item vira um (ou poucos) commits no padrão do projeto: 1 step = 1 commit,
 > smoke test verde entre cada. Quando for pegar um, vale abrir um mini-plano no

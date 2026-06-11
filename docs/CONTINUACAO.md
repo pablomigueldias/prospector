@@ -1,8 +1,7 @@
 # Continuação — onde paramos e como retomar
 
-> Handoff geral do sistema (não só do auth — pra isso veja `AUTH_STATUS.md` /
-> `AUTH_CONTINUACAO.md`). Última atualização: **2026-06-10**.
-> Branch de trabalho: **`feat/financas`** (tudo aqui; `main` está atrás).
+> Handoff geral do sistema. Última atualização: **2026-06-10**.
+> Branch de trabalho: **`feat/financas`** — agora **espelhado em `main`** (merge + push feitos; ver §2).
 
 ---
 
@@ -12,14 +11,16 @@
 - **VPS:** 5 containers de pé (`api`, `web`, `caddy`, `db` healthy, `minio` healthy). Migrations rodaram do zero (public/financas/auth). Admin seedado (`pablo.miguel.dias@gmail.com`, id `00…001`).
 - **Bot do Telegram (@IqueFinBot):** ligado, webhook registrado, menu de comandos publicado. Comandos: `/gasto`, `/ganho`, `/saldo`, `/resumo`, `/help`, `/start` + linguagem natural + boleto por foto/PDF.
 - **Pessoas no bot:** você (chat `925108560`) e a **Monique** (chat `8834370302`) — ambas apontando pro **mesmo** `usuario_id` (`00…001`), ou seja, **carteira compartilhada**.
+- **Dashboard agora manipula tudo pela web (2026-06-10):** CRUD completo de **conta**, **categoria**, **transação** (lançar/excluir, com reversão de saldo), **recorrência** (contas fixas) e **cartão**, além da **lista de transações filtrável** (mês/conta/categoria/tipo/busca). Tudo por modal, sem depender de API/bot.
+- **Botão de dev "Puxar da produção"** no rodapé de Finanças (só no build de dev): copia o banco de produção pro dev (one-way). Gated por `DEV_TOOLS_ENABLED` — em produção a rota é 404.
 
 ---
 
 ## 2. Git / código
 
-- Trabalho todo commitado e **com push** em `origin/feat/financas` (último: `financas(bot): mostra o chat_id…`).
-- **`main` ainda NÃO recebeu esse trabalho.** O deploy foi por **rsync** (não depende de git). Decisão pendente: **fazer merge `feat/financas` → `main`** quando quiser que o GitHub reflita o que está em produção.
-- Deploys futuros = `rsync` do repo pro VPS + `./scripts/02-deploy.sh` (ver README §5).
+- Trabalho todo commitado e **com push** em `origin/feat/financas` **e `origin/main`** (os dois sincronizados; `main` recebeu tudo via merges `--no-ff`). Padrão: 1 feature = 1 commit, sem co-author.
+- **Deploy é por `rsync`** pro VPS (`~/reative` não é repo git) + rebuild dos containers (`docker compose up -d --build api web` no `~/reative/deploy`). Ver §5.
+- ⚠️ **2 arquivos `docs/AUTH_*.md`** seguem deletados no working tree de `feat/financas` (pré-existente, não commitado) — decidir se apaga de vez ou restaura.
 
 ---
 
@@ -33,9 +34,10 @@ Em ordem de "pega rápido":
 4. **`test_auth_me_logout_api` falha** (pré-existente, fora de escopo): faz `logout` sem header CSRF, que o CSRF (B8) passou a exigir → 403. Correção trivial: o teste mandar `X-CSRF-Token` nos `logout`/`logout-all`.
 5. **Renomear as vars `TELEGRAM_*_SANDRA` → algo neutro** (`_2`) pra não confundir (hoje guardam a Monique). Mexe em `config.py` + `bot_service.py` + `.env` do VPS + compose.
 6. **Comprovantes no navegador:** o MinIO só escuta no localhost do VPS → URLs presignadas não abrem no browser. Expor o MinIO atrás do Caddy (ex.: `/s3/*`) + ajustar `S3_ENDPOINT` público e o `img-src` do CSP.
-7. **Limpar o "double /api"** (ver README §8): Caddy `handle` (sem strip) + `NEXT_PUBLIC_API_URL` sem `/api` + rebuild do `web`. Cosmético; o atual funciona.
+7. ✅ **"Double /api" resolvido (2026-06-10):** Caddy passou a usar `handle /api/*` (sem strip) e `NEXT_PUBLIC_API_URL` sem `/api`. **Pegadinha:** ao trocar o Caddyfile via rsync, precisa `docker restart reative-caddy` (não só `reload`) — bind-mount de arquivo único fica preso ao inode velho.
 8. **Mais de 2 pessoas no bot:** hoje só há 2 slots (você + 1). Pra um terceiro chat, generalizar o mapa chat→usuário (lista no `.env` ou tabela).
-9. **Merge `feat/financas` → `main`** (item 2 acima) quando estiver confortável.
+9. ✅ **Merge `feat/financas` → `main` feito.** Os dois branches seguem sincronizados a cada feature.
+10. **Senha do dev:** se travar o login local, a senha de dev fica em `backend/.env` (`ADMIN_SENHA_INICIAL`); resetar só pelo banco (`UPDATE auth.usuarios SET senha_hash=...`). Trocar a senha no app revoga sessões; anote a nova.
 
 ---
 
