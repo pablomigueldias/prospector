@@ -8,6 +8,7 @@ import type {
   FaturasCartao,
   Conta,
   LeituraConsumo,
+  Recorrencia,
   ResumoMes,
   TransacaoFiltro,
   TransacaoListItem,
@@ -77,6 +78,13 @@ export function useCategorias() {
   const result = useFetch(() => api.financasCategorias(), []);
   const arvore: CategoriaTreeItem[] = result.data?.items ?? [];
   return { ...result, arvore };
+}
+
+export function useRecorrencias() {
+  const result = useFetch(() => api.financasRecorrencias(), []);
+  const recorrencias: Recorrencia[] = result.data?.items ?? [];
+  const total: number = result.data?.total ?? 0;
+  return { ...result, recorrencias, total };
 }
 
 export function useComprovantes(tipo?: string) {

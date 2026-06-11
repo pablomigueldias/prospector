@@ -323,6 +323,16 @@ class RecorrenciaCreate(BaseModel):
     frequencia: str = "mensal"
 
 
+class RecorrenciaUpdate(BaseModel):
+    descricao: Optional[str] = None
+    tipo: Optional[str] = None
+    valor_estimado: Optional[Decimal] = Field(None, gt=0)
+    dia_vencimento: Optional[int] = Field(None, ge=1, le=31)
+    categoria_id: Optional[str] = None
+    conta_id: Optional[str] = None
+    ativa: Optional[bool] = None
+
+
 class RecorrenciaResponse(BaseModel):
     id: str
     usuario_id: str

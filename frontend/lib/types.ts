@@ -495,6 +495,44 @@ export interface LancamentoInput {
   status?: 'paga' | 'prevista';
 }
 
+// ── Recorrências (despesas/receitas fixas) ──────────────────────────
+export interface Recorrencia {
+  id: string;
+  usuario_id: string;
+  descricao: string;
+  tipo: string;
+  valor_estimado: string;
+  dia_vencimento: number;
+  frequencia: string;
+  categoria_id?: string | null;
+  conta_id?: string | null;
+  ativa: boolean;
+}
+
+export interface RecorrenciaListResponse {
+  items: Recorrencia[];
+  total: number;
+}
+
+export interface RecorrenciaCreateInput {
+  descricao: string;
+  tipo: 'despesa' | 'receita';
+  valor_estimado: string;
+  dia_vencimento: number;
+  categoria_id?: string | null;
+  conta_id?: string | null;
+}
+
+export interface RecorrenciaUpdateInput {
+  descricao?: string;
+  tipo?: 'despesa' | 'receita';
+  valor_estimado?: string;
+  dia_vencimento?: number;
+  categoria_id?: string | null;
+  conta_id?: string | null;
+  ativa?: boolean;
+}
+
 export interface CategoriaTreeItem {
   id: string;
   nome: string;

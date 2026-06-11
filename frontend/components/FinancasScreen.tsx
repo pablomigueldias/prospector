@@ -7,6 +7,7 @@ import { ComprovantesGaleria } from '@/components/ComprovantesGaleria';
 import { ConsumoSection } from '@/components/ConsumoSection';
 import { ContasSection } from '@/components/ContasSection';
 import { DevSyncButton } from '@/components/DevSyncButton';
+import { RecorrenciasSection } from '@/components/RecorrenciasSection';
 import { StatCard } from '@/components/StatCard';
 import { TransacoesSection } from '@/components/TransacoesSection';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
@@ -164,6 +165,9 @@ export default function FinancasScreen() {
         </h2>
         <CartoesSection />
       </section>
+
+      {/* Contas fixas (recorrências: criar/editar/excluir) */}
+      <RecorrenciasSection contas={contas} onMutate={recarregarTudo} />
 
       {/* Categorias (criar/editar/excluir) */}
       <CategoriasSection />
