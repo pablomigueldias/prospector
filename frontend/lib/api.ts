@@ -10,6 +10,10 @@ import type {
   CategoriaTreeResponse,
   CategoriaUpdateInput,
   LancamentoInput,
+  Recorrencia,
+  RecorrenciaCreateInput,
+  RecorrenciaListResponse,
+  RecorrenciaUpdateInput,
   TransacaoFiltro,
   TransacaoListResponse,
   TransacaoResponse,
@@ -473,6 +477,38 @@ export const api = {
   financasExcluirCategoria(id: string): Promise<void> {
     return request<void>(
       `/api/financas/categorias/${encodeURIComponent(id)}`,
+      { method: 'DELETE', timeoutMs: 10_000 },
+    );
+  },
+
+  // ── Finanças · recorrências (despesas/receitas fixas) ───────────
+  financasRecorrencias(): Promise<RecorrenciaListResponse> {
+    return request<RecorrenciaListResponse>('/api/financas/recorrencias', {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCriarRecorrencia(body: RecorrenciaCreateInput): Promise<Recorrencia> {
+    return request<Recorrencia>('/api/financas/recorrencias', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasAtualizarRecorrencia(
+    id: string,
+    body: RecorrenciaUpdateInput,
+  ): Promise<Recorrencia> {
+    return request<Recorrencia>(
+      `/api/financas/recorrencias/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body, timeoutMs: 10_000 },
+    );
+  },
+
+  financasExcluirRecorrencia(id: string): Promise<void> {
+    return request<void>(
+      `/api/financas/recorrencias/${encodeURIComponent(id)}`,
       { method: 'DELETE', timeoutMs: 10_000 },
     );
   },
