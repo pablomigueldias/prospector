@@ -10,11 +10,14 @@ import asyncio
 import os
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 
 from app.api.dependencies.auth import usuario_atual
+from app.api.services.auth import senha_service
 from app.config import BASE_DIR, settings
 from app.db.models.auth.usuario import Usuario
-from app.db.session import dispose_engine
+from app.db.session import dispose_engine, get_session
+from app.jobs.seed_admin import ADMIN_ID
 from app.utils.logger import get_logger
 
 logger = get_logger()
@@ -22,6 +25,28 @@ logger = get_logger()
 router = APIRouter(prefix="/api/dev", tags=["dev"])
 
 _SCRIPT = BASE_DIR.parent / "deploy" / "scripts" / "sync-prod-to-dev.sh"
+
+
+async def _resetar_senha_admin_dev() -> str | None:
+    """Depois do sync, ``auth.usuarios`` veio da PRODUÇÃO — ou seja, a senha do
+    admin no dev virou a de produção. Pra você continuar logando com a senha
+    LOCAL de sempre, sobrescreve o hash do admin com a ``ADMIN_SENHA_INICIAL``
+    do ``.env`` de dev. Roda DEPOIS do ``dispose_engine`` (banco já recriado).
+    Retorna o email resetado, ou ``None`` se não deu pra resetar."""
+    if not settings.admin_email or not settings.admin_senha_inicial:
+        return None
+    email_norm = settings.admin_email.strip().lower()
+    async with get_session() as session:
+        admin = await session.get(Usuario, ADMIN_ID)
+        if admin is None:
+            admin = await session.scalar(
+                select(Usuario).where(Usuario.email == email_norm)
+            )
+        if admin is None:
+            return None
+        admin.senha_hash = senha_service.hash_senha(settings.admin_senha_inicial)
+        await session.commit()
+        return admin.email
 
 
 def _exige_dev() -> None:
@@ -69,8 +94,28 @@ async def sync_prod_to_dev(_: Usuario = Depends(usuario_atual)) -> dict:
     # O banco de dev foi recriado: descarta o pool pra reconectar no novo banco.
     await dispose_engine()
     logger.info("Sync produção→dev concluído; engine descartado.")
+
+    # O dump trouxe a senha de PRODUÇÃO; devolve a senha LOCAL de dev pro admin
+    # pra você não precisar lembrar a senha do site toda vez que sincroniza.
+    try:
+        email = await _resetar_senha_admin_dev()
+    except Exception as e:  # nunca falha o sync por causa do reset
+        logger.error("Reset de senha pós-sync falhou: %s", e)
+        email = None
+
+    if email:
+        msg = (
+            "Dados da produção copiados para o dev. Faça login de novo com sua "
+            "senha LOCAL de dev (a do .env). Recarregando…"
+        )
+    else:
+        msg = (
+            "Dados da produção copiados para o dev. Login = senha da PRODUÇÃO "
+            "(não consegui resetar pra senha local). Recarregue a página."
+        )
     return {
         "ok": True,
-        "mensagem": "Dados da produção copiados para o dev. Recarregue a página.",
+        "mensagem": msg,
+        "senha_resetada": bool(email),
         "log": log.strip()[-2000:],
     }
