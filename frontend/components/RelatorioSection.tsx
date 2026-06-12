@@ -79,6 +79,21 @@ export function RelatorioSection({ ano, mes }: Props) {
 
   const temDados = dados.some((d) => d.receitas > 0 || d.despesas > 0);
 
+  // Insight: despesa do último mês vs. média do período.
+  const insight = useMemo(() => {
+    if (!relatorio || dados.length < 2) return null;
+    const ultimo = dados[dados.length - 1];
+    const media = Number(relatorio.media_despesas);
+    if (media <= 0) return null;
+    const diffPct = ((ultimo.despesas - media) / media) * 100;
+    return {
+      rotulo: ultimo.rotulo,
+      despesa: ultimo.despesas,
+      diffPct,
+      acima: diffPct > 0,
+    };
+  }, [relatorio, dados]);
+
   return (
     <section id="sec-relatorio" className="scroll-mt-16 mb-8">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -137,6 +152,33 @@ export function RelatorioSection({ ano, mes }: Props) {
               value={formatBRL(relatorio!.media_despesas)}
             />
           </div>
+
+          {/* Insight: último mês vs. média */}
+          {insight && (
+            <div className="flex items-center gap-2 text-[13px] text-ink-soft mb-4">
+              <span
+                className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] shrink-0 ${
+                  insight.acima
+                    ? 'bg-red-50 text-red-600'
+                    : 'bg-success-soft text-success-ink'
+                }`}
+                aria-hidden
+              >
+                {insight.acima ? '↑' : '↓'}
+              </span>
+              <span>
+                <strong className="text-ink">{insight.rotulo}</strong> fechou em{' '}
+                {formatBRL(insight.despesa)} de despesa —{' '}
+                <strong
+                  className={insight.acima ? 'text-red-600' : 'text-success-ink'}
+                >
+                  {Math.abs(insight.diffPct).toFixed(0)}%{' '}
+                  {insight.acima ? 'acima' : 'abaixo'}
+                </strong>{' '}
+                da média do período.
+              </span>
+            </div>
+          )}
 
           {/* Gráfico: receitas x despesas (barras) + saldo (linha) */}
           <div className="card p-5 mb-4">
