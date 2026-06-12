@@ -36,9 +36,17 @@ copiloto** (§8–§10) e polir as bordas.
 - ✅ **Lista de transações filtrável** (2026-06-10) — por mês, conta, categoria, tipo e busca na descrição.
 - ✅ **Editar transação** (2026-06-11) — botão ✎ em cada linha abre o formulário pré-preenchido e salva via `PATCH`, reajustando o saldo da conta (reverte o efeito antigo e aplica o novo). Vale pra transação de uma conta; dividida orienta a excluir e relançar.
 - ✅ **Agilidade no dashboard** (2026-06-11) — lançar de qualquer lugar (FAB flutuante + atalho `N`/`Ctrl+K`), sub-nav sticky pra pular entre seções, e a lista lembra os últimos filtros (localStorage).
-- 🟡 **Relatório mensal** — comparativo mês a mês, evolução de saldo, top categorias, exportar PDF/CSV.
+- ✅ **Relatório mensal** (2026-06-11) — seção **Relatório**: série de 3/6/12 meses com receitas × despesas (gráfico de barras), saldo por mês, totais do período + despesa média, top categorias do período e **export CSV**. Endpoint `GET /api/financas/resumo/relatorio`.
 - 🟢 **Detalhe de cartão** — extrato da fatura, parcelas futuras, projeção de quanto vai pesar nos próximos meses.
 - 🟢 **Atalhos & produtividade (resto)** — falta busca global e dark mode (atalho de teclado e lembrar filtros já feitos).
+
+### Novas recomendações (2026-06-11) — evoluir Dashboard & relatórios
+- 🟡 **Export PDF do relatório** — o CSV já saiu; falta um PDF "bonito" (cabeçalho, gráfico, totais) pra mandar/arquivar. Dá pra renderizar no front (ex.: `window.print()` com uma folha de estilo de impressão) ou gerar no backend.
+- 🟡 **Filtrar o relatório por conta/categoria** — hoje a série é do consolidado; poder recortar "só Nubank" ou "só Mercado" ao longo dos meses ajuda a achar onde o gasto cresce.
+- 🟡 **Linha de tendência / variação %** — mostrar no card de cada mês o "−12% vs. média" ou vs. mês anterior (o dado já está na série, falta só o cálculo no front).
+- 🟢 **Evolução de saldo real (patrimônio no tempo)** — hoje "saldo por mês" é o *resultado* (receitas − despesas) do mês; o saldo acumulado das contas ao longo do tempo exige snapshots (não guardamos histórico). Encaixa com o §10 (patrimônio líquido).
+- 🟢 **Clicar no mês do gráfico → abre a lista filtrada** daquele mês (cruza o Relatório com a seção Transações).
+- 🟢 **Comparar dois períodos** lado a lado (este mês vs. mesmo mês do ano passado).
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
@@ -61,6 +69,7 @@ copiloto** (§8–§10) e polir as bordas.
 - 🟡 **Monitoramento/alerta de saúde** — ping no `/api/health` + aviso se a API cair; checar o cron de backup.
 - 🟢 **Testar o restore do backup** — restaurar um dump num banco de teste e confirmar que volta inteiro.
 - 🟢 **Observabilidade** — logs estruturados + métricas (quantos lançamentos/dia, latência do importador).
+- 🟡 **Testes E2E / verificação visual (Playwright)** — hoje a validação de tela é manual (a API/lógica têm smoke tests, mas o front não). Um Playwright que faz login automatizado e tira screenshot/roda smoke das telas (Finanças, lançar, editar) dá pra conferir mudanças de UI sem subir e clicar à mão. *Surgiu em 2026-06-11 quando não deu pra screenshotar a tela autenticada sem browser automatizado.*
 
 ## 7. Segurança & dados
 
@@ -100,7 +109,7 @@ O maior atrito é digitar cada gasto. Puxar do banco resolve isso de vez.
 ---
 
 ## Sugestão de ordem (se for tocar)
-0. ✅ **CRUD no front + lista de transações + editar + agilidade** (§3) — feito (CRUD/lista em 2026-06-10; editar transação, FAB/atalho, sub-nav e filtros lembrados em 2026-06-11).
+0. ✅ **Dashboard & relatórios** (§3) — feito: CRUD/lista (2026-06-10) + editar transação, agilidade (FAB/atalho/sub-nav/filtros lembrados) e **relatório mensal com CSV** (2026-06-11). Restam refinamentos (PDF, filtros no relatório, tendência) nas "Novas recomendações" da §3.
 1. **Cadastrar conta + desfazer no bot** (§1) — tira o atrito do dia a dia (o CRUD web já alivia o cadastro de conta, mas o "desfazer" no card ainda falta).
 2. **MinIO atrás do Caddy** (§6) — destrava ver comprovante no site.
 3. **Orçamento por categoria + alertas** (§4) — vira "organizador" de verdade, não só "registrador".
