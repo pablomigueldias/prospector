@@ -36,7 +36,8 @@ copiloto** (§8–§10) e polir as bordas.
 - ✅ **Lista de transações filtrável** (2026-06-10) — por mês, conta, categoria, tipo e busca na descrição.
 - ✅ **Editar transação** (2026-06-11) — botão ✎ em cada linha abre o formulário pré-preenchido e salva via `PATCH`, reajustando o saldo da conta (reverte o efeito antigo e aplica o novo). Vale pra transação de uma conta; dividida orienta a excluir e relançar.
 - ✅ **Agilidade no dashboard** (2026-06-11) — lançar de qualquer lugar (FAB flutuante + atalho `N`/`Ctrl+K`), sub-nav sticky pra pular entre seções, e a lista lembra os últimos filtros (localStorage).
-- ✅ **Relatório mensal** (2026-06-11) — seção **Relatório**: série de 3/6/12 meses com receitas × despesas (gráfico de barras), saldo por mês, totais do período + despesa média, top categorias do período e **export CSV**. Endpoint `GET /api/financas/resumo/relatorio`.
+- ✅ **Relatório mensal** (2026-06-11) — seção **Relatório**: série de 3/6/12 meses com receitas × despesas (barras) + **linha de saldo**, totais do período + despesa média, top categorias do período e **export CSV**. Endpoint `GET /api/financas/resumo/relatorio`.
+- ✅ **Gráficos com Recharts** (2026-06-11) — adotada a **Recharts** (`recharts@^2`) como lib de gráficos do front (padrão de mercado em React, SVG, casa com os tokens `oklch` do design — vs. Tremor, que traz preset Tailwind próprio e conflita). O 1º remendo do relatório foi feito à mão e não renderizava as barras; agora é `ComposedChart` (barras + linha + tooltip custom). Ref: `frontend/components/RelatorioSection.tsx`. *Próximo gráfico novo: pintar com as cores oklch direto nas props.*
 - 🟢 **Detalhe de cartão** — extrato da fatura, parcelas futuras, projeção de quanto vai pesar nos próximos meses.
 - 🟢 **Atalhos & produtividade (resto)** — falta busca global e dark mode (atalho de teclado e lembrar filtros já feitos).
 
@@ -47,6 +48,7 @@ copiloto** (§8–§10) e polir as bordas.
 - 🟢 **Evolução de saldo real (patrimônio no tempo)** — hoje "saldo por mês" é o *resultado* (receitas − despesas) do mês; o saldo acumulado das contas ao longo do tempo exige snapshots (não guardamos histórico). Encaixa com o §10 (patrimônio líquido).
 - 🟢 **Clicar no mês do gráfico → abre a lista filtrada** daquele mês (cruza o Relatório com a seção Transações).
 - 🟢 **Comparar dois períodos** lado a lado (este mês vs. mesmo mês do ano passado).
+- 🟢 **Migrar o donut "Despesas por categoria" pra Recharts** — hoje o `CategoriaDonut` é conic-gradient feito à mão; um `PieChart` Recharts deixa tudo coeso com o gráfico do relatório.
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
