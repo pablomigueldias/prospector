@@ -41,6 +41,7 @@ import type {
   CandidaturaEmailItem,
   ContaListResponse,
   ResumoMes,
+  RelatorioResponse,
   CartaoListResponse,
   FaturasCartao,
   LeituraConsumoListResponse,
@@ -346,6 +347,24 @@ export const api = {
       mes: String(mes),
     });
     return request<ResumoMes>(`/api/financas/resumo?${q}`, { timeoutMs: 10_000 });
+  },
+
+  /** GET /api/financas/resumo/relatorio — série mês a mês + top categorias */
+  financasRelatorio(
+    usuarioId: string,
+    ano: number,
+    mes: number,
+    meses = 6,
+  ): Promise<RelatorioResponse> {
+    const q = new URLSearchParams({
+      usuario_id: usuarioId,
+      ano: String(ano),
+      mes: String(mes),
+      meses: String(meses),
+    });
+    return request<RelatorioResponse>(`/api/financas/resumo/relatorio?${q}`, {
+      timeoutMs: 10_000,
+    });
   },
 
   financasCartoes(usuarioId: string): Promise<CartaoListResponse> {

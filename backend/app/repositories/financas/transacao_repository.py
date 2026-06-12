@@ -105,6 +105,33 @@ class TransacaoRepository:
         rows = await self.session.execute(stmt)
         return {tipo: Decimal(total) for tipo, total in rows.all()}
 
+    async def totais_por_mes(
+        self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date
+    ) -> List[Tuple[int, int, str, Decimal]]:
+        """(ano, mes, tipo, total) por mês de competência no intervalo, pra
+        montar a série do relatório. Meses sem lançamento não aparecem (o
+        service preenche zero)."""
+        ano = func.extract("year", Transacao.data_competencia)
+        mes = func.extract("month", Transacao.data_competencia)
+        stmt = (
+            select(
+                ano.label("ano"),
+                mes.label("mes"),
+                Transacao.tipo,
+                func.coalesce(func.sum(Transacao.valor_total), 0).label("total"),
+            )
+            .where(
+                Transacao.usuario_id == usuario_id,
+                Transacao.data_competencia >= inicio,
+                Transacao.data_competencia < proximo_mes,
+            )
+            .group_by("ano", "mes", Transacao.tipo)
+        )
+        rows = await self.session.execute(stmt)
+        return [
+            (int(a), int(m), tipo, Decimal(total)) for a, m, tipo, total in rows.all()
+        ]
+
     async def despesas_por_categoria(
         self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date
     ) -> List[Tuple[Optional[uuid.UUID], Optional[str], Decimal]]:

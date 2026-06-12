@@ -524,3 +524,23 @@ class ResumoMesResponse(BaseModel):
     total_despesas: Decimal
     saldo: Decimal                 # receitas − despesas (sobra/déficit)
     por_categoria: List[CategoriaResumoItem]   # despesas, maior → menor
+
+
+class RelatorioMesItem(BaseModel):
+    """Um mês na série do relatório (cronológico, mais antigo → mais novo)."""
+    ano: int
+    mes: int
+    total_receitas: Decimal
+    total_despesas: Decimal
+    saldo: Decimal                 # resultado do mês (receitas − despesas)
+
+
+class RelatorioResponse(BaseModel):
+    """Relatório do período (N meses até o mês âncora): série mês a mês,
+    top categorias e totais consolidados."""
+    meses: List[RelatorioMesItem]
+    por_categoria: List[CategoriaResumoItem]   # despesas do período, maior → menor
+    total_receitas: Decimal
+    total_despesas: Decimal
+    saldo: Decimal
+    media_despesas: Decimal        # média mensal de despesa no período

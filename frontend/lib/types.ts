@@ -591,6 +591,23 @@ export interface ResumoMes {
   por_categoria: CategoriaResumoItem[];
 }
 
+export interface RelatorioMesItem {
+  ano: number;
+  mes: number;
+  total_receitas: string;
+  total_despesas: string;
+  saldo: string;
+}
+
+export interface RelatorioResponse {
+  meses: RelatorioMesItem[];
+  por_categoria: CategoriaResumoItem[];
+  total_receitas: string;
+  total_despesas: string;
+  saldo: string;
+  media_despesas: string;
+}
+
 export interface Cartao {
   id: string;
   usuario_id: string;

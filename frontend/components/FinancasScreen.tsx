@@ -9,6 +9,7 @@ import { ConsumoSection } from '@/components/ConsumoSection';
 import { ContasSection } from '@/components/ContasSection';
 import { DevSyncButton } from '@/components/DevSyncButton';
 import { RecorrenciasSection } from '@/components/RecorrenciasSection';
+import { RelatorioSection } from '@/components/RelatorioSection';
 import { StatCard } from '@/components/StatCard';
 import { TransacoesSection } from '@/components/TransacoesSection';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
@@ -26,6 +27,7 @@ function mesSeguinte(ano: number, mes: number): [number, number] {
 /** Atalhos da sub-navegação (id da seção → rótulo). */
 const SECOES: { id: string; label: string }[] = [
   { id: 'sec-visao', label: 'Visão' },
+  { id: 'sec-relatorio', label: 'Relatório' },
   { id: 'sec-contas', label: 'Contas' },
   { id: 'sec-transacoes', label: 'Transações' },
   { id: 'sec-consumo', label: 'Consumo' },
@@ -208,6 +210,9 @@ export default function FinancasScreen() {
           loading={resumoLoading}
         />
       </section>
+
+      {/* Relatório: série mês a mês + top categorias do período + CSV */}
+      <RelatorioSection ano={ano} mes={mes} />
 
       {/* Contas + Reservas (com criar/editar/excluir) */}
       <div id="sec-contas" className="scroll-mt-16">
