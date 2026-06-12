@@ -34,10 +34,11 @@ copiloto** (§8–§10) e polir as bordas.
 
 - ✅ **CRUD completo no front** (2026-06-10) — criar/editar/excluir **conta**, **categoria**, **cartão** e **recorrência** (contas fixas) por modal, e **lançar despesa/receita** + **excluir** transação (com reversão de saldo) pela interface. Tudo gerenciável sem depender de API/bot.
 - ✅ **Lista de transações filtrável** (2026-06-10) — por mês, conta, categoria, tipo e busca na descrição.
+- ✅ **Editar transação** (2026-06-11) — botão ✎ em cada linha abre o formulário pré-preenchido e salva via `PATCH`, reajustando o saldo da conta (reverte o efeito antigo e aplica o novo). Vale pra transação de uma conta; dividida orienta a excluir e relançar.
+- ✅ **Agilidade no dashboard** (2026-06-11) — lançar de qualquer lugar (FAB flutuante + atalho `N`/`Ctrl+K`), sub-nav sticky pra pular entre seções, e a lista lembra os últimos filtros (localStorage).
 - 🟡 **Relatório mensal** — comparativo mês a mês, evolução de saldo, top categorias, exportar PDF/CSV.
-- 🟡 **Edição inline de transação** — hoje é excluir + relançar; editar valor/categoria/conta/data direto na linha (recalculando saldo) é mais fluido.
 - 🟢 **Detalhe de cartão** — extrato da fatura, parcelas futuras, projeção de quanto vai pesar nos próximos meses.
-- 🟢 **Atalhos & produtividade** — lançar com atalho de teclado, busca global, lembrar últimos filtros, dark mode.
+- 🟢 **Atalhos & produtividade (resto)** — falta busca global e dark mode (atalho de teclado e lembrar filtros já feitos).
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
@@ -99,7 +100,7 @@ O maior atrito é digitar cada gasto. Puxar do banco resolve isso de vez.
 ---
 
 ## Sugestão de ordem (se for tocar)
-0. ✅ **CRUD no front + lista de transações** (§3) — feito (2026-06-10).
+0. ✅ **CRUD no front + lista de transações + editar + agilidade** (§3) — feito (CRUD/lista em 2026-06-10; editar transação, FAB/atalho, sub-nav e filtros lembrados em 2026-06-11).
 1. **Cadastrar conta + desfazer no bot** (§1) — tira o atrito do dia a dia (o CRUD web já alivia o cadastro de conta, mas o "desfazer" no card ainda falta).
 2. **MinIO atrás do Caddy** (§6) — destrava ver comprovante no site.
 3. **Orçamento por categoria + alertas** (§4) — vira "organizador" de verdade, não só "registrador".
