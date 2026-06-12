@@ -50,6 +50,28 @@ copiloto** (§8–§10) e polir as bordas.
 - 🟢 **Comparar dois períodos** lado a lado (este mês vs. mesmo mês do ano passado).
 - ✅ **Donut "Despesas por categoria" no Recharts** (2026-06-11) — `CategoriaDonut` virou `PieChart` da Recharts (mesma interface, legenda lateral mantida, tooltip no hover com valor + %). Usado no donut do mês e no top categorias do relatório.
 
+## 3b. Paridade backend ↔ tela (o backend já faz, a tela ainda não)
+
+> Levantamento 2026-06-11 cruzando os routers de `financas` com o `lib/api.ts`/
+> componentes. **Objetivo: poder fazer TUDO pela tela de Finanças** (e, quando
+> fora de casa, pelo bot — que já cobre NLU, boleto por foto e lançamento).
+> Estas funções **já existem no backend**, só falta a interface no front.
+
+- 🟡 **Importar boleto por foto/PDF pela web** — `POST /api/financas/importador/boleto` (IA lê o boleto e pré-preenche). Hoje só pelo Telegram; na tela seria um "arraste o boleto aqui". **Alto valor** — replica o melhor do bot no desktop.
+- 🟡 **Compra parcelada no cartão** — `POST /api/financas/compras` (`CompraParceladaCreate`): lançar "geladeira em 10x no cartão" e o sistema gera as parcelas/faturas. Não existe na tela — hoje só dá pra cadastrar o cartão, não comprar nele.
+- 🟡 **Boleto parcelado** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`): boleto que vira N parcelas. Ausente no front.
+- 🟡 **Despesa dividida (split por N contas)** — `POST /api/financas/transacoes/despesa/dividida`: pagar uma despesa com mais de uma conta (ex.: metade VR, metade dinheiro). O form de lançamento só faz conta única. *(É também o que destrava editar transações divididas — ver §3 "Editar transação".)*
+- 🟡 **Despesa auto-split VR/VA** — `POST /api/financas/transacoes/despesa/auto-split`: esgota o VR e joga o resto no dinheiro automaticamente. Resolve "às vezes acaba o VR" — só existe no backend.
+- 🟡 **Registrar leitura de consumo pela web** — `POST /api/financas/leituras`: a `ConsumoSection` só **lê** (GET); não dá pra lançar a leitura de água/gás/luz manualmente na tela (hoje só chega via boleto de condomínio).
+- 🟢 **Anexar comprovante pela web** — `POST /api/financas/comprovantes`: a galeria só **lista** (GET); anexar um comprovante a uma transação é só pelo bot. Falta o upload na tela. *(Depende também de expor o MinIO atrás do Caddy — §6 — pra a imagem abrir no browser.)*
+- 🟢 **Linguagem natural no dashboard** — `POST /api/financas/nlu/interpretar`: uma caixa "digite o gasto" na tela (ex.: *"gastei 30 no mercado"*) usando o mesmo NLU do bot, caindo no card de confirmação. Casa com o §8 (perguntas/assistente).
+- 🟢 **Processar recorrências manualmente** — `POST /api/financas/recorrencias/processar`: um botão "gerar previstas / marcar atrasadas" na seção Contas fixas (enquanto o cron do §6 não existe).
+- 🟢 **Detalhe de compra parcelada** — `GET /api/financas/compras/{id}`: ver as parcelas de uma compra específica (depende de existir o lançamento de compra parcelada acima).
+
+> Já cobertos na tela (pra referência): CRUD de conta/categoria/cartão/recorrência,
+> lançar despesa/receita simples, editar/excluir transação, lista filtrável,
+> resumo, relatório, faturas do cartão e a galeria de comprovantes (leitura).
+
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
 - 🔴 **Orçamento por categoria** — definir um teto mensal (ex.: R$ 800 em mercado) e o sistema acompanhar o consumido x previsto. *Ficou de fora no build original (sem tabela de metas).*
