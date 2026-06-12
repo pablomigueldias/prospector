@@ -19,6 +19,9 @@ interface Props {
   contas: Conta[];
   /** Recarrega resumo/contas do dashboard após lançar ou excluir. */
   onMutate: () => void;
+  /** Modal "novo lançamento" controlado de fora (FAB / atalho de teclado). */
+  novoAberto: boolean;
+  onNovoAbertoChange: (aberto: boolean) => void;
 }
 
 function dataCurta(iso: string): string {
@@ -27,20 +30,63 @@ function dataCurta(iso: string): string {
   return d && m ? `${d}/${m}` : iso;
 }
 
-export function TransacoesSection({ ano, mes, contas, onMutate }: Props) {
-  const [soEsteMes, setSoEsteMes] = useState(true);
-  const [tipo, setTipo] = useState<'' | 'despesa' | 'receita'>('');
-  const [contaId, setContaId] = useState('');
-  const [categoriaId, setCategoriaId] = useState('');
-  const [buscaInput, setBuscaInput] = useState('');
-  const [busca, setBusca] = useState('');
-  const [novoAberto, setNovoAberto] = useState(false);
+const FILTROS_KEY = 'financas:filtros-transacoes';
+
+interface FiltrosSalvos {
+  soEsteMes: boolean;
+  tipo: '' | 'despesa' | 'receita';
+  contaId: string;
+  categoriaId: string;
+  busca: string;
+}
+
+function carregarFiltros(): Partial<FiltrosSalvos> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(FILTROS_KEY);
+    return raw ? (JSON.parse(raw) as Partial<FiltrosSalvos>) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function TransacoesSection({
+  ano,
+  mes,
+  contas,
+  onMutate,
+  novoAberto,
+  onNovoAbertoChange,
+}: Props) {
+  // Restaura os últimos filtros usados (uma vez, na montagem).
+  const inicial = useMemo(carregarFiltros, []);
+  const [soEsteMes, setSoEsteMes] = useState(inicial?.soEsteMes ?? true);
+  const [tipo, setTipo] = useState<'' | 'despesa' | 'receita'>(
+    inicial?.tipo ?? '',
+  );
+  const [contaId, setContaId] = useState(inicial?.contaId ?? '');
+  const [categoriaId, setCategoriaId] = useState(inicial?.categoriaId ?? '');
+  const [buscaInput, setBuscaInput] = useState(inicial?.busca ?? '');
+  const [busca, setBusca] = useState(inicial?.busca ?? '');
 
   // Debounce da busca (evita um request por tecla).
   useEffect(() => {
     const t = setTimeout(() => setBusca(buscaInput.trim()), 400);
     return () => clearTimeout(t);
   }, [buscaInput]);
+
+  // Lembra os filtros pra próxima visita.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        FILTROS_KEY,
+        JSON.stringify({ soEsteMes, tipo, contaId, categoriaId, busca: buscaInput }),
+      );
+    } catch {
+      /* localStorage indisponível (modo privado etc.) — ignora. */
+    }
+  }, [soEsteMes, tipo, contaId, categoriaId, buscaInput]);
 
   const { arvore } = useCategorias();
   const categoriasPlanas = useMemo(() => achatarCategorias(arvore), [arvore]);
@@ -85,7 +131,7 @@ export function TransacoesSection({ ano, mes, contas, onMutate }: Props) {
         </h2>
         <button
           type="button"
-          onClick={() => setNovoAberto(true)}
+          onClick={() => onNovoAbertoChange(true)}
           className="btn-primary px-4 py-1.5 text-sm"
           disabled={contas.length === 0}
           title={
@@ -174,9 +220,9 @@ export function TransacoesSection({ ano, mes, contas, onMutate }: Props) {
         <LancamentoForm
           contas={contas}
           categorias={categoriasPlanas}
-          onClose={() => setNovoAberto(false)}
+          onClose={() => onNovoAbertoChange(false)}
           onSaved={() => {
-            setNovoAberto(false);
+            onNovoAbertoChange(false);
             recarregar();
           }}
         />
