@@ -1,4 +1,12 @@
 import { useMemo } from 'react';
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  type TooltipProps,
+} from 'recharts';
 
 import { formatBRL } from '@/lib/format';
 import type { CategoriaResumoItem } from '@/lib/types';
@@ -27,18 +35,12 @@ interface Props {
 export function CategoriaDonut({ items, loading }: Props) {
   const { total, segmentos } = useMemo(() => {
     const soma = items.reduce((acc, it) => acc + Number(it.total), 0);
-    let cursor = 0;
-    const segs = items.map((it, i) => {
-      const frac = soma > 0 ? Number(it.total) / soma : 0;
-      const ini = cursor * 360;
-      cursor += frac;
-      return {
-        ...it,
-        cor: cor(i),
-        pct: frac * 100,
-        css: `${cor(i)} ${ini}deg ${cursor * 360}deg`,
-      };
-    });
+    const segs = items.map((it, i) => ({
+      ...it,
+      valor: Number(it.total),
+      cor: cor(i),
+      pct: soma > 0 ? (Number(it.total) / soma) * 100 : 0,
+    }));
     return { total: soma, segmentos: segs };
   }, [items]);
 
@@ -48,22 +50,36 @@ export function CategoriaDonut({ items, loading }: Props) {
   if (items.length === 0) {
     return (
       <div className="card p-6 text-center text-ink-soft text-sm">
-        Sem despesas neste mês.
+        Sem despesas neste período.
       </div>
     );
   }
 
-  const gradient = `conic-gradient(${segmentos.map((s) => s.css).join(', ')})`;
-
   return (
     <div className="card p-5 flex flex-col sm:flex-row items-center gap-6">
-      {/* Donut */}
+      {/* Donut (Recharts) com total no centro */}
       <div className="relative shrink-0" style={{ width: 160, height: 160 }}>
-        <div
-          className="w-full h-full rounded-full"
-          style={{ background: gradient }}
-        />
-        <div className="absolute inset-[22px] rounded-full bg-surface flex flex-col items-center justify-center">
+        <ResponsiveContainer>
+          <PieChart>
+            <Pie
+              data={segmentos}
+              dataKey="valor"
+              nameKey="categoria_nome"
+              innerRadius={52}
+              outerRadius={78}
+              paddingAngle={1}
+              stroke="none"
+              startAngle={90}
+              endAngle={-270}
+            >
+              {segmentos.map((s) => (
+                <Cell key={s.categoria_id ?? s.categoria_nome} fill={s.cor} />
+              ))}
+            </Pie>
+            <Tooltip content={<DonutTooltip total={total} />} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <div className="font-mono uppercase tracking-[0.1em] text-[9px] text-ink-mute">
             Despesas
           </div>
@@ -92,6 +108,32 @@ export function CategoriaDonut({ items, loading }: Props) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function DonutTooltip({
+  active,
+  payload,
+  total,
+}: TooltipProps<number, string> & { total: number }) {
+  if (!active || !payload?.length) return null;
+  const item = payload[0];
+  const valor = Number(item.value ?? 0);
+  const pct = total > 0 ? (valor / total) * 100 : 0;
+  return (
+    <div className="card px-3 py-2 shadow-brand-sm text-xs">
+      <div className="flex items-center gap-2">
+        <span
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{ background: item.payload?.cor }}
+        />
+        <span className="text-ink-soft">{item.name}</span>
+        <span className="ml-auto tabular-nums text-ink">{formatBRL(valor)}</span>
+      </div>
+      <div className="text-ink-mute text-[10.5px] mt-0.5 text-right">
+        {pct.toFixed(0)}% das despesas
+      </div>
     </div>
   );
 }
