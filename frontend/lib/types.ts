@@ -459,8 +459,14 @@ export interface TransacaoListResponse {
   offset: number;
 }
 
-/** Resposta de detalhe/criação de transação (campos principais; o front
- *  hoje só usa o `id` após lançar e recarrega a lista). */
+export interface TransacaoPagamento {
+  id: string;
+  conta_id: string;
+  valor: string;
+}
+
+/** Resposta de detalhe/criação de transação. O detalhe (GET /{id}) traz os
+ *  `pagamentos`, usados pra pré-preencher a conta na edição. */
 export interface TransacaoResponse {
   id: string;
   usuario_id: string;
@@ -471,6 +477,7 @@ export interface TransacaoResponse {
   data_pagamento?: string | null;
   status: string;
   categoria_id?: string | null;
+  pagamentos?: TransacaoPagamento[];
 }
 
 export interface TransacaoFiltro {
@@ -487,6 +494,18 @@ export interface TransacaoFiltro {
 /** Payload pra lançar despesa ou receita pela web. O `usuario_id` é injetado
  *  no api.ts (ignorado pelo backend, que usa a sessão). */
 export interface LancamentoInput {
+  descricao: string;
+  valor_total: string;
+  conta_id: string;
+  categoria_id?: string | null;
+  data_competencia?: string | null;
+  status?: 'paga' | 'prevista';
+}
+
+/** Payload pra editar uma transação (PATCH). Inclui o `tipo` porque a edição
+ *  pode trocar despesa↔receita. */
+export interface TransacaoEditInput {
+  tipo: 'despesa' | 'receita';
   descricao: string;
   valor_total: string;
   conta_id: string;

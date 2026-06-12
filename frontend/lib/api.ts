@@ -17,6 +17,7 @@ import type {
   RecorrenciaCreateInput,
   RecorrenciaListResponse,
   RecorrenciaUpdateInput,
+  TransacaoEditInput,
   TransacaoFiltro,
   TransacaoListResponse,
   TransacaoResponse,
@@ -462,6 +463,25 @@ export const api = {
       body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
       timeoutMs: 10_000,
     });
+  },
+
+  /** GET /api/financas/transacoes/{id} — detalhe (traz os pagamentos/conta) */
+  financasTransacao(id: string): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>(
+      `/api/financas/transacoes/${encodeURIComponent(id)}`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  /** PATCH /api/financas/transacoes/{id} — edita e reajusta o saldo */
+  financasEditarTransacao(
+    id: string,
+    body: TransacaoEditInput,
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>(
+      `/api/financas/transacoes/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body, timeoutMs: 10_000 },
+    );
   },
 
   /** DELETE /api/financas/transacoes/{id} — exclui e reverte saldo (204) */

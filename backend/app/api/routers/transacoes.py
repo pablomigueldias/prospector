@@ -14,6 +14,7 @@ from app.api.schemas.financas import (
     ReceitaCreate,
     TransacaoListResponse,
     TransacaoResponse,
+    TransacaoUpdate,
 )
 from app.api.services.financas import transacao_service
 from app.api.services.financas.transacao_service import TransacaoError
@@ -120,6 +121,20 @@ async def listar(
 async def detalhe(transacao_id: str) -> TransacaoResponse:
     try:
         return await transacao_service.get_transacao(transacao_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.patch("/{transacao_id}", response_model=TransacaoResponse,
+              summary="Edita uma transação simples (uma conta) e reajusta o saldo",
+              dependencies=[Depends(exige_editar)])
+async def editar(
+    transacao_id: str,
+    body: TransacaoUpdate,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> TransacaoResponse:
+    try:
+        return await transacao_service.editar_transacao(transacao_id, body, usuario_id)
     except Exception as e:
         raise _handle(e)
 

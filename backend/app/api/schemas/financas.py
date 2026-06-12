@@ -155,6 +155,19 @@ class ReceitaCreate(BaseModel):
     notas: Optional[str] = None
 
 
+class TransacaoUpdate(BaseModel):
+    """Edição de uma transação simples (uma conta). Espelha o formulário do
+    dashboard: tipo, descrição, valor, conta, categoria, data e status. O saldo
+    da conta é reajustado (reverte o efeito antigo e aplica o novo)."""
+    tipo: str = Field(..., description="despesa | receita")
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    conta_id: str = Field(..., description="Conta da transação")
+    categoria_id: Optional[str] = None
+    data_competencia: Optional[date] = None
+    status: str = Field("paga", description="prevista/paga/atrasada")
+
+
 class TransacaoItemResponse(BaseModel):
     id: str
     categoria_id: Optional[str] = None
