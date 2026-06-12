@@ -44,11 +44,11 @@ copiloto** (§8–§10) e polir as bordas.
 ### Novas recomendações (2026-06-11) — evoluir Dashboard & relatórios
 - 🟡 **Export PDF do relatório** — o CSV já saiu; falta um PDF "bonito" (cabeçalho, gráfico, totais) pra mandar/arquivar. Dá pra renderizar no front (ex.: `window.print()` com uma folha de estilo de impressão) ou gerar no backend.
 - 🟡 **Filtrar o relatório por conta/categoria** — hoje a série é do consolidado; poder recortar "só Nubank" ou "só Mercado" ao longo dos meses ajuda a achar onde o gasto cresce.
-- 🟡 **Linha de tendência / variação %** — mostrar no card de cada mês o "−12% vs. média" ou vs. mês anterior (o dado já está na série, falta só o cálculo no front).
+- ✅ **Linha de tendência / variação %** (2026-06-11) — acima do gráfico, compara a despesa do mês mais recente com a média do período e mostra a variação % (acima/abaixo, com cor e seta). Falta o recorte por mês anterior e por categoria.
 - 🟢 **Evolução de saldo real (patrimônio no tempo)** — hoje "saldo por mês" é o *resultado* (receitas − despesas) do mês; o saldo acumulado das contas ao longo do tempo exige snapshots (não guardamos histórico). Encaixa com o §10 (patrimônio líquido).
 - 🟢 **Clicar no mês do gráfico → abre a lista filtrada** daquele mês (cruza o Relatório com a seção Transações).
 - 🟢 **Comparar dois períodos** lado a lado (este mês vs. mesmo mês do ano passado).
-- 🟢 **Migrar o donut "Despesas por categoria" pra Recharts** — hoje o `CategoriaDonut` é conic-gradient feito à mão; um `PieChart` Recharts deixa tudo coeso com o gráfico do relatório.
+- ✅ **Donut "Despesas por categoria" no Recharts** (2026-06-11) — `CategoriaDonut` virou `PieChart` da Recharts (mesma interface, legenda lateral mantida, tooltip no hover com valor + %). Usado no donut do mês e no top categorias do relatório.
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
