@@ -539,6 +539,47 @@ export interface LancamentoInput {
   status?: 'paga' | 'prevista';
 }
 
+export interface Orcamento {
+  id: string;
+  usuario_id: string;
+  categoria_id: string;
+  categoria_nome?: string | null;
+  valor_mensal: string;
+  ativo: boolean;
+}
+
+export interface OrcamentoListResponse {
+  items: Orcamento[];
+  total: number;
+}
+
+export interface OrcamentoStatusItem {
+  orcamento_id: string;
+  categoria_id: string;
+  categoria_nome?: string | null;
+  valor_mensal: string;
+  consumido: string;
+  restante: string;
+  percentual: number;
+}
+
+export interface OrcamentoStatusResponse {
+  competencia: string;
+  items: OrcamentoStatusItem[];
+  total_orcado: string;
+  total_consumido: string;
+}
+
+export interface OrcamentoCreateInput {
+  categoria_id: string;
+  valor_mensal: string;
+}
+
+export interface OrcamentoUpdateInput {
+  valor_mensal?: string;
+  ativo?: boolean;
+}
+
 export interface NluInterpretacao {
   tipo: string;
   valor: string;

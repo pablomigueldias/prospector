@@ -64,8 +64,8 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
-- 🔴 **Orçamento por categoria** — definir um teto mensal (ex.: R$ 800 em mercado) e acompanhar consumido × previsto. *Ficou de fora no build original (sem tabela de metas).*
-- 🟡 **Alertas** — avisar (no Telegram) quando estourar X% de uma categoria, quando uma conta fixa vencer/atrasar, ou quando o saldo previsto do mês ficar negativo.
+- 🟡 **Alertas de orçamento (Telegram)** — avisar quando estourar X% de uma categoria (o orçamento já existe — ver FEITO §4); falta o disparo no digest. Também: conta fixa vencer/atrasar e saldo previsto do mês negativo.
+- 🟢 **Orçar por categoria-pai (roll-up de subcategorias)** — hoje o orçamento casa por categoria exata; somar os gastos das subcategorias num teto da categoria-mãe.
 - 🟡 **Projeção de fim de mês** — com base nas recorrências previstas + média, dizer "sobra estimada: R$ Y".
 - 🟢 **Reservas com objetivo** — meta de valor numa conta tipo reserva (ex.: "viagem: R$ 5.000") com barra de progresso.
 

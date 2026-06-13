@@ -15,6 +15,11 @@ import type {
   LancamentoInput,
   DespesaDivididaInput,
   NluInterpretacao,
+  Orcamento,
+  OrcamentoListResponse,
+  OrcamentoStatusResponse,
+  OrcamentoCreateInput,
+  OrcamentoUpdateInput,
   Recorrencia,
   RecorrenciaCreateInput,
   RecorrenciaListResponse,
@@ -747,6 +752,46 @@ export const api = {
       `/api/financas/recorrencias/${encodeURIComponent(id)}`,
       { method: 'DELETE', timeoutMs: 10_000 },
     );
+  },
+
+  // ── Finanças · orçamentos (teto mensal por categoria) ───────────
+  financasOrcamentos(): Promise<OrcamentoListResponse> {
+    return request<OrcamentoListResponse>('/api/financas/orcamentos', {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasOrcamentosStatus(competencia?: string): Promise<OrcamentoStatusResponse> {
+    const q = competencia ? `?competencia=${encodeURIComponent(competencia)}` : '';
+    return request<OrcamentoStatusResponse>(`/api/financas/orcamentos/status${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCriarOrcamento(body: OrcamentoCreateInput): Promise<Orcamento> {
+    return request<Orcamento>('/api/financas/orcamentos', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasAtualizarOrcamento(
+    id: string,
+    body: OrcamentoUpdateInput,
+  ): Promise<Orcamento> {
+    return request<Orcamento>(`/api/financas/orcamentos/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body,
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasExcluirOrcamento(id: string): Promise<void> {
+    return request<void>(`/api/financas/orcamentos/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      timeoutMs: 10_000,
+    });
   },
 
   financasProcessarRecorrencias(): Promise<{

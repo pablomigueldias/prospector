@@ -10,6 +10,7 @@ import { ConsumoSection } from '@/components/ConsumoSection';
 import { ContasSection } from '@/components/ContasSection';
 import { DevSyncButton } from '@/components/DevSyncButton';
 import { ImportarBoletoSection } from '@/components/ImportarBoletoSection';
+import { OrcamentosSection } from '@/components/OrcamentosSection';
 import { RecorrenciasSection } from '@/components/RecorrenciasSection';
 import { RelatorioSection } from '@/components/RelatorioSection';
 import { StatCard } from '@/components/StatCard';
@@ -38,6 +39,7 @@ const SECOES: { id: string; label: string }[] = [
   { id: 'sec-consumo', label: 'Consumo' },
   { id: 'sec-cartoes', label: 'Cartões' },
   { id: 'sec-fixas', label: 'Contas fixas' },
+  { id: 'sec-orcamentos', label: 'Orçamentos' },
   { id: 'sec-categorias', label: 'Categorias' },
   { id: 'sec-comprovantes', label: 'Comprovantes' },
 ];
@@ -274,6 +276,11 @@ export default function FinancasScreen() {
       {/* Contas fixas (recorrências: criar/editar/excluir) */}
       <div id="sec-fixas" className="scroll-mt-16">
         <RecorrenciasSection contas={contas} ano={ano} mes={mes} onMutate={recarregarTudo} />
+      </div>
+
+      {/* Orçamentos por categoria (teto mensal × consumido) */}
+      <div id="sec-orcamentos" className="scroll-mt-16">
+        <OrcamentosSection ano={ano} mes={mes} onMutate={recarregarTudo} />
       </div>
 
       {/* Categorias (criar/editar/excluir) */}

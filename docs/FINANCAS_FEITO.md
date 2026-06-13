@@ -57,6 +57,10 @@ Serve de histórico e de referência de onde cada coisa mora no código.
 - ✅ **Projeção das próximas faturas (básica)** (2026-06-13) — o card lista as próximas faturas em aberto com **mês de competência** + total e link pro extrato. Front-only sobre `/cartoes/{id}/faturas`. (A visão consolidada multi-cartão por mês fica como pendência.)
 - ✅ **Compra recorrente / assinatura no cartão** (2026-06-13) — recorrência ganhou **forma de pagamento** (conta/cartão/boleto) + cartão alvo (migration `e5a1b3c4d6f7`). Recorrência de cartão vira **compra na fatura** (não prevista de conta): o cron gera sozinho a cada mês (forma-aware) e dá pra **lançar/marcar este mês** na seção Contas fixas (badge de situação + botão). `GET /recorrencias/status`, `POST /recorrencias/{id}/pagar-mes`. E o **boleto importado se liga à conta fixa** (auto pelo beneficiário + select manual no editor da conta a pagar) — resolve "Claude no cartão / aluguel no boleto". Ref `RecorrenciasSection.tsx`, `recorrencia_service.py`, `jobs/recorrencias.py`.
 
+## 4. Metas, orçamento e alertas
+
+- ✅ **Orçamento por categoria** (2026-06-13) — teto mensal por categoria (tabela `financas.orcamentos`, migration `f6b2c8d4e7a9`). Seção **Orçamentos** no dashboard: barra de progresso consumido×teto (verde→laranja→vermelho a partir de 80%/100%, "estourou" se passar), restante e %, com CRUD por modal. O consumido vem das despesas da categoria no mês (mesma soma do resumo). `GET /orcamentos` + `/orcamentos/status` + POST/PATCH/DELETE. Match por categoria exata (roll-up de subcategoria fica pendente). Ref `OrcamentosSection.tsx`, `orcamento_service.py`.
+
 ## 6. Confiabilidade & infraestrutura
 
 - ✅ **Cron das recorrências** (2026-06-13) — `rotina_diaria` no APScheduler gera previstas + marca atrasadas todo dia (antes só o endpoint manual). Ver §3c (lembrete de vencimento).
