@@ -75,6 +75,20 @@ copiloto** (§8–§10) e polir as bordas.
 > lançar despesa/receita simples, editar/excluir transação, lista filtrável,
 > resumo, relatório, faturas do cartão e a galeria de comprovantes (leitura).
 
+## 3c. Boletos profissionais (carro-chefe — Pablo vai alimentar muito)
+Meta declarada (2026-06-13): deixar o boleto "bem profissional e super útil".
+Ordem de ataque por custo/benefício (evitar as dores mais caras primeiro):
+
+- ✅ **Linha digitável + detector de duplicado** (2026-06-13) — IA extrai a linha digitável (só dígitos, `linha_digitavel`, migration `b2d8f1a3c6e1`); painel A pagar tem "copiar código"; importação não duplica boleto já lançado (chave: linha digitável, ou beneficiário+vencimento+valor). `CopiarLinha.tsx`.
+- 🔴 **Lembrete de vencimento (Telegram)** — avisar X dias antes / no dia / vencido. Depende de **cron diário** (job `/recorrencias/processar` já existe, falta agendar). Evita pagar com juros por esquecimento.
+- 🟡 **Marcar "atrasada" automático** — hoje o status fica "prevista" mesmo vencido (a tela só pinta de vermelho client-side); o cron acima corrige o status no banco.
+- 🔴 **Editar a conta a pagar do boleto** — quando a IA não separa as verbas, poder abrir e ajustar valor/categoria/vencimento e detalhar verbas (hoje o editor rejeita transação com itens / sem conta).
+- 🟡 **Pagar valor diferente do boleto** — ajustar o valor final pago (acordo/desconto manual) pra o saldo bater com o que saiu de verdade.
+- 🟡 **Lembrar categoria/conta por beneficiário** — reimportou "Condomínio Lello" → sugere a categoria e conta da última vez.
+- 🟡 **Virar conta fixa (recorrência)** — detectar boleto que se repete e oferecer transformar em recorrência.
+- 🟡 **Ver boleto/recibo no painel + anexar comprovante de pagamento** — depende de **expor o MinIO atrás do Caddy** (§6).
+- 🟢 **Passo de revisão antes de criar**, **sanity checks** (valor 0 / data improvável / soma≠total), **desconto por antecipação** (IA ler "desconto até dia X"), **importar vários boletos de uma vez**, **histórico do boleto** (original × pago × encargos).
+
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
 - 🔴 **Orçamento por categoria** — definir um teto mensal (ex.: R$ 800 em mercado) e o sistema acompanhar o consumido x previsto. *Ficou de fora no build original (sem tabela de metas).*

@@ -34,6 +34,37 @@ class TransacaoRepository:
         )
         return await self.session.scalar(stmt)
 
+    async def buscar_duplicado(
+        self,
+        usuario_id: uuid.UUID,
+        *,
+        linha_digitavel: Optional[str] = None,
+        beneficiario: Optional[str] = None,
+        vencimento: Optional[date] = None,
+        valor: Optional[Decimal] = None,
+    ) -> Optional[Transacao]:
+        """Acha um boleto já lançado que pareça o mesmo. Prioriza a linha
+        digitável (chave forte); senão, cai no trio beneficiário+vencimento+
+        valor de um boleto importado. Retorna a transação existente ou None."""
+        cond = [Transacao.usuario_id == usuario_id]
+        if linha_digitavel:
+            cond.append(Transacao.linha_digitavel == linha_digitavel)
+        elif beneficiario and vencimento is not None and valor is not None:
+            cond.append(Transacao.origem == "importacao_boleto")
+            cond.append(Transacao.descricao == beneficiario)
+            cond.append(Transacao.data_vencimento == vencimento)
+            cond.append(Transacao.valor_total == valor)
+        else:
+            return None
+        stmt = (
+            select(Transacao)
+            .options(selectinload(Transacao.pagamentos))
+            .where(*cond)
+            .order_by(Transacao.created_at.desc())
+            .limit(1)
+        )
+        return await self.session.scalar(stmt)
+
     # ── Listagem filtrável (para a tela de transações no dashboard) ───
     async def listar(
         self,

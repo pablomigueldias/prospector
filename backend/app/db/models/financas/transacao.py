@@ -51,6 +51,10 @@ class Transacao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # Quanto de multa+juros foi de fato somado ao pagar (registro/transparência).
     encargos_pagos: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
 
+    # Linha digitável do boleto (só dígitos) — copiar/colar pra pagar no banco
+    # e chave pra detectar boleto duplicado na importação.
+    linha_digitavel: Mapped[Optional[str]] = mapped_column(String(64))
+
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="prevista", server_default="prevista"
     )

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 
+import { CopiarLinha } from '@/components/CopiarLinha';
 import { PagarModal, type PagamentoAlvo } from '@/components/PagarModal';
 import { useTransacoes } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
@@ -187,11 +188,14 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
                         {t.categoria_nome ? ` · ${t.categoria_nome}` : ''}
                       </span>
                     ) : (
-                      <span className={venc.vencido ? 'text-red-600 font-medium' : 'text-ink-mute'}>
-                        {venc.texto}
-                        {t.categoria_nome ? (
-                          <span className="text-ink-mute"> · {t.categoria_nome}</span>
-                        ) : ''}
+                      <span className="inline-flex items-center gap-2">
+                        <span className={venc.vencido ? 'text-red-600 font-medium' : 'text-ink-mute'}>
+                          {venc.texto}
+                          {t.categoria_nome ? (
+                            <span className="text-ink-mute"> · {t.categoria_nome}</span>
+                          ) : ''}
+                        </span>
+                        {t.linha_digitavel && <CopiarLinha linha={t.linha_digitavel} />}
                       </span>
                     )}
                   </div>

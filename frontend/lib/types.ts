@@ -450,6 +450,7 @@ export interface TransacaoListItem {
   multa_percentual?: string | null;
   juros_mensal_percentual?: string | null;
   encargos_pagos?: string | null;
+  linha_digitavel?: string | null;
   status: string;
   categoria_id?: string | null;
   categoria_nome?: string | null;
@@ -725,6 +726,7 @@ export interface BoletoExtraido {
   beneficiario?: string | null;
   vencimento?: string | null;
   valor_total: string | number;
+  linha_digitavel?: string | null;
   verbas: VerbaBoleto[];
   leituras: LeituraBoleto[];
 }
@@ -732,6 +734,7 @@ export interface BoletoExtraido {
 export interface ImportarBoletoResponse {
   success: boolean;
   conferido: boolean;
+  duplicado?: boolean;
   mensagem: string;
   comprovante_id?: string | null;
   transacao_id?: string | null;

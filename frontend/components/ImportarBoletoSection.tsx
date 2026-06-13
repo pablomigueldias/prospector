@@ -38,7 +38,8 @@ export function ImportarBoletoSection({ onImportado }: Props) {
       try {
         const r = await api.financasImportarBoleto(file, categoriaId || undefined);
         setResultado(r);
-        if (r.conferido) onImportado?.();
+        // Recarrega o painel sempre que algo novo entrou (não em duplicado).
+        if (r.transacao_id && !r.duplicado) onImportado?.();
       } catch (e) {
         setErro(e instanceof ApiError ? e.message : 'Falha ao importar o boleto.');
       } finally {
@@ -142,22 +143,27 @@ export function ImportarBoletoSection({ onImportado }: Props) {
 }
 
 function ResultadoBoleto({ resultado: r }: { resultado: ImportarBoletoResponse }) {
+  const dup = !!r.duplicado;
   const ok = r.conferido;
   const criou = !!r.transacao_id; // virou conta a pagar (com ou sem verbas)
-  // 3 estados: ✅ conferido | ⚠️ a pagar sem separar verbas | ⛔ não criou
-  const titulo = ok
-    ? 'Despesa criada'
-    : criou
-      ? 'Lançado como a pagar'
-      : 'Revisão manual';
-  const icone = ok ? '✅' : criou ? '⚠️' : '⛔';
+  // 4 estados: 🔁 duplicado | ✅ conferido | ⚠️ a pagar sem verbas | ⛔ não criou
+  const titulo = dup
+    ? 'Boleto já lançado'
+    : ok
+      ? 'Despesa criada'
+      : criou
+        ? 'Lançado como a pagar'
+        : 'Revisão manual';
+  const icone = dup ? '🔁' : ok ? '✅' : criou ? '⚠️' : '⛔';
+  const borda = dup
+    ? 'border-l-brand'
+    : ok
+      ? 'border-l-success'
+      : criou
+        ? 'border-l-amber-500'
+        : 'border-l-line';
   return (
-    <div
-      className={[
-        'card mt-4 p-4 border-l-4',
-        ok ? 'border-l-success' : criou ? 'border-l-amber-500' : 'border-l-line',
-      ].join(' ')}
-    >
+    <div className={['card mt-4 p-4 border-l-4', borda].join(' ')}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg leading-none">{icone}</span>
         <strong className="text-[14px] text-ink">{titulo}</strong>

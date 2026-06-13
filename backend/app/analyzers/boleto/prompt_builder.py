@@ -11,6 +11,7 @@ OUTPUT_SCHEMA = """
   "beneficiario": "<quem recebe (ex: Condomínio Edifício X / Lello)>",
   "vencimento": "<YYYY-MM-DD>",
   "valor_total": <número, ex: 1107.52>,
+  "linha_digitavel": "<a linha digitável do boleto, só os números, ou null>",
   "multa_percentual": <número|null, ex: 2 para "multa de 2%">,
   "juros_mensal_percentual": <número|null, ex: 1 para "juros de 1% ao mês">,
   "verbas": [
@@ -35,6 +36,9 @@ REGRAS:
 - "leituras": só quando o boleto traz medição de consumo (água/gás/luz),
   comum em condomínio. Caso contrário, devolva lista vazia.
 - "vencimento": data no formato YYYY-MM-DD. Se não achar, use null.
+- "linha_digitavel": a sequência numérica longa do boleto (a "linha digitável",
+  ~47-48 dígitos), só os números — sem pontos, espaços ou traços. Se não der
+  pra ler com confiança, use null (não invente).
 - "multa_percentual" e "juros_mensal_percentual": leia as instruções de
   pagamento/encargos do boleto (ex.: "após o vencimento, multa de 2% e juros de
   1% ao mês" / "mora de 0,033% ao dia"). Devolva só o número do percentual

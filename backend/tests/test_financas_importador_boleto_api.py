@@ -24,6 +24,7 @@ BOLETO_OK = {
     "beneficiario": "Condomínio Lello",
     "vencimento": "2026-06-10",
     "valor_total": 1107.52,
+    "linha_digitavel": "34191.79001 01043.510047 91020.150008 9 99990000110752",
     "verbas": [
         {"descricao": "Taxa de condomínio", "valor": 800.00},
         {"descricao": "Consumo de gás", "valor": 50.00},
@@ -38,8 +39,16 @@ BOLETO_OK = {
         {"tipo": "gas", "leitura_atual": 320.2, "leitura_anterior": 297.0, "consumo": 23.2, "valor": 50},
     ],
 }
-BOLETO_SOMA_ERRADA = {**BOLETO_OK, "verbas": [{"descricao": "Total", "valor": 1000.0}]}
-BOLETO_SEM_VALOR = {**BOLETO_OK, "valor_total": 0, "verbas": []}
+# Distintos do BOLETO_OK (outro beneficiário/vencimento/linha) pra não baterem
+# no detector de duplicado.
+BOLETO_SOMA_ERRADA = {
+    **BOLETO_OK, "beneficiario": "Escola Alfa", "vencimento": "2026-07-15",
+    "linha_digitavel": None, "verbas": [{"descricao": "Total", "valor": 1000.0}],
+}
+BOLETO_SEM_VALOR = {
+    **BOLETO_OK, "beneficiario": "Loja Beta", "vencimento": "2026-08-01",
+    "linha_digitavel": None, "valor_total": 0, "verbas": [],
+}
 
 
 async def _cleanup(usuario_id: str) -> None:
@@ -102,6 +111,8 @@ def smoke_test() -> None:
             assert tx["status"] == "prevista"
             assert tx["data_vencimento"] == "2026-06-10"
             assert tx["categoria_id"] == condominio
+            # linha digitável guardada só com dígitos
+            assert tx["linha_digitavel"] == "34191790010104351004791020150008999990000110752", tx["linha_digitavel"]
             soma = sum(float(i["valor"]) for i in tx["itens"])
             assert round(soma, 2) == 1107.52, soma
             print(f"   tx: {len(tx['itens'])} itens, soma {soma}, venc {tx['data_vencimento']}")
@@ -143,6 +154,21 @@ def smoke_test() -> None:
             assert b3["transacao_id"] is None, b3
             assert b3["comprovante_id"]
             print(f"   {b3['mensagem']}")
+
+            # ── 4. Reimportar o BOLETO_OK → detecta duplicado, não cria ──
+            print("\n→ Test 4: reimportar boleto já lançado → duplicado")
+            antes = client.get(f"{TX}?status=prevista").json()["total"]
+            extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_OK)
+            r4 = client.post(IMPORTAR, data={
+                "usuario_id": usuario_id, "categoria_id": condominio,
+            }, files={"file": ("repetido.pdf", b"%PDF dup", "application/pdf")})
+            assert r4.status_code == 200, r4.text
+            b4 = r4.json()
+            assert b4["duplicado"] is True, b4
+            assert b4["transacao_id"] == b["transacao_id"], b4  # aponta pro existente
+            depois = client.get(f"{TX}?status=prevista").json()["total"]
+            assert depois == antes, (antes, depois)  # nada novo criado
+            print(f"   {b4['mensagem']}")
 
         finally:
             extrator.extrair_boleto_llm = original

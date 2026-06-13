@@ -207,6 +207,7 @@ class TransacaoResponse(BaseModel):
     multa_percentual: Optional[Decimal] = None
     juros_mensal_percentual: Optional[Decimal] = None
     encargos_pagos: Optional[Decimal] = None
+    linha_digitavel: Optional[str] = None
     status: str
     origem: str
     categoria_id: Optional[str] = None
@@ -230,6 +231,7 @@ class TransacaoListItem(BaseModel):
     multa_percentual: Optional[Decimal] = None
     juros_mensal_percentual: Optional[Decimal] = None
     encargos_pagos: Optional[Decimal] = None
+    linha_digitavel: Optional[str] = None
     status: str
     categoria_id: Optional[str] = None
     categoria_nome: Optional[str] = None
@@ -454,6 +456,8 @@ class BoletoExtraido(BaseModel):
     beneficiario: Optional[str] = None
     vencimento: Optional[date] = None
     valor_total: Decimal
+    # Linha digitável (com ou sem pontos/espaços — normalizada no service).
+    linha_digitavel: Optional[str] = None
     # Encargos por atraso impressos no boleto (ex.: multa 2% + juros 1% a.m.).
     multa_percentual: Optional[Decimal] = None
     juros_mensal_percentual: Optional[Decimal] = None
@@ -464,9 +468,10 @@ class BoletoExtraido(BaseModel):
 class ImportarBoletoResponse(BaseModel):
     success: bool                          # conseguiu ler o arquivo?
     conferido: bool                        # soma das verbas == total?
+    duplicado: bool = False                # já existe um boleto igual lançado?
     mensagem: str
     comprovante_id: Optional[str] = None
-    transacao_id: Optional[str] = None     # criada só quando conferido
+    transacao_id: Optional[str] = None     # criada (ou a já existente, se duplicado)
     extraido: Optional[BoletoExtraido] = None
 
 
