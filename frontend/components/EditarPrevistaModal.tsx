@@ -1,10 +1,15 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Modal } from '@/components/Modal';
 import { api } from '@/lib/api';
 import { type CategoriaPlana } from '@/lib/categorias';
 import { formatBRL } from '@/lib/format';
-import { ApiError, type TransacaoResponse, type VerbaInput } from '@/lib/types';
+import {
+  ApiError,
+  type Comprovante,
+  type TransacaoResponse,
+  type VerbaInput,
+} from '@/lib/types';
 
 /**
  * Editar uma conta **a pagar** (prevista) — detalhar/corrigir o que veio do
@@ -229,6 +234,8 @@ export function EditarPrevistaModal({
           )}
         </div>
 
+        <AnexosTransacao transacaoId={detalhe.id} />
+
         {erro && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
             {erro}
@@ -253,5 +260,99 @@ export function EditarPrevistaModal({
         </div>
       </form>
     </Modal>
+  );
+}
+
+/** Comprovantes anexados à transação: lista (com link) + anexar novo arquivo. */
+function AnexosTransacao({ transacaoId }: { transacaoId: string }) {
+  const [itens, setItens] = useState<Comprovante[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [enviando, setEnviando] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function carregar() {
+    try {
+      const r = await api.financasComprovantesDaTransacao(transacaoId);
+      setItens(r.items);
+    } catch {
+      /* ignora — anexos são opcionais */
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  useEffect(() => {
+    void carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transacaoId]);
+
+  async function anexar(file: File) {
+    setEnviando(true);
+    try {
+      await api.financasAnexarComprovante(transacaoId, file);
+      await carregar();
+    } catch {
+      /* ignora */
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="text-[13px] font-medium text-ink-soft">
+          Comprovantes / anexos
+        </label>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={enviando}
+          className="text-[12px] text-brand hover:underline disabled:opacity-50"
+        >
+          {enviando ? 'enviando…' : '+ anexar'}
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void anexar(f);
+            e.target.value = '';
+          }}
+        />
+      </div>
+      {carregando ? (
+        <p className="text-[12px] text-ink-mute">carregando…</p>
+      ) : itens.length === 0 ? (
+        <p className="text-[12px] text-ink-mute">
+          Nenhum arquivo anexado. (boleto, recibo de pagamento…)
+        </p>
+      ) : (
+        <ul className="space-y-1">
+          {itens.map((c) => (
+            <li key={c.id} className="text-[12.5px] flex items-center gap-1.5">
+              <span aria-hidden>📎</span>
+              {c.url ? (
+                <a
+                  href={c.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand hover:underline truncate"
+                >
+                  {c.nome_original || c.tipo}
+                </a>
+              ) : (
+                <span className="text-ink-soft truncate">
+                  {c.nome_original || c.tipo}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

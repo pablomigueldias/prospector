@@ -86,8 +86,10 @@ Ordem de ataque por custo/benefício (evitar as dores mais caras primeiro):
 - ✅ **Pagar valor diferente do boleto** (2026-06-13) — no modal de pagamento, marcar "Paguei um valor diferente" e informar o valor real (acordo/desconto/arredondamento); o saldo desce por esse valor e o `valor_total` passa a refletir o que saiu. `POST .../pagar` aceita `valor_pago`.
 - ✅ **Lembrar categoria/conta por beneficiário** (2026-06-13) — ao importar sem categoria, reaproveita a do último boleto do mesmo beneficiário (`ultima_categoria_por_descricao`); e no pagamento de um boleto sem conta, o modal já vem com a **última conta usada pra pagar esse beneficiário** (`GET /transacoes/{id}/sugestao-conta` → `ultima_conta_por_descricao`), com dica "Sugerida: X".
 - 🟡 **Virar conta fixa (recorrência)** — detectar boleto que se repete e oferecer transformar em recorrência.
-- 🟡 **Ver boleto/recibo no painel + anexar comprovante de pagamento** — depende de **expor o MinIO atrás do Caddy** (§6).
-- 🟢 **Passo de revisão antes de criar**, **sanity checks** (valor 0 / data improvável / soma≠total), **desconto por antecipação** (IA ler "desconto até dia X"), **importar vários boletos de uma vez**, **histórico do boleto** (original × pago × encargos).
+- ✅ **Ver/anexar comprovante no detalhe** (2026-06-13) — o editor da conta a pagar lista os anexos (boleto importado, recibos) com link e tem "+ anexar" (upload). `GET/POST /comprovantes?transacao_id`. **Funciona em dev** (MinIO em localhost); **em produção depende de expor o MinIO atrás do Caddy** (§6) pra a URL presignada abrir no navegador — tarefa de infra/deploy ainda pendente.
+- ✅ **Desconto por antecipação** (2026-06-13) — IA lê "desconto de R$X até DD/MM"; abate no pagamento se pago até a data.
+- ✅ **Importar vários boletos de uma vez** (2026-06-13) — arrasta/seleciona N PDFs/fotos; processa em lote com um card de resultado por arquivo.
+- 🟢 **Não feitos (de propósito):** passo de revisão antes de criar (conflita com o "nunca some / auto-cria" atual), sanity checks (valor 0 / data improvável — baixo valor), histórico dedicado (os dados já aparecem no editor + anexos).
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 

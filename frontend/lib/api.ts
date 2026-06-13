@@ -45,6 +45,7 @@ import type {
   CartaoListResponse,
   FaturasCartao,
   LeituraConsumoListResponse,
+  Comprovante,
   ComprovanteListResponse,
   ImportarBoletoResponse,
   PrevistaUpdateInput,
@@ -416,6 +417,33 @@ export const api = {
     if (tipo) q.set('tipo', tipo);
     return request<LeituraConsumoListResponse>(`/api/financas/leituras?${q}`, {
       timeoutMs: 10_000,
+    });
+  },
+
+  /** GET /api/financas/comprovantes?transacao_id=… — anexos de uma transação */
+  financasComprovantesDaTransacao(
+    transacaoId: string,
+  ): Promise<ComprovanteListResponse> {
+    return request<ComprovanteListResponse>(
+      `/api/financas/comprovantes?transacao_id=${encodeURIComponent(transacaoId)}`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  /** POST /api/financas/comprovantes — anexa um arquivo a uma transação */
+  financasAnexarComprovante(
+    transacaoId: string,
+    file: File,
+    tipo = 'comprovante',
+  ): Promise<Comprovante> {
+    const form = new FormData();
+    form.append('tipo', tipo);
+    form.append('file', file);
+    form.append('transacao_id', transacaoId);
+    return request<Comprovante>('/api/financas/comprovantes', {
+      method: 'POST',
+      body: form,
+      timeoutMs: 60_000,
     });
   },
 
