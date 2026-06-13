@@ -20,6 +20,9 @@ export interface PagamentoAlvo {
   vencimento?: string | null;
   multaPct?: string | number | null;
   jurosPct?: string | number | null;
+  /** Desconto por antecipação: abate se pagar até a data. */
+  descontoValor?: string | number | null;
+  descontoAte?: string | null;
 }
 
 /**
@@ -64,7 +67,13 @@ export function PagarModal({
     () => calcularEncargos(alvo.valor, alvo.vencimento, multaPct, jurosPct, data),
     [alvo.valor, alvo.vencimento, multaPct, jurosPct, data],
   );
-  const totalCalculado = Number(alvo.valor) + enc.total;
+  // Desconto por antecipação: vale se pagar até a data e não houver encargos.
+  const descNum = Number(alvo.descontoValor ?? 0);
+  const desconto =
+    enc.total === 0 && descNum > 0 && alvo.descontoAte && data <= alvo.descontoAte
+      ? Math.min(descNum, Number(alvo.valor))
+      : 0;
+  const totalCalculado = Number(alvo.valor) + enc.total - desconto;
   const valorPagoNum = Number(valorPago.replace(',', '.'));
   const ajusteValido = ajustar && Number.isFinite(valorPagoNum) && valorPagoNum > 0;
   const totalComEncargos = ajusteValido ? valorPagoNum : totalCalculado;
@@ -104,7 +113,7 @@ export function PagarModal({
               {formatBRL(alvo.valor)}
             </span>
           </div>
-          {enc.total > 0 && (
+          {(enc.total > 0 || desconto > 0) && (
             <div className="mt-2 pt-2 border-t border-line space-y-1 text-[12.5px]">
               {enc.multa > 0 && (
                 <div className="flex justify-between text-ink-soft">
@@ -118,11 +127,21 @@ export function PagarModal({
                   <span className="font-mono">+{formatBRL(enc.juros)}</span>
                 </div>
               )}
+              {desconto > 0 && (
+                <div className="flex justify-between text-success">
+                  <span>Desconto por antecipação</span>
+                  <span className="font-mono">−{formatBRL(desconto)}</span>
+                </div>
+              )}
             </div>
           )}
           <div className="mt-2 pt-2 border-t border-line flex items-center justify-between">
             <span className="text-[13px] font-medium text-ink">
-              {ajusteValido ? 'Valor pago (ajustado)' : enc.total > 0 ? 'Total a pagar' : 'Valor'}
+              {ajusteValido
+                ? 'Valor pago (ajustado)'
+                : enc.total > 0 || desconto > 0
+                  ? 'Total a pagar'
+                  : 'Valor'}
             </span>
             <strong className="text-sm text-ink">{formatBRL(totalComEncargos)}</strong>
           </div>

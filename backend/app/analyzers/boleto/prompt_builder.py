@@ -14,6 +14,8 @@ OUTPUT_SCHEMA = """
   "linha_digitavel": "<a linha digitável do boleto, só os números, ou null>",
   "multa_percentual": <número|null, ex: 2 para "multa de 2%">,
   "juros_mensal_percentual": <número|null, ex: 1 para "juros de 1% ao mês">,
+  "desconto_valor": <número|null, valor do desconto por antecipação>,
+  "desconto_ate": "<YYYY-MM-DD|null, data limite do desconto>",
   "verbas": [
     {"descricao": "<rubrica do boleto>", "valor": <número>},
     "..."
@@ -45,6 +47,9 @@ REGRAS:
   (multa única → multa_percentual; juros mensais → juros_mensal_percentual). Se
   o boleto informar juros AO DIA, multiplique por 30 pra virar mensal. Se não
   houver, use null. NÃO invente valores.
+- "desconto_valor"/"desconto_ate": se o boleto oferecer desconto por pagamento
+  antecipado (ex.: "desconto de R$10,00 até 05/06"), traga o valor e a data
+  limite (YYYY-MM-DD). Sem desconto, use null.
 - Números sem separador de milhar e com ponto decimal (1107.52, não 1.107,52).
 - Responda APENAS com JSON. Sem markdown, sem texto antes ou depois.
 """

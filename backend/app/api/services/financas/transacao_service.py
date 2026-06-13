@@ -64,6 +64,8 @@ def _to_response(t: Transacao) -> TransacaoResponse:
         juros_mensal_percentual=t.juros_mensal_percentual,
         encargos_pagos=t.encargos_pagos,
         linha_digitavel=t.linha_digitavel,
+        desconto_valor=t.desconto_valor,
+        desconto_ate=t.desconto_ate,
         status=t.status,
         origem=t.origem,
         categoria_id=str(t.categoria_id) if t.categoria_id else None,
@@ -445,6 +447,8 @@ async def listar_transacoes(
                 juros_mensal_percentual=t.juros_mensal_percentual,
                 encargos_pagos=t.encargos_pagos,
                 linha_digitavel=t.linha_digitavel,
+                desconto_valor=t.desconto_valor,
+                desconto_ate=t.desconto_ate,
                 status=t.status,
                 categoria_id=str(t.categoria_id) if t.categoria_id else None,
                 categoria_nome=cat_nome.get(t.categoria_id),
@@ -640,6 +644,10 @@ async def pagar_transacao(
                 t.valor_total, t.data_vencimento, t.multa_percentual,
                 t.juros_mensal_percentual, quando,
             )
+            # Desconto por antecipação: abate se paga até a data limite.
+            desc = Decimal("0")
+            if (t.desconto_valor and t.desconto_ate and quando <= t.desconto_ate):
+                desc = min(Decimal(t.desconto_valor), Decimal(t.valor_total))
             if valor_pago is not None and valor_pago > 0:
                 # Valor manual manda — total exato que saiu da conta.
                 total_final = Decimal(valor_pago)
@@ -647,6 +655,8 @@ async def pagar_transacao(
             elif enc > 0:
                 total_final = Decimal(t.valor_total) + enc
                 t.encargos_pagos = enc
+            elif desc > 0:
+                total_final = Decimal(t.valor_total) - desc
             else:
                 total_final = Decimal(t.valor_total)
             t.valor_total = total_final

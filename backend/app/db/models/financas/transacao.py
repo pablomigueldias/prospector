@@ -55,6 +55,11 @@ class Transacao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # e chave pra detectar boleto duplicado na importação.
     linha_digitavel: Mapped[Optional[str]] = mapped_column(String(64))
 
+    # Desconto por antecipação (ex.: "desconto de R$X até DD/MM"): abate do
+    # total se o pagamento for feito até a data.
+    desconto_valor: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+    desconto_ate: Mapped[Optional[date]] = mapped_column(Date)
+
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="prevista", server_default="prevista"
     )

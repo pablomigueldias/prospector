@@ -130,6 +130,8 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
         vencimento: det.data_vencimento ?? null,
         multaPct: det.multa_percentual ?? null,
         jurosPct: det.juros_mensal_percentual ?? null,
+        descontoValor: det.desconto_valor ?? null,
+        descontoAte: det.desconto_ate ?? null,
       });
     } catch (err) {
       setErro(err instanceof ApiError ? err.message : 'Falha ao abrir o pagamento.');

@@ -236,6 +236,8 @@ class TransacaoResponse(BaseModel):
     juros_mensal_percentual: Optional[Decimal] = None
     encargos_pagos: Optional[Decimal] = None
     linha_digitavel: Optional[str] = None
+    desconto_valor: Optional[Decimal] = None
+    desconto_ate: Optional[date] = None
     status: str
     origem: str
     categoria_id: Optional[str] = None
@@ -260,6 +262,8 @@ class TransacaoListItem(BaseModel):
     juros_mensal_percentual: Optional[Decimal] = None
     encargos_pagos: Optional[Decimal] = None
     linha_digitavel: Optional[str] = None
+    desconto_valor: Optional[Decimal] = None
+    desconto_ate: Optional[date] = None
     status: str
     categoria_id: Optional[str] = None
     categoria_nome: Optional[str] = None
@@ -489,6 +493,9 @@ class BoletoExtraido(BaseModel):
     # Encargos por atraso impressos no boleto (ex.: multa 2% + juros 1% a.m.).
     multa_percentual: Optional[Decimal] = None
     juros_mensal_percentual: Optional[Decimal] = None
+    # Desconto por antecipação (ex.: "desconto de R$X até DD/MM").
+    desconto_valor: Optional[Decimal] = None
+    desconto_ate: Optional[date] = None
     verbas: List[VerbaBoleto] = Field(default_factory=list)
     leituras: List[LeituraBoleto] = Field(default_factory=list)
 

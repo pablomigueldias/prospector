@@ -29,9 +29,10 @@ TX = "/api/financas/transacoes"
 async def _inserir_prevista_sem_conta(
     usuario_id: str, tx_id: str, valor: float,
     *, vencimento=None, multa=None, juros=None,
+    desconto_valor=None, desconto_ate=None,
 ) -> None:
     """Simula um boleto importado / recorrência: transação prevista sem
-    nenhum pagamento (sem conta). Aceita encargos por atraso opcionais."""
+    nenhum pagamento (sem conta). Aceita encargos/desconto opcionais."""
     eng = create_async_engine(settings.database_url)
     try:
         async with eng.begin() as conn:
@@ -40,14 +41,17 @@ async def _inserir_prevista_sem_conta(
                     "INSERT INTO financas.transacoes "
                     "(id, usuario_id, tipo, descricao, valor_total, "
                     " data_competencia, data_vencimento, multa_percentual, "
-                    " juros_mensal_percentual, status, origem) "
+                    " juros_mensal_percentual, desconto_valor, desconto_ate, "
+                    " status, origem) "
                     "VALUES (:id, :uid, 'despesa', 'Condomínio', :v, "
-                    " :comp, :venc, :multa, :juros, 'prevista', 'importacao_boleto')"
+                    " :comp, :venc, :multa, :juros, :dv, :da, "
+                    " 'prevista', 'importacao_boleto')"
                 ),
                 {
                     "id": tx_id, "uid": usuario_id, "v": valor,
                     "comp": date.today().replace(day=1),
                     "venc": vencimento, "multa": multa, "juros": juros,
+                    "dv": desconto_valor, "da": desconto_ate,
                 },
             )
     finally:
@@ -251,6 +255,24 @@ def smoke_test() -> None:
             # limpa a recorrência criada (não há cleanup dela no finally)
             client.delete(f"/api/financas/recorrencias/{rec['id']}")
             print(f"   recorrência dia {rec['dia_vencimento']}, R${rec['valor_estimado']}")
+
+            # ══ Desconto por antecipação ════════════════════════════════
+            print("\n→ Test 12: desconto por antecipação (paga até a data)")
+            from datetime import timedelta as _td
+            tx8 = str(uuid.uuid4())
+            asyncio.run(_inserir_prevista_sem_conta(
+                usuario_id, tx8, 100,
+                vencimento=date.today() + _td(days=5),
+                desconto_valor=10, desconto_ate=date.today() + _td(days=2),
+            ))
+            tx_ids.append(tx8)
+            s8 = _saldo(client, conta_id)
+            rp8 = client.post(f"{TX}/{tx8}/pagar", json={"conta_id": conta_id})  # hoje <= desconto_ate
+            assert rp8.status_code == 200, rp8.text
+            c8 = rp8.json()
+            assert float(c8["valor_total"]) == 90.0, c8["valor_total"]  # 100 - 10
+            assert round(s8 - _saldo(client, conta_id), 2) == 90.0
+            print(f"   pagou {c8['valor_total']} (desconto de 10)")
 
         finally:
             limpar_override()

@@ -451,6 +451,8 @@ export interface TransacaoListItem {
   juros_mensal_percentual?: string | null;
   encargos_pagos?: string | null;
   linha_digitavel?: string | null;
+  desconto_valor?: string | null;
+  desconto_ate?: string | null;
   status: string;
   categoria_id?: string | null;
   categoria_nome?: string | null;
@@ -484,6 +486,9 @@ export interface TransacaoResponse {
   multa_percentual?: string | null;
   juros_mensal_percentual?: string | null;
   encargos_pagos?: string | null;
+  linha_digitavel?: string | null;
+  desconto_valor?: string | null;
+  desconto_ate?: string | null;
   status: string;
   categoria_id?: string | null;
   pagamentos?: TransacaoPagamento[];
