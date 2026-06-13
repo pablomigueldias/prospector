@@ -155,6 +155,19 @@ class ReceitaCreate(BaseModel):
     notas: Optional[str] = None
 
 
+class TransacaoUpdate(BaseModel):
+    """Edição de uma transação simples (uma conta). Espelha o formulário do
+    dashboard: tipo, descrição, valor, conta, categoria, data e status. O saldo
+    da conta é reajustado (reverte o efeito antigo e aplica o novo)."""
+    tipo: str = Field(..., description="despesa | receita")
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    conta_id: str = Field(..., description="Conta da transação")
+    categoria_id: Optional[str] = None
+    data_competencia: Optional[date] = None
+    status: str = Field("paga", description="prevista/paga/atrasada")
+
+
 class TransacaoItemResponse(BaseModel):
     id: str
     categoria_id: Optional[str] = None
@@ -511,3 +524,23 @@ class ResumoMesResponse(BaseModel):
     total_despesas: Decimal
     saldo: Decimal                 # receitas − despesas (sobra/déficit)
     por_categoria: List[CategoriaResumoItem]   # despesas, maior → menor
+
+
+class RelatorioMesItem(BaseModel):
+    """Um mês na série do relatório (cronológico, mais antigo → mais novo)."""
+    ano: int
+    mes: int
+    total_receitas: Decimal
+    total_despesas: Decimal
+    saldo: Decimal                 # resultado do mês (receitas − despesas)
+
+
+class RelatorioResponse(BaseModel):
+    """Relatório do período (N meses até o mês âncora): série mês a mês,
+    top categorias e totais consolidados."""
+    meses: List[RelatorioMesItem]
+    por_categoria: List[CategoriaResumoItem]   # despesas do período, maior → menor
+    total_receitas: Decimal
+    total_despesas: Decimal
+    saldo: Decimal
+    media_despesas: Decimal        # média mensal de despesa no período

@@ -5,7 +5,12 @@ import uuid
 from datetime import date
 from decimal import Decimal
 
-from app.api.schemas.financas import CategoriaResumoItem, ResumoMesResponse
+from app.api.schemas.financas import (
+    CategoriaResumoItem,
+    RelatorioMesItem,
+    RelatorioResponse,
+    ResumoMesResponse,
+)
 from app.db.session import get_session
 from app.repositories.financas.transacao_repository import TransacaoRepository
 
@@ -55,4 +60,75 @@ async def resumo_mes(usuario_id: str, ano: int, mes: int) -> ResumoMesResponse:
             )
             for cid, nome, total in por_cat
         ],
+    )
+
+
+def _passo_meses(ano: int, mes: int, delta: int) -> tuple[int, int]:
+    """Soma ``delta`` meses a (ano, mes), tratando virada de ano. delta pode
+    ser negativo."""
+    indice = (ano * 12 + (mes - 1)) + delta
+    return indice // 12, indice % 12 + 1
+
+
+async def relatorio(
+    usuario_id: str, ano: int, mes: int, meses: int = 6
+) -> RelatorioResponse:
+    """Série dos últimos ``meses`` (terminando em ano/mes): receita/despesa/saldo
+    por mês, top categorias do período e totais consolidados. Meses sem
+    lançamento entram zerados pra a série não ter buracos."""
+    if not 1 <= mes <= 12:
+        raise ResumoError(f"Mês inválido: {mes}. Use 1..12.")
+    meses = max(1, min(int(meses), 24))
+    uid = _uuid(usuario_id, campo="usuario_id")
+
+    # Janela [inicio, proximo): do 1º dia do mês mais antigo até o 1º do mês
+    # seguinte ao âncora.
+    ano_ini, mes_ini = _passo_meses(ano, mes, -(meses - 1))
+    inicio = date(ano_ini, mes_ini, 1)
+    ano_fim, mes_fim = _passo_meses(ano, mes, 1)
+    proximo = date(ano_fim, mes_fim, 1)
+
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        linhas = await repo.totais_por_mes(uid, inicio, proximo)
+        por_cat = await repo.despesas_por_categoria(uid, inicio, proximo)
+
+    # Indexa (ano, mes) → {receita, despesa}.
+    por_mes: dict[tuple[int, int], dict[str, Decimal]] = {}
+    for a, m, tipo, total in linhas:
+        por_mes.setdefault((a, m), {})[tipo] = total
+
+    itens: list[RelatorioMesItem] = []
+    total_receitas = Decimal("0")
+    total_despesas = Decimal("0")
+    for i in range(meses):
+        a, m = _passo_meses(ano_ini, mes_ini, i)
+        dados = por_mes.get((a, m), {})
+        rec = dados.get("receita", Decimal("0"))
+        desp = dados.get("despesa", Decimal("0"))
+        total_receitas += rec
+        total_despesas += desp
+        itens.append(
+            RelatorioMesItem(
+                ano=a, mes=m,
+                total_receitas=rec, total_despesas=desp, saldo=rec - desp,
+            )
+        )
+
+    media = (total_despesas / meses) if meses else Decimal("0")
+
+    return RelatorioResponse(
+        meses=itens,
+        por_categoria=[
+            CategoriaResumoItem(
+                categoria_id=str(cid) if cid else None,
+                categoria_nome=nome or "Sem categoria",
+                total=total,
+            )
+            for cid, nome, total in por_cat
+        ],
+        total_receitas=total_receitas,
+        total_despesas=total_despesas,
+        saldo=total_receitas - total_despesas,
+        media_despesas=media,
     )

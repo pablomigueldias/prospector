@@ -10,7 +10,7 @@ excluir sem depender de API/bot). O que falta é, sobretudo, **fechar o loop de
 gestão** (orçar, alertar, relatar), **deixar de ser registrador e virar
 copiloto** (§8–§10) e polir as bordas.
 
-Última revisão: 2026-06-10.
+Última revisão: 2026-06-13.
 
 ---
 
@@ -34,10 +34,43 @@ copiloto** (§8–§10) e polir as bordas.
 
 - ✅ **CRUD completo no front** (2026-06-10) — criar/editar/excluir **conta**, **categoria**, **cartão** e **recorrência** (contas fixas) por modal, e **lançar despesa/receita** + **excluir** transação (com reversão de saldo) pela interface. Tudo gerenciável sem depender de API/bot.
 - ✅ **Lista de transações filtrável** (2026-06-10) — por mês, conta, categoria, tipo e busca na descrição.
-- 🟡 **Relatório mensal** — comparativo mês a mês, evolução de saldo, top categorias, exportar PDF/CSV.
-- 🟡 **Edição inline de transação** — hoje é excluir + relançar; editar valor/categoria/conta/data direto na linha (recalculando saldo) é mais fluido.
+- ✅ **Editar transação** (2026-06-11) — botão ✎ em cada linha abre o formulário pré-preenchido e salva via `PATCH`, reajustando o saldo da conta (reverte o efeito antigo e aplica o novo). Vale pra transação de uma conta; dividida orienta a excluir e relançar.
+- ✅ **Agilidade no dashboard** (2026-06-11) — lançar de qualquer lugar (FAB flutuante + atalho `N`/`Ctrl+K`), sub-nav sticky pra pular entre seções, e a lista lembra os últimos filtros (localStorage).
+- ✅ **Relatório mensal** (2026-06-11) — seção **Relatório**: série de 3/6/12 meses com receitas × despesas (barras) + **linha de saldo**, totais do período + despesa média, top categorias do período e **export CSV**. Endpoint `GET /api/financas/resumo/relatorio`.
+- ✅ **Gráficos com Recharts** (2026-06-11) — adotada a **Recharts** (`recharts@^2`) como lib de gráficos do front (padrão de mercado em React, SVG, casa com os tokens `oklch` do design — vs. Tremor, que traz preset Tailwind próprio e conflita). O 1º remendo do relatório foi feito à mão e não renderizava as barras; agora é `ComposedChart` (barras + linha + tooltip custom). Ref: `frontend/components/RelatorioSection.tsx`. *Próximo gráfico novo: pintar com as cores oklch direto nas props.*
 - 🟢 **Detalhe de cartão** — extrato da fatura, parcelas futuras, projeção de quanto vai pesar nos próximos meses.
-- 🟢 **Atalhos & produtividade** — lançar com atalho de teclado, busca global, lembrar últimos filtros, dark mode.
+- 🟢 **Atalhos & produtividade (resto)** — falta busca global e dark mode (atalho de teclado e lembrar filtros já feitos).
+
+### Novas recomendações (2026-06-11) — evoluir Dashboard & relatórios
+- 🟡 **Export PDF do relatório** — o CSV já saiu; falta um PDF "bonito" (cabeçalho, gráfico, totais) pra mandar/arquivar. Dá pra renderizar no front (ex.: `window.print()` com uma folha de estilo de impressão) ou gerar no backend.
+- 🟡 **Filtrar o relatório por conta/categoria** — hoje a série é do consolidado; poder recortar "só Nubank" ou "só Mercado" ao longo dos meses ajuda a achar onde o gasto cresce.
+- ✅ **Linha de tendência / variação %** (2026-06-11) — acima do gráfico, compara a despesa do mês mais recente com a média do período e mostra a variação % (acima/abaixo, com cor e seta). Falta o recorte por mês anterior e por categoria.
+- 🟢 **Evolução de saldo real (patrimônio no tempo)** — hoje "saldo por mês" é o *resultado* (receitas − despesas) do mês; o saldo acumulado das contas ao longo do tempo exige snapshots (não guardamos histórico). Encaixa com o §10 (patrimônio líquido).
+- 🟢 **Clicar no mês do gráfico → abre a lista filtrada** daquele mês (cruza o Relatório com a seção Transações).
+- 🟢 **Comparar dois períodos** lado a lado (este mês vs. mesmo mês do ano passado).
+- ✅ **Donut "Despesas por categoria" no Recharts** (2026-06-11) — `CategoriaDonut` virou `PieChart` da Recharts (mesma interface, legenda lateral mantida, tooltip no hover com valor + %). Usado no donut do mês e no top categorias do relatório.
+
+## 3b. Paridade backend ↔ tela (o backend já faz, a tela ainda não)
+
+> Levantamento 2026-06-11 cruzando os routers de `financas` com o `lib/api.ts`/
+> componentes. **Objetivo: poder fazer TUDO pela tela de Finanças** (e, quando
+> fora de casa, pelo bot — que já cobre NLU, boleto por foto e lançamento).
+> Estas funções **já existem no backend**, só falta a interface no front.
+
+- ✅ **Importar boleto por foto/PDF pela web** (2026-06-13) — seção **Importar boleto** no dashboard: arraste (ou escolha) um PDF/foto, a IA lê as verbas e, se batem com o total, já cria a despesa **prevista**; senão guarda pra revisão manual. Categoria opcional. `POST /api/financas/importar/boleto`. Ref `frontend/components/ImportarBoletoSection.tsx`. Replica o "boleto por foto" do bot no desktop — era o item de maior valor da §3b.
+- 🟡 **Compra parcelada no cartão** — `POST /api/financas/compras` (`CompraParceladaCreate`): lançar "geladeira em 10x no cartão" e o sistema gera as parcelas/faturas. Não existe na tela — hoje só dá pra cadastrar o cartão, não comprar nele.
+- 🟡 **Boleto parcelado** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`): boleto que vira N parcelas. Ausente no front.
+- 🟡 **Despesa dividida (split por N contas)** — `POST /api/financas/transacoes/despesa/dividida`: pagar uma despesa com mais de uma conta (ex.: metade VR, metade dinheiro). O form de lançamento só faz conta única. *(É também o que destrava editar transações divididas — ver §3 "Editar transação".)*
+- 🟡 **Despesa auto-split VR/VA** — `POST /api/financas/transacoes/despesa/auto-split`: esgota o VR e joga o resto no dinheiro automaticamente. Resolve "às vezes acaba o VR" — só existe no backend.
+- 🟡 **Registrar leitura de consumo pela web** — `POST /api/financas/leituras`: a `ConsumoSection` só **lê** (GET); não dá pra lançar a leitura de água/gás/luz manualmente na tela (hoje só chega via boleto de condomínio).
+- 🟢 **Anexar comprovante pela web** — `POST /api/financas/comprovantes`: a galeria só **lista** (GET); anexar um comprovante a uma transação é só pelo bot. Falta o upload na tela. *(Depende também de expor o MinIO atrás do Caddy — §6 — pra a imagem abrir no browser.)*
+- 🟢 **Linguagem natural no dashboard** — `POST /api/financas/nlu/interpretar`: uma caixa "digite o gasto" na tela (ex.: *"gastei 30 no mercado"*) usando o mesmo NLU do bot, caindo no card de confirmação. Casa com o §8 (perguntas/assistente).
+- 🟢 **Processar recorrências manualmente** — `POST /api/financas/recorrencias/processar`: um botão "gerar previstas / marcar atrasadas" na seção Contas fixas (enquanto o cron do §6 não existe).
+- 🟢 **Detalhe de compra parcelada** — `GET /api/financas/compras/{id}`: ver as parcelas de uma compra específica (depende de existir o lançamento de compra parcelada acima).
+
+> Já cobertos na tela (pra referência): CRUD de conta/categoria/cartão/recorrência,
+> lançar despesa/receita simples, editar/excluir transação, lista filtrável,
+> resumo, relatório, faturas do cartão e a galeria de comprovantes (leitura).
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
@@ -60,6 +93,7 @@ copiloto** (§8–§10) e polir as bordas.
 - 🟡 **Monitoramento/alerta de saúde** — ping no `/api/health` + aviso se a API cair; checar o cron de backup.
 - 🟢 **Testar o restore do backup** — restaurar um dump num banco de teste e confirmar que volta inteiro.
 - 🟢 **Observabilidade** — logs estruturados + métricas (quantos lançamentos/dia, latência do importador).
+- 🟡 **Testes E2E / verificação visual (Playwright)** — hoje a validação de tela é manual (a API/lógica têm smoke tests, mas o front não). Um Playwright que faz login automatizado e tira screenshot/roda smoke das telas (Finanças, lançar, editar) dá pra conferir mudanças de UI sem subir e clicar à mão. *Surgiu em 2026-06-11 quando não deu pra screenshotar a tela autenticada sem browser automatizado.*
 
 ## 7. Segurança & dados
 
@@ -99,7 +133,7 @@ O maior atrito é digitar cada gasto. Puxar do banco resolve isso de vez.
 ---
 
 ## Sugestão de ordem (se for tocar)
-0. ✅ **CRUD no front + lista de transações** (§3) — feito (2026-06-10).
+0. ✅ **Dashboard & relatórios** (§3) — feito: CRUD/lista (2026-06-10) + editar transação, agilidade (FAB/atalho/sub-nav/filtros lembrados) e **relatório mensal com CSV** (2026-06-11). Restam refinamentos (PDF, filtros no relatório, tendência) nas "Novas recomendações" da §3.
 1. **Cadastrar conta + desfazer no bot** (§1) — tira o atrito do dia a dia (o CRUD web já alivia o cadastro de conta, mas o "desfazer" no card ainda falta).
 2. **MinIO atrás do Caddy** (§6) — destrava ver comprovante no site.
 3. **Orçamento por categoria + alertas** (§4) — vira "organizador" de verdade, não só "registrador".

@@ -9,6 +9,7 @@ import type {
   Conta,
   LeituraConsumo,
   Recorrencia,
+  RelatorioResponse,
   ResumoMes,
   TransacaoFiltro,
   TransacaoListItem,
@@ -20,6 +21,14 @@ export function useResumoMes(ano: number, mes: number) {
     [ano, mes],
   );
   return { ...result, resumo: result.data };
+}
+
+export function useRelatorio(ano: number, mes: number, meses = 6) {
+  const result = useFetch<RelatorioResponse>(
+    () => api.financasRelatorio(FINANCAS_USUARIO_ID, ano, mes, meses),
+    [ano, mes, meses],
+  );
+  return { ...result, relatorio: result.data };
 }
 
 export function useContas(apenasAtivas = false) {

@@ -1,6 +1,6 @@
 # Continuação — onde paramos e como retomar
 
-> Handoff geral do sistema. Última atualização: **2026-06-10**.
+> Handoff geral do sistema. Última atualização: **2026-06-13**.
 > Branch de trabalho: **`feat/financas`** — agora **espelhado em `main`** (merge + push feitos; ver §2).
 
 ---
@@ -12,7 +12,10 @@
 - **Bot do Telegram (@IqueFinBot):** ligado, webhook registrado, menu de comandos publicado. Comandos: `/gasto`, `/ganho`, `/saldo`, `/resumo`, `/help`, `/start` + linguagem natural + boleto por foto/PDF.
 - **Pessoas no bot:** você (chat `925108560`) e a **Monique** (chat `8834370302`) — ambas apontando pro **mesmo** `usuario_id` (`00…001`), ou seja, **carteira compartilhada**.
 - **Dashboard agora manipula tudo pela web (2026-06-10):** CRUD completo de **conta**, **categoria**, **transação** (lançar/excluir, com reversão de saldo), **recorrência** (contas fixas) e **cartão**, além da **lista de transações filtrável** (mês/conta/categoria/tipo/busca). Tudo por modal, sem depender de API/bot.
-- **Botão de dev "Puxar da produção"** no rodapé de Finanças (só no build de dev): copia o banco de produção pro dev (one-way). Gated por `DEV_TOOLS_ENABLED` — em produção a rota é 404.
+- **Editar transação + agilidade (2026-06-11):** cada linha tem **✎** que abre o form pré-preenchido e salva via `PATCH` reajustando o saldo (transação de uma conta; dividida orienta a excluir/relançar). E pra agilizar: **lançar de qualquer lugar** (FAB flutuante + atalho `N`/`Ctrl+K`), **sub-nav sticky** entre as seções e a lista **lembra os últimos filtros**.
+- **Relatório mensal (2026-06-11):** seção **Relatório** no dashboard com a série de 3/6/12 meses (receitas × despesas em barras + linha de saldo, via **Recharts**), totais + despesa média, top categorias do período e **export CSV** (`GET /api/financas/resumo/relatorio`). Recharts (`recharts@^2`) é agora a lib de gráficos do front — pintar com os tokens `oklch`; ref `frontend/components/RelatorioSection.tsx`.
+- **Importar boleto pela web (2026-06-13):** seção **Importar boleto** no dashboard — arraste/escolha um PDF ou foto, a IA (Gemini) lê as verbas e, se batem com o total, já cria a despesa **prevista**; senão guarda pra revisão manual. Categoria opcional. Consome o `POST /api/financas/importar/boleto` que já rodava no bot. Replica o "boleto por foto" do Telegram no desktop. Ref `frontend/components/ImportarBoletoSection.tsx`.
+- **Botão de dev "Puxar da produção"** no rodapé de Finanças (só no build de dev): copia o banco de produção pro dev (one-way). Gated por `DEV_TOOLS_ENABLED` — em produção a rota é 404. **Desde 2026-06-11** o sync **restaura a senha local do admin** no fim (o dump trazia a senha de produção e quebrava o login do dev) — agora você loga sempre com a mesma senha do `backend/.env`.
 
 ---
 
@@ -37,7 +40,7 @@ Em ordem de "pega rápido":
 7. ✅ **"Double /api" resolvido (2026-06-10):** Caddy passou a usar `handle /api/*` (sem strip) e `NEXT_PUBLIC_API_URL` sem `/api`. **Pegadinha:** ao trocar o Caddyfile via rsync, precisa `docker restart reative-caddy` (não só `reload`) — bind-mount de arquivo único fica preso ao inode velho.
 8. **Mais de 2 pessoas no bot:** hoje só há 2 slots (você + 1). Pra um terceiro chat, generalizar o mapa chat→usuário (lista no `.env` ou tabela).
 9. ✅ **Merge `feat/financas` → `main` feito.** Os dois branches seguem sincronizados a cada feature.
-10. **Senha do dev:** se travar o login local, a senha de dev fica em `backend/.env` (`ADMIN_SENHA_INICIAL`); resetar só pelo banco (`UPDATE auth.usuarios SET senha_hash=...`). Trocar a senha no app revoga sessões; anote a nova.
+10. ✅ **Senha do dev após sync resolvido (2026-06-11):** o botão "Puxar da produção" agora reseta o `senha_hash` do admin pra `ADMIN_SENHA_INICIAL` do `backend/.env` no fim do sync, então o login do dev não quebra mais. Se ainda precisar resetar à mão (ex.: sync rodado pelo terminal, fora do botão), use o `app.api.services.auth.senha_service.hash_senha` + `UPDATE auth.usuarios`. Trocar a senha no app revoga sessões; anote a nova.
 
 ---
 

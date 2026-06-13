@@ -25,7 +25,8 @@ export function DevSyncButton() {
       !window.confirm(
         'Copiar os dados da PRODUÇÃO para o dev?\n\n' +
           'Isto APAGA o banco de dev e o substitui pelo de produção. ' +
-          'O login do dev passa a ser o mesmo da produção. Não dá pra desfazer.',
+          'Seu login de dev continua o mesmo (a senha local é restaurada no fim). ' +
+          'Não dá pra desfazer.',
       )
     ) {
       return;

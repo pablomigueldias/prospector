@@ -19,6 +19,9 @@ interface Props {
   contas: Conta[];
   /** Recarrega resumo/contas do dashboard após lançar ou excluir. */
   onMutate: () => void;
+  /** Modal "novo lançamento" controlado de fora (FAB / atalho de teclado). */
+  novoAberto: boolean;
+  onNovoAbertoChange: (aberto: boolean) => void;
 }
 
 function dataCurta(iso: string): string {
@@ -27,20 +30,75 @@ function dataCurta(iso: string): string {
   return d && m ? `${d}/${m}` : iso;
 }
 
-export function TransacoesSection({ ano, mes, contas, onMutate }: Props) {
-  const [soEsteMes, setSoEsteMes] = useState(true);
-  const [tipo, setTipo] = useState<'' | 'despesa' | 'receita'>('');
-  const [contaId, setContaId] = useState('');
-  const [categoriaId, setCategoriaId] = useState('');
-  const [buscaInput, setBuscaInput] = useState('');
-  const [busca, setBusca] = useState('');
-  const [novoAberto, setNovoAberto] = useState(false);
+/** Valores que pré-preenchem o LancamentoForm quando se edita uma transação. */
+interface LancamentoInicial {
+  id: string;
+  tipo: 'despesa' | 'receita';
+  descricao: string;
+  valor: string;
+  contaId: string;
+  categoriaId: string;
+  data: string;
+  prevista: boolean;
+}
+
+const FILTROS_KEY = 'financas:filtros-transacoes';
+
+interface FiltrosSalvos {
+  soEsteMes: boolean;
+  tipo: '' | 'despesa' | 'receita';
+  contaId: string;
+  categoriaId: string;
+  busca: string;
+}
+
+function carregarFiltros(): Partial<FiltrosSalvos> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(FILTROS_KEY);
+    return raw ? (JSON.parse(raw) as Partial<FiltrosSalvos>) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function TransacoesSection({
+  ano,
+  mes,
+  contas,
+  onMutate,
+  novoAberto,
+  onNovoAbertoChange,
+}: Props) {
+  // Restaura os últimos filtros usados (uma vez, na montagem).
+  const inicial = useMemo(carregarFiltros, []);
+  const [soEsteMes, setSoEsteMes] = useState(inicial?.soEsteMes ?? true);
+  const [tipo, setTipo] = useState<'' | 'despesa' | 'receita'>(
+    inicial?.tipo ?? '',
+  );
+  const [contaId, setContaId] = useState(inicial?.contaId ?? '');
+  const [categoriaId, setCategoriaId] = useState(inicial?.categoriaId ?? '');
+  const [buscaInput, setBuscaInput] = useState(inicial?.busca ?? '');
+  const [busca, setBusca] = useState(inicial?.busca ?? '');
 
   // Debounce da busca (evita um request por tecla).
   useEffect(() => {
     const t = setTimeout(() => setBusca(buscaInput.trim()), 400);
     return () => clearTimeout(t);
   }, [buscaInput]);
+
+  // Lembra os filtros pra próxima visita.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        FILTROS_KEY,
+        JSON.stringify({ soEsteMes, tipo, contaId, categoriaId, busca: buscaInput }),
+      );
+    } catch {
+      /* localStorage indisponível (modo privado etc.) — ignora. */
+    }
+  }, [soEsteMes, tipo, contaId, categoriaId, buscaInput]);
 
   const { arvore } = useCategorias();
   const categoriasPlanas = useMemo(() => achatarCategorias(arvore), [arvore]);
@@ -65,6 +123,35 @@ export function TransacoesSection({ ano, mes, contas, onMutate }: Props) {
     onMutate();
   };
 
+  // Edição: busca o detalhe (pra saber a conta) e abre o form pré-preenchido.
+  const [editando, setEditando] = useState<LancamentoInicial | null>(null);
+  const [carregandoEdicao, setCarregandoEdicao] = useState<string | null>(null);
+  const [erroEdicao, setErroEdicao] = useState('');
+
+  async function abrirEdicao(t: TransacaoListItem) {
+    setErroEdicao('');
+    setCarregandoEdicao(t.id);
+    try {
+      const det = await api.financasTransacao(t.id);
+      setEditando({
+        id: det.id,
+        tipo: det.tipo === 'receita' ? 'receita' : 'despesa',
+        descricao: det.descricao,
+        valor: String(det.valor_total),
+        contaId: det.pagamentos?.[0]?.conta_id ?? '',
+        categoriaId: det.categoria_id ?? '',
+        data: det.data_competencia,
+        prevista: det.status !== 'paga',
+      });
+    } catch (err) {
+      setErroEdicao(
+        err instanceof ApiError ? err.message : 'Falha ao abrir a edição.',
+      );
+    } finally {
+      setCarregandoEdicao(null);
+    }
+  }
+
   const algumFiltro =
     !soEsteMes || !!tipo || !!contaId || !!categoriaId || !!busca;
 
@@ -85,7 +172,7 @@ export function TransacoesSection({ ano, mes, contas, onMutate }: Props) {
         </h2>
         <button
           type="button"
-          onClick={() => setNovoAberto(true)}
+          onClick={() => onNovoAbertoChange(true)}
           className="btn-primary px-4 py-1.5 text-sm"
           disabled={contas.length === 0}
           title={
@@ -163,20 +250,33 @@ export function TransacoesSection({ ano, mes, contas, onMutate }: Props) {
         )}
       </div>
 
+      {erroEdicao && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
+          {erroEdicao}
+        </div>
+      )}
+
       <TransacoesLista
         transacoes={transacoes}
         loading={loading}
         total={total}
         onExcluiu={recarregar}
+        onEditar={abrirEdicao}
+        editandoId={carregandoEdicao}
       />
 
-      {novoAberto && (
+      {(novoAberto || editando) && (
         <LancamentoForm
           contas={contas}
           categorias={categoriasPlanas}
-          onClose={() => setNovoAberto(false)}
+          inicial={editando ?? undefined}
+          onClose={() => {
+            setEditando(null);
+            onNovoAbertoChange(false);
+          }}
           onSaved={() => {
-            setNovoAberto(false);
+            setEditando(null);
+            onNovoAbertoChange(false);
             recarregar();
           }}
         />
@@ -190,11 +290,16 @@ function TransacoesLista({
   loading,
   total,
   onExcluiu,
+  onEditar,
+  editandoId,
 }: {
   transacoes: TransacaoListItem[];
   loading: boolean;
   total: number;
   onExcluiu: () => void;
+  onEditar: (t: TransacaoListItem) => void;
+  /** Id da transação cujo detalhe está carregando (pra abrir a edição). */
+  editandoId: string | null;
 }) {
   const [excluindo, setExcluindo] = useState<string | null>(null);
   const [erro, setErro] = useState('');
@@ -279,6 +384,19 @@ function TransacoesLista({
                 {despesa ? '−' : '+'}
                 {formatBRL(t.valor_total)}
               </div>
+              {/* Editar só faz sentido pra transação de uma conta (sem split). */}
+              {(t.contas?.length ?? 0) <= 1 && (
+                <button
+                  type="button"
+                  onClick={() => onEditar(t)}
+                  disabled={editandoId === t.id}
+                  className="shrink-0 text-ink-faint hover:text-brand text-sm px-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                  title="Editar"
+                  aria-label="Editar transação"
+                >
+                  {editandoId === t.id ? '…' : '✎'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => excluir(t)}
@@ -303,22 +421,28 @@ function TransacoesLista({
 function LancamentoForm({
   contas,
   categorias,
+  inicial,
   onClose,
   onSaved,
 }: {
   contas: Conta[];
   categorias: CategoriaPlana[];
+  /** Quando presente, o form abre em modo EDIÇÃO (PATCH em vez de lançar). */
+  inicial?: LancamentoInicial;
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const editando = !!inicial;
   const hojeIso = new Date().toISOString().slice(0, 10);
-  const [tipo, setTipo] = useState<'despesa' | 'receita'>('despesa');
-  const [descricao, setDescricao] = useState('');
-  const [valor, setValor] = useState('');
-  const [contaId, setContaId] = useState(contas[0]?.id ?? '');
-  const [categoriaId, setCategoriaId] = useState('');
-  const [data, setData] = useState(hojeIso);
-  const [prevista, setPrevista] = useState(false);
+  const [tipo, setTipo] = useState<'despesa' | 'receita'>(
+    inicial?.tipo ?? 'despesa',
+  );
+  const [descricao, setDescricao] = useState(inicial?.descricao ?? '');
+  const [valor, setValor] = useState(inicial?.valor ?? '');
+  const [contaId, setContaId] = useState(inicial?.contaId ?? contas[0]?.id ?? '');
+  const [categoriaId, setCategoriaId] = useState(inicial?.categoriaId ?? '');
+  const [data, setData] = useState(inicial?.data ?? hojeIso);
+  const [prevista, setPrevista] = useState(inicial?.prevista ?? false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -343,18 +467,24 @@ function LancamentoForm({
 
     setSalvando(true);
     try {
-      if (tipo === 'despesa') await api.financasLancarDespesa(body);
-      else await api.financasLancarReceita(body);
+      if (inicial) {
+        await api.financasEditarTransacao(inicial.id, { tipo, ...body });
+      } else if (tipo === 'despesa') {
+        await api.financasLancarDespesa(body);
+      } else {
+        await api.financasLancarReceita(body);
+      }
       onSaved();
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Falha ao lançar.');
+      const acao = editando ? 'salvar' : 'lançar';
+      setErro(err instanceof ApiError ? err.message : `Falha ao ${acao}.`);
     } finally {
       setSalvando(false);
     }
   }
 
   return (
-    <Modal open onClose={onClose} title="Novo lançamento">
+    <Modal open onClose={onClose} title={editando ? 'Editar lançamento' : 'Novo lançamento'}>
       <form onSubmit={salvar} className="space-y-4">
         {/* Toggle despesa / receita */}
         <div className="grid grid-cols-2 gap-2">
@@ -477,7 +607,13 @@ function LancamentoForm({
             disabled={salvando}
             className="btn-primary px-5 py-2 text-sm disabled:opacity-50"
           >
-            {salvando ? 'Lançando…' : 'Lançar'}
+            {salvando
+              ? editando
+                ? 'Salvando…'
+                : 'Lançando…'
+              : editando
+                ? 'Salvar'
+                : 'Lançar'}
           </button>
         </div>
       </form>
