@@ -57,6 +57,15 @@ class Settings(BaseSettings):
     telegram_chat_id_sandra: str = ""
     telegram_usuario_id_sandra: str = ""
 
+    # Agendador in-process (APScheduler no container da API). Roda 1x/dia:
+    # processa recorrências (gera previstas + marca atrasadas) e manda o
+    # lembrete de vencimento dos boletos/contas a pagar no Telegram.
+    scheduler_enabled: bool = True       # liga o agendador no startup da API
+    lembretes_enabled: bool = True       # manda o digest de vencimento no Telegram
+    lembretes_hora: int = 8              # hora local (America/Sao_Paulo) do envio
+    lembretes_dias_antes: int = 3        # avisa boletos vencendo em até N dias
+    timezone: str = "America/Sao_Paulo"
+
     # Auth / sessão (portão de entrada). Cookie opaco httpOnly; o token vai
     # hasheado no Postgres (ver app.api.services.auth). Em produção o Caddy
     # serve tudo em HTTPS → cookie Secure + prefixo __Host-. Em dev http puro,
