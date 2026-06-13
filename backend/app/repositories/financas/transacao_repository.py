@@ -65,6 +65,25 @@ class TransacaoRepository:
         )
         return await self.session.scalar(stmt)
 
+    async def ultima_categoria_por_descricao(
+        self, usuario_id: uuid.UUID, descricao: Optional[str]
+    ) -> Optional[uuid.UUID]:
+        """Categoria usada na transação mais recente com essa descrição
+        (beneficiário). Serve pra auto-categorizar boletos recorrentes."""
+        if not descricao or not descricao.strip():
+            return None
+        stmt = (
+            select(Transacao.categoria_id)
+            .where(
+                Transacao.usuario_id == usuario_id,
+                func.lower(Transacao.descricao) == descricao.strip().lower(),
+                Transacao.categoria_id.is_not(None),
+            )
+            .order_by(Transacao.created_at.desc())
+            .limit(1)
+        )
+        return await self.session.scalar(stmt)
+
     # ── Listagem filtrável (para a tela de transações no dashboard) ───
     async def listar(
         self,

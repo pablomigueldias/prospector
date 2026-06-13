@@ -86,16 +86,27 @@ async def importar_boleto(
         comp_row = await session.get(Comprovante, _uuid(comp.id))
         comp_row.extraido_json = extraido.model_dump(mode="json")
 
+        repo = TransacaoRepository(session)
         # Antes de criar, vê se esse boleto já não foi lançado (não duplicar).
         existente = None
         if criar:
-            existente = await TransacaoRepository(session).buscar_duplicado(
+            existente = await repo.buscar_duplicado(
                 uid,
                 linha_digitavel=linha,
                 beneficiario=extraido.beneficiario,
                 vencimento=extraido.vencimento,
                 valor=extraido.valor_total,
             )
+
+        # Sem categoria explícita? Reaproveita a do último boleto desse mesmo
+        # beneficiário (auto-categoriza recorrentes: condomínio, escola…).
+        auto_categoria = False
+        categoria_final = cat_id
+        if existente is None and criar and categoria_final is None:
+            categoria_final = await repo.ultima_categoria_por_descricao(
+                uid, extraido.beneficiario
+            )
+            auto_categoria = categoria_final is not None
 
         if existente is not None:
             duplicado = True
@@ -114,7 +125,7 @@ async def importar_boleto(
                 linha_digitavel=linha,
                 status="prevista",          # boleto importado = a pagar
                 origem="importacao_boleto",
-                categoria_id=cat_id,
+                categoria_id=categoria_final,
                 itens=[
                     TransacaoItem(descricao=v.descricao, valor=v.valor)
                     for v in extraido.verbas
@@ -163,6 +174,9 @@ async def importar_boleto(
             "Não consegui ler o valor do boleto. Guardei o arquivo pra "
             "revisão manual."
         )
+
+    if auto_categoria:
+        msg += " Categoria reaproveitada do último boleto desse beneficiário."
 
     return ImportarBoletoResponse(
         success=True,

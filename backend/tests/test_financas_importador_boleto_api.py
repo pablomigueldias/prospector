@@ -49,6 +49,13 @@ BOLETO_SEM_VALOR = {
     **BOLETO_OK, "beneficiario": "Loja Beta", "vencimento": "2026-08-01",
     "linha_digitavel": None, "valor_total": 0, "verbas": [],
 }
+# Mesmo beneficiário do BOLETO_OK, outro mês/valor/linha — pra testar a
+# auto-categoria (deve herdar a categoria do BOLETO_OK sem informar).
+BOLETO_MESMO_BENEF = {
+    "beneficiario": "Condomínio Lello", "vencimento": "2026-07-10",
+    "valor_total": 500, "linha_digitavel": "75691.23456 78901.234567 89012.345678 1 88880000050000",
+    "verbas": [{"descricao": "Taxa", "valor": 500}], "leituras": [],
+}
 
 
 async def _cleanup(usuario_id: str) -> None:
@@ -169,6 +176,20 @@ def smoke_test() -> None:
             depois = client.get(f"{TX}?status=prevista").json()["total"]
             assert depois == antes, (antes, depois)  # nada novo criado
             print(f"   {b4['mensagem']}")
+
+            # ── 5. Mesmo beneficiário, SEM categoria → herda do histórico ─
+            print("\n→ Test 5: auto-categoria pelo beneficiário (sem informar)")
+            extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_MESMO_BENEF)
+            r5 = client.post(IMPORTAR, data={
+                "usuario_id": usuario_id,  # SEM categoria_id
+            }, files={"file": ("julho.pdf", b"%PDF jul", "application/pdf")})
+            assert r5.status_code == 200, r5.text
+            b5 = r5.json()
+            assert b5["transacao_id"] and not b5["duplicado"], b5
+            tx5 = client.get(f"{TX}/{b5['transacao_id']}").json()
+            assert tx5["categoria_id"] == condominio, tx5["categoria_id"]
+            assert "reaproveitada" in b5["mensagem"].lower(), b5["mensagem"]
+            print(f"   {b5['mensagem']}")
 
         finally:
             extrator.extrair_boleto_llm = original
