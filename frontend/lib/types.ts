@@ -692,6 +692,40 @@ export interface FaturasCartao {
   total_juros: string;
 }
 
+export interface Parcela {
+  id: string;
+  numero: number;
+  total_parcelas: number;
+  valor: string;
+  tem_juros: boolean;
+  valor_juros: string;
+  vencimento: string;
+  fatura_id?: string | null;
+}
+
+export interface Compra {
+  id: string;
+  usuario_id: string;
+  cartao_id?: string | null;
+  descricao: string;
+  valor_total: string;
+  total_parcelas: number;
+  data_compra: string;
+  origem: string;
+  categoria_id?: string | null;
+  parcelas: Parcela[];
+}
+
+export interface CompraCreateInput {
+  cartao_id: string;
+  descricao: string;
+  valor_total: string;
+  total_parcelas: number;
+  data_compra?: string | null;
+  categoria_id?: string | null;
+  valor_juros_total?: string;
+}
+
 export interface LeituraConsumo {
   id: string;
   usuario_id: string;

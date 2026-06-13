@@ -44,6 +44,8 @@ import type {
   RelatorioResponse,
   CartaoListResponse,
   FaturasCartao,
+  Compra,
+  CompraCreateInput,
   LeituraConsumoListResponse,
   Comprovante,
   ComprovanteListResponse,
@@ -408,6 +410,20 @@ export const api = {
   financasExcluirCartao(id: string): Promise<void> {
     return request<void>(`/api/financas/cartoes/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCriarCompra(body: CompraCreateInput): Promise<Compra> {
+    return request<Compra>('/api/financas/compras', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCompra(id: string): Promise<Compra> {
+    return request<Compra>(`/api/financas/compras/${encodeURIComponent(id)}`, {
       timeoutMs: 10_000,
     });
   },
