@@ -580,6 +580,34 @@ export interface OrcamentoUpdateInput {
   ativo?: boolean;
 }
 
+export interface PagamentoMesItem {
+  tipo: 'boleto' | 'fatura';
+  id: string;
+  descricao: string;
+  valor: string;
+  vencimento?: string | null;
+  conta_sugerida_id?: string | null;
+  conta_sugerida_nome?: string | null;
+}
+
+export interface PagamentoMesPreview {
+  competencia: string;
+  itens: PagamentoMesItem[];
+  total: string;
+}
+
+export interface PagamentoMesItemInput {
+  tipo: 'boleto' | 'fatura';
+  id: string;
+  conta_id: string;
+}
+
+export interface PagamentoMesResultado {
+  pagos: number;
+  total_pago: string;
+  falhas: string[];
+}
+
 export interface NluInterpretacao {
   tipo: string;
   valor: string;

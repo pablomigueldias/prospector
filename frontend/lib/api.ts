@@ -15,6 +15,9 @@ import type {
   LancamentoInput,
   DespesaDivididaInput,
   NluInterpretacao,
+  PagamentoMesPreview,
+  PagamentoMesItemInput,
+  PagamentoMesResultado,
   Orcamento,
   OrcamentoListResponse,
   OrcamentoStatusResponse,
@@ -752,6 +755,25 @@ export const api = {
       `/api/financas/recorrencias/${encodeURIComponent(id)}`,
       { method: 'DELETE', timeoutMs: 10_000 },
     );
+  },
+
+  // ── Finanças · pagar o mês (boletos + faturas juntos) ───────────
+  financasPagarMesPreview(competencia?: string): Promise<PagamentoMesPreview> {
+    const q = competencia ? `?competencia=${encodeURIComponent(competencia)}` : '';
+    return request<PagamentoMesPreview>(`/api/financas/pagar-mes/preview${q}`, {
+      timeoutMs: 15_000,
+    });
+  },
+
+  financasPagarMes(
+    itens: PagamentoMesItemInput[],
+    dataPagamento?: string,
+  ): Promise<PagamentoMesResultado> {
+    return request<PagamentoMesResultado>('/api/financas/pagar-mes', {
+      method: 'POST',
+      body: { data_pagamento: dataPagamento ?? null, itens },
+      timeoutMs: 30_000,
+    });
   },
 
   // ── Finanças · orçamentos (teto mensal por categoria) ───────────
