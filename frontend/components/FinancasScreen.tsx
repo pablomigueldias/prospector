@@ -269,7 +269,7 @@ export default function FinancasScreen() {
 
       {/* Contas fixas (recorrências: criar/editar/excluir) */}
       <div id="sec-fixas" className="scroll-mt-16">
-        <RecorrenciasSection contas={contas} onMutate={recarregarTudo} />
+        <RecorrenciasSection contas={contas} ano={ano} mes={mes} onMutate={recarregarTudo} />
       </div>
 
       {/* Categorias (criar/editar/excluir) */}

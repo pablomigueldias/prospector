@@ -565,6 +565,30 @@ export interface Recorrencia {
   ativa: boolean;
 }
 
+export interface RecorrenciaStatusItem {
+  recorrencia_id: string;
+  descricao: string;
+  forma_pagamento: string;
+  valor_estimado: string;
+  dia_vencimento: number;
+  cartao_id?: string | null;
+  situacao: 'paga' | 'prevista' | 'atrasada' | 'lancada_cartao' | 'nenhuma';
+  transacao_id?: string | null;
+  compra_id?: string | null;
+}
+
+export interface RecorrenciaStatusResponse {
+  competencia: string;
+  items: RecorrenciaStatusItem[];
+}
+
+export interface PagarMesInput {
+  competencia?: string | null;
+  conta_id?: string | null;
+  data_pagamento?: string | null;
+  valor_pago?: string | null;
+}
+
 export interface RecorrenciaListResponse {
   items: Recorrencia[];
   total: number;

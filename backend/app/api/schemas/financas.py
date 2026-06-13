@@ -472,6 +472,33 @@ class ProcessarRecorrenciasResponse(BaseModel):
     marcadas_atrasadas: int
 
 
+class RecorrenciaStatusItem(BaseModel):
+    """Situação de uma recorrência num mês específico."""
+    recorrencia_id: str
+    descricao: str
+    forma_pagamento: str
+    valor_estimado: Decimal
+    dia_vencimento: int
+    cartao_id: Optional[str] = None
+    # do mês: "paga" | "prevista" | "atrasada" | "lancada_cartao" | "nenhuma"
+    situacao: str
+    transacao_id: Optional[str] = None
+    compra_id: Optional[str] = None
+
+
+class RecorrenciaStatusResponse(BaseModel):
+    competencia: str  # "YYYY-MM"
+    items: List[RecorrenciaStatusItem]
+
+
+class PagarMesRequest(BaseModel):
+    """Marca/lança a recorrência num mês (default = mês atual)."""
+    competencia: Optional[str] = None  # "YYYY-MM"
+    conta_id: Optional[str] = None
+    data_pagamento: Optional[date] = None
+    valor_pago: Optional[Decimal] = Field(None, gt=0)
+
+
 # ══════════════════════════════════════════════════════════════════
 # NLU do Telegram (texto livre → estrutura)
 # ══════════════════════════════════════════════════════════════════

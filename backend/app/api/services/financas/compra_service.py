@@ -152,7 +152,53 @@ async def _fatura_do_mes(
     return fatura
 
 
-async def criar_compra_parcelada(payload: CompraParceladaCreate) -> CompraResponse:
+async def lancar_avista_na_sessao(
+    session: AsyncSession,
+    cartao: Cartao,
+    *,
+    usuario_id: uuid.UUID,
+    descricao: str,
+    valor: Decimal,
+    data_compra: date,
+    categoria_id: Optional[uuid.UUID] = None,
+    recorrencia_id: Optional[uuid.UUID] = None,
+) -> Compra:
+    """Lança uma compra à vista (1 parcela) na fatura do mês, dentro da sessão
+    dada (não commita). Usado pelo cron e pelo "marcar pago" das recorrências
+    de cartão — a despesa só pesa no saldo quando a fatura é paga."""
+    compra = Compra(
+        usuario_id=usuario_id,
+        descricao=descricao,
+        valor_total=valor,
+        total_parcelas=1,
+        data_compra=data_compra,
+        origem="cartao",
+        cartao_id=cartao.id,
+        categoria_id=categoria_id,
+        recorrencia_id=recorrencia_id,
+    )
+    session.add(compra)
+    await session.flush()
+
+    ano0, mes0 = competencia_inicial(data_compra, cartao.dia_fechamento)
+    fatura = await _fatura_do_mes(session, cartao, ano0, mes0, {})
+    session.add(Parcela(
+        compra_id=compra.id,
+        numero=1,
+        total_parcelas=1,
+        valor=valor,
+        tem_juros=False,
+        valor_juros=Decimal("0"),
+        vencimento=fatura.vencimento,
+        fatura_id=fatura.id,
+    ))
+    fatura.valor_total = Decimal(fatura.valor_total) + Decimal(valor)
+    return compra
+
+
+async def criar_compra_parcelada(
+    payload: CompraParceladaCreate, *, recorrencia_id: Optional[uuid.UUID] = None
+) -> CompraResponse:
     if not payload.descricao.strip():
         raise CompraError("A compra precisa de uma descrição.")
     if payload.valor_juros_total > payload.valor_total:
@@ -189,6 +235,7 @@ async def criar_compra_parcelada(payload: CompraParceladaCreate) -> CompraRespon
             origem="cartao",
             cartao_id=cartao_id,
             categoria_id=categoria_id,
+            recorrencia_id=recorrencia_id,
         )
         session.add(compra)
         await session.flush()

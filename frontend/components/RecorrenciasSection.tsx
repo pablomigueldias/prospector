@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { Modal } from '@/components/Modal';
+import { useFetch } from '@/hooks/useFetch';
 import { useCartoes, useCategorias, useRecorrencias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
@@ -10,12 +11,15 @@ import {
   type Conta,
   type FormaPagamento,
   type Recorrencia,
+  type RecorrenciaStatusItem,
+  type RecorrenciaStatusResponse,
 } from '@/lib/types';
 
 interface Props {
   contas: Conta[];
-  /** Recarrega resumo/contas do dashboard (recorrência não mexe em saldo, mas
-   *  mantém o padrão das outras seções). */
+  ano: number;
+  mes: number;
+  /** Recarrega resumo/contas do dashboard (marcar pago mexe em saldo). */
   onMutate?: () => void;
 }
 
@@ -24,18 +28,49 @@ type ModalState =
   | { modo: 'nova' }
   | { modo: 'editar'; rec: Recorrencia };
 
-export function RecorrenciasSection({ contas, onMutate }: Props) {
+export function RecorrenciasSection({ contas, ano, mes, onMutate }: Props) {
   const { recorrencias, loading, refetch } = useRecorrencias();
+  const competencia = `${ano}-${String(mes).padStart(2, '0')}`;
+  const {
+    data: statusData,
+    refetch: refetchStatus,
+  } = useFetch<RecorrenciaStatusResponse>(
+    () => api.financasRecorrenciasStatus(competencia),
+    [competencia],
+  );
   const [modal, setModal] = useState<ModalState>({ modo: 'fechado' });
+  const [pagarRec, setPagarRec] = useState<Recorrencia | null>(null);
+
+  const statusMap = useMemo(() => {
+    const m = new Map<string, RecorrenciaStatusItem['situacao']>();
+    for (const i of statusData?.items ?? []) m.set(i.recorrencia_id, i.situacao);
+    return m;
+  }, [statusData]);
 
   const recarregar = () => {
     void refetch();
+    void refetchStatus();
     onMutate?.();
   };
 
   const totalMensal = recorrencias
     .filter((r) => r.tipo === 'despesa' && r.ativa)
     .reduce((acc, r) => acc + Number(r.valor_estimado), 0);
+
+  async function marcar(rec: Recorrencia) {
+    // Cartão: lança direto na fatura (sem conta). Conta/boleto com conta
+    // definida: paga direto. Senão, abre o modal pra escolher a conta.
+    if (rec.forma_pagamento === 'cartao' || rec.conta_id) {
+      try {
+        await api.financasPagarMesRecorrencia(rec.id, { competencia });
+        recarregar();
+      } catch {
+        setPagarRec(rec); // deixa o usuário ajustar (ex.: faltou conta)
+      }
+      return;
+    }
+    setPagarRec(rec);
+  }
 
   return (
     <section className="mb-8">
@@ -69,46 +104,13 @@ export function RecorrenciasSection({ contas, onMutate }: Props) {
       ) : (
         <div className="card divide-y divide-line">
           {recorrencias.map((r) => (
-            <button
+            <RecorrenciaRow
               key={r.id}
-              type="button"
-              onClick={() => setModal({ modo: 'editar', rec: r })}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-bg-alt/40 transition-colors group"
-              title="Editar"
-            >
-              <div className="w-12 shrink-0 text-center">
-                <div className="font-mono text-[10px] text-ink-mute uppercase tracking-wide">
-                  dia
-                </div>
-                <div className="font-display font-semibold text-ink leading-none">
-                  {r.dia_vencimento}
-                </div>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm text-ink truncate">
-                  {r.descricao}
-                  {!r.ativa && (
-                    <span className="ml-2 text-[10px] uppercase tracking-wide text-ink-mute border border-line rounded px-1 py-0.5">
-                      pausada
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11.5px] text-ink-mute">
-                  {r.tipo === 'despesa' ? 'Despesa' : 'Receita'} · {r.frequencia}
-                </div>
-              </div>
-              <div
-                className={`shrink-0 font-display font-semibold tracking-tight text-sm ${
-                  r.tipo === 'despesa' ? 'text-ink' : 'text-success'
-                } ${!r.ativa ? 'opacity-50' : ''}`}
-              >
-                {r.tipo === 'despesa' ? '−' : '+'}
-                {formatBRL(r.valor_estimado)}
-              </div>
-              <span className="shrink-0 text-[11px] text-ink-faint opacity-0 group-hover:opacity-100 transition-opacity">
-                editar
-              </span>
-            </button>
+              rec={r}
+              situacao={statusMap.get(r.id) ?? 'nenhuma'}
+              onEditar={() => setModal({ modo: 'editar', rec: r })}
+              onMarcar={() => void marcar(r)}
+            />
           ))}
         </div>
       )}
@@ -124,7 +126,208 @@ export function RecorrenciasSection({ contas, onMutate }: Props) {
           }}
         />
       )}
+
+      {pagarRec && (
+        <PagarMesModal
+          rec={pagarRec}
+          contas={contas}
+          competencia={competencia}
+          onClose={() => setPagarRec(null)}
+          onPaid={() => {
+            setPagarRec(null);
+            recarregar();
+          }}
+        />
+      )}
     </section>
+  );
+}
+
+const BADGE: Record<
+  RecorrenciaStatusItem['situacao'],
+  { texto: string; cls: string } | null
+> = {
+  paga: { texto: '✓ pago', cls: 'text-success border-success/40' },
+  lancada_cartao: { texto: 'na fatura', cls: 'text-brand-deep border-brand/40' },
+  prevista: { texto: 'a pagar', cls: 'text-ink-soft border-line' },
+  atrasada: { texto: 'vencida', cls: 'text-red-600 border-red-300' },
+  nenhuma: null,
+};
+
+function RecorrenciaRow({
+  rec,
+  situacao,
+  onEditar,
+  onMarcar,
+}: {
+  rec: Recorrencia;
+  situacao: RecorrenciaStatusItem['situacao'];
+  onEditar: () => void;
+  onMarcar: () => void;
+}) {
+  const badge = BADGE[situacao];
+  const feito = situacao === 'paga' || situacao === 'lancada_cartao';
+  const acaoLabel = rec.forma_pagamento === 'cartao' ? 'Lançar' : 'Marcar pago';
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-bg-alt/40 transition-colors group">
+      <button
+        type="button"
+        onClick={onEditar}
+        className="flex items-center gap-3 flex-1 min-w-0 text-left"
+        title="Editar"
+      >
+        <div className="w-12 shrink-0 text-center">
+          <div className="font-mono text-[10px] text-ink-mute uppercase tracking-wide">
+            dia
+          </div>
+          <div className="font-display font-semibold text-ink leading-none">
+            {rec.dia_vencimento}
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm text-ink truncate flex items-center gap-2">
+            {rec.descricao}
+            {!rec.ativa && (
+              <span className="text-[10px] uppercase tracking-wide text-ink-mute border border-line rounded px-1 py-0.5">
+                pausada
+              </span>
+            )}
+            {badge && (
+              <span
+                className={`text-[10px] uppercase tracking-wide rounded border px-1 py-0.5 ${badge.cls}`}
+              >
+                {badge.texto}
+              </span>
+            )}
+          </div>
+          <div className="text-[11.5px] text-ink-mute">
+            {rec.tipo === 'despesa' ? 'Despesa' : 'Receita'} ·{' '}
+            {rec.forma_pagamento === 'cartao'
+              ? 'cartão'
+              : rec.forma_pagamento === 'boleto'
+                ? 'boleto'
+                : 'conta'}
+          </div>
+        </div>
+      </button>
+
+      <div
+        className={`shrink-0 font-display font-semibold tracking-tight text-sm ${
+          rec.tipo === 'despesa' ? 'text-ink' : 'text-success'
+        } ${!rec.ativa ? 'opacity-50' : ''}`}
+      >
+        {rec.tipo === 'despesa' ? '−' : '+'}
+        {formatBRL(rec.valor_estimado)}
+      </div>
+
+      {rec.ativa && !feito && (
+        <button
+          type="button"
+          onClick={onMarcar}
+          className="shrink-0 btn-ghost px-2.5 py-1 text-[12px]"
+          title={
+            rec.forma_pagamento === 'cartao'
+              ? 'Lançar na fatura do cartão deste mês'
+              : 'Marcar como paga neste mês'
+          }
+        >
+          {acaoLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function PagarMesModal({
+  rec,
+  contas,
+  competencia,
+  onClose,
+  onPaid,
+}: {
+  rec: Recorrencia;
+  contas: Conta[];
+  competencia: string;
+  onClose: () => void;
+  onPaid: () => void;
+}) {
+  const [contaId, setContaId] = useState(rec.conta_id ?? '');
+  const [valor, setValor] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  async function confirmar() {
+    setErro('');
+    if (!contaId) return setErro('Escolha a conta que pagou.');
+    const valorStr = valor.trim()
+      ? String(Number(valor.replace(',', '.')))
+      : null;
+    if (valorStr !== null && (!Number.isFinite(Number(valorStr)) || Number(valorStr) <= 0)) {
+      return setErro('Valor inválido.');
+    }
+    setSalvando(true);
+    try {
+      await api.financasPagarMesRecorrencia(rec.id, {
+        competencia,
+        conta_id: contaId,
+        valor_pago: valorStr,
+      });
+      onPaid();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Falha ao marcar como paga.');
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Marcar paga · ${rec.descricao}`}>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+            Conta que pagou
+          </label>
+          <select
+            className="input"
+            value={contaId}
+            onChange={(e) => setContaId(e.target.value)}
+          >
+            <option value="">Escolha a conta…</option>
+            {contas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+            Valor pago (opcional)
+          </label>
+          <input
+            className="input"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            inputMode="decimal"
+            placeholder={formatBRL(rec.valor_estimado)}
+          />
+        </div>
+        {erro && <div className="text-sm text-red-600">{erro}</div>}
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" onClick={onClose} className="btn-ghost px-4 py-2 text-sm">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={confirmar}
+            disabled={salvando}
+            className="btn-primary px-5 py-2 text-sm disabled:opacity-50"
+          >
+            {salvando ? 'Salvando…' : 'Marcar paga'}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

@@ -17,10 +17,39 @@ from typing import Optional
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.services.financas import compra_service
 from app.api.services.financas.compra_service import dia_valido
+from app.db.models.financas.cartao import Cartao
+from app.db.models.financas.compra import Compra
 from app.db.models.financas.recorrencia import Recorrencia
 from app.db.models.financas.transacao import Transacao
 from app.db.session import get_session
+
+
+async def _tem_ocorrencia_no_mes(
+    session: AsyncSession, r: Recorrencia, mes_ref: date
+) -> bool:
+    """Já há um lançamento desta recorrência neste mês? (prevista/transação ou,
+    pra cartão, uma compra na fatura)."""
+    if r.forma_pagamento == "cartao":
+        n = await session.scalar(
+            select(func.count())
+            .select_from(Compra)
+            .where(
+                Compra.recorrencia_id == r.id,
+                func.date_trunc("month", Compra.data_compra) == mes_ref,
+            )
+        )
+        return bool(n)
+    n = await session.scalar(
+        select(func.count())
+        .select_from(Transacao)
+        .where(
+            Transacao.recorrencia_id == r.id,
+            Transacao.data_competencia == mes_ref,
+        )
+    )
+    return bool(n)
 
 
 async def _gerar_previstas(
@@ -35,16 +64,29 @@ async def _gerar_previstas(
 
     criadas = 0
     for r in recorrencias:
-        # idempotência: já existe uma prevista desta recorrência neste mês?
-        existe = await session.scalar(
-            select(func.count())
-            .select_from(Transacao)
-            .where(
-                Transacao.recorrencia_id == r.id,
-                Transacao.data_competencia == mes_ref,
+        if await _tem_ocorrencia_no_mes(session, r, mes_ref):
+            continue
+
+        # Recorrência no cartão (assinatura): a cobrança cai na fatura, não vira
+        # prevista de conta. Lança a compra à vista do mês (some do saldo só
+        # quando a fatura é paga).
+        if r.forma_pagamento == "cartao" and r.cartao_id is not None:
+            cartao = await session.get(Cartao, r.cartao_id)
+            if cartao is None:
+                continue
+            data_compra = date(
+                ref.year, ref.month, dia_valido(ref.year, ref.month, r.dia_vencimento)
             )
-        )
-        if existe:
+            await compra_service.lancar_avista_na_sessao(
+                session, cartao,
+                usuario_id=r.usuario_id,
+                descricao=r.descricao,
+                valor=r.valor_estimado,
+                data_compra=data_compra,
+                categoria_id=r.categoria_id,
+                recorrencia_id=r.id,
+            )
+            criadas += 1
             continue
 
         venc = date(ref.year, ref.month, dia_valido(ref.year, ref.month, r.dia_vencimento))

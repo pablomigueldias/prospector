@@ -16,6 +16,9 @@ import type {
   Recorrencia,
   RecorrenciaCreateInput,
   RecorrenciaListResponse,
+  RecorrenciaStatusItem,
+  RecorrenciaStatusResponse,
+  PagarMesInput,
   RecorrenciaUpdateInput,
   TransacaoEditInput,
   TransacaoFiltro,
@@ -711,6 +714,26 @@ export const api = {
     return request<void>(
       `/api/financas/recorrencias/${encodeURIComponent(id)}`,
       { method: 'DELETE', timeoutMs: 10_000 },
+    );
+  },
+
+  financasRecorrenciasStatus(
+    competencia?: string,
+  ): Promise<RecorrenciaStatusResponse> {
+    const q = competencia ? `?competencia=${encodeURIComponent(competencia)}` : '';
+    return request<RecorrenciaStatusResponse>(
+      `/api/financas/recorrencias/status${q}`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  financasPagarMesRecorrencia(
+    id: string,
+    body: PagarMesInput,
+  ): Promise<RecorrenciaStatusItem> {
+    return request<RecorrenciaStatusItem>(
+      `/api/financas/recorrencias/${encodeURIComponent(id)}/pagar-mes`,
+      { method: 'POST', body, timeoutMs: 10_000 },
     );
   },
 
