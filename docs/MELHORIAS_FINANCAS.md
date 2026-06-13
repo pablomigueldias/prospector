@@ -51,13 +51,14 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 ## 3d. Cartões profissionais
 
 > O trio que torna o cartão usável (lançar compra, extrato da fatura, pagar a
-> fatura) e a assinatura recorrente no cartão **já saíram** (ver
-> `FINANCAS_FEITO.md` §3d). Falta:
+> fatura), a assinatura recorrente no cartão e o "pagar o mês" **já saíram**
+> (ver `FINANCAS_FEITO.md` §3d). Falta:
 
+- 🔴 **"Pagar o mês" direto no card do cartão** — *pedido do Pablo (2026-06-13): "queria uma opção de pagar o mês todo no cartão de crédito também — todo fim de mês pagamos com boleto ou pix".* Hoje pagar a fatura do mês já funciona pelo painel *Contas a pagar* (botão "Pagar o mês", que inclui as faturas) e clicando numa fatura → "Pagar fatura"; **falta o atalho no próprio card do cartão** (na seção Cartões, o card só tem "+ Compra"). Adicionar um botão **Pagar fatura / Pagar o mês** no card que abre o fluxo de pagamento da fatura em aberto (escolhe conta — ex.: a conta de onde sai o boleto/pix — data e valor), reusando o `pagar_fatura` que já existe. UX: surfacing, sem backend novo.
 - 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` já existe (boleto carnê → N parcelas, sem fatura); falta UI. Encaixa com o importador.
 - 🟡 **Projeção das próximas faturas (avançada)** — o card já lista as próximas faturas com mês e total (projeção básica); falta uma visão consolidada "comprometido por mês nos próximos N meses" somando parcelas futuras de todos os cartões.
 - 🟢 **Categoria por compra** — categorizar cada compra do cartão (e auto-categoria por descrição, como no boleto).
-- 🟢 **Importar fatura (PDF/CSV)** — ler a fatura inteira do banco e gerar as compras/parcelas de uma vez, conciliando (§9).
+- 🟢 **Importar a fatura (PDF/CSV)** — ler a fatura inteira do banco e gerar as compras/parcelas de uma vez, conciliando (§9). Poderia reusar o pipeline do importador de boleto (IA multimodal).
 - 🟢 **Estorno / ajuste de compra** — cancelar uma compra parcelada (remover parcelas futuras) ou ajustar valor.
 - 🟢 **Antecipar parcelas** — pagar parcelas futuras adiantado e recalcular a fatura.
 - 🟢 **Anexar comprovante à compra/fatura** — igual ao boleto (depende do MinIO atrás do Caddy, §6).

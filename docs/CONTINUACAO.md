@@ -1,11 +1,41 @@
 # Continuação — onde paramos e como retomar
 
 > Handoff geral do sistema. Última atualização: **2026-06-13**.
-> Branch de trabalho: **`feat/financas`** — agora **espelhado em `main`** (merge + push feitos; ver §2).
+> Branch de trabalho: **`feat/financas`**.
+> ⚠️ **A grande leva de 2026-06-13 (cartão usável, recorrência por forma de
+> pagamento, orçamento, pagar-o-mês, NLU, etc.) está SÓ em `feat/financas` —
+> NÃO foi pra `main` nem pro deploy** (o Pablo pediu pra segurar). Ver §0.
 
 ---
 
-## 1. Estado atual — está NO AR ✅
+## 0. Onde paramos (sessão 2026-06-13) — NÃO deployado ⏸️
+
+Tudo abaixo está **commitado em `feat/financas` com smoke verde**, mas **sem
+push/merge/deploy** (decisão do Pablo: "vamos continuar fazendo as pendências"
+antes de subir). ~19 commits.
+
+**Cartões (o campo da vez):**
+- **Trio usável:** lançar compra parcelada/à vista (botão **+ Compra** no card), **extrato da fatura** (clicar na fatura → item a item) e **pagar a fatura** (debita conta, move saldo, vira despesa do mês). Migration `d4f0a1b2c3e5` (`faturas.transacao_id`).
+- **Limite/disponível + projeção** no card (barra de uso colorida; lista das próximas faturas por mês).
+- **Pagar o mês** (botão no painel *Contas a pagar*): junta **fatura do cartão + boletos do mês** num modal só, cada um na sua conta, e quita tudo de uma vez (`/pagar-mes/preview` + `/pagar-mes`).
+
+**Recorrência ciente da forma de pagamento** (migration `e5a1b3c4d6f7`): conta/cartão/boleto; recorrência de cartão vira **compra na fatura** (cron forma-aware) e dá pra "marcar/lançar o mês"; boleto importado **se liga à conta fixa** (auto pelo beneficiário + manual). Resolve "Claude no cartão / aluguel no boleto".
+
+**Orçamento por categoria** (migration `f6b2c8d4e7a9`): teto mensal × consumido com barras (seção **Orçamentos**) + **alerta no digest** do Telegram (`ORCAMENTO_ALERTA_PCT`, default 80).
+
+**Paridade backend↔tela (§3b) fechada:** despesa dividida por N contas, **NLU no dashboard** (caixa "digite o gasto"), registrar leitura de consumo, botão "gerar previstas".
+
+**Docs reorganizados:** `FINANCAS_FEITO.md` (o que está pronto, por categoria) × `MELHORIAS_FINANCAS.md` (só pendente).
+
+**Hotfix de produção (esse SIM foi aplicado no VPS):** `GEMINI_API_KEY` estava vazia no `~/reative/deploy/.env` → importar boleto dava 500. Preenchida + `docker compose up -d api`. Funciona.
+
+**Quando for deployar:** rodar as **4 migrations** novas (já no `02-deploy.sh` no boot): `a1c7e9d2b4f0`/`b2d8f1a3c6e1`/`c3e9a4d7b8f2` (boleto, de antes) + `d4f0a1b2c3e5`/`e5a1b3c4d6f7`/`f6b2c8d4e7a9` (cartão/recorrência/orçamento). Conferir `ORCAMENTO_ALERTA_PCT` no `.env` do VPS (tem default).
+
+**Próxima pendência marcada (cartão):** 🔴 **botão "Pagar o mês / Pagar fatura" direto no card do cartão** (pedido do Pablo: todo fim de mês ele quita a fatura via boleto/pix e quer o atalho no próprio card — hoje só dá pelo painel *Contas a pagar* ou abrindo a fatura). É surfacing do `pagar_fatura` que já existe, sem backend novo. Está no `MELHORIAS_FINANCAS.md` §3d.
+
+---
+
+## 1. Estado atual — está NO AR ✅ (o que JÁ estava deployado antes desta sessão)
 
 - **App em produção:** https://studio.reativesystems.com.br — login, sessão, RBAC, 2FA, headers de segurança, financeiro e dashboard ao vivo, todos funcionando pela internet.
 - **VPS:** 5 containers de pé (`api`, `web`, `caddy`, `db` healthy, `minio` healthy). Migrations rodaram do zero (public/financas/auth). Admin seedado (`pablo.miguel.dias@gmail.com`, id `00…001`).
@@ -33,8 +63,9 @@
 
 ## 2. Git / código
 
-- Trabalho todo commitado e **com push** em `origin/feat/financas` **e `origin/main`** (os dois sincronizados; `main` recebeu tudo via merges `--no-ff`). Padrão: 1 feature = 1 commit, sem co-author.
-- **Deploy é por `rsync`** pro VPS (`~/reative` não é repo git) + rebuild dos containers (`docker compose up -d --build api web` no `~/reative/deploy`). Ver §5.
+- Padrão: 1 feature = 1 commit, sem co-author.
+- ⚠️ **`feat/financas` está ADIANTE de `main`** desde a sessão 2026-06-13 (~19 commits locais, **sem push/merge** — ver §0). Até 2026-06-13 de manhã os dois estavam sincronizados; a leva de cartão/orçamento/pagar-o-mês ficou só local por decisão do Pablo. Quando for subir: push `feat/financas` → merge `--no-ff` na `main` → push → deploy.
+- **Deploy é por `rsync`** pro VPS (`~/reative` não é repo git) + rebuild dos containers (`docker compose up -d --build api web` no `~/reative/deploy`). Ver §5. As migrations novas rodam no boot via `02-deploy.sh`.
 - ⚠️ **2 arquivos `docs/AUTH_*.md`** seguem deletados no working tree de `feat/financas` (pré-existente, não commitado) — decidir se apaga de vez ou restaura.
 
 ---
@@ -51,14 +82,26 @@ Em ordem de "pega rápido":
 6. **Comprovantes no navegador:** o MinIO só escuta no localhost do VPS → URLs presignadas não abrem no browser. Expor o MinIO atrás do Caddy (ex.: `/s3/*`) + ajustar `S3_ENDPOINT` público e o `img-src` do CSP.
 7. ✅ **"Double /api" resolvido (2026-06-10):** Caddy passou a usar `handle /api/*` (sem strip) e `NEXT_PUBLIC_API_URL` sem `/api`. **Pegadinha:** ao trocar o Caddyfile via rsync, precisa `docker restart reative-caddy` (não só `reload`) — bind-mount de arquivo único fica preso ao inode velho.
 8. **Mais de 2 pessoas no bot:** hoje só há 2 slots (você + 1). Pra um terceiro chat, generalizar o mapa chat→usuário (lista no `.env` ou tabela).
-9. ✅ **Merge `feat/financas` → `main` feito.** Os dois branches seguem sincronizados a cada feature.
+9. ⏸️ **`feat/financas` ADIANTE de `main`** (sessão 2026-06-13, ~19 commits sem push/merge/deploy — ver §0). Estavam sincronizados até a manhã do dia 13; segurar foi decisão do Pablo.
 10. ✅ **Senha do dev após sync resolvido (2026-06-11):** o botão "Puxar da produção" agora reseta o `senha_hash` do admin pra `ADMIN_SENHA_INICIAL` do `backend/.env` no fim do sync, então o login do dev não quebra mais. Se ainda precisar resetar à mão (ex.: sync rodado pelo terminal, fora do botão), use o `app.api.services.auth.senha_service.hash_senha` + `UPDATE auth.usuarios`. Trocar a senha no app revoga sessões; anote a nova.
 
 ---
 
 ## 4. Próximos blocos de produto
 
-Ideias de evolução do financeiro estão em **`docs/MELHORIAS_FINANCAS.md`** (priorizadas). Destaques rápidos: cadastrar conta pelo bot, metas/orçamento por categoria, alertas de vencimento, relatório mensal automático no Telegram.
+O que **já foi feito** está catalogado em **`docs/FINANCAS_FEITO.md`** (por
+categoria); o **pendente** em **`docs/MELHORIAS_FINANCAS.md`** (priorizado).
+
+Destaques do que ainda falta (🔴):
+- **Importar a fatura do cartão por foto/PDF com IA** (igual ao boleto) — pedido do Pablo, §3d. Provável próximo passo no cartão.
+- **Cadastrar conta + `/desfazer` no bot** (§1).
+- **Perguntas em linguagem natural sobre os dados / categorização que aprende** (§8).
+- **Expor o MinIO atrás do Caddy** (§6) — destrava ver comprovante no navegador em prod.
+- **Open Finance / importar extrato** (§9).
+
+Já entregues nesta leva (antes era "próximo"): metas/**orçamento por categoria**
++ alertas no Telegram, **lembrete de vencimento** (boleto e fatura), relatório
+mensal — ver `FINANCAS_FEITO.md`.
 
 ---
 
