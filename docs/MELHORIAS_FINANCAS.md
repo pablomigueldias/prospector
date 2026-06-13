@@ -100,10 +100,9 @@ de cabeça. Hoje o cartão já tem **CRUD** (criar/editar/excluir) e mostra as
 parcelado, mas **a tela não expõe**. Ordem sugerida de ataque:
 
 ### Núcleo (o que destrava usar o cartão de verdade)
-- 🔴 **Lançar compra parcelada na tela** — `POST /api/financas/compras` (`CompraParceladaCreate`) já existe: "geladeira em 10x" gera as parcelas e joga nas faturas. Falta o formulário (descrição, valor total, nº de parcelas, cartão, 1ª competência, juros opcional). É o maior buraco hoje.
-- 🔴 **Lançar compra à vista no cartão** — compra de 1x que entra na fatura do mês (atalho do parcelado com parcelas=1).
-- 🔴 **Extrato da fatura** — abrir uma fatura e ver as compras/parcelas que a compõem (`GET /cartoes/{id}/faturas` traz o agregado; falta o detalhe item a item). Cruzar com `GET /compras/{id}`.
-- 🔴 **Pagar a fatura** — marcar a fatura do mês como paga, debitando de uma conta (move o saldo) e baixando as parcelas. **Não existe endpoint ainda** — criar (`POST /cartoes/{id}/faturas/{competencia}/pagar` ou similar), espelhando o `pagar_transacao` do boleto (conta, data, valor pago, encargos da fatura).
+- ✅ **Lançar compra parcelada/à vista na tela** (2026-06-13) — botão **+ Compra** em cada card de cartão abre um form (descrição, valor total, parcelas, data, categoria, juros opcional); parcelas=1 = à vista. Consome o `POST /api/financas/compras` que já existia. Ref `frontend/components/CartoesSection.tsx`.
+- ✅ **Extrato da fatura** (2026-06-13) — clicar numa fatura abre o detalhe item a item (parcelas/compras que a compõem, com categoria e juros). Novo `GET /api/financas/cartoes/{id}/faturas/{fatura_id}` → `cartao_service.extrato_fatura`.
+- ✅ **Pagar a fatura** (2026-06-13) — botão **Pagar fatura** no extrato: escolhe a conta, data e valor opcional; cria uma despesa paga (move o saldo, aparece no resumo do mês) e marca a fatura paga, ligada via `faturas.transacao_id` (migration `d4f0a1b2c3e5`). `POST /api/financas/cartoes/{id}/faturas/{fatura_id}/pagar` → `cartao_service.pagar_fatura`. Idempotente (fatura já paga → 400).
 
 ### Boleto parcelado e projeção
 - 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`) já existe (boleto que vira N parcelas, sem fatura); falta UI. Encaixa com o importador: um boleto carnê → parcelas.
@@ -112,7 +111,7 @@ parcelado, mas **a tela não expõe**. Ordem sugerida de ataque:
 
 ### Lembrete e automação (reusa o que o boleto já tem)
 - 🟡 **Lembrete de fatura (Telegram)** — avisar quando a fatura fecha e quando vence, no mesmo digest diário do boleto (`app/jobs/lembretes.py`). Evita pagar fatura com juros.
-- 🟡 **Compra recorrente / assinatura no cartão** — Netflix, Spotify: cadastrar uma compra fixa mensal que entra na fatura sozinha (cruza com recorrências e com o "detector de assinaturas" do §8).
+- ✅ **Compra recorrente / assinatura no cartão** (2026-06-13) — recorrência ganhou **forma de pagamento** (conta/cartão/boleto) + cartão alvo (migration `e5a1b3c4d6f7`). Recorrência de cartão vira **compra na fatura** (não prevista de conta): o cron gera sozinho a cada mês (forma-aware) e dá pra **lançar/marcar este mês** na seção Contas fixas (badge de situação + botão). `GET /recorrencias/status`, `POST /recorrencias/{id}/pagar-mes`. E o **boleto importado se liga à conta fixa** (auto pelo beneficiário + select manual no editor da conta a pagar) — resolve "Claude no cartão / aluguel no boleto". Ref `RecorrenciasSection.tsx`, `recorrencia_service.py`, `jobs/recorrencias.py`.
 - 🟢 **Categoria por compra** — categorizar cada compra do cartão (e auto-categoria por descrição, como no boleto).
 
 ### Confiabilidade e conveniência
