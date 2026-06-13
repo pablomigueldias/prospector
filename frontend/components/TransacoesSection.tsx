@@ -30,6 +30,15 @@ function dataCurta(iso: string): string {
   return d && m ? `${d}/${m}` : iso;
 }
 
+/** Transação que está sendo quitada no modal "Pagar". */
+interface PagamentoAlvo {
+  id: string;
+  descricao: string;
+  valor: string;
+  /** Conta já vinculada (prevista lançada com conta) ou null (boleto/recorrência). */
+  contaIdAtual: string | null;
+}
+
 /** Valores que pré-preenchem o LancamentoForm quando se edita uma transação. */
 interface LancamentoInicial {
   id: string;
@@ -152,6 +161,31 @@ export function TransacoesSection({
     }
   }
 
+  // Pagar: quita uma prevista/atrasada (move o saldo). Busca o detalhe pra
+  // saber se já tem conta (boleto/recorrência nascem sem) e abre o modal.
+  const [pagando, setPagando] = useState<PagamentoAlvo | null>(null);
+  const [carregandoPagar, setCarregandoPagar] = useState<string | null>(null);
+
+  async function abrirPagamento(t: TransacaoListItem) {
+    setErroEdicao('');
+    setCarregandoPagar(t.id);
+    try {
+      const det = await api.financasTransacao(t.id);
+      setPagando({
+        id: det.id,
+        descricao: det.descricao,
+        valor: String(det.valor_total),
+        contaIdAtual: det.pagamentos?.[0]?.conta_id ?? null,
+      });
+    } catch (err) {
+      setErroEdicao(
+        err instanceof ApiError ? err.message : 'Falha ao abrir o pagamento.',
+      );
+    } finally {
+      setCarregandoPagar(null);
+    }
+  }
+
   const algumFiltro =
     !soEsteMes || !!tipo || !!contaId || !!categoriaId || !!busca;
 
@@ -263,7 +297,21 @@ export function TransacoesSection({
         onExcluiu={recarregar}
         onEditar={abrirEdicao}
         editandoId={carregandoEdicao}
+        onPagar={abrirPagamento}
+        pagandoId={carregandoPagar}
       />
+
+      {pagando && (
+        <PagarModal
+          contas={contas}
+          alvo={pagando}
+          onClose={() => setPagando(null)}
+          onPaid={() => {
+            setPagando(null);
+            recarregar();
+          }}
+        />
+      )}
 
       {(novoAberto || editando) && (
         <LancamentoForm
@@ -292,6 +340,8 @@ function TransacoesLista({
   onExcluiu,
   onEditar,
   editandoId,
+  onPagar,
+  pagandoId,
 }: {
   transacoes: TransacaoListItem[];
   loading: boolean;
@@ -300,6 +350,9 @@ function TransacoesLista({
   onEditar: (t: TransacaoListItem) => void;
   /** Id da transação cujo detalhe está carregando (pra abrir a edição). */
   editandoId: string | null;
+  onPagar: (t: TransacaoListItem) => void;
+  /** Id da transação cujo detalhe está carregando (pra abrir o pagamento). */
+  pagandoId: string | null;
 }) {
   const [excluindo, setExcluindo] = useState<string | null>(null);
   const [erro, setErro] = useState('');
@@ -384,6 +437,19 @@ function TransacoesLista({
                 {despesa ? '−' : '+'}
                 {formatBRL(t.valor_total)}
               </div>
+              {/* Pagar: quita a prevista/atrasada e move o saldo. */}
+              {t.status !== 'paga' && (
+                <button
+                  type="button"
+                  onClick={() => onPagar(t)}
+                  disabled={pagandoId === t.id}
+                  className="shrink-0 text-[11px] font-medium text-success border border-success-soft hover:bg-success-soft rounded-pill px-2.5 py-1 transition-colors disabled:opacity-50"
+                  title="Marcar como paga (move o saldo)"
+                  aria-label="Pagar transação"
+                >
+                  {pagandoId === t.id ? '…' : '✓ Pagar'}
+                </button>
+              )}
               {/* Editar só faz sentido pra transação de uma conta (sem split). */}
               {(t.contas?.length ?? 0) <= 1 && (
                 <button
@@ -415,6 +481,121 @@ function TransacoesLista({
         {total} {total === 1 ? 'transação' : 'transações'}
       </div>
     </>
+  );
+}
+
+function PagarModal({
+  contas,
+  alvo,
+  onClose,
+  onPaid,
+}: {
+  contas: Conta[];
+  alvo: PagamentoAlvo;
+  onClose: () => void;
+  onPaid: () => void;
+}) {
+  const hojeIso = new Date().toISOString().slice(0, 10);
+  // Boleto importado / recorrência nascem sem conta — aí é preciso escolher.
+  const precisaConta = !alvo.contaIdAtual;
+  const contaAtualNome = contas.find((c) => c.id === alvo.contaIdAtual)?.nome;
+  const [contaId, setContaId] = useState(alvo.contaIdAtual ?? contas[0]?.id ?? '');
+  const [data, setData] = useState(hojeIso);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  async function confirmar(e: FormEvent) {
+    e.preventDefault();
+    setErro('');
+    if (precisaConta && !contaId) return setErro('Escolha a conta.');
+    setSalvando(true);
+    try {
+      await api.financasPagarTransacao(
+        alvo.id,
+        precisaConta ? contaId : undefined,
+        data,
+      );
+      onPaid();
+    } catch (err) {
+      setErro(
+        err instanceof ApiError ? err.message : 'Falha ao registrar o pagamento.',
+      );
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Registrar pagamento">
+      <form onSubmit={confirmar} className="space-y-4">
+        <div className="card bg-bg-alt p-3 flex items-center justify-between">
+          <span className="text-sm text-ink truncate pr-2">{alvo.descricao}</span>
+          <strong className="text-sm text-ink shrink-0">
+            {formatBRL(alvo.valor)}
+          </strong>
+        </div>
+
+        {precisaConta ? (
+          <div>
+            <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+              Pagar com qual conta?
+            </label>
+            <select
+              className="input"
+              value={contaId}
+              onChange={(e) => setContaId(e.target.value)}
+              autoFocus
+            >
+              {contas.length === 0 && <option value="">Nenhuma conta</option>}
+              {contas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="text-[13px] text-ink-soft">
+            Sai de <strong className="text-ink">{contaAtualNome ?? 'conta'}</strong>.
+          </div>
+        )}
+
+        <div>
+          <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+            Data do pagamento
+          </label>
+          <input
+            type="date"
+            className="input"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+          />
+        </div>
+
+        {erro && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {erro}
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-ghost px-4 py-2 text-sm"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={salvando || (precisaConta && !contaId)}
+            className="btn-primary px-5 py-2 text-sm disabled:opacity-50"
+          >
+            {salvando ? 'Registrando…' : 'Confirmar pagamento'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

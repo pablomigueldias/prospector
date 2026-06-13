@@ -483,6 +483,59 @@ async def editar_transacao(
         return _to_response(await repo.get(t.id))
 
 
+async def pagar_transacao(
+    transacao_id: str,
+    *,
+    conta_id: Optional[str] = None,
+    data_pagamento: Optional[date] = None,
+    usuario_id_sessao: str,
+) -> TransacaoResponse:
+    """Marca uma transação prevista/atrasada como **paga**, movendo o saldo.
+
+    - Se já tem pagamento(s) (ex.: prevista lançada com conta), só efetiva:
+      aplica no saldo o valor de cada pagamento existente.
+    - Se não tem nenhum (ex.: boleto importado ou recorrência, que nascem sem
+      conta), exige uma ``conta_id`` e cria o pagamento único com o valor total
+      antes de mexer no saldo.
+    """
+    tid = _uuid(transacao_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    quando = data_pagamento or date.today()
+
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        t = await repo.get(tid)
+        if t is None:
+            raise TransacaoError("Transação não encontrada.")
+        if t.usuario_id != uid:
+            raise TransacaoError("A transação não pertence a esse usuário.")
+        if t.status == "paga":
+            raise TransacaoError("Essa transação já está paga.")
+
+        if t.pagamentos:
+            for p in t.pagamentos:
+                conta = await session.get(Conta, p.conta_id)
+                if conta is not None:
+                    saldo_service.aplicar_movimento(conta, t.tipo, p.valor)
+        else:
+            if not conta_id:
+                raise TransacaoError("Escolha a conta pra registrar o pagamento.")
+            conta = await _buscar_conta(
+                session, _uuid(conta_id, campo="conta_id"), uid
+            )
+            t.pagamentos.append(
+                TransacaoPagamento(conta_id=conta.id, valor=t.valor_total)
+            )
+            saldo_service.aplicar_movimento(conta, t.tipo, t.valor_total)
+
+        t.status = "paga"
+        t.data_pagamento = quando
+
+        await eventos.notificar(session, uid, "transacao_paga")
+        await session.commit()
+        return _to_response(await repo.get(tid))
+
+
 async def excluir_transacao(transacao_id: str) -> None:
     """Remove a transação e reverte o saldo das contas (se estava paga).
     Cascateia pagamentos/itens/comprovantes; zera leituras ligadas."""

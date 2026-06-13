@@ -509,6 +509,27 @@ export const api = {
     );
   },
 
+  /** POST /api/financas/transacoes/{id}/pagar — marca a prevista como paga e
+   *  move o saldo. `contaId` só é exigido quando a transação ainda não tem
+   *  conta (boleto importado / recorrência). */
+  financasPagarTransacao(
+    id: string,
+    contaId?: string,
+    dataPagamento?: string,
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>(
+      `/api/financas/transacoes/${encodeURIComponent(id)}/pagar`,
+      {
+        method: 'POST',
+        body: {
+          conta_id: contaId || null,
+          data_pagamento: dataPagamento || null,
+        },
+        timeoutMs: 10_000,
+      },
+    );
+  },
+
   /** DELETE /api/financas/transacoes/{id} — exclui e reverte saldo (204) */
   financasExcluirTransacao(id: string): Promise<void> {
     return request<void>(`/api/financas/transacoes/${encodeURIComponent(id)}`, {

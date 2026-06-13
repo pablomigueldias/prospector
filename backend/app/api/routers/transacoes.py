@@ -11,6 +11,7 @@ from app.api.schemas.financas import (
     DespesaAutoSplitCreate,
     DespesaCreate,
     DespesaDivididaCreate,
+    PagarTransacaoRequest,
     ReceitaCreate,
     TransacaoListResponse,
     TransacaoResponse,
@@ -135,6 +136,25 @@ async def editar(
 ) -> TransacaoResponse:
     try:
         return await transacao_service.editar_transacao(transacao_id, body, usuario_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/{transacao_id}/pagar", response_model=TransacaoResponse,
+             summary="Marca a transação como paga (move o saldo)",
+             dependencies=[Depends(exige_editar)])
+async def pagar(
+    transacao_id: str,
+    body: PagarTransacaoRequest,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> TransacaoResponse:
+    try:
+        return await transacao_service.pagar_transacao(
+            transacao_id,
+            conta_id=body.conta_id,
+            data_pagamento=body.data_pagamento,
+            usuario_id_sessao=usuario_id,
+        )
     except Exception as e:
         raise _handle(e)
 

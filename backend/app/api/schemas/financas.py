@@ -168,6 +168,14 @@ class TransacaoUpdate(BaseModel):
     status: str = Field("paga", description="prevista/paga/atrasada")
 
 
+class PagarTransacaoRequest(BaseModel):
+    """Quita uma transação prevista/atrasada (move o saldo). ``conta_id`` só é
+    exigido quando a transação ainda não tem conta (boleto importado /
+    recorrência); se já tem pagamento(s), efetiva nas contas existentes."""
+    conta_id: Optional[str] = None
+    data_pagamento: Optional[date] = None
+
+
 class TransacaoItemResponse(BaseModel):
     id: str
     categoria_id: Optional[str] = None
