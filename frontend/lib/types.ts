@@ -560,6 +560,8 @@ export interface Recorrencia {
   frequencia: string;
   categoria_id?: string | null;
   conta_id?: string | null;
+  forma_pagamento: string;
+  cartao_id?: string | null;
   ativa: boolean;
 }
 
@@ -568,6 +570,8 @@ export interface RecorrenciaListResponse {
   total: number;
 }
 
+export type FormaPagamento = 'conta' | 'cartao' | 'boleto';
+
 export interface RecorrenciaCreateInput {
   descricao: string;
   tipo: 'despesa' | 'receita';
@@ -575,6 +579,8 @@ export interface RecorrenciaCreateInput {
   dia_vencimento: number;
   categoria_id?: string | null;
   conta_id?: string | null;
+  forma_pagamento?: FormaPagamento;
+  cartao_id?: string | null;
 }
 
 export interface RecorrenciaUpdateInput {
@@ -584,6 +590,8 @@ export interface RecorrenciaUpdateInput {
   dia_vencimento?: number;
   categoria_id?: string | null;
   conta_id?: string | null;
+  forma_pagamento?: FormaPagamento;
+  cartao_id?: string | null;
   ativa?: boolean;
 }
 

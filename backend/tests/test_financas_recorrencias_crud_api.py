@@ -20,7 +20,7 @@ from tests._financas_auth import limpar_override, usar_usuario
 REC = "/api/financas/recorrencias"
 
 
-async def _cleanup(rec_ids: list[str]) -> None:
+async def _cleanup(rec_ids: list[str], usuario_id: str | None = None) -> None:
     eng = create_async_engine(settings.database_url)
     try:
         async with eng.begin() as conn:
@@ -28,6 +28,11 @@ async def _cleanup(rec_ids: list[str]) -> None:
                 await conn.execute(
                     text("DELETE FROM financas.recorrencias WHERE id = :id"),
                     {"id": rid},
+                )
+            if usuario_id:
+                await conn.execute(
+                    text("DELETE FROM financas.cartoes WHERE usuario_id = :u"),
+                    {"u": usuario_id},
                 )
     finally:
         await eng.dispose()
@@ -87,9 +92,31 @@ def smoke_test() -> None:
             # ── 5. Excluir inexistente → 404 ──────────────────────────
             assert client.delete(f"{REC}/{uuid.uuid4()}").status_code == 404
 
+            # ── 6. Recorrência no cartão (forma_pagamento + cartao_id) ─
+            print("→ Test 4: recorrência paga no cartão")
+            cartao_id = client.post("/api/financas/cartoes", json={
+                "usuario_id": usuario_id, "nome": "Nubank",
+                "dia_fechamento": 20, "dia_vencimento": 10,
+            }).json()["id"]
+            rc = client.post(REC, json={
+                "usuario_id": usuario_id, "descricao": "Claude",
+                "tipo": "despesa", "valor_estimado": 100, "dia_vencimento": 15,
+                "forma_pagamento": "cartao", "cartao_id": cartao_id,
+            })
+            assert rc.status_code == 201, rc.text
+            assert rc.json()["forma_pagamento"] == "cartao"
+            assert rc.json()["cartao_id"] == cartao_id
+            rec_ids.append(rc.json()["id"])
+            # forma inválida → 400
+            assert client.post(REC, json={
+                "usuario_id": usuario_id, "descricao": "X", "valor_estimado": 1,
+                "dia_vencimento": 1, "forma_pagamento": "pix",
+            }).status_code == 400
+            print("   ok: Claude no cartão Nubank; forma inválida → 400")
+
         finally:
             limpar_override()
-            asyncio.run(_cleanup(rec_ids))
+            asyncio.run(_cleanup(rec_ids, usuario_id))
 
     print("\n" + "━" * 60)
     print("TUDO OK — CRUD de recorrências funcionando!")

@@ -1,11 +1,16 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { Modal } from '@/components/Modal';
-import { useCategorias, useRecorrencias } from '@/hooks/useFinancas';
+import { useCartoes, useCategorias, useRecorrencias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
 import { formatBRL } from '@/lib/format';
-import { ApiError, type Conta, type Recorrencia } from '@/lib/types';
+import {
+  ApiError,
+  type Conta,
+  type FormaPagamento,
+  type Recorrencia,
+} from '@/lib/types';
 
 interface Props {
   contas: Conta[];
@@ -146,6 +151,11 @@ function RecorrenciaForm({
   const [dia, setDia] = useState(String(rec?.dia_vencimento ?? 5));
   const [contaId, setContaId] = useState(rec?.conta_id ?? '');
   const [categoriaId, setCategoriaId] = useState(rec?.categoria_id ?? '');
+  const [forma, setForma] = useState<FormaPagamento>(
+    (rec?.forma_pagamento as FormaPagamento) ?? 'conta',
+  );
+  const [cartaoId, setCartaoId] = useState(rec?.cartao_id ?? '');
+  const { cartoes } = useCartoes();
   const [ativa, setAtiva] = useState(rec?.ativa ?? true);
   const [salvando, setSalvando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
@@ -163,9 +173,13 @@ function RecorrenciaForm({
     if (!Number.isInteger(diaNum) || diaNum < 1 || diaNum > 31) {
       return setErro('Dia de vencimento entre 1 e 31.');
     }
+    if (forma === 'cartao' && !cartaoId) {
+      return setErro('Escolha o cartão onde essa conta é cobrada.');
+    }
 
     setSalvando(true);
     try {
+      const cartaoFinal = forma === 'cartao' ? cartaoId || null : null;
       if (editando && rec) {
         await api.financasAtualizarRecorrencia(rec.id, {
           descricao: descricao.trim(),
@@ -174,6 +188,8 @@ function RecorrenciaForm({
           dia_vencimento: diaNum,
           conta_id: contaId || null,
           categoria_id: categoriaId || null,
+          forma_pagamento: forma,
+          cartao_id: cartaoFinal,
           ativa,
         });
       } else {
@@ -184,6 +200,8 @@ function RecorrenciaForm({
           dia_vencimento: diaNum,
           conta_id: contaId || null,
           categoria_id: categoriaId || null,
+          forma_pagamento: forma,
+          cartao_id: cartaoFinal,
         });
       }
       onSaved();
@@ -314,6 +332,55 @@ function RecorrenciaForm({
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+            Forma de pagamento
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                ['conta', 'Conta'],
+                ['cartao', 'Cartão'],
+                ['boleto', 'Boleto'],
+              ] as const
+            ).map(([f, rotulo]) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setForma(f)}
+                className={`py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  forma === f
+                    ? 'border-brand bg-brand-soft text-brand-ink'
+                    : 'border-line text-ink-soft hover:border-ink-mute'
+                }`}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
+          {forma === 'cartao' && (
+            <select
+              className="input mt-2"
+              value={cartaoId}
+              onChange={(e) => setCartaoId(e.target.value)}
+            >
+              <option value="">Escolha o cartão…</option>
+              {cartoes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          )}
+          <p className="text-[12px] text-ink-mute mt-1.5 m-0">
+            {forma === 'cartao'
+              ? 'Ao marcar paga, vira uma compra na fatura desse cartão.'
+              : forma === 'boleto'
+                ? 'Paga por boleto — pode ligar ao boleto importado do mês.'
+                : 'Débito direto na conta ao marcar como paga.'}
+          </p>
         </div>
 
         {editando && (

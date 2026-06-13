@@ -12,9 +12,10 @@ from app.api.schemas.financas import (
     RecorrenciaResponse,
     RecorrenciaUpdate,
 )
+from app.db.models.financas.cartao import Cartao
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
-from app.db.models.financas.recorrencia import Recorrencia
+from app.db.models.financas.recorrencia import FORMAS_PAGAMENTO, Recorrencia
 from app.db.models.financas.transacao import Transacao
 from app.db.session import get_session
 
@@ -47,6 +48,8 @@ def _to_response(r: Recorrencia) -> RecorrenciaResponse:
         frequencia=r.frequencia,
         categoria_id=str(r.categoria_id) if r.categoria_id else None,
         conta_id=str(r.conta_id) if r.conta_id else None,
+        forma_pagamento=r.forma_pagamento,
+        cartao_id=str(r.cartao_id) if r.cartao_id else None,
         ativa=r.ativa,
         created_at=_iso(r.created_at),
         updated_at=_iso(r.updated_at),
@@ -60,6 +63,10 @@ async def criar_recorrencia(payload: RecorrenciaCreate) -> RecorrenciaResponse:
         raise RecorrenciaError(
             f"Tipo inválido: {payload.tipo!r}. Use 'despesa' ou 'receita'."
         )
+    if payload.forma_pagamento not in FORMAS_PAGAMENTO:
+        raise RecorrenciaError(
+            f"Forma de pagamento inválida: {payload.forma_pagamento!r}."
+        )
 
     usuario_id = _uuid(payload.usuario_id, campo="usuario_id")
     categoria_id = (
@@ -67,6 +74,7 @@ async def criar_recorrencia(payload: RecorrenciaCreate) -> RecorrenciaResponse:
         if payload.categoria_id else None
     )
     conta_id = _uuid(payload.conta_id, campo="conta_id") if payload.conta_id else None
+    cartao_id = _uuid(payload.cartao_id, campo="cartao_id") if payload.cartao_id else None
 
     async with get_session() as session:
         if categoria_id and await session.get(Categoria, categoria_id) is None:
@@ -77,6 +85,12 @@ async def criar_recorrencia(payload: RecorrenciaCreate) -> RecorrenciaResponse:
                 raise RecorrenciaError("Conta não encontrada.")
             if conta.usuario_id != usuario_id:
                 raise RecorrenciaError("A conta não pertence a esse usuário.")
+        if cartao_id is not None:
+            cartao = await session.get(Cartao, cartao_id)
+            if cartao is None:
+                raise RecorrenciaError("Cartão não encontrado.")
+            if cartao.usuario_id != usuario_id:
+                raise RecorrenciaError("O cartão não pertence a esse usuário.")
 
         rec = Recorrencia(
             usuario_id=usuario_id,
@@ -87,6 +101,8 @@ async def criar_recorrencia(payload: RecorrenciaCreate) -> RecorrenciaResponse:
             frequencia=payload.frequencia,
             categoria_id=categoria_id,
             conta_id=conta_id,
+            forma_pagamento=payload.forma_pagamento,
+            cartao_id=cartao_id,
         )
         session.add(rec)
         await session.commit()
@@ -147,6 +163,10 @@ async def atualizar_recorrencia(
         if not dados["descricao"].strip():
             raise RecorrenciaError("A descrição não pode ficar vazia.")
         dados["descricao"] = dados["descricao"].strip()
+    if dados.get("forma_pagamento") and dados["forma_pagamento"] not in FORMAS_PAGAMENTO:
+        raise RecorrenciaError(
+            f"Forma de pagamento inválida: {dados['forma_pagamento']!r}."
+        )
 
     async with get_session() as session:
         rec = await session.get(Recorrencia, _uuid(recorrencia_id))
@@ -166,6 +186,14 @@ async def atualizar_recorrencia(
             if conta.usuario_id != rec.usuario_id:
                 raise RecorrenciaError("A conta não pertence a esse usuário.")
             dados["conta_id"] = coid
+        if dados.get("cartao_id"):
+            caid = _uuid(dados["cartao_id"], campo="cartao_id")
+            cartao = await session.get(Cartao, caid)
+            if cartao is None:
+                raise RecorrenciaError("Cartão não encontrado.")
+            if cartao.usuario_id != rec.usuario_id:
+                raise RecorrenciaError("O cartão não pertence a esse usuário.")
+            dados["cartao_id"] = caid
 
         for campo, valor in dados.items():
             setattr(rec, campo, valor)

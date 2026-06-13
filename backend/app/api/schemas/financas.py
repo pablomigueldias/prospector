@@ -428,6 +428,8 @@ class RecorrenciaCreate(BaseModel):
     dia_vencimento: int = Field(..., ge=1, le=31)
     categoria_id: Optional[str] = None
     conta_id: Optional[str] = None
+    forma_pagamento: str = Field("conta", description="conta/cartao/boleto")
+    cartao_id: Optional[str] = None
     frequencia: str = "mensal"
 
 
@@ -438,6 +440,8 @@ class RecorrenciaUpdate(BaseModel):
     dia_vencimento: Optional[int] = Field(None, ge=1, le=31)
     categoria_id: Optional[str] = None
     conta_id: Optional[str] = None
+    forma_pagamento: Optional[str] = None
+    cartao_id: Optional[str] = None
     ativa: Optional[bool] = None
 
 
@@ -451,6 +455,8 @@ class RecorrenciaResponse(BaseModel):
     frequencia: str
     categoria_id: Optional[str] = None
     conta_id: Optional[str] = None
+    forma_pagamento: str = "conta"
+    cartao_id: Optional[str] = None
     ativa: bool
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

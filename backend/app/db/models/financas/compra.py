@@ -49,6 +49,17 @@ class Compra(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("financas.categorias.id", ondelete="SET NULL"),
         nullable=True,
     )
+    # Quando a compra é a ocorrência mensal de uma recorrência no cartão
+    # (ex.: assinatura). Liga pro mês não duplicar e pra rastrear o vínculo.
+    recorrencia_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey(
+            "financas.recorrencias.id",
+            ondelete="SET NULL",
+            name="fk_fin_compras_recorrencia",
+        ),
+        nullable=True,
+    )
 
     parcelas: Mapped[List["Parcela"]] = relationship(
         back_populates="compra",
