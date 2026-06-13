@@ -10,7 +10,7 @@ import {
 } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
-import { formatBRL } from '@/lib/format';
+import { formatBRL, formatMesAno } from '@/lib/format';
 import {
   ApiError,
   type Cartao,
@@ -86,6 +86,16 @@ function CartaoCard({
   const [faturaAberta, setFaturaAberta] = useState<Fatura | null>(null);
   const abertas = (dados?.faturas ?? []).filter((f) => f.status !== 'paga');
 
+  // Limite / disponível: o "em aberto" já soma todas as faturas não pagas
+  // (inclui as parcelas dos próximos meses), então é o comprometido.
+  const limite = cartao.limite ? Number(cartao.limite) : null;
+  const emAberto = Number(dados?.total_em_aberto ?? 0);
+  const disponivel = limite != null ? limite - emAberto : null;
+  const usoPct =
+    limite != null && limite > 0
+      ? Math.min(100, Math.max(0, (emAberto / limite) * 100))
+      : null;
+
   return (
     <div className={`card p-4 ${!cartao.ativo ? 'opacity-60' : ''}`}>
       <div className="flex items-baseline justify-between mb-3">
@@ -123,26 +133,52 @@ function CartaoCard({
         )}
       </div>
 
-      <div className="flex items-baseline gap-1.5 mb-3">
+      <div className="flex items-baseline gap-1.5 mb-1">
         <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-ink-mute">
           em aberto
         </span>
         <span className="font-display font-semibold tracking-tight text-lg text-ink">
-          {loading ? '…' : formatBRL(dados?.total_em_aberto)}
+          {loading ? '…' : formatBRL(emAberto)}
         </span>
-        {cartao.limite && (
-          <span className="ml-auto text-[11.5px] text-ink-mute">
-            limite {formatBRL(cartao.limite)}
+        {disponivel != null && (
+          <span
+            className={`ml-auto text-[11.5px] ${
+              disponivel < 0 ? 'text-red-600' : 'text-ink-mute'
+            }`}
+          >
+            {disponivel < 0 ? 'estourou ' : 'disponível '}
+            {formatBRL(Math.abs(disponivel))}
           </span>
         )}
       </div>
 
+      {usoPct != null && (
+        <div className="mb-3">
+          <div className="h-1.5 rounded-full bg-line-soft overflow-hidden">
+            <div
+              className={`h-full rounded-full ${
+                usoPct >= 100 ? 'bg-red-500' : usoPct >= 80 ? 'bg-brand-deep' : 'bg-brand'
+              }`}
+              style={{ width: `${usoPct}%` }}
+            />
+          </div>
+          <div className="font-mono uppercase tracking-[0.1em] text-[9px] text-ink-mute mt-1">
+            {Math.round(usoPct)}% de {formatBRL(limite!)}
+          </div>
+        </div>
+      )}
+
       {abertas.length > 0 && (
-        <ul className="m-0 p-0 list-none flex flex-col gap-1.5 border-t border-line-soft pt-3">
-          {abertas.slice(0, 4).map((f) => (
-            <FaturaRow key={f.id} fatura={f} onAbrir={() => setFaturaAberta(f)} />
-          ))}
-        </ul>
+        <div className="border-t border-line-soft pt-3">
+          <div className="font-mono uppercase tracking-[0.1em] text-[9px] text-ink-mute mb-1.5">
+            próximas faturas
+          </div>
+          <ul className="m-0 p-0 list-none flex flex-col gap-1.5">
+            {abertas.slice(0, 4).map((f) => (
+              <FaturaRow key={f.id} fatura={f} onAbrir={() => setFaturaAberta(f)} />
+            ))}
+          </ul>
+        </div>
       )}
 
       <div className="flex justify-end mt-3 pt-3 border-t border-line-soft">
@@ -182,6 +218,9 @@ function CartaoCard({
 }
 
 function FaturaRow({ fatura, onAbrir }: { fatura: Fatura; onAbrir: () => void }) {
+  // mes_referencia vem como "YYYY-MM-01" → rótulo "Mês/Ano".
+  const [a, m] = fatura.mes_referencia.split('-').map(Number);
+  const rotuloMes = a && m ? formatMesAno(a, m) : fatura.mes_referencia;
   return (
     <li>
       <button
@@ -191,10 +230,8 @@ function FaturaRow({ fatura, onAbrir }: { fatura: Fatura; onAbrir: () => void })
         title="Ver o extrato da fatura"
       >
         <span className="text-ink-soft">
-          vence {fatura.vencimento}
-          <span className="ml-2 font-mono text-[10px] uppercase tracking-wide text-ink-mute">
-            {fatura.status}
-          </span>
+          {rotuloMes}
+          <span className="ml-2 text-[11px] text-ink-mute">vence {fatura.vencimento}</span>
         </span>
         <span className="text-ink tabular-nums">{formatBRL(fatura.valor_total)}</span>
       </button>

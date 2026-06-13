@@ -59,8 +59,7 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 > `FINANCAS_FEITO.md` §3d). Falta:
 
 - 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` já existe (boleto carnê → N parcelas, sem fatura); falta UI. Encaixa com o importador.
-- 🟡 **Projeção das próximas faturas** — "quanto já está comprometido nos próximos meses" (soma das parcelas futuras por mês). Ajuda a não se enrolar.
-- 🟡 **Limite e disponível** — o cartão já tem campo `limite`; falta mostrar quanto já foi usado / quanto sobra.
+- 🟡 **Projeção das próximas faturas (avançada)** — o card já lista as próximas faturas com mês e total (projeção básica); falta uma visão consolidada "comprometido por mês nos próximos N meses" somando parcelas futuras de todos os cartões.
 - 🟡 **Lembrete de fatura (Telegram)** — avisar quando a fatura fecha e quando vence, no mesmo digest diário do boleto (`app/jobs/lembretes.py`). Evita pagar fatura com juros.
 - 🟢 **Categoria por compra** — categorizar cada compra do cartão (e auto-categoria por descrição, como no boleto).
 - 🟢 **Importar fatura (PDF/CSV)** — ler a fatura inteira do banco e gerar as compras/parcelas de uma vez, conciliando (§9).
