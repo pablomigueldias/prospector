@@ -804,6 +804,15 @@ export interface LeituraConsumoListResponse {
   total: number;
 }
 
+export interface LeituraCreateInput {
+  tipo: 'agua' | 'gas' | 'luz';
+  mes_referencia: string;
+  leitura_atual: string;
+  leitura_anterior?: string | null;
+  consumo?: string | null;
+  valor?: string | null;
+}
+
 export interface Comprovante {
   id: string;
   usuario_id: string;

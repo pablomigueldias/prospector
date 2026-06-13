@@ -42,7 +42,6 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 - 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`): boleto que vira N parcelas mensais (sem fatura). Ausente no front. (Ver também §3d.)
 - 🟡 **Despesa dividida (split por N contas)** — `POST /api/financas/transacoes/despesa/dividida`: pagar uma despesa com mais de uma conta (ex.: metade VR, metade dinheiro). O form só faz conta única. *(É o que destrava editar transações divididas.)*
 - 🟡 **Despesa auto-split VR/VA** — `POST /api/financas/transacoes/despesa/auto-split`: esgota o VR e joga o resto no dinheiro automaticamente.
-- 🟡 **Registrar leitura de consumo pela web** — `POST /api/financas/leituras`: a `ConsumoSection` só **lê**; não dá pra lançar a leitura de água/gás/luz manualmente (hoje só chega via boleto de condomínio).
 - 🟢 **Linguagem natural no dashboard** — `POST /api/financas/nlu/interpretar`: uma caixa "digite o gasto" na tela usando o mesmo NLU do bot, caindo num card de confirmação. Casa com o §8.
 - 🟢 **Processar recorrências manualmente** — `POST /api/financas/recorrencias/processar`: um botão "gerar previstas / marcar atrasadas" na seção Contas fixas (o cron diário já roda; é só conveniência).
 - 🟢 **Detalhe de compra parcelada** — `GET /api/financas/compras/{id}`: ver as parcelas de uma compra específica (o extrato da fatura já mostra item a item; isto é a visão por compra).

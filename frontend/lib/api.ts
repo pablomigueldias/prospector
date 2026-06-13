@@ -53,6 +53,8 @@ import type {
   Fatura,
   PagarFaturaInput,
   LeituraConsumoListResponse,
+  LeituraConsumo,
+  LeituraCreateInput,
   Comprovante,
   ComprovanteListResponse,
   ImportarBoletoResponse,
@@ -456,6 +458,14 @@ export const api = {
     const q = new URLSearchParams({ usuario_id: usuarioId });
     if (tipo) q.set('tipo', tipo);
     return request<LeituraConsumoListResponse>(`/api/financas/leituras?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCriarLeitura(body: LeituraCreateInput): Promise<LeituraConsumo> {
+    return request<LeituraConsumo>('/api/financas/leituras', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
       timeoutMs: 10_000,
     });
   },

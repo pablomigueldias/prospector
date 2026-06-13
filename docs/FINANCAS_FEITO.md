@@ -28,6 +28,7 @@ Serve de histórico e de referência de onde cada coisa mora no código.
 
 - ✅ **Importar boleto por foto/PDF pela web** (2026-06-13) — seção **Importar boleto**: arrasta/escolhe um PDF/foto, a IA lê as verbas e cria a despesa **prevista** (ou guarda pra revisão). Categoria opcional. `POST /api/financas/importar/boleto`. Ref `ImportarBoletoSection.tsx`.
 - ✅ **Marcar prevista como paga pela tela** (2026-06-13) — botão **✓ Pagar** em toda transação não-paga; modal escolhe a conta quando não tem e move o saldo. `POST /api/financas/transacoes/{id}/pagar`. Fecha o furo do importador.
+- ✅ **Registrar leitura de consumo pela web** (2026-06-13) — a `ConsumoSection` ganhou **+ Registrar leitura**: modal com tipo (água/gás/luz), mês, leitura atual/anterior e valor opcional (mostra a prévia do consumo). `POST /api/financas/leituras` (já existia, só faltava UI). Ref `ConsumoSection.tsx`.
 
 ## 3c. Boletos profissionais
 
