@@ -208,6 +208,21 @@ def smoke_test() -> None:
             assert float(c4["multa_percentual"]) == 2, c4  # persistiu
             print(f"   informado no pagamento → encargos {c4['encargos_pagos']}")
 
+            # ══ Caminho 5: pagar valor diferente (acordo/desconto) ══════
+            print("\n→ Test 9: pagar valor diferente do boleto (valor_pago)")
+            tx5 = str(uuid.uuid4())
+            asyncio.run(_inserir_prevista_sem_conta(usuario_id, tx5, 100))
+            tx_ids.append(tx5)
+            saldo5 = _saldo(client, conta_id)
+            rp5 = client.post(f"{TX}/{tx5}/pagar", json={
+                "conta_id": conta_id, "valor_pago": 90,  # pagou 90 em vez de 100
+            })
+            assert rp5.status_code == 200, rp5.text
+            c5 = rp5.json()
+            assert float(c5["valor_total"]) == 90, c5["valor_total"]
+            assert round(saldo5 - _saldo(client, conta_id), 2) == 90.0
+            print(f"   pagou {c5['valor_total']} (boleto era 100)")
+
         finally:
             limpar_override()
             asyncio.run(_cleanup(conta_ids, tx_ids))

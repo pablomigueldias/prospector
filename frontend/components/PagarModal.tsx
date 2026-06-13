@@ -46,6 +46,8 @@ export function PagarModal({
     v == null || v === '' ? '' : String(v);
   const [multaPct, setMultaPct] = useState(pctInicial(alvo.multaPct));
   const [jurosPct, setJurosPct] = useState(pctInicial(alvo.jurosPct));
+  const [ajustar, setAjustar] = useState(false);
+  const [valorPago, setValorPago] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -57,7 +59,10 @@ export function PagarModal({
     () => calcularEncargos(alvo.valor, alvo.vencimento, multaPct, jurosPct, data),
     [alvo.valor, alvo.vencimento, multaPct, jurosPct, data],
   );
-  const totalComEncargos = Number(alvo.valor) + enc.total;
+  const totalCalculado = Number(alvo.valor) + enc.total;
+  const valorPagoNum = Number(valorPago.replace(',', '.'));
+  const ajusteValido = ajustar && Number.isFinite(valorPagoNum) && valorPagoNum > 0;
+  const totalComEncargos = ajusteValido ? valorPagoNum : totalCalculado;
 
   async function confirmar(e: FormEvent) {
     e.preventDefault();
@@ -71,6 +76,8 @@ export function PagarModal({
         // Salva os encargos informados (só quando há vencimento pra aplicar).
         multaPercentual: temVencimento && multaPct !== '' ? multaPct : null,
         jurosMensalPercentual: temVencimento && jurosPct !== '' ? jurosPct : null,
+        // Valor manual sobrescreve o total calculado (acordo/desconto).
+        valorPago: ajusteValido ? String(valorPagoNum) : null,
       });
       onPaid();
     } catch (err) {
@@ -110,7 +117,7 @@ export function PagarModal({
           )}
           <div className="mt-2 pt-2 border-t border-line flex items-center justify-between">
             <span className="text-[13px] font-medium text-ink">
-              {enc.total > 0 ? 'Total a pagar' : 'Valor'}
+              {ajusteValido ? 'Valor pago (ajustado)' : enc.total > 0 ? 'Total a pagar' : 'Valor'}
             </span>
             <strong className="text-sm text-ink">{formatBRL(totalComEncargos)}</strong>
           </div>
@@ -195,6 +202,32 @@ export function PagarModal({
             </p>
           </details>
         )}
+
+        <div>
+          <label className="flex items-center gap-2 text-[12.5px] text-ink-soft cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={ajustar}
+              onChange={(e) => {
+                setAjustar(e.target.checked);
+                if (e.target.checked && valorPago === '') {
+                  setValorPago(totalCalculado.toFixed(2));
+                }
+              }}
+            />
+            Paguei um valor diferente (acordo, desconto, arredondamento)
+          </label>
+          {ajustar && (
+            <input
+              className="input mt-2"
+              value={valorPago}
+              onChange={(e) => setValorPago(e.target.value)}
+              inputMode="decimal"
+              placeholder="valor pago"
+              autoFocus
+            />
+          )}
+        </div>
 
         {erro && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">

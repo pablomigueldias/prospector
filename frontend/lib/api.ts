@@ -535,6 +535,7 @@ export const api = {
       dataPagamento?: string;
       multaPercentual?: string | null;
       jurosMensalPercentual?: string | null;
+      valorPago?: string | null;
     } = {},
   ): Promise<TransacaoResponse> {
     return request<TransacaoResponse>(
@@ -546,6 +547,7 @@ export const api = {
           data_pagamento: opts.dataPagamento || null,
           multa_percentual: opts.multaPercentual ?? null,
           juros_mensal_percentual: opts.jurosMensalPercentual ?? null,
+          valor_pago: opts.valorPago ?? null,
         },
         timeoutMs: 10_000,
       },

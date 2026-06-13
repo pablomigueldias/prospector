@@ -565,6 +565,7 @@ async def pagar_transacao(
     data_pagamento: Optional[date] = None,
     multa_percentual: Optional[Decimal] = None,
     juros_mensal_percentual: Optional[Decimal] = None,
+    valor_pago: Optional[Decimal] = None,
     usuario_id_sessao: str,
 ) -> TransacaoResponse:
     """Marca uma transação prevista/atrasada como **paga**, movendo o saldo.
@@ -596,37 +597,46 @@ async def pagar_transacao(
         if juros_mensal_percentual is not None:
             t.juros_mensal_percentual = juros_mensal_percentual
 
-        # Multa + juros até a data do pagamento (0 se no prazo / sem encargos).
-        # Não aplica em despesa dividida (mais de uma conta) — caso raro de boleto.
-        enc = encargos_service.calcular_encargos(
-            t.valor_total, t.data_vencimento, t.multa_percentual,
-            t.juros_mensal_percentual, quando,
-        )
-        aplica_enc = enc > 0 and len(t.pagamentos) <= 1
+        # Encargos/valor manual só fazem sentido num pagamento único (não em
+        # despesa dividida em várias contas, caso raro de boleto).
+        unico = len(t.pagamentos) <= 1
 
-        if t.pagamentos:
-            if aplica_enc:
-                t.pagamentos[0].valor = Decimal(t.pagamentos[0].valor) + enc
-                t.valor_total = Decimal(t.valor_total) + enc
-                t.encargos_pagos = enc
-            for p in t.pagamentos:
-                conta = await session.get(Conta, p.conta_id)
-                if conta is not None:
-                    saldo_service.aplicar_movimento(conta, t.tipo, p.valor)
-        else:
+        # Conta destino: se ainda não tem pagamento (boleto/recorrência), exige.
+        nova_conta = None
+        if not t.pagamentos:
             if not conta_id:
                 raise TransacaoError("Escolha a conta pra registrar o pagamento.")
-            conta = await _buscar_conta(
+            nova_conta = await _buscar_conta(
                 session, _uuid(conta_id, campo="conta_id"), uid
             )
-            total = Decimal(t.valor_total) + (enc if aplica_enc else Decimal("0"))
-            t.pagamentos.append(
-                TransacaoPagamento(conta_id=conta.id, valor=total)
+
+        if unico:
+            enc = encargos_service.calcular_encargos(
+                t.valor_total, t.data_vencimento, t.multa_percentual,
+                t.juros_mensal_percentual, quando,
             )
-            if aplica_enc:
-                t.valor_total = total
+            if valor_pago is not None and valor_pago > 0:
+                # Valor manual manda — total exato que saiu da conta.
+                total_final = Decimal(valor_pago)
+                t.encargos_pagos = None
+            elif enc > 0:
+                total_final = Decimal(t.valor_total) + enc
                 t.encargos_pagos = enc
-            saldo_service.aplicar_movimento(conta, t.tipo, total)
+            else:
+                total_final = Decimal(t.valor_total)
+            t.valor_total = total_final
+            if t.pagamentos:
+                t.pagamentos[0].valor = total_final
+            else:
+                t.pagamentos.append(
+                    TransacaoPagamento(conta_id=nova_conta.id, valor=total_final)
+                )
+
+        # Aplica no saldo o valor de cada pagamento (já com o ajuste acima).
+        for p in t.pagamentos:
+            conta = await session.get(Conta, p.conta_id)
+            if conta is not None:
+                saldo_service.aplicar_movimento(conta, t.tipo, p.valor)
 
         t.status = "paga"
         t.data_pagamento = quando

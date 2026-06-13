@@ -199,6 +199,9 @@ class PagarTransacaoRequest(BaseModel):
     data_pagamento: Optional[date] = None
     multa_percentual: Optional[Decimal] = None
     juros_mensal_percentual: Optional[Decimal] = None
+    # Valor realmente pago — sobrescreve o total calculado (valor + encargos).
+    # Pra acordo/desconto/arredondamento; o saldo desce por esse valor.
+    valor_pago: Optional[Decimal] = None
 
 
 class TransacaoItemResponse(BaseModel):
