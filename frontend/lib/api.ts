@@ -512,6 +512,15 @@ export const api = {
     );
   },
 
+  /** POST /api/financas/transacoes/{id}/tornar-recorrente — cria uma conta
+   *  fixa (recorrência) a partir do boleto e liga a transação a ela. */
+  financasTornarRecorrente(id: string): Promise<Recorrencia> {
+    return request<Recorrencia>(
+      `/api/financas/transacoes/${encodeURIComponent(id)}/tornar-recorrente`,
+      { method: 'POST', timeoutMs: 10_000 },
+    );
+  },
+
   /** GET /api/financas/transacoes/{id}/sugestao-conta — conta sugerida pra
    *  pagar (a última usada com o mesmo beneficiário). */
   financasSugestaoConta(

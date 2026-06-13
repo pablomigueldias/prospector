@@ -14,19 +14,21 @@ from app.api.schemas.financas import (
     PagarTransacaoRequest,
     PrevistaUpdate,
     ReceitaCreate,
+    RecorrenciaResponse,
     SugestaoContaResponse,
     TransacaoListResponse,
     TransacaoResponse,
     TransacaoUpdate,
 )
-from app.api.services.financas import transacao_service
+from app.api.services.financas import recorrencia_service, transacao_service
+from app.api.services.financas.recorrencia_service import RecorrenciaError
 from app.api.services.financas.transacao_service import TransacaoError
 
 router = APIRouter(prefix="/api/financas/transacoes", tags=["financas:transacoes"])
 
 
 def _handle(e: Exception) -> HTTPException:
-    if isinstance(e, TransacaoError):
+    if isinstance(e, (TransacaoError, RecorrenciaError)):
         msg = str(e)
         status = 404 if "não encontrad" in msg.lower() else 400
         return HTTPException(status_code=status, detail=msg)
@@ -156,6 +158,23 @@ async def sugestao_conta(
     try:
         return SugestaoContaResponse(
             **await transacao_service.sugestao_conta_pagamento(transacao_id, usuario_id)
+        )
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/{transacao_id}/tornar-recorrente", response_model=RecorrenciaResponse,
+             status_code=201,
+             summary="Cria uma conta fixa (recorrência) a partir do boleto",
+             dependencies=[Depends(exige_editar)])
+async def tornar_recorrente(
+    transacao_id: str,
+    dia_vencimento: Optional[int] = None,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> RecorrenciaResponse:
+    try:
+        return await recorrencia_service.tornar_recorrente(
+            transacao_id, usuario_id, dia_vencimento
         )
     except Exception as e:
         raise _handle(e)

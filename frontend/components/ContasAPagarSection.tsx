@@ -76,6 +76,29 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
   const [editando, setEditando] = useState<TransacaoResponse | null>(null);
   const [carregandoEditar, setCarregandoEditar] = useState<string | null>(null);
 
+  const [recorrendo, setRecorrendo] = useState<string | null>(null);
+
+  async function tornarRecorrente(t: TransacaoListItem) {
+    if (
+      !window.confirm(
+        `Transformar "${t.descricao}" em conta fixa mensal? ` +
+          'Toda mês o sistema vai gerar essa conta a pagar automaticamente.',
+      )
+    ) {
+      return;
+    }
+    setErro('');
+    setRecorrendo(t.id);
+    try {
+      await api.financasTornarRecorrente(t.id);
+      recarregar();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Falha ao tornar recorrente.');
+    } finally {
+      setRecorrendo(null);
+    }
+  }
+
   async function abrirEdicao(t: TransacaoListItem) {
     setErro('');
     setCarregandoEditar(t.id);
@@ -248,6 +271,16 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
                   </span>
                 ) : (
                   <>
+                    <button
+                      type="button"
+                      onClick={() => tornarRecorrente(t)}
+                      disabled={recorrendo === t.id}
+                      className="shrink-0 text-ink-faint hover:text-brand text-sm px-1 disabled:opacity-50"
+                      title="Tornar conta fixa (recorrência mensal)"
+                      aria-label="Tornar recorrente"
+                    >
+                      {recorrendo === t.id ? '…' : '↻'}
+                    </button>
                     <button
                       type="button"
                       onClick={() => abrirEdicao(t)}

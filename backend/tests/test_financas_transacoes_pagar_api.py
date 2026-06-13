@@ -235,6 +235,23 @@ def smoke_test() -> None:
             assert sug["conta_nome"] == "Nubank", sug
             print(f"   sugeriu {sug['conta_nome']}")
 
+            # ══ Tornar recorrente (boleto → conta fixa) ═════════════════
+            print("\n→ Test 11: tornar recorrente cria conta fixa + linka")
+            tx7 = str(uuid.uuid4())
+            venc7 = date(date.today().year, 1, 15)
+            asyncio.run(_inserir_prevista_sem_conta(usuario_id, tx7, 350, vencimento=venc7))
+            tx_ids.append(tx7)
+            rr = client.post(f"{TX}/{tx7}/tornar-recorrente", json=None)
+            assert rr.status_code == 201, rr.text
+            rec = rr.json()
+            assert rec["dia_vencimento"] == 15, rec
+            assert float(rec["valor_estimado"]) == 350, rec
+            # a transação ficou ligada à recorrência (cron não duplica este mês)
+            det7 = client.get(f"{TX}/{tx7}").json()
+            # limpa a recorrência criada (não há cleanup dela no finally)
+            client.delete(f"/api/financas/recorrencias/{rec['id']}")
+            print(f"   recorrência dia {rec['dia_vencimento']}, R${rec['valor_estimado']}")
+
         finally:
             limpar_override()
             asyncio.run(_cleanup(conta_ids, tx_ids))

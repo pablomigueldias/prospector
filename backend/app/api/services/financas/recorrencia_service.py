@@ -15,6 +15,7 @@ from app.api.schemas.financas import (
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
 from app.db.models.financas.recorrencia import Recorrencia
+from app.db.models.financas.transacao import Transacao
 from app.db.session import get_session
 
 TIPOS_RECORRENCIA = ("despesa", "receita")
@@ -88,6 +89,46 @@ async def criar_recorrencia(payload: RecorrenciaCreate) -> RecorrenciaResponse:
             conta_id=conta_id,
         )
         session.add(rec)
+        await session.commit()
+        await session.refresh(rec)
+        return _to_response(rec)
+
+
+async def tornar_recorrente(
+    transacao_id: str, usuario_id_sessao: str, dia_vencimento: Optional[int] = None
+) -> RecorrenciaResponse:
+    """Cria uma conta fixa (recorrência) a partir de uma transação/boleto e
+    liga a transação atual à recorrência, pra o cron não gerar uma 2ª prevista
+    deste mês. O dia de vencimento vem do boleto (ou do informado)."""
+    from datetime import date
+
+    tid = _uuid(transacao_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    async with get_session() as session:
+        t = await session.get(Transacao, tid)
+        if t is None:
+            raise RecorrenciaError("Transação não encontrada.")
+        if t.usuario_id != uid:
+            raise RecorrenciaError("A transação não pertence a esse usuário.")
+
+        dia = dia_vencimento or (
+            t.data_vencimento.day if t.data_vencimento else date.today().day
+        )
+        dia = max(1, min(int(dia), 31))
+
+        rec = Recorrencia(
+            usuario_id=uid,
+            descricao=t.descricao,
+            tipo=t.tipo,
+            valor_estimado=t.valor_total,
+            dia_vencimento=dia,
+            frequencia="mensal",
+            categoria_id=t.categoria_id,
+        )
+        session.add(rec)
+        await session.flush()
+        # Liga a transação à recorrência → idempotência do cron neste mês.
+        t.recorrencia_id = rec.id
         await session.commit()
         await session.refresh(rec)
         return _to_response(rec)
