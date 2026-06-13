@@ -28,6 +28,7 @@ from app.api.services.financas import encargos as encargos_service
 from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
+from app.db.models.financas.recorrencia import Recorrencia
 from app.db.models.financas.transacao import STATUS_TRANSACAO, Transacao
 from app.db.models.financas.transacao_item import TransacaoItem
 from app.db.models.financas.transacao_pagamento import TransacaoPagamento
@@ -69,6 +70,7 @@ def _to_response(t: Transacao) -> TransacaoResponse:
         status=t.status,
         origem=t.origem,
         categoria_id=str(t.categoria_id) if t.categoria_id else None,
+        recorrencia_id=str(t.recorrencia_id) if t.recorrencia_id else None,
         notas=t.notas,
         itens=[
             TransacaoItemResponse(
@@ -452,6 +454,7 @@ async def listar_transacoes(
                 status=t.status,
                 categoria_id=str(t.categoria_id) if t.categoria_id else None,
                 categoria_nome=cat_nome.get(t.categoria_id),
+                recorrencia_id=str(t.recorrencia_id) if t.recorrencia_id else None,
                 contas=[contas_nome.get(p.conta_id, "?") for p in t.pagamentos],
             )
             for t in itens
@@ -581,6 +584,19 @@ async def editar_prevista(
                 t.itens.append(
                     TransacaoItem(descricao=it.descricao, valor=it.valor)
                 )
+        # Vínculo com a conta fixa: só mexe se o campo foi enviado (None = solta).
+        if "recorrencia_id" in payload.model_fields_set:
+            rid = (
+                _uuid(payload.recorrencia_id, campo="recorrencia_id")
+                if payload.recorrencia_id else None
+            )
+            if rid is not None:
+                rec = await session.get(Recorrencia, rid)
+                if rec is None:
+                    raise TransacaoError("Recorrência não encontrada.")
+                if rec.usuario_id != uid:
+                    raise TransacaoError("A recorrência não pertence a esse usuário.")
+            t.recorrencia_id = rid
 
         await eventos.notificar(session, uid, "transacao_editada")
         await session.commit()

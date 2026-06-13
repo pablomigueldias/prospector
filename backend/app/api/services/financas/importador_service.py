@@ -108,6 +108,16 @@ async def importar_boleto(
             )
             auto_categoria = categoria_final is not None
 
+        # Liga o boleto à conta fixa (recorrência) desse beneficiário, se houver
+        # — assim o aluguel importado já conta como a recorrência do mês.
+        recorrencia_match = None
+        auto_recorrencia = False
+        if existente is None and criar:
+            recorrencia_match = await repo.recorrencia_para_descricao(
+                uid, extraido.beneficiario
+            )
+            auto_recorrencia = recorrencia_match is not None
+
         if existente is not None:
             duplicado = True
             transacao_id = existente.id
@@ -128,6 +138,7 @@ async def importar_boleto(
                 status="prevista",          # boleto importado = a pagar
                 origem="importacao_boleto",
                 categoria_id=categoria_final,
+                recorrencia_id=recorrencia_match,
                 itens=[
                     TransacaoItem(descricao=v.descricao, valor=v.valor)
                     for v in extraido.verbas
@@ -179,6 +190,8 @@ async def importar_boleto(
 
     if auto_categoria:
         msg += " Categoria reaproveitada do último boleto desse beneficiário."
+    if auto_recorrencia:
+        msg += " Vinculei à conta fixa desse beneficiário."
 
     return ImportarBoletoResponse(
         success=True,

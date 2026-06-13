@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.models.financas.categoria import Categoria
+from app.db.models.financas.recorrencia import Recorrencia
 from app.db.models.financas.transacao import Transacao
 from app.db.models.financas.transacao_pagamento import TransacaoPagamento
 
@@ -106,6 +107,43 @@ class TransacaoRepository:
             .limit(1)
         )
         return await self.session.scalar(stmt)
+
+    async def recorrencia_para_descricao(
+        self, usuario_id: uuid.UUID, descricao: Optional[str]
+    ) -> Optional[uuid.UUID]:
+        """Qual recorrência (conta fixa) casa com esse beneficiário/descrição.
+
+        Aprende como as outras features 'por beneficiário': primeiro pela
+        recorrência que já foi usada na transação mais recente com a mesma
+        descrição; senão, por uma recorrência ativa de nome igual. Serve pra
+        ligar o boleto importado (ex.: aluguel) à conta fixa automaticamente."""
+        if not descricao or not descricao.strip():
+            return None
+        alvo = descricao.strip().lower()
+        # 1) histórico: recorrência da última transação com essa descrição
+        do_historico = await self.session.scalar(
+            select(Transacao.recorrencia_id)
+            .where(
+                Transacao.usuario_id == usuario_id,
+                func.lower(Transacao.descricao) == alvo,
+                Transacao.recorrencia_id.is_not(None),
+            )
+            .order_by(Transacao.created_at.desc())
+            .limit(1)
+        )
+        if do_historico is not None:
+            return do_historico
+        # 2) nome igual a uma recorrência ativa
+        return await self.session.scalar(
+            select(Recorrencia.id)
+            .where(
+                Recorrencia.usuario_id == usuario_id,
+                Recorrencia.ativa.is_(True),
+                func.lower(Recorrencia.descricao) == alvo,
+            )
+            .order_by(Recorrencia.created_at.desc())
+            .limit(1)
+        )
 
     # ── Listagem filtrável (para a tela de transações no dashboard) ───
     async def listar(

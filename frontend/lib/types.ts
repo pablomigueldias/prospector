@@ -491,6 +491,7 @@ export interface TransacaoResponse {
   desconto_ate?: string | null;
   status: string;
   categoria_id?: string | null;
+  recorrencia_id?: string | null;
   pagamentos?: TransacaoPagamento[];
   itens?: { id: string; descricao: string; valor: string; categoria_id?: string | null }[];
 }
@@ -509,6 +510,7 @@ export interface PrevistaUpdateInput {
   multa_percentual?: string | null;
   juros_mensal_percentual?: string | null;
   itens?: VerbaInput[] | null;
+  recorrencia_id?: string | null;
 }
 
 export interface TransacaoFiltro {

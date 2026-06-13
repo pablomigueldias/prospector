@@ -191,6 +191,9 @@ class PrevistaUpdate(BaseModel):
     multa_percentual: Optional[Decimal] = None
     juros_mensal_percentual: Optional[Decimal] = None
     itens: Optional[List[ItemPrevistaInput]] = None
+    # Conta fixa (recorrência) à qual esta despesa pertence. Só altera quando o
+    # campo é enviado (None envia = desvincular; ausente = mantém).
+    recorrencia_id: Optional[str] = None
 
 
 class PagarTransacaoRequest(BaseModel):
@@ -241,6 +244,7 @@ class TransacaoResponse(BaseModel):
     status: str
     origem: str
     categoria_id: Optional[str] = None
+    recorrencia_id: Optional[str] = None
     notas: Optional[str] = None
     itens: List[TransacaoItemResponse] = Field(default_factory=list)
     pagamentos: List[TransacaoPagamentoResponse] = Field(default_factory=list)
@@ -267,6 +271,7 @@ class TransacaoListItem(BaseModel):
     status: str
     categoria_id: Optional[str] = None
     categoria_nome: Optional[str] = None
+    recorrencia_id: Optional[str] = None
     contas: List[str] = Field(default_factory=list)
 
 
