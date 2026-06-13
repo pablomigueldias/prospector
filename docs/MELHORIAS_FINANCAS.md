@@ -10,7 +10,7 @@ excluir sem depender de API/bot). O que falta é, sobretudo, **fechar o loop de
 gestão** (orçar, alertar, relatar), **deixar de ser registrador e virar
 copiloto** (§8–§10) e polir as bordas.
 
-Última revisão: 2026-06-10.
+Última revisão: 2026-06-13.
 
 ---
 
@@ -57,7 +57,7 @@ copiloto** (§8–§10) e polir as bordas.
 > fora de casa, pelo bot — que já cobre NLU, boleto por foto e lançamento).
 > Estas funções **já existem no backend**, só falta a interface no front.
 
-- 🟡 **Importar boleto por foto/PDF pela web** — `POST /api/financas/importador/boleto` (IA lê o boleto e pré-preenche). Hoje só pelo Telegram; na tela seria um "arraste o boleto aqui". **Alto valor** — replica o melhor do bot no desktop.
+- ✅ **Importar boleto por foto/PDF pela web** (2026-06-13) — seção **Importar boleto** no dashboard: arraste (ou escolha) um PDF/foto, a IA lê as verbas e, se batem com o total, já cria a despesa **prevista**; senão guarda pra revisão manual. Categoria opcional. `POST /api/financas/importar/boleto`. Ref `frontend/components/ImportarBoletoSection.tsx`. Replica o "boleto por foto" do bot no desktop — era o item de maior valor da §3b.
 - 🟡 **Compra parcelada no cartão** — `POST /api/financas/compras` (`CompraParceladaCreate`): lançar "geladeira em 10x no cartão" e o sistema gera as parcelas/faturas. Não existe na tela — hoje só dá pra cadastrar o cartão, não comprar nele.
 - 🟡 **Boleto parcelado** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`): boleto que vira N parcelas. Ausente no front.
 - 🟡 **Despesa dividida (split por N contas)** — `POST /api/financas/transacoes/despesa/dividida`: pagar uma despesa com mais de uma conta (ex.: metade VR, metade dinheiro). O form de lançamento só faz conta única. *(É também o que destrava editar transações divididas — ver §3 "Editar transação".)*

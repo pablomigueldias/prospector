@@ -8,6 +8,7 @@ import { ComprovantesGaleria } from '@/components/ComprovantesGaleria';
 import { ConsumoSection } from '@/components/ConsumoSection';
 import { ContasSection } from '@/components/ContasSection';
 import { DevSyncButton } from '@/components/DevSyncButton';
+import { ImportarBoletoSection } from '@/components/ImportarBoletoSection';
 import { RecorrenciasSection } from '@/components/RecorrenciasSection';
 import { RelatorioSection } from '@/components/RelatorioSection';
 import { StatCard } from '@/components/StatCard';
@@ -30,6 +31,7 @@ const SECOES: { id: string; label: string }[] = [
   { id: 'sec-relatorio', label: 'Relatório' },
   { id: 'sec-contas', label: 'Contas' },
   { id: 'sec-transacoes', label: 'Transações' },
+  { id: 'sec-importar', label: 'Importar boleto' },
   { id: 'sec-consumo', label: 'Consumo' },
   { id: 'sec-cartoes', label: 'Cartões' },
   { id: 'sec-fixas', label: 'Contas fixas' },
@@ -234,6 +236,18 @@ export default function FinancasScreen() {
           onNovoAbertoChange={setLancarAberto}
         />
       </div>
+
+      {/* Importar boleto (PDF/foto) — IA lê e cria a despesa prevista */}
+      <section id="sec-importar" className="scroll-mt-16 mb-8">
+        <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0 mb-2">
+          Importar boleto
+        </h2>
+        <p className="text-[13.5px] text-ink-soft max-w-[60ch] leading-relaxed m-0 mb-4">
+          Arraste um boleto em PDF ou foto: a IA lê as verbas e, se baterem com o
+          total, já lança a despesa prevista — o mesmo que o bot faz por foto.
+        </p>
+        <ImportarBoletoSection onImportado={recarregarTudo} />
+      </section>
 
       {/* Consumo (água/gás/luz) */}
       <section id="sec-consumo" className="scroll-mt-16 mb-8">

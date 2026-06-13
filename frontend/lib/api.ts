@@ -46,6 +46,7 @@ import type {
   FaturasCartao,
   LeituraConsumoListResponse,
   ComprovanteListResponse,
+  ImportarBoletoResponse,
   Usuario,
   UsuarioAdminItem,
   PapelItem,
@@ -87,8 +88,13 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     else signal.addEventListener('abort', () => controller.abort());
   }
 
+  // FormData (upload) vai como multipart — deixa o browser pôr o boundary;
+  // não serializa em JSON nem força Content-Type.
+  const isFormData =
+    typeof FormData !== 'undefined' && body instanceof FormData;
+
   const headers: Record<string, string> = {};
-  if (body) headers['Content-Type'] = 'application/json';
+  if (body && !isFormData) headers['Content-Type'] = 'application/json';
   // CSRF (double-submit): em mutações, reenvia o cookie CSRF como header. O
   // backend só exige isso quando há cookie de sessão.
   if (method !== 'GET') {
@@ -101,7 +107,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     response = await fetch(`${API_URL}${path}`, {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? (isFormData ? (body as FormData) : JSON.stringify(body)) : undefined,
       // Sempre manda o cookie de sessão (auth). Em prod é first-party (mesmo
       // domínio via Caddy); em dev é cross-port mas same-site, então o cookie
       // viaja com credentials:'include' + CORS allow_credentials no backend.
@@ -576,6 +582,27 @@ export const api = {
       `/api/financas/recorrencias/${encodeURIComponent(id)}`,
       { method: 'DELETE', timeoutMs: 10_000 },
     );
+  },
+
+  // ── Finanças · importador de boleto (LLM multimodal) ────────────
+  /** POST /api/financas/importar/boleto — sobe um boleto (PDF/foto), a IA lê
+   *  e, se as verbas batem com o total, já cria a despesa prevista. */
+  financasImportarBoleto(
+    file: File,
+    categoriaId?: string,
+    opts?: { signal?: AbortSignal },
+  ): Promise<ImportarBoletoResponse> {
+    // O dono dos dados vem da sessão no backend; aqui só o arquivo e a
+    // categoria opcional (pra etiquetar a despesa que será criada).
+    const form = new FormData();
+    form.append('file', file);
+    if (categoriaId) form.append('categoria_id', categoriaId);
+    return request<ImportarBoletoResponse>('/api/financas/importar/boleto', {
+      method: 'POST',
+      body: form,
+      timeoutMs: 120_000,
+      signal: opts?.signal,
+    });
   },
 
   // ── Dev tools (só habilitado fora de produção) ──────────────────

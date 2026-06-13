@@ -694,3 +694,34 @@ export interface ComprovanteListResponse {
   items: Comprovante[];
   total: number;
 }
+
+// ── Importador de boleto (LLM multimodal) ─────────────────────────
+export interface VerbaBoleto {
+  descricao: string;
+  valor: string | number;
+}
+
+export interface LeituraBoleto {
+  tipo: string;
+  leitura_atual?: string | number | null;
+  leitura_anterior?: string | number | null;
+  consumo?: string | number | null;
+  valor?: string | number | null;
+}
+
+export interface BoletoExtraido {
+  beneficiario?: string | null;
+  vencimento?: string | null;
+  valor_total: string | number;
+  verbas: VerbaBoleto[];
+  leituras: LeituraBoleto[];
+}
+
+export interface ImportarBoletoResponse {
+  success: boolean;
+  conferido: boolean;
+  mensagem: string;
+  comprovante_id?: string | null;
+  transacao_id?: string | null;
+  extraido?: BoletoExtraido | null;
+}
