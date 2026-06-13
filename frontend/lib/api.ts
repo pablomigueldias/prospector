@@ -749,6 +749,16 @@ export const api = {
     );
   },
 
+  financasProcessarRecorrencias(): Promise<{
+    previstas_criadas: number;
+    marcadas_atrasadas: number;
+  }> {
+    return request('/api/financas/recorrencias/processar', {
+      method: 'POST',
+      timeoutMs: 15_000,
+    });
+  },
+
   financasRecorrenciasStatus(
     competencia?: string,
   ): Promise<RecorrenciaStatusResponse> {

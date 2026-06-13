@@ -40,6 +40,19 @@ export function RecorrenciasSection({ contas, ano, mes, onMutate }: Props) {
   );
   const [modal, setModal] = useState<ModalState>({ modo: 'fechado' });
   const [pagarRec, setPagarRec] = useState<Recorrencia | null>(null);
+  const [processando, setProcessando] = useState(false);
+
+  async function processar() {
+    setProcessando(true);
+    try {
+      await api.financasProcessarRecorrencias();
+      recarregar();
+    } catch {
+      /* silencioso — o cron diário também roda isso */
+    } finally {
+      setProcessando(false);
+    }
+  }
 
   const statusMap = useMemo(() => {
     const m = new Map<string, RecorrenciaStatusItem['situacao']>();
@@ -84,6 +97,15 @@ export function RecorrenciasSection({ contas, ano, mes, onMutate }: Props) {
               ~{formatBRL(totalMensal)}/mês
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => void processar()}
+            disabled={processando}
+            className="btn-ghost px-3.5 py-1.5 text-sm disabled:opacity-50"
+            title="Gera as previstas do mês e marca as atrasadas (o cron diário também faz)"
+          >
+            {processando ? 'Gerando…' : 'Gerar previstas'}
+          </button>
           <button
             type="button"
             onClick={() => setModal({ modo: 'nova' })}

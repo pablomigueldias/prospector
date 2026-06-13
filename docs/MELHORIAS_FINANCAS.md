@@ -41,7 +41,6 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 
 - 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`): boleto que vira N parcelas mensais (sem fatura). Ausente no front. (Ver também §3d.)
 - 🟢 **Despesa auto-split VR/VA** — `POST /api/financas/transacoes/despesa/auto-split`: esgota o VR e joga o resto no dinheiro automaticamente. (A divisão **explícita** por N contas já saiu — ver FEITO §3b.)
-- 🟢 **Processar recorrências manualmente** — `POST /api/financas/recorrencias/processar`: um botão "gerar previstas / marcar atrasadas" na seção Contas fixas (o cron diário já roda; é só conveniência).
 - 🟢 **Detalhe de compra parcelada** — `GET /api/financas/compras/{id}`: ver as parcelas de uma compra específica (o extrato da fatura já mostra item a item; isto é a visão por compra).
 
 ## 3c. Boletos profissionais
