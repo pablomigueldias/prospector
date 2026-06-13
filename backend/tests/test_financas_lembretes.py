@@ -58,18 +58,40 @@ async def _inserir_fatura(uid: str, nome: str, valor, venc) -> str:
     return fid
 
 
+async def _inserir_orcamento_estourado(uid: str) -> None:
+    """Cria um orçamento e uma despesa paga na mesma categoria que estoura o
+    teto neste mês (pra disparar o alerta de orçamento no digest)."""
+    eng = create_async_engine(settings.database_url)
+    try:
+        async with eng.begin() as conn:
+            cat_id = (await conn.execute(
+                text("SELECT id FROM financas.categorias LIMIT 1")
+            )).scalar()
+            await conn.execute(text(
+                "INSERT INTO financas.transacoes "
+                "(id, usuario_id, tipo, descricao, valor_total, data_competencia, "
+                " categoria_id, status, origem) "
+                "VALUES (:id,:uid,'despesa','Mercado',:v,:c,:cat,'paga','manual')"
+            ), {"id": str(uuid.uuid4()), "uid": uid, "v": 900,
+                "c": date.today().replace(day=1), "cat": cat_id})
+            await conn.execute(text(
+                "INSERT INTO financas.orcamentos "
+                "(usuario_id, categoria_id, valor_mensal, ativo) "
+                "VALUES (:uid,:cat,:v,true)"
+            ), {"uid": uid, "cat": cat_id, "v": 800})
+    finally:
+        await eng.dispose()
+
+
 async def _cleanup(uid: str) -> None:
     eng = create_async_engine(settings.database_url)
     try:
         async with eng.begin() as conn:
-            await conn.execute(
-                text("DELETE FROM financas.transacoes WHERE usuario_id = :u"),
-                {"u": uuid.UUID(uid)},
-            )
-            await conn.execute(
-                text("DELETE FROM financas.cartoes WHERE usuario_id = :u"),
-                {"u": uuid.UUID(uid)},
-            )
+            for tbl in ("orcamentos", "transacoes", "cartoes"):
+                await conn.execute(
+                    text(f"DELETE FROM financas.{tbl} WHERE usuario_id = :u"),
+                    {"u": uuid.UUID(uid)},
+                )
     finally:
         await eng.dispose()
 
@@ -99,6 +121,7 @@ def smoke_test() -> None:
         asyncio.run(_inserir(uid, "Luz", 200, hoje + timedelta(days=2)))  # vence em breve
         asyncio.run(_inserir(uid, "Escola", 900, hoje + timedelta(days=30)))  # fora da janela
         asyncio.run(_inserir_fatura(uid, "Nubank", 1500, hoje + timedelta(days=3)))  # fatura na janela
+        asyncio.run(_inserir_orcamento_estourado(uid))  # categoria a 112% do teto
 
         print("\n→ Test 1: envia digest com vencida + próxima + fatura, ignora a distante")
         r = asyncio.run(lembretes.enviar_lembretes(ref=hoje))
@@ -114,6 +137,8 @@ def smoke_test() -> None:
         assert "juros/multa" in texto
         # seção de faturas de cartão
         assert "Faturas de cartão" in texto and "Nubank" in texto and "R$1.500,00" in texto, texto
+        # seção de orçamento estourado (900 de 800 = 112%)
+        assert "Orçamentos no limite" in texto and "112%" in texto, texto
         print("   " + texto.replace("\n", " | "))
 
         print("\n→ Test 2: desligado → não envia")

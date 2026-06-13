@@ -60,6 +60,7 @@ Serve de histórico e de referência de onde cada coisa mora no código.
 ## 4. Metas, orçamento e alertas
 
 - ✅ **Orçamento por categoria** (2026-06-13) — teto mensal por categoria (tabela `financas.orcamentos`, migration `f6b2c8d4e7a9`). Seção **Orçamentos** no dashboard: barra de progresso consumido×teto (verde→laranja→vermelho a partir de 80%/100%, "estourou" se passar), restante e %, com CRUD por modal. O consumido vem das despesas da categoria no mês (mesma soma do resumo). `GET /orcamentos` + `/orcamentos/status` + POST/PATCH/DELETE. Match por categoria exata (roll-up de subcategoria fica pendente). Ref `OrcamentosSection.tsx`, `orcamento_service.py`.
+- ✅ **Alerta de orçamento no Telegram** (2026-06-13) — o digest diário ganhou a seção **📊 Orçamentos no limite**: categorias acima de `ORCAMENTO_ALERTA_PCT`% do teto no mês (🟠 ≥80%, 🔴 ≥100%), com consumido/teto/%. Setting nova `orcamento_alerta_pct` (default 80, exposta no compose/.env.example). `lembretes.py::_texto_orcamento`. Smoke `test_financas_lembretes` cobre (categoria a 112%).
 
 ## 6. Confiabilidade & infraestrutura
 

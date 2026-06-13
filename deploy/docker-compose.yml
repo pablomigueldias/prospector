@@ -119,6 +119,7 @@ services:
       LEMBRETES_ENABLED: ${LEMBRETES_ENABLED:-true}
       LEMBRETES_HORA: ${LEMBRETES_HORA:-8}
       LEMBRETES_DIAS_ANTES: ${LEMBRETES_DIAS_ANTES:-3}
+      ORCAMENTO_ALERTA_PCT: ${ORCAMENTO_ALERTA_PCT:-80}
       TIMEZONE: ${TIMEZONE:-America/Sao_Paulo}
       # Auth / login (produção é HTTPS → cookie Secure + __Host-)
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}

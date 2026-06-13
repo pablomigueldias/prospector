@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.services.financas import encargos as encargos_service
+from app.api.services.financas import orcamento_service
 from app.api.services.financas.bot_service import mapa_chat_usuario
 from app.config import settings
 from app.db.models.financas.cartao import Cartao
@@ -124,6 +125,24 @@ def _montar_texto_faturas(linhas: List[tuple], hoje: date) -> Optional[str]:
     )
 
 
+async def _texto_orcamento(usuario_id: str, ref: date) -> Optional[str]:
+    """Categorias que já passaram de `orcamento_alerta_pct` do teto no mês."""
+    pct_alerta = max(0, settings.orcamento_alerta_pct)
+    comp = f"{ref.year:04d}-{ref.month:02d}"
+    status = await orcamento_service.status_do_mes(usuario_id, comp)
+    quentes = [i for i in status.items if i.percentual >= pct_alerta]
+    if not quentes:
+        return None
+    linhas = []
+    for i in sorted(quentes, key=lambda x: x.percentual, reverse=True):
+        estouro = "🔴" if i.percentual >= 100 else "🟠"
+        linhas.append(
+            f"{estouro} {i.categoria_nome or 'categoria'} — "
+            f"{_brl(i.consumido)} de {_brl(i.valor_mensal)} ({round(i.percentual)}%)"
+        )
+    return "📊 <b>Orçamentos no limite</b>\n" + "\n".join(linhas)
+
+
 async def enviar_lembretes(ref: Optional[date] = None) -> dict:
     """Manda o digest de contas a pagar pra cada chat configurado no Telegram.
     Pablo e Monique compartilham o usuario_id → ambos recebem (carteira junta)."""
@@ -141,10 +160,12 @@ async def enviar_lembretes(ref: Optional[date] = None) -> dict:
             uid = uuid.UUID(usuario_id)
             itens = await _contas_a_pagar(session, uid, limite)
             faturas = await _faturas_a_vencer(session, uid, limite)
+            orcamento = await _texto_orcamento(usuario_id, hoje)
             blocos = [
                 b for b in (
                     _montar_texto(itens, hoje),
                     _montar_texto_faturas(faturas, hoje),
+                    orcamento,
                 ) if b
             ]
             if not blocos:
