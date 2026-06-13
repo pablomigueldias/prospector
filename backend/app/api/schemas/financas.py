@@ -333,6 +333,16 @@ class FaturasCartaoResponse(BaseModel):
     total_juros: Decimal           # soma de valor_juros das parcelas do cartão
 
 
+class PagarFaturaRequest(BaseModel):
+    """Pagamento de uma fatura: debita de uma conta e baixa a fatura."""
+    conta_id: str
+    data_pagamento: Optional[date] = None
+    valor_pago: Optional[Decimal] = Field(
+        None, gt=0, description="Valor real que saiu (default = total da fatura)"
+    )
+    categoria_id: Optional[str] = None
+
+
 class FaturaExtratoItem(BaseModel):
     """Uma parcela que compõe a fatura (com os dados da compra de origem)."""
     parcela_id: str

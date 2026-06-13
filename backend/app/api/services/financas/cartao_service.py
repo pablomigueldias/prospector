@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from decimal import Decimal
 from typing import Optional
 
@@ -16,12 +17,17 @@ from app.api.schemas.financas import (
     FaturaExtratoResponse,
     FaturaResponse,
     FaturasCartaoResponse,
+    PagarFaturaRequest,
 )
+from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.cartao import Cartao
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.compra import Compra
+from app.db.models.financas.conta import Conta
 from app.db.models.financas.fatura import Fatura
 from app.db.models.financas.parcela import Parcela
+from app.db.models.financas.transacao import Transacao
+from app.db.models.financas.transacao_pagamento import TransacaoPagamento
 from app.db.session import get_session
 
 
@@ -214,3 +220,73 @@ async def extrato_fatura(fatura_id: str) -> FaturaExtratoResponse:
         itens=itens,
         total_juros=Decimal(total_juros),
     )
+
+
+def _fatura_response(f: Fatura) -> FaturaResponse:
+    return FaturaResponse(
+        id=str(f.id),
+        cartao_id=str(f.cartao_id),
+        mes_referencia=f.mes_referencia,
+        valor_total=f.valor_total,
+        vencimento=f.vencimento,
+        status=f.status,
+    )
+
+
+async def pagar_fatura(
+    fatura_id: str, payload: PagarFaturaRequest, *, usuario_id_sessao: str
+) -> FaturaResponse:
+    """Baixa a fatura: cria uma despesa paga (move o saldo da conta) e marca a
+    fatura como paga, ligando-a a esse lançamento (``transacao_id``). A despesa
+    aparece no resumo/lista do mês como a saída real de dinheiro."""
+    fid = _uuid(fatura_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    quando = payload.data_pagamento or date.today()
+
+    async with get_session() as session:
+        fatura = await session.get(Fatura, fid)
+        if fatura is None:
+            raise CartaoError("Fatura não encontrada.")
+        cartao = await session.get(Cartao, fatura.cartao_id)
+        if cartao is None or cartao.usuario_id != uid:
+            raise CartaoError("A fatura não pertence a esse usuário.")
+        if fatura.status == "paga":
+            raise CartaoError("Essa fatura já está paga.")
+
+        conta = await session.get(Conta, _uuid(payload.conta_id, campo="conta_id"))
+        if conta is None or conta.usuario_id != uid:
+            raise CartaoError("Conta não encontrada.")
+
+        categoria_id = None
+        if payload.categoria_id:
+            categoria_id = _uuid(payload.categoria_id, campo="categoria_id")
+            if await session.get(Categoria, categoria_id) is None:
+                raise CartaoError("Categoria não encontrada.")
+
+        total = Decimal(payload.valor_pago) if payload.valor_pago else Decimal(fatura.valor_total)
+        competencia = fatura.mes_referencia
+        rotulo = competencia.strftime("%m/%Y")
+
+        despesa = Transacao(
+            usuario_id=uid,
+            tipo="despesa",
+            descricao=f"Fatura {cartao.nome} {rotulo}",
+            valor_total=total,
+            data_competencia=quando,
+            data_pagamento=quando,
+            status="paga",
+            origem="manual",
+            categoria_id=categoria_id,
+        )
+        despesa.pagamentos.append(TransacaoPagamento(conta_id=conta.id, valor=total))
+        session.add(despesa)
+        await session.flush()  # garante despesa.id pra ligar na fatura
+
+        saldo_service.aplicar_movimento(conta, "despesa", total)
+        fatura.status = "paga"
+        fatura.transacao_id = despesa.id
+
+        await eventos.notificar(session, uid, "fatura_paga")
+        await session.commit()
+        await session.refresh(fatura)
+        return _fatura_response(fatura)

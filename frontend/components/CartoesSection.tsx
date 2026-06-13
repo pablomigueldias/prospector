@@ -2,7 +2,12 @@ import { useMemo, useState, type FormEvent } from 'react';
 
 import { Modal } from '@/components/Modal';
 import { useFetch } from '@/hooks/useFetch';
-import { useCartaoFaturas, useCartoes, useCategorias } from '@/hooks/useFinancas';
+import {
+  useCartaoFaturas,
+  useCartoes,
+  useCategorias,
+  useContas,
+} from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
 import { formatBRL } from '@/lib/format';
@@ -166,6 +171,10 @@ function CartaoCard({
           cartaoId={cartao.id}
           fatura={faturaAberta}
           onClose={() => setFaturaAberta(null)}
+          onPaid={() => {
+            setFaturaAberta(null);
+            void refetch();
+          }}
         />
       )}
     </div>
@@ -197,15 +206,49 @@ function FaturaExtratoModal({
   cartaoId,
   fatura,
   onClose,
+  onPaid,
 }: {
   cartaoId: string;
   fatura: Fatura;
   onClose: () => void;
+  onPaid: () => void;
 }) {
   const { data, loading, error } = useFetch<FaturaExtrato>(
     () => api.financasFaturaExtrato(cartaoId, fatura.id),
     [cartaoId, fatura.id],
   );
+  const { contas } = useContas(true);
+  const [pagando, setPagando] = useState(false);
+  const [contaId, setContaId] = useState('');
+  const [dataPg, setDataPg] = useState(() => new Date().toISOString().slice(0, 10));
+  const [valorPago, setValorPago] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  const paga = fatura.status === 'paga';
+
+  async function pagar() {
+    setErro('');
+    if (!contaId) return setErro('Escolha a conta que pagou a fatura.');
+    const valorStr = valorPago.trim()
+      ? String(Number(valorPago.replace(',', '.')))
+      : null;
+    if (valorStr !== null && (!Number.isFinite(Number(valorStr)) || Number(valorStr) <= 0)) {
+      return setErro('Valor pago inválido.');
+    }
+    setSalvando(true);
+    try {
+      await api.financasPagarFatura(cartaoId, fatura.id, {
+        conta_id: contaId,
+        data_pagamento: dataPg || null,
+        valor_pago: valorStr,
+      });
+      onPaid();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Falha ao pagar a fatura.');
+      setSalvando(false);
+    }
+  }
 
   return (
     <Modal open onClose={onClose} title={`Fatura · vence ${fatura.vencimento}`}>
@@ -213,42 +256,124 @@ function FaturaExtratoModal({
         <div className="h-24 animate-pulse" />
       ) : error ? (
         <div className="text-sm text-red-600">Falha ao carregar o extrato.</div>
-      ) : !data || data.itens.length === 0 ? (
-        <p className="text-sm text-ink-mute m-0">
-          Nenhuma parcela nesta fatura ainda.
-        </p>
       ) : (
         <div className="space-y-3">
-          <ul className="m-0 p-0 list-none flex flex-col divide-y divide-line-soft">
-            {data.itens.map((it) => (
-              <li
-                key={it.parcela_id}
-                className="flex items-center justify-between gap-3 py-2 text-sm"
-              >
-                <div className="min-w-0">
-                  <div className="text-ink truncate">{it.descricao}</div>
-                  <div className="font-mono uppercase tracking-[0.08em] text-[10px] text-ink-mute">
-                    {it.numero}/{it.total_parcelas}
-                    {it.categoria_nome ? ` · ${it.categoria_nome}` : ''}
-                    {Number(it.valor_juros) > 0
-                      ? ` · juros ${formatBRL(it.valor_juros)}`
-                      : ''}
+          {!data || data.itens.length === 0 ? (
+            <p className="text-sm text-ink-mute m-0">
+              Nenhuma parcela nesta fatura ainda.
+            </p>
+          ) : (
+            <ul className="m-0 p-0 list-none flex flex-col divide-y divide-line-soft">
+              {data.itens.map((it) => (
+                <li
+                  key={it.parcela_id}
+                  className="flex items-center justify-between gap-3 py-2 text-sm"
+                >
+                  <div className="min-w-0">
+                    <div className="text-ink truncate">{it.descricao}</div>
+                    <div className="font-mono uppercase tracking-[0.08em] text-[10px] text-ink-mute">
+                      {it.numero}/{it.total_parcelas}
+                      {it.categoria_nome ? ` · ${it.categoria_nome}` : ''}
+                      {Number(it.valor_juros) > 0
+                        ? ` · juros ${formatBRL(it.valor_juros)}`
+                        : ''}
+                    </div>
                   </div>
-                </div>
-                <span className="text-ink tabular-nums shrink-0">
-                  {formatBRL(it.valor)}
-                </span>
-              </li>
-            ))}
-          </ul>
+                  <span className="text-ink tabular-nums shrink-0">
+                    {formatBRL(it.valor)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <div className="flex items-baseline justify-between border-t border-line pt-3">
             <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-ink-mute">
               total da fatura
             </span>
             <span className="font-display font-semibold tracking-tight text-ink">
-              {formatBRL(data.fatura.valor_total)}
+              {formatBRL((data ?? { fatura }).fatura.valor_total)}
             </span>
           </div>
+
+          {paga ? (
+            <div className="text-sm text-ink-mute border-t border-line-soft pt-3">
+              Fatura já paga. ✓
+            </div>
+          ) : !pagando ? (
+            <div className="flex justify-end border-t border-line-soft pt-3">
+              <button
+                type="button"
+                onClick={() => setPagando(true)}
+                className="btn-primary px-4 py-2 text-sm"
+              >
+                Pagar fatura
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3 border-t border-line-soft pt-3">
+              <div>
+                <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+                  Conta
+                </label>
+                <select
+                  className="input"
+                  value={contaId}
+                  onChange={(e) => setContaId(e.target.value)}
+                >
+                  <option value="">Escolha a conta…</option>
+                  {contas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+                    Data do pagamento
+                  </label>
+                  <input
+                    type="date"
+                    className="input"
+                    value={dataPg}
+                    onChange={(e) => setDataPg(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+                    Valor pago (opcional)
+                  </label>
+                  <input
+                    className="input"
+                    value={valorPago}
+                    onChange={(e) => setValorPago(e.target.value)}
+                    inputMode="decimal"
+                    placeholder={formatBRL((data ?? { fatura }).fatura.valor_total)}
+                  />
+                </div>
+              </div>
+              {erro && <div className="text-sm text-red-600">{erro}</div>}
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPagando(false)}
+                  className="btn-ghost px-4 py-2 text-sm"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="button"
+                  onClick={pagar}
+                  disabled={salvando}
+                  className="btn-primary px-5 py-2 text-sm disabled:opacity-50"
+                >
+                  {salvando ? 'Pagando…' : 'Confirmar pagamento'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Modal>

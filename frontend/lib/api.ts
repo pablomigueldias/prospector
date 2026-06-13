@@ -47,6 +47,8 @@ import type {
   FaturaExtrato,
   Compra,
   CompraCreateInput,
+  Fatura,
+  PagarFaturaInput,
   LeituraConsumoListResponse,
   Comprovante,
   ComprovanteListResponse,
@@ -434,6 +436,17 @@ export const api = {
     return request<Compra>(`/api/financas/compras/${encodeURIComponent(id)}`, {
       timeoutMs: 10_000,
     });
+  },
+
+  financasPagarFatura(
+    cartaoId: string,
+    faturaId: string,
+    body: PagarFaturaInput,
+  ): Promise<Fatura> {
+    return request<Fatura>(
+      `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas/${encodeURIComponent(faturaId)}/pagar`,
+      { method: 'POST', body, timeoutMs: 10_000 },
+    );
   },
 
   financasLeituras(usuarioId: string, tipo?: string): Promise<LeituraConsumoListResponse> {

@@ -736,6 +736,13 @@ export interface Compra {
   parcelas: Parcela[];
 }
 
+export interface PagarFaturaInput {
+  conta_id: string;
+  data_pagamento?: string | null;
+  valor_pago?: string | null;
+  categoria_id?: string | null;
+}
+
 export interface CompraCreateInput {
   cartao_id: string;
   descricao: string;

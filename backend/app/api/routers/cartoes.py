@@ -11,7 +11,9 @@ from app.api.schemas.financas import (
     CartaoResponse,
     CartaoUpdate,
     FaturaExtratoResponse,
+    FaturaResponse,
     FaturasCartaoResponse,
+    PagarFaturaRequest,
 )
 from app.api.services.financas import cartao_service
 from app.api.services.financas.cartao_service import CartaoError
@@ -68,6 +70,23 @@ async def faturas(cartao_id: str) -> FaturasCartaoResponse:
 async def extrato_fatura(cartao_id: str, fatura_id: str) -> FaturaExtratoResponse:
     try:
         return await cartao_service.extrato_fatura(fatura_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/{cartao_id}/faturas/{fatura_id}/pagar", response_model=FaturaResponse,
+             summary="Paga a fatura: debita de uma conta e baixa a fatura",
+             dependencies=[Depends(exige_editar)])
+async def pagar_fatura(
+    cartao_id: str,
+    fatura_id: str,
+    body: PagarFaturaRequest,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> FaturaResponse:
+    try:
+        return await cartao_service.pagar_fatura(
+            fatura_id, body, usuario_id_sessao=usuario_id
+        )
     except Exception as e:
         raise _handle(e)
 
