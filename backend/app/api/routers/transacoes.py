@@ -157,6 +157,8 @@ async def pagar(
             transacao_id,
             conta_id=body.conta_id,
             data_pagamento=body.data_pagamento,
+            multa_percentual=body.multa_percentual,
+            juros_mensal_percentual=body.juros_mensal_percentual,
             usuario_id_sessao=usuario_id,
         )
     except Exception as e:

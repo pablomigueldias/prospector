@@ -40,16 +40,22 @@ export function PagarModal({
   const contaAtualNome = contas.find((c) => c.id === alvo.contaIdAtual)?.nome;
   const [contaId, setContaId] = useState(alvo.contaIdAtual ?? contas[0]?.id ?? '');
   const [data, setData] = useState(hojeIso);
+  // Multa/juros editáveis: prefill do que veio (IA), mas dá pra corrigir aqui
+  // ou preencher boleto antigo que não tinha essa info.
+  const pctInicial = (v: string | number | null | undefined) =>
+    v == null || v === '' ? '' : String(v);
+  const [multaPct, setMultaPct] = useState(pctInicial(alvo.multaPct));
+  const [jurosPct, setJurosPct] = useState(pctInicial(alvo.jurosPct));
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
-  // Multa + juros até a data escolhida (recalcula quando muda a data).
+  // Só faz sentido cobrar encargos quando há vencimento (boleto/conta datada).
+  const temVencimento = !!alvo.vencimento;
+
+  // Multa + juros até a data escolhida (recalcula quando muda data ou %).
   const enc = useMemo(
-    () =>
-      calcularEncargos(
-        alvo.valor, alvo.vencimento, alvo.multaPct, alvo.jurosPct, data,
-      ),
-    [alvo, data],
+    () => calcularEncargos(alvo.valor, alvo.vencimento, multaPct, jurosPct, data),
+    [alvo.valor, alvo.vencimento, multaPct, jurosPct, data],
   );
   const totalComEncargos = Number(alvo.valor) + enc.total;
 
@@ -59,11 +65,13 @@ export function PagarModal({
     if (precisaConta && !contaId) return setErro('Escolha a conta.');
     setSalvando(true);
     try {
-      await api.financasPagarTransacao(
-        alvo.id,
-        precisaConta ? contaId : undefined,
-        data,
-      );
+      await api.financasPagarTransacao(alvo.id, {
+        contaId: precisaConta ? contaId : undefined,
+        dataPagamento: data,
+        // Salva os encargos informados (só quando há vencimento pra aplicar).
+        multaPercentual: temVencimento && multaPct !== '' ? multaPct : null,
+        jurosMensalPercentual: temVencimento && jurosPct !== '' ? jurosPct : null,
+      });
       onPaid();
     } catch (err) {
       setErro(
@@ -150,6 +158,43 @@ export function PagarModal({
             onChange={(e) => setData(e.target.value)}
           />
         </div>
+
+        {temVencimento && (
+          <details open={enc.total > 0} className="group">
+            <summary className="text-[12.5px] text-ink-soft cursor-pointer select-none hover:text-ink">
+              Encargos por atraso (multa e juros do boleto)
+            </summary>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <div>
+                <label className="block text-[12px] text-ink-soft mb-1">
+                  Multa (%)
+                </label>
+                <input
+                  className="input"
+                  value={multaPct}
+                  onChange={(e) => setMultaPct(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="ex: 2"
+                />
+              </div>
+              <div>
+                <label className="block text-[12px] text-ink-soft mb-1">
+                  Juros (% ao mês)
+                </label>
+                <input
+                  className="input"
+                  value={jurosPct}
+                  onChange={(e) => setJurosPct(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="ex: 1"
+                />
+              </div>
+            </div>
+            <p className="text-[11.5px] text-ink-mute mt-1.5">
+              Preencha se a IA não pegou do boleto. Fica salvo na conta.
+            </p>
+          </details>
+        )}
 
         {erro && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">

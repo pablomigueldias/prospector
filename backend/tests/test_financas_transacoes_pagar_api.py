@@ -168,6 +168,24 @@ def smoke_test() -> None:
             assert round(saldo_antes - _saldo(client, conta_id), 2) == 102.33
             print(f"   encargos {corpo['encargos_pagos']}, total {corpo['valor_total']}")
 
+            # ══ Caminho 4: boleto antigo SEM encargos → informa no pagamento ═
+            print("\n→ Test 8: boleto antigo s/ encargos → multa/juros no body")
+            tx4 = str(uuid.uuid4())
+            venc4 = date.today() - timedelta(days=10)
+            asyncio.run(_inserir_prevista_sem_conta(
+                usuario_id, tx4, 100, vencimento=venc4,  # sem multa/juros
+            ))
+            tx_ids.append(tx4)
+            rp4 = client.post(f"{TX}/{tx4}/pagar", json={
+                "conta_id": conta_id, "multa_percentual": 2, "juros_mensal_percentual": 1,
+            })
+            assert rp4.status_code == 200, rp4.text
+            c4 = rp4.json()
+            assert float(c4["encargos_pagos"]) == 2.33, c4["encargos_pagos"]
+            assert float(c4["valor_total"]) == 102.33, c4["valor_total"]
+            assert float(c4["multa_percentual"]) == 2, c4  # persistiu
+            print(f"   informado no pagamento → encargos {c4['encargos_pagos']}")
+
         finally:
             limpar_override()
             asyncio.run(_cleanup(conta_ids, tx_ids))

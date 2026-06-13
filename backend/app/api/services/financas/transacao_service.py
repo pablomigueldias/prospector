@@ -504,6 +504,8 @@ async def pagar_transacao(
     *,
     conta_id: Optional[str] = None,
     data_pagamento: Optional[date] = None,
+    multa_percentual: Optional[Decimal] = None,
+    juros_mensal_percentual: Optional[Decimal] = None,
     usuario_id_sessao: str,
 ) -> TransacaoResponse:
     """Marca uma transação prevista/atrasada como **paga**, movendo o saldo.
@@ -527,6 +529,13 @@ async def pagar_transacao(
             raise TransacaoError("A transação não pertence a esse usuário.")
         if t.status == "paga":
             raise TransacaoError("Essa transação já está paga.")
+
+        # Encargos informados na hora de pagar sobrescrevem (e salvam) os da
+        # transação — corrige o que a IA leu / preenche boleto antigo sem essa info.
+        if multa_percentual is not None:
+            t.multa_percentual = multa_percentual
+        if juros_mensal_percentual is not None:
+            t.juros_mensal_percentual = juros_mensal_percentual
 
         # Multa + juros até a data do pagamento (0 se no prazo / sem encargos).
         # Não aplica em despesa dividida (mais de uma conta) — caso raro de boleto.

@@ -516,16 +516,22 @@ export const api = {
    *  conta (boleto importado / recorrência). */
   financasPagarTransacao(
     id: string,
-    contaId?: string,
-    dataPagamento?: string,
+    opts: {
+      contaId?: string;
+      dataPagamento?: string;
+      multaPercentual?: string | null;
+      jurosMensalPercentual?: string | null;
+    } = {},
   ): Promise<TransacaoResponse> {
     return request<TransacaoResponse>(
       `/api/financas/transacoes/${encodeURIComponent(id)}/pagar`,
       {
         method: 'POST',
         body: {
-          conta_id: contaId || null,
-          data_pagamento: dataPagamento || null,
+          conta_id: opts.contaId || null,
+          data_pagamento: opts.dataPagamento || null,
+          multa_percentual: opts.multaPercentual ?? null,
+          juros_mensal_percentual: opts.jurosMensalPercentual ?? null,
         },
         timeoutMs: 10_000,
       },

@@ -171,9 +171,15 @@ class TransacaoUpdate(BaseModel):
 class PagarTransacaoRequest(BaseModel):
     """Quita uma transação prevista/atrasada (move o saldo). ``conta_id`` só é
     exigido quando a transação ainda não tem conta (boleto importado /
-    recorrência); se já tem pagamento(s), efetiva nas contas existentes."""
+    recorrência); se já tem pagamento(s), efetiva nas contas existentes.
+
+    ``multa_percentual``/``juros_mensal_percentual``: quando informados,
+    sobrescrevem (e salvam) os encargos da transação — pra corrigir o que a IA
+    leu ou preencher boletos antigos que não traziam essa informação."""
     conta_id: Optional[str] = None
     data_pagamento: Optional[date] = None
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
 
 
 class TransacaoItemResponse(BaseModel):
