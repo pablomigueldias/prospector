@@ -107,6 +107,16 @@ def smoke_test() -> None:
             assert r1.json()["status"] == "prevista"
             assert _saldo(client, conta_id) == 1000.0, _saldo(client, conta_id)
 
+            # filtro "a pagar" (status=prevista) + ordenação por vencimento
+            apagar = client.get(
+                f"{TX}?status=prevista&por_vencimento=true&tipo=despesa"
+            ).json()
+            assert apagar["total"] == 1, apagar
+            assert apagar["items"][0]["id"] == tx1
+            assert "data_vencimento" in apagar["items"][0]
+            # filtro de pagas ainda não traz nada
+            assert client.get(f"{TX}?status=paga").json()["total"] == 0
+
             print("→ Test 2: pagar (sem conta no body) → paga, saldo 800")
             rp = client.post(f"{TX}/{tx1}/pagar", json={})
             assert rp.status_code == 200, rp.text

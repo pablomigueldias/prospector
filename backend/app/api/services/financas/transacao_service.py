@@ -349,7 +349,9 @@ async def listar_transacoes(
     conta_id: Optional[str] = None,
     categoria_id: Optional[str] = None,
     tipo: Optional[str] = None,
+    status: Optional[List[str]] = None,
     busca: Optional[str] = None,
+    por_vencimento: bool = False,
     limit: int = 50,
     offset: int = 0,
 ) -> TransacaoListResponse:
@@ -360,6 +362,10 @@ async def listar_transacoes(
     catid = _uuid(categoria_id, campo="categoria_id") if categoria_id else None
     if tipo is not None and tipo not in ("despesa", "receita"):
         raise TransacaoError(f"Tipo inválido: {tipo!r}. Use despesa ou receita.")
+    if status:
+        invalidos = [s for s in status if s not in STATUS_TRANSACAO]
+        if invalidos:
+            raise TransacaoError(f"Status inválido: {', '.join(invalidos)}.")
     limit = max(1, min(int(limit), 200))
     offset = max(0, int(offset))
     termo = busca.strip() if busca and busca.strip() else None
@@ -373,7 +379,9 @@ async def listar_transacoes(
             conta_id=cid,
             categoria_id=catid,
             tipo=tipo,
+            status=status,
             busca=termo,
+            por_vencimento=por_vencimento,
             limit=limit,
             offset=offset,
         )
@@ -401,6 +409,7 @@ async def listar_transacoes(
                 valor_total=t.valor_total,
                 data_competencia=t.data_competencia,
                 data_pagamento=t.data_pagamento,
+                data_vencimento=t.data_vencimento,
                 status=t.status,
                 categoria_id=str(t.categoria_id) if t.categoria_id else None,
                 categoria_nome=cat_nome.get(t.categoria_id),

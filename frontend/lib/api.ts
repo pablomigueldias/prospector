@@ -462,7 +462,9 @@ export const api = {
     if (filtro.conta_id) q.set('conta_id', filtro.conta_id);
     if (filtro.categoria_id) q.set('categoria_id', filtro.categoria_id);
     if (filtro.tipo) q.set('tipo', filtro.tipo);
+    if (filtro.status) filtro.status.forEach((s) => q.append('status', s));
     if (filtro.busca) q.set('busca', filtro.busca);
+    if (filtro.por_vencimento) q.set('por_vencimento', 'true');
     if (filtro.limit != null) q.set('limit', String(filtro.limit));
     if (filtro.offset != null) q.set('offset', String(filtro.offset));
     const qs = q.toString();

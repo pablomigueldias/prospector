@@ -39,6 +39,7 @@ BOLETO_OK = {
     ],
 }
 BOLETO_SOMA_ERRADA = {**BOLETO_OK, "verbas": [{"descricao": "Total", "valor": 1000.0}]}
+BOLETO_SEM_VALOR = {**BOLETO_OK, "valor_total": 0, "verbas": []}
 
 
 async def _cleanup(usuario_id: str) -> None:
@@ -113,8 +114,8 @@ def smoke_test() -> None:
             assert all(x["transacao_id"] == b["transacao_id"] for x in leituras["items"])
             print(f"   leituras: {tipos} vinculadas à transação")
 
-            # ── 2. Boleto que NÃO confere → revisão manual, sem transação ─
-            print("\n→ Test 2: soma não bate → revisão manual")
+            # ── 2. Soma não bate → cria a pagar (sem itens), pra não sumir ─
+            print("\n→ Test 2: soma não bate → prevista sem itens (a pagar)")
             extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_SOMA_ERRADA)
             r2 = client.post(IMPORTAR, data={
                 "usuario_id": usuario_id,
@@ -122,9 +123,26 @@ def smoke_test() -> None:
             assert r2.status_code == 200, r2.text
             b2 = r2.json()
             assert b2["success"] and not b2["conferido"], b2
-            assert b2["transacao_id"] is None
+            assert b2["transacao_id"], "deveria criar a despesa a pagar mesmo sem conferir"
             assert b2["comprovante_id"]
+            tx2 = client.get(f"{TX}/{b2['transacao_id']}").json()
+            assert tx2["status"] == "prevista", tx2["status"]
+            assert tx2["itens"] == [], tx2["itens"]  # verbas não confiáveis → sem itens
+            assert float(tx2["valor_total"]) == 1107.52, tx2["valor_total"]
             print(f"   {b2['mensagem']}")
+
+            # ── 3. Sem valor legível → nada criado (só o arquivo) ─────────
+            print("\n→ Test 3: sem valor total → revisão manual (sem transação)")
+            extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_SEM_VALOR)
+            r3 = client.post(IMPORTAR, data={
+                "usuario_id": usuario_id,
+            }, files={"file": ("vazio.pdf", b"%PDF fake 3", "application/pdf")})
+            assert r3.status_code == 200, r3.text
+            b3 = r3.json()
+            assert b3["success"] and not b3["conferido"], b3
+            assert b3["transacao_id"] is None, b3
+            assert b3["comprovante_id"]
+            print(f"   {b3['mensagem']}")
 
         finally:
             extrator.extrair_boleto_llm = original

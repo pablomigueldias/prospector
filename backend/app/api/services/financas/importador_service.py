@@ -69,12 +69,18 @@ async def importar_boleto(
         if extraido.vencimento else date.today().replace(day=1)
     )
 
+    # Sempre que houver um valor total, o boleto vira uma despesa **prevista**
+    # (a pagar) — assim ele nunca some de vista. As verbas (itens) e as leituras
+    # de consumo só entram quando a soma bate com o total (conferido); senão fica
+    # só o total, pra você conferir/detalhar depois.
+    criar = extraido.valor_total and extraido.valor_total > 0
+
     transacao_id = None
     async with get_session() as session:
         comp_row = await session.get(Comprovante, _uuid(comp.id))
         comp_row.extraido_json = extraido.model_dump(mode="json")
 
-        if conferido:
+        if criar:
             tx = Transacao(
                 usuario_id=uid,
                 tipo="despesa",
@@ -88,26 +94,27 @@ async def importar_boleto(
                 itens=[
                     TransacaoItem(descricao=v.descricao, valor=v.valor)
                     for v in extraido.verbas
-                ],
+                ] if conferido else [],
             )
             session.add(tx)
             await session.flush()
             comp_row.transacao_id = tx.id
             transacao_id = tx.id
 
-            for le in extraido.leituras:
-                if le.tipo not in TIPOS_CONSUMO or le.leitura_atual is None:
-                    continue
-                session.add(LeituraConsumo(
-                    usuario_id=uid,
-                    tipo=le.tipo,
-                    mes_referencia=competencia,
-                    leitura_atual=le.leitura_atual,
-                    leitura_anterior=le.leitura_anterior,
-                    consumo=le.consumo,
-                    valor=le.valor,
-                    transacao_id=tx.id,
-                ))
+            if conferido:
+                for le in extraido.leituras:
+                    if le.tipo not in TIPOS_CONSUMO or le.leitura_atual is None:
+                        continue
+                    session.add(LeituraConsumo(
+                        usuario_id=uid,
+                        tipo=le.tipo,
+                        mes_referencia=competencia,
+                        leitura_atual=le.leitura_atual,
+                        leitura_anterior=le.leitura_anterior,
+                        consumo=le.consumo,
+                        valor=le.valor,
+                        transacao_id=tx.id,
+                    ))
 
         await session.commit()
 
@@ -116,10 +123,15 @@ async def importar_boleto(
             f"Boleto importado: despesa de R${extraido.valor_total} "
             f"com {len(extraido.verbas)} verba(s)."
         )
+    elif criar:
+        msg = (
+            f"Lancei R${extraido.valor_total} como a pagar, mas não consegui "
+            "separar as verbas direito — confira/detalhe quando puder."
+        )
     else:
         msg = (
-            f"Verbas (R${soma}) não batem com o total (R${extraido.valor_total}). "
-            "Guardei o boleto pra revisão manual."
+            "Não consegui ler o valor do boleto. Guardei o arquivo pra "
+            "revisão manual."
         )
 
     return ImportarBoletoResponse(

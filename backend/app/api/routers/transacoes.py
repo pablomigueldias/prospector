@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -95,7 +95,9 @@ async def listar(
     conta_id: Optional[str] = Query(None, description="Só transações que tocam essa conta"),
     categoria_id: Optional[str] = None,
     tipo: Optional[str] = Query(None, description="despesa | receita"),
+    status: Optional[List[str]] = Query(None, description="prevista/paga/atrasada (repetível)"),
     busca: Optional[str] = Query(None, description="Texto na descrição"),
+    por_vencimento: bool = Query(False, description="Ordena por vencimento (vencidas primeiro)"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     usuario_id: str = Depends(financas_usuario_id),
@@ -108,7 +110,9 @@ async def listar(
             conta_id=conta_id,
             categoria_id=categoria_id,
             tipo=tipo,
+            status=status,
             busca=busca,
+            por_vencimento=por_vencimento,
             limit=limit,
             offset=offset,
         )

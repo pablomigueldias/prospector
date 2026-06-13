@@ -446,6 +446,7 @@ export interface TransacaoListItem {
   valor_total: string;
   data_competencia: string;
   data_pagamento?: string | null;
+  data_vencimento?: string | null;
   status: string;
   categoria_id?: string | null;
   categoria_nome?: string | null;
@@ -486,7 +487,11 @@ export interface TransacaoFiltro {
   conta_id?: string;
   categoria_id?: string;
   tipo?: 'despesa' | 'receita';
+  /** prevista/paga/atrasada — pode passar várias (ex.: a pagar = previstas+atrasadas). */
+  status?: string[];
   busca?: string;
+  /** Ordena por vencimento (vencidas primeiro) — usado no painel "A pagar". */
+  por_vencimento?: boolean;
   limit?: number;
   offset?: number;
 }

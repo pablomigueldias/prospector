@@ -217,6 +217,7 @@ class TransacaoListItem(BaseModel):
     valor_total: Decimal
     data_competencia: date
     data_pagamento: Optional[date] = None
+    data_vencimento: Optional[date] = None
     status: str
     categoria_id: Optional[str] = None
     categoria_nome: Optional[str] = None

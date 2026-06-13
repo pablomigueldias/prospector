@@ -44,12 +44,18 @@ class TransacaoRepository:
         conta_id: Optional[uuid.UUID] = None,
         categoria_id: Optional[uuid.UUID] = None,
         tipo: Optional[str] = None,
+        status: Optional[List[str]] = None,
         busca: Optional[str] = None,
+        por_vencimento: bool = False,
         limit: int = 50,
         offset: int = 0,
     ) -> Tuple[List[Transacao], int]:
         """Transações do usuário aplicando os filtros, mais novas primeiro.
-        Retorna ``(itens, total)`` — total ignora limit/offset (paginação)."""
+        Retorna ``(itens, total)`` — total ignora limit/offset (paginação).
+
+        ``status`` filtra por uma lista (ex.: previstas+atrasadas = a pagar).
+        ``por_vencimento`` ordena pela data de vencimento crescente (vencidas
+        primeiro) — usado no painel "A pagar"."""
         cond = [Transacao.usuario_id == usuario_id]
         if inicio is not None:
             cond.append(Transacao.data_competencia >= inicio)
@@ -59,6 +65,8 @@ class TransacaoRepository:
             cond.append(Transacao.categoria_id == categoria_id)
         if tipo is not None:
             cond.append(Transacao.tipo == tipo)
+        if status:
+            cond.append(Transacao.status.in_(status))
         if busca:
             cond.append(Transacao.descricao.ilike(f"%{busca}%"))
         if conta_id is not None:
@@ -72,14 +80,17 @@ class TransacaoRepository:
                 select(Transacao.id).where(*cond).subquery()
             )
         )
+        ordem = (
+            [Transacao.data_vencimento.asc().nullslast(),
+             Transacao.data_competencia.desc()]
+            if por_vencimento
+            else [Transacao.data_competencia.desc(), Transacao.created_at.desc()]
+        )
         stmt = (
             select(Transacao)
             .options(selectinload(Transacao.pagamentos))
             .where(*cond)
-            .order_by(
-                Transacao.data_competencia.desc(),
-                Transacao.created_at.desc(),
-            )
+            .order_by(*ordem)
             .limit(limit)
             .offset(offset)
         )
