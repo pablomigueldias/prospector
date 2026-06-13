@@ -10,6 +10,7 @@ from app.api.schemas.financas import (
     CartaoListResponse,
     CartaoResponse,
     CartaoUpdate,
+    FaturaExtratoResponse,
     FaturasCartaoResponse,
 )
 from app.api.services.financas import cartao_service
@@ -21,7 +22,7 @@ router = APIRouter(prefix="/api/financas/cartoes", tags=["financas:cartoes"])
 def _handle(e: Exception) -> HTTPException:
     if isinstance(e, CartaoError):
         msg = str(e)
-        status = 404 if "não encontrado" in msg.lower() else 400
+        status = 404 if "não encontrad" in msg.lower() else 400
         return HTTPException(status_code=status, detail=msg)
     return HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
@@ -57,6 +58,16 @@ async def criar(
 async def faturas(cartao_id: str) -> FaturasCartaoResponse:
     try:
         return await cartao_service.faturas_do_cartao(cartao_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/{cartao_id}/faturas/{fatura_id}", response_model=FaturaExtratoResponse,
+            summary="Extrato da fatura: parcelas/compras que a compõem",
+            dependencies=[Depends(usuario_financas)])
+async def extrato_fatura(cartao_id: str, fatura_id: str) -> FaturaExtratoResponse:
+    try:
+        return await cartao_service.extrato_fatura(fatura_id)
     except Exception as e:
         raise _handle(e)
 

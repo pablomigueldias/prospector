@@ -12,10 +12,13 @@ from app.api.schemas.financas import (
     CartaoListResponse,
     CartaoResponse,
     CartaoUpdate,
+    FaturaExtratoItem,
+    FaturaExtratoResponse,
     FaturaResponse,
     FaturasCartaoResponse,
 )
 from app.db.models.financas.cartao import Cartao
+from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.compra import Compra
 from app.db.models.financas.fatura import Fatura
 from app.db.models.financas.parcela import Parcela
@@ -160,4 +163,54 @@ async def faturas_do_cartao(cartao_id: str) -> FaturasCartaoResponse:
         ],
         total_em_aberto=Decimal(em_aberto),
         total_juros=Decimal(juros),
+    )
+
+
+async def extrato_fatura(fatura_id: str) -> FaturaExtratoResponse:
+    """Detalha uma fatura item a item: as parcelas que caem nela, com a
+    descrição/categoria da compra de origem."""
+    fid = _uuid(fatura_id)
+    async with get_session() as session:
+        fatura = await session.get(Fatura, fid)
+        if fatura is None:
+            raise CartaoError("Fatura não encontrada.")
+        cartao = await session.get(Cartao, fatura.cartao_id)
+
+        linhas = (await session.execute(
+            select(Parcela, Compra, Categoria)
+            .join(Compra, Compra.id == Parcela.compra_id)
+            .outerjoin(Categoria, Categoria.id == Compra.categoria_id)
+            .where(Parcela.fatura_id == fid)
+            .order_by(Parcela.vencimento, Compra.descricao)
+        )).all()
+
+        itens = [
+            FaturaExtratoItem(
+                parcela_id=str(p.id),
+                compra_id=str(c.id),
+                descricao=c.descricao,
+                numero=p.numero,
+                total_parcelas=p.total_parcelas,
+                valor=p.valor,
+                valor_juros=p.valor_juros,
+                vencimento=p.vencimento,
+                categoria_id=str(cat.id) if cat else None,
+                categoria_nome=cat.nome if cat else None,
+            )
+            for p, c, cat in linhas
+        ]
+        total_juros = sum((p.valor_juros for p, _, _ in linhas), Decimal("0"))
+
+    return FaturaExtratoResponse(
+        fatura=FaturaResponse(
+            id=str(fatura.id),
+            cartao_id=str(fatura.cartao_id),
+            mes_referencia=fatura.mes_referencia,
+            valor_total=fatura.valor_total,
+            vencimento=fatura.vencimento,
+            status=fatura.status,
+        ),
+        cartao_nome=cartao.nome if cartao else "",
+        itens=itens,
+        total_juros=Decimal(total_juros),
     )

@@ -692,6 +692,26 @@ export interface FaturasCartao {
   total_juros: string;
 }
 
+export interface FaturaExtratoItem {
+  parcela_id: string;
+  compra_id: string;
+  descricao: string;
+  numero: number;
+  total_parcelas: number;
+  valor: string;
+  valor_juros: string;
+  vencimento: string;
+  categoria_id?: string | null;
+  categoria_nome?: string | null;
+}
+
+export interface FaturaExtrato {
+  fatura: Fatura;
+  cartao_nome: string;
+  itens: FaturaExtratoItem[];
+  total_juros: string;
+}
+
 export interface Parcela {
   id: string;
   numero: number;

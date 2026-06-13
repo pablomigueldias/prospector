@@ -44,6 +44,7 @@ import type {
   RelatorioResponse,
   CartaoListResponse,
   FaturasCartao,
+  FaturaExtrato,
   Compra,
   CompraCreateInput,
   LeituraConsumoListResponse,
@@ -387,6 +388,13 @@ export const api = {
   financasCartaoFaturas(cartaoId: string): Promise<FaturasCartao> {
     return request<FaturasCartao>(
       `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  financasFaturaExtrato(cartaoId: string, faturaId: string): Promise<FaturaExtrato> {
+    return request<FaturaExtrato>(
+      `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas/${encodeURIComponent(faturaId)}`,
       { timeoutMs: 10_000 },
     );
   },

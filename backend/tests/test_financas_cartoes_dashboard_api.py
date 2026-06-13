@@ -78,6 +78,23 @@ def smoke_test() -> None:
             assert client.get(f"{CARTOES}/{uuid.uuid4()}/faturas").status_code == 404
             print("   404 ok")
 
+            # ── 4. Extrato de uma fatura ──────────────────────────────
+            print("\n→ Test 4: GET /cartoes/{id}/faturas/{fatura_id} (extrato)")
+            primeira = sorted(b["faturas"], key=lambda f: f["mes_referencia"])[0]
+            re = client.get(f"{CARTOES}/{cartao_id}/faturas/{primeira['id']}")
+            assert re.status_code == 200, re.text
+            ext = re.json()
+            assert ext["cartao_nome"] == "Nubank", ext["cartao_nome"]
+            assert len(ext["itens"]) == 1, ext["itens"]
+            it = ext["itens"][0]
+            assert it["descricao"] == "Geladeira", it
+            assert it["total_parcelas"] == 3, it
+            assert Decimal(it["valor"]) == Decimal("100.00"), it["valor"]
+            print(f"   extrato: {it['descricao']} {it['numero']}/{it['total_parcelas']} R${it['valor']}")
+            # fatura inexistente → 404
+            assert client.get(f"{CARTOES}/{cartao_id}/faturas/{uuid.uuid4()}").status_code == 404
+            print("   fatura inexistente → 404 ok")
+
         finally:
             asyncio.run(_cleanup(usuario_id, cartao_ids, compra_ids))
 

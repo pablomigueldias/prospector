@@ -333,6 +333,27 @@ class FaturasCartaoResponse(BaseModel):
     total_juros: Decimal           # soma de valor_juros das parcelas do cartão
 
 
+class FaturaExtratoItem(BaseModel):
+    """Uma parcela que compõe a fatura (com os dados da compra de origem)."""
+    parcela_id: str
+    compra_id: str
+    descricao: str
+    numero: int
+    total_parcelas: int
+    valor: Decimal
+    valor_juros: Decimal
+    vencimento: date
+    categoria_id: Optional[str] = None
+    categoria_nome: Optional[str] = None
+
+
+class FaturaExtratoResponse(BaseModel):
+    fatura: FaturaResponse
+    cartao_nome: str
+    itens: List[FaturaExtratoItem]
+    total_juros: Decimal
+
+
 class CompraParceladaCreate(BaseModel):
     """Compra no cartão parcelada em N vezes."""
     usuario_id: str

@@ -1,11 +1,17 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { Modal } from '@/components/Modal';
+import { useFetch } from '@/hooks/useFetch';
 import { useCartaoFaturas, useCartoes, useCategorias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
 import { formatBRL } from '@/lib/format';
-import { ApiError, type Cartao, type Fatura } from '@/lib/types';
+import {
+  ApiError,
+  type Cartao,
+  type Fatura,
+  type FaturaExtrato,
+} from '@/lib/types';
 
 type ModalState =
   | { modo: 'fechado' }
@@ -72,6 +78,7 @@ function CartaoCard({
 }) {
   const { dados, loading, refetch } = useCartaoFaturas(cartao.id);
   const [comprando, setComprando] = useState(false);
+  const [faturaAberta, setFaturaAberta] = useState<Fatura | null>(null);
   const abertas = (dados?.faturas ?? []).filter((f) => f.status !== 'paga');
 
   return (
@@ -128,7 +135,7 @@ function CartaoCard({
       {abertas.length > 0 && (
         <ul className="m-0 p-0 list-none flex flex-col gap-1.5 border-t border-line-soft pt-3">
           {abertas.slice(0, 4).map((f) => (
-            <FaturaRow key={f.id} fatura={f} />
+            <FaturaRow key={f.id} fatura={f} onAbrir={() => setFaturaAberta(f)} />
           ))}
         </ul>
       )}
@@ -153,21 +160,98 @@ function CartaoCard({
           }}
         />
       )}
+
+      {faturaAberta && (
+        <FaturaExtratoModal
+          cartaoId={cartao.id}
+          fatura={faturaAberta}
+          onClose={() => setFaturaAberta(null)}
+        />
+      )}
     </div>
   );
 }
 
-function FaturaRow({ fatura }: { fatura: Fatura }) {
+function FaturaRow({ fatura, onAbrir }: { fatura: Fatura; onAbrir: () => void }) {
   return (
-    <li className="flex items-center justify-between text-sm">
-      <span className="text-ink-soft">
-        vence {fatura.vencimento}
-        <span className="ml-2 font-mono text-[10px] uppercase tracking-wide text-ink-mute">
-          {fatura.status}
+    <li>
+      <button
+        type="button"
+        onClick={onAbrir}
+        className="w-full flex items-center justify-between text-sm text-left hover:bg-line-soft/40 rounded px-1 -mx-1 py-0.5 transition-colors"
+        title="Ver o extrato da fatura"
+      >
+        <span className="text-ink-soft">
+          vence {fatura.vencimento}
+          <span className="ml-2 font-mono text-[10px] uppercase tracking-wide text-ink-mute">
+            {fatura.status}
+          </span>
         </span>
-      </span>
-      <span className="text-ink tabular-nums">{formatBRL(fatura.valor_total)}</span>
+        <span className="text-ink tabular-nums">{formatBRL(fatura.valor_total)}</span>
+      </button>
     </li>
+  );
+}
+
+function FaturaExtratoModal({
+  cartaoId,
+  fatura,
+  onClose,
+}: {
+  cartaoId: string;
+  fatura: Fatura;
+  onClose: () => void;
+}) {
+  const { data, loading, error } = useFetch<FaturaExtrato>(
+    () => api.financasFaturaExtrato(cartaoId, fatura.id),
+    [cartaoId, fatura.id],
+  );
+
+  return (
+    <Modal open onClose={onClose} title={`Fatura · vence ${fatura.vencimento}`}>
+      {loading ? (
+        <div className="h-24 animate-pulse" />
+      ) : error ? (
+        <div className="text-sm text-red-600">Falha ao carregar o extrato.</div>
+      ) : !data || data.itens.length === 0 ? (
+        <p className="text-sm text-ink-mute m-0">
+          Nenhuma parcela nesta fatura ainda.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          <ul className="m-0 p-0 list-none flex flex-col divide-y divide-line-soft">
+            {data.itens.map((it) => (
+              <li
+                key={it.parcela_id}
+                className="flex items-center justify-between gap-3 py-2 text-sm"
+              >
+                <div className="min-w-0">
+                  <div className="text-ink truncate">{it.descricao}</div>
+                  <div className="font-mono uppercase tracking-[0.08em] text-[10px] text-ink-mute">
+                    {it.numero}/{it.total_parcelas}
+                    {it.categoria_nome ? ` · ${it.categoria_nome}` : ''}
+                    {Number(it.valor_juros) > 0
+                      ? ` · juros ${formatBRL(it.valor_juros)}`
+                      : ''}
+                  </div>
+                </div>
+                <span className="text-ink tabular-nums shrink-0">
+                  {formatBRL(it.valor)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-baseline justify-between border-t border-line pt-3">
+            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-ink-mute">
+              total da fatura
+            </span>
+            <span className="font-display font-semibold tracking-tight text-ink">
+              {formatBRL(data.fatura.valor_total)}
+            </span>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
