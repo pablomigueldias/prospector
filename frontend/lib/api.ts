@@ -13,6 +13,7 @@ import type {
   CategoriaTreeResponse,
   CategoriaUpdateInput,
   LancamentoInput,
+  DespesaDivididaInput,
   Recorrencia,
   RecorrenciaCreateInput,
   RecorrenciaListResponse,
@@ -556,6 +557,17 @@ export const api = {
   /** POST /api/financas/transacoes/despesa — lança despesa simples */
   financasLancarDespesa(body: LancamentoInput): Promise<TransacaoResponse> {
     return request<TransacaoResponse>('/api/financas/transacoes/despesa', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/transacoes/despesa/dividida — despesa paga por N contas */
+  financasLancarDespesaDividida(
+    body: DespesaDivididaInput,
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>('/api/financas/transacoes/despesa/dividida', {
       method: 'POST',
       body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
       timeoutMs: 10_000,

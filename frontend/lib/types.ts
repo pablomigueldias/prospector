@@ -539,6 +539,20 @@ export interface LancamentoInput {
   status?: 'paga' | 'prevista';
 }
 
+export interface PagamentoInput {
+  conta_id: string;
+  valor: string;
+}
+
+export interface DespesaDivididaInput {
+  descricao: string;
+  valor_total: string;
+  pagamentos: PagamentoInput[];
+  categoria_id?: string | null;
+  data_competencia?: string | null;
+  status?: 'paga' | 'prevista';
+}
+
 /** Payload pra editar uma transação (PATCH). Inclui o `tipo` porque a edição
  *  pode trocar despesa↔receita. */
 export interface TransacaoEditInput {

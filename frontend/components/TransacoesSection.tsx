@@ -512,30 +512,74 @@ function LancamentoForm({
   const [categoriaId, setCategoriaId] = useState(inicial?.categoriaId ?? '');
   const [data, setData] = useState(inicial?.data ?? hojeIso);
   const [prevista, setPrevista] = useState(inicial?.prevista ?? false);
+  // Despesa dividida em N contas (ex.: metade VR, metade dinheiro). Só pra
+  // despesa nova (edição de dividida não é suportada — orienta excluir/relançar).
+  const [dividir, setDividir] = useState(false);
+  const [pagamentos, setPagamentos] = useState<{ conta_id: string; valor: string }[]>([
+    { conta_id: contas[0]?.id ?? '', valor: '' },
+    { conta_id: contas[1]?.id ?? contas[0]?.id ?? '', valor: '' },
+  ]);
+  const podeDividir = !editando && tipo === 'despesa';
+  const dividindo = podeDividir && dividir;
+  const valorNumPreview = Number(valor.replace(',', '.')) || 0;
+  const somaPagamentos = pagamentos.reduce(
+    (acc, p) => acc + (Number(p.valor.replace(',', '.')) || 0),
+    0,
+  );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+
+  function setPagamento(i: number, campo: 'conta_id' | 'valor', v: string) {
+    setPagamentos((ps) => ps.map((p, idx) => (idx === i ? { ...p, [campo]: v } : p)));
+  }
 
   async function salvar(e: FormEvent) {
     e.preventDefault();
     setErro('');
     if (!descricao.trim()) return setErro('Descreva o lançamento.');
-    if (!contaId) return setErro('Escolha a conta.');
     const valorNum = Number(valor.replace(',', '.'));
     if (!Number.isFinite(valorNum) || valorNum <= 0) {
       return setErro('Informe um valor maior que zero.');
     }
 
-    const body = {
-      descricao: descricao.trim(),
-      valor_total: String(valorNum),
-      conta_id: contaId,
-      categoria_id: categoriaId || null,
-      data_competencia: data || null,
-      status: prevista ? ('prevista' as const) : ('paga' as const),
-    };
-
     setSalvando(true);
     try {
+      if (dividindo) {
+        const pags = pagamentos
+          .filter((p) => p.conta_id && Number(p.valor.replace(',', '.')) > 0)
+          .map((p) => ({ conta_id: p.conta_id, valor: String(Number(p.valor.replace(',', '.'))) }));
+        if (pags.length < 2) {
+          setSalvando(false);
+          return setErro('Divida em pelo menos duas contas (ou desmarque a divisão).');
+        }
+        if (Math.abs(somaPagamentos - valorNum) >= 0.005) {
+          setSalvando(false);
+          return setErro(`A soma das contas (${somaPagamentos.toFixed(2)}) precisa bater com o total (${valorNum.toFixed(2)}).`);
+        }
+        await api.financasLancarDespesaDividida({
+          descricao: descricao.trim(),
+          valor_total: String(valorNum),
+          pagamentos: pags,
+          categoria_id: categoriaId || null,
+          data_competencia: data || null,
+          status: prevista ? 'prevista' : 'paga',
+        });
+        onSaved();
+        return;
+      }
+
+      if (!contaId) {
+        setSalvando(false);
+        return setErro('Escolha a conta.');
+      }
+      const body = {
+        descricao: descricao.trim(),
+        valor_total: String(valorNum),
+        conta_id: contaId,
+        categoria_id: categoriaId || null,
+        data_competencia: data || null,
+        status: prevista ? ('prevista' as const) : ('paga' as const),
+      };
       if (inicial) {
         await api.financasEditarTransacao(inicial.id, { tipo, ...body });
       } else if (tipo === 'despesa') {
@@ -615,19 +659,29 @@ function LancamentoForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
-              {tipo === 'despesa' ? 'Conta (saiu de)' : 'Conta (entrou em)'}
+              {dividindo
+                ? 'Contas'
+                : tipo === 'despesa'
+                  ? 'Conta (saiu de)'
+                  : 'Conta (entrou em)'}
             </label>
-            <select
-              className="input"
-              value={contaId}
-              onChange={(e) => setContaId(e.target.value)}
-            >
-              {contas.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
+            {dividindo ? (
+              <div className="input flex items-center text-ink-mute text-[13px]">
+                dividida abaixo ↓
+              </div>
+            ) : (
+              <select
+                className="input"
+                value={contaId}
+                onChange={(e) => setContaId(e.target.value)}
+              >
+                {contas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
@@ -647,6 +701,73 @@ function LancamentoForm({
             </select>
           </div>
         </div>
+
+        {podeDividir && (
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
+            <input
+              type="checkbox"
+              checked={dividir}
+              onChange={(e) => setDividir(e.target.checked)}
+            />
+            Dividir entre contas (ex.: metade VR, metade dinheiro)
+          </label>
+        )}
+
+        {dividindo && (
+          <div className="space-y-2 border border-line-soft rounded-lg p-3">
+            {pagamentos.map((p, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <select
+                  className="input flex-1"
+                  value={p.conta_id}
+                  onChange={(e) => setPagamento(i, 'conta_id', e.target.value)}
+                >
+                  <option value="">Conta…</option>
+                  {contas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="input w-28"
+                  value={p.valor}
+                  onChange={(e) => setPagamento(i, 'valor', e.target.value)}
+                  inputMode="decimal"
+                  placeholder="0,00"
+                />
+                {pagamentos.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setPagamentos((ps) => ps.filter((_, idx) => idx !== i))}
+                    className="text-ink-mute hover:text-red-600 text-lg leading-none px-1"
+                    title="Remover"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setPagamentos((ps) => [...ps, { conta_id: '', valor: '' }])}
+                className="text-[13px] text-brand hover:underline"
+              >
+                + conta
+              </button>
+              <span
+                className={`text-[12.5px] tabular-nums ${
+                  Math.abs(somaPagamentos - valorNumPreview) < 0.005
+                    ? 'text-ink-mute'
+                    : 'text-red-600'
+                }`}
+              >
+                soma {somaPagamentos.toFixed(2)} / total {valorNumPreview.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        )}
 
         <label className="flex items-center gap-2 text-sm text-ink-soft">
           <input
