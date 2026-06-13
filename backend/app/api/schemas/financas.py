@@ -526,6 +526,44 @@ class OrcamentoStatusResponse(BaseModel):
     total_consumido: Decimal
 
 
+# ══════════════════════════════════════════════════════════════════
+# Pagar o mês (fatura do cartão + boletos do mês de uma vez)
+# ══════════════════════════════════════════════════════════════════
+
+class PagamentoMesItem(BaseModel):
+    """Uma pendência do mês (boleto a pagar ou fatura de cartão)."""
+    tipo: str                       # "boleto" | "fatura"
+    id: str
+    descricao: str
+    valor: Decimal                  # já com encargos (boleto) até hoje
+    vencimento: Optional[date] = None
+    conta_sugerida_id: Optional[str] = None
+    conta_sugerida_nome: Optional[str] = None
+
+
+class PagamentoMesPreview(BaseModel):
+    competencia: str                # "YYYY-MM"
+    itens: List[PagamentoMesItem]
+    total: Decimal
+
+
+class PagamentoMesItemInput(BaseModel):
+    tipo: str                       # "boleto" | "fatura"
+    id: str
+    conta_id: str
+
+
+class PagamentoMesRequest(BaseModel):
+    data_pagamento: Optional[date] = None
+    itens: List[PagamentoMesItemInput] = Field(..., min_length=1)
+
+
+class PagamentoMesResultado(BaseModel):
+    pagos: int
+    total_pago: Decimal
+    falhas: List[str] = Field(default_factory=list)
+
+
 class RecorrenciaStatusItem(BaseModel):
     """Situação de uma recorrência num mês específico."""
     recorrencia_id: str
