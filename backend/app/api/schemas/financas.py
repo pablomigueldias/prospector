@@ -168,6 +168,12 @@ class TransacaoUpdate(BaseModel):
     status: str = Field("paga", description="prevista/paga/atrasada")
 
 
+class SugestaoContaResponse(BaseModel):
+    """Conta sugerida pra pagar (última usada com o mesmo beneficiário)."""
+    conta_id: Optional[str] = None
+    conta_nome: Optional[str] = None
+
+
 class ItemPrevistaInput(BaseModel):
     descricao: str
     valor: Decimal = Field(..., gt=0)

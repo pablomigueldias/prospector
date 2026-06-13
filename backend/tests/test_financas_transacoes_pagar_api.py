@@ -223,6 +223,18 @@ def smoke_test() -> None:
             assert round(saldo5 - _saldo(client, conta_id), 2) == 90.0
             print(f"   pagou {c5['valor_total']} (boleto era 100)")
 
+            # ══ Conta sugerida pelo beneficiário ════════════════════════
+            print("\n→ Test 10: sugestão de conta pelo último pago do beneficiário")
+            # tx5 ('Condomínio') foi pago com conta_id acima; um novo boleto do
+            # mesmo beneficiário deve sugerir essa conta.
+            tx6 = str(uuid.uuid4())
+            asyncio.run(_inserir_prevista_sem_conta(usuario_id, tx6, 80))  # 'Condomínio'
+            tx_ids.append(tx6)
+            sug = client.get(f"{TX}/{tx6}/sugestao-conta").json()
+            assert sug["conta_id"] == conta_id, sug
+            assert sug["conta_nome"] == "Nubank", sug
+            print(f"   sugeriu {sug['conta_nome']}")
+
         finally:
             limpar_override()
             asyncio.run(_cleanup(conta_ids, tx_ids))

@@ -14,6 +14,7 @@ from app.api.schemas.financas import (
     PagarTransacaoRequest,
     PrevistaUpdate,
     ReceitaCreate,
+    SugestaoContaResponse,
     TransacaoListResponse,
     TransacaoResponse,
     TransacaoUpdate,
@@ -141,6 +142,21 @@ async def editar(
 ) -> TransacaoResponse:
     try:
         return await transacao_service.editar_transacao(transacao_id, body, usuario_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/{transacao_id}/sugestao-conta", response_model=SugestaoContaResponse,
+            summary="Conta sugerida pra pagar (última usada com o mesmo beneficiário)",
+            dependencies=[Depends(usuario_financas)])
+async def sugestao_conta(
+    transacao_id: str,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> SugestaoContaResponse:
+    try:
+        return SugestaoContaResponse(
+            **await transacao_service.sugestao_conta_pagamento(transacao_id, usuario_id)
+        )
     except Exception as e:
         raise _handle(e)
 

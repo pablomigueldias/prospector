@@ -13,6 +13,9 @@ export interface PagamentoAlvo {
   valor: string;
   /** Conta já vinculada (prevista lançada com conta) ou null (boleto/recorrência). */
   contaIdAtual: string | null;
+  /** Conta sugerida (última usada pra pagar o mesmo beneficiário). */
+  contaSugeridaId?: string | null;
+  contaSugeridaNome?: string | null;
   /** Encargos por atraso (boleto), pra projetar multa+juros até a data de pagamento. */
   vencimento?: string | null;
   multaPct?: string | number | null;
@@ -38,7 +41,9 @@ export function PagarModal({
   const hojeIso = new Date().toISOString().slice(0, 10);
   const precisaConta = !alvo.contaIdAtual;
   const contaAtualNome = contas.find((c) => c.id === alvo.contaIdAtual)?.nome;
-  const [contaId, setContaId] = useState(alvo.contaIdAtual ?? contas[0]?.id ?? '');
+  const [contaId, setContaId] = useState(
+    alvo.contaIdAtual ?? alvo.contaSugeridaId ?? contas[0]?.id ?? '',
+  );
   const [data, setData] = useState(hojeIso);
   // Multa/juros editáveis: prefill do que veio (IA), mas dá pra corrigir aqui
   // ou preencher boleto antigo que não tinha essa info.
@@ -147,6 +152,12 @@ export function PagarModal({
                 </option>
               ))}
             </select>
+            {alvo.contaSugeridaNome && (
+              <p className="text-[11.5px] text-ink-mute mt-1">
+                Sugerida: <strong className="text-ink-soft">{alvo.contaSugeridaNome}</strong>{' '}
+                (última vez que você pagou esse beneficiário)
+              </p>
+            )}
           </div>
         ) : (
           <div className="text-[13px] text-ink-soft">

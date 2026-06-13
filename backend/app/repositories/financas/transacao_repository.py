@@ -84,6 +84,29 @@ class TransacaoRepository:
         )
         return await self.session.scalar(stmt)
 
+    async def ultima_conta_por_descricao(
+        self, usuario_id: uuid.UUID, descricao: Optional[str]
+    ) -> Optional[uuid.UUID]:
+        """Conta usada pra pagar a transação paga mais recente com essa
+        descrição (beneficiário). Sugere a conta no pagamento de um boleto."""
+        if not descricao or not descricao.strip():
+            return None
+        stmt = (
+            select(TransacaoPagamento.conta_id)
+            .join(Transacao, Transacao.id == TransacaoPagamento.transacao_id)
+            .where(
+                Transacao.usuario_id == usuario_id,
+                func.lower(Transacao.descricao) == descricao.strip().lower(),
+                Transacao.status == "paga",
+            )
+            .order_by(
+                Transacao.data_pagamento.desc().nullslast(),
+                Transacao.created_at.desc(),
+            )
+            .limit(1)
+        )
+        return await self.session.scalar(stmt)
+
     # ── Listagem filtrável (para a tela de transações no dashboard) ───
     async def listar(
         self,

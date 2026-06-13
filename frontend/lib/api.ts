@@ -512,6 +512,17 @@ export const api = {
     );
   },
 
+  /** GET /api/financas/transacoes/{id}/sugestao-conta — conta sugerida pra
+   *  pagar (a última usada com o mesmo beneficiário). */
+  financasSugestaoConta(
+    id: string,
+  ): Promise<{ conta_id: string | null; conta_nome: string | null }> {
+    return request(
+      `/api/financas/transacoes/${encodeURIComponent(id)}/sugestao-conta`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
   /** PATCH /api/financas/transacoes/{id}/conta-a-pagar — edita uma conta a
    *  pagar (prevista): detalha verbas, ajusta valor/categoria/vencimento/encargos.
    *  Não mexe no saldo (ainda não foi paga). */

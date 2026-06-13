@@ -93,11 +93,17 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
     setCarregandoPagar(t.id);
     try {
       const det = await api.financasTransacao(t.id);
+      const semConta = !det.pagamentos?.[0]?.conta_id;
+      const sug = semConta
+        ? await api.financasSugestaoConta(t.id).catch(() => null)
+        : null;
       setPagando({
         id: det.id,
         descricao: det.descricao,
         valor: String(det.valor_total),
         contaIdAtual: det.pagamentos?.[0]?.conta_id ?? null,
+        contaSugeridaId: sug?.conta_id ?? null,
+        contaSugeridaNome: sug?.conta_nome ?? null,
         vencimento: det.data_vencimento ?? null,
         multaPct: det.multa_percentual ?? null,
         jurosPct: det.juros_mensal_percentual ?? null,

@@ -325,6 +325,31 @@ async def lancar_despesa_auto_split(
         )
 
 
+async def sugestao_conta_pagamento(
+    transacao_id: str, usuario_id_sessao: str
+) -> dict:
+    """Sugere a conta pra pagar uma conta a pagar: a última usada pra pagar o
+    mesmo beneficiário. Retorna {conta_id, conta_nome} (None se não houver)."""
+    tid = _uuid(transacao_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        t = await repo.get(tid)
+        if t is None:
+            raise TransacaoError("Transação não encontrada.")
+        if t.usuario_id != uid:
+            raise TransacaoError("A transação não pertence a esse usuário.")
+        conta_id = await repo.ultima_conta_por_descricao(uid, t.descricao)
+        nome = None
+        if conta_id is not None:
+            conta = await session.get(Conta, conta_id)
+            nome = conta.nome if conta is not None else None
+    return {
+        "conta_id": str(conta_id) if conta_id else None,
+        "conta_nome": nome,
+    }
+
+
 async def get_transacao(transacao_id: str) -> TransacaoResponse:
     async with get_session() as session:
         transacao = await TransacaoRepository(session).get(_uuid(transacao_id))
