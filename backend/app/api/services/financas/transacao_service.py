@@ -29,6 +29,7 @@ from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
 from app.db.models.financas.transacao import STATUS_TRANSACAO, Transacao
+from app.db.models.financas.transacao_item import TransacaoItem
 from app.db.models.financas.transacao_pagamento import TransacaoPagamento
 from app.db.session import get_session
 from app.repositories.financas.transacao_repository import TransacaoRepository
@@ -499,6 +500,62 @@ async def editar_transacao(
         await eventos.notificar(session, usuario_id, "transacao_editada")
         await session.commit()
         return _to_response(await repo.get(t.id))
+
+
+async def editar_prevista(
+    transacao_id: str, payload, usuario_id_sessao: str
+) -> TransacaoResponse:
+    """Edita uma conta **a pagar** (prevista/atrasada) sem tocar no saldo — ela
+    ainda não foi paga. Serve pra detalhar/corrigir o que veio do boleto:
+    descrição, valor, categoria, vencimento, encargos e as verbas (itens)."""
+    if not payload.descricao.strip():
+        raise TransacaoError("A conta a pagar precisa de uma descrição.")
+    tid = _uuid(transacao_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    categoria_id = (
+        _uuid(payload.categoria_id, campo="categoria_id")
+        if payload.categoria_id else None
+    )
+
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        t = await repo.get(tid)
+        if t is None:
+            raise TransacaoError("Transação não encontrada.")
+        if t.usuario_id != uid:
+            raise TransacaoError("A transação não pertence a esse usuário.")
+        if t.status == "paga":
+            raise TransacaoError(
+                "Essa transação já foi paga — não dá pra editar como conta a pagar."
+            )
+        if len(t.pagamentos) > 1:
+            raise TransacaoError(
+                "Essa conta é dividida em mais de uma conta — exclua e relance."
+            )
+        await _validar_categoria(session, categoria_id)
+
+        t.descricao = payload.descricao.strip()
+        t.valor_total = payload.valor_total
+        t.categoria_id = categoria_id
+        t.data_vencimento = payload.data_vencimento
+        if payload.multa_percentual is not None:
+            t.multa_percentual = payload.multa_percentual
+        if payload.juros_mensal_percentual is not None:
+            t.juros_mensal_percentual = payload.juros_mensal_percentual
+        # Prevista lançada com conta: mantém a soma do pagamento == total.
+        if len(t.pagamentos) == 1:
+            t.pagamentos[0].valor = payload.valor_total
+        # Substitui as verbas, se vieram (cascade delete-orphan limpa as antigas).
+        if payload.itens is not None:
+            t.itens.clear()
+            for it in payload.itens:
+                t.itens.append(
+                    TransacaoItem(descricao=it.descricao, valor=it.valor)
+                )
+
+        await eventos.notificar(session, uid, "transacao_editada")
+        await session.commit()
+        return _to_response(await repo.get(tid))
 
 
 async def pagar_transacao(

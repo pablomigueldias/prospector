@@ -487,6 +487,23 @@ export interface TransacaoResponse {
   status: string;
   categoria_id?: string | null;
   pagamentos?: TransacaoPagamento[];
+  itens?: { id: string; descricao: string; valor: string; categoria_id?: string | null }[];
+}
+
+export interface VerbaInput {
+  descricao: string;
+  valor: string;
+}
+
+/** Edição de uma conta a pagar (prevista) — não mexe no saldo. */
+export interface PrevistaUpdateInput {
+  descricao: string;
+  valor_total: string;
+  categoria_id?: string | null;
+  data_vencimento?: string | null;
+  multa_percentual?: string | null;
+  juros_mensal_percentual?: string | null;
+  itens?: VerbaInput[] | null;
 }
 
 export interface TransacaoFiltro {

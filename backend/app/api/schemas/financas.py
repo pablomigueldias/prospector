@@ -168,6 +168,25 @@ class TransacaoUpdate(BaseModel):
     status: str = Field("paga", description="prevista/paga/atrasada")
 
 
+class ItemPrevistaInput(BaseModel):
+    descricao: str
+    valor: Decimal = Field(..., gt=0)
+
+
+class PrevistaUpdate(BaseModel):
+    """Edição de uma conta **a pagar** (prevista/atrasada) — sem mexer no saldo
+    (ela ainda não foi paga). Permite detalhar/corrigir o que a IA importou do
+    boleto: descrição, valor, categoria, vencimento, encargos e as verbas
+    (itens). Se ``itens`` vier, substitui as verbas atuais."""
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    categoria_id: Optional[str] = None
+    data_vencimento: Optional[date] = None
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
+    itens: Optional[List[ItemPrevistaInput]] = None
+
+
 class PagarTransacaoRequest(BaseModel):
     """Quita uma transação prevista/atrasada (move o saldo). ``conta_id`` só é
     exigido quando a transação ainda não tem conta (boleto importado /

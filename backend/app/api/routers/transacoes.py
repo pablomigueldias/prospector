@@ -12,6 +12,7 @@ from app.api.schemas.financas import (
     DespesaCreate,
     DespesaDivididaCreate,
     PagarTransacaoRequest,
+    PrevistaUpdate,
     ReceitaCreate,
     TransacaoListResponse,
     TransacaoResponse,
@@ -140,6 +141,20 @@ async def editar(
 ) -> TransacaoResponse:
     try:
         return await transacao_service.editar_transacao(transacao_id, body, usuario_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.patch("/{transacao_id}/conta-a-pagar", response_model=TransacaoResponse,
+              summary="Edita uma conta a pagar (prevista) — detalha verbas, valor, etc.",
+              dependencies=[Depends(exige_editar)])
+async def editar_prevista(
+    transacao_id: str,
+    body: PrevistaUpdate,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> TransacaoResponse:
+    try:
+        return await transacao_service.editar_prevista(transacao_id, body, usuario_id)
     except Exception as e:
         raise _handle(e)
 

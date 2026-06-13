@@ -168,6 +168,28 @@ def smoke_test() -> None:
             assert round(saldo_antes - _saldo(client, conta_id), 2) == 102.33
             print(f"   encargos {corpo['encargos_pagos']}, total {corpo['valor_total']}")
 
+            # ══ Editar conta a pagar: detalha verbas + ajusta valor ══
+            print("\n→ Test 7b: editar prevista (detalhar verbas, sem mexer no saldo)")
+            txe = str(uuid.uuid4())
+            asyncio.run(_inserir_prevista_sem_conta(usuario_id, txe, 300))
+            tx_ids.append(txe)
+            saldo_pre = _saldo(client, conta_id)
+            re_ = client.patch(f"{TX}/{txe}/conta-a-pagar", json={
+                "descricao": "Condomínio detalhado",
+                "valor_total": 300,
+                "itens": [
+                    {"descricao": "Taxa", "valor": 250},
+                    {"descricao": "Fundo", "valor": 50},
+                ],
+            })
+            assert re_.status_code == 200, re_.text
+            ce = re_.json()
+            assert ce["descricao"] == "Condomínio detalhado"
+            assert len(ce["itens"]) == 2, ce["itens"]
+            assert ce["status"] == "prevista"
+            assert _saldo(client, conta_id) == saldo_pre, "editar prevista não mexe no saldo"
+            print(f"   {len(ce['itens'])} verbas, saldo intacto")
+
             # ══ Caminho 4: boleto antigo SEM encargos → informa no pagamento ═
             print("\n→ Test 8: boleto antigo s/ encargos → multa/juros no body")
             tx4 = str(uuid.uuid4())

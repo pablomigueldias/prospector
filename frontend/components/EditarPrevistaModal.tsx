@@ -1,0 +1,257 @@
+import { useState, type FormEvent } from 'react';
+
+import { Modal } from '@/components/Modal';
+import { api } from '@/lib/api';
+import { type CategoriaPlana } from '@/lib/categorias';
+import { formatBRL } from '@/lib/format';
+import { ApiError, type TransacaoResponse, type VerbaInput } from '@/lib/types';
+
+/**
+ * Editar uma conta **a pagar** (prevista) — detalhar/corrigir o que veio do
+ * boleto sem mexer no saldo (ainda não foi paga): descrição, valor, categoria,
+ * vencimento, encargos e as verbas (itens).
+ */
+export function EditarPrevistaModal({
+  detalhe,
+  categorias,
+  onClose,
+  onSaved,
+}: {
+  detalhe: TransacaoResponse;
+  categorias: CategoriaPlana[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [descricao, setDescricao] = useState(detalhe.descricao);
+  const [valor, setValor] = useState(String(detalhe.valor_total));
+  const [vencimento, setVencimento] = useState(detalhe.data_vencimento ?? '');
+  const [categoriaId, setCategoriaId] = useState(detalhe.categoria_id ?? '');
+  const [multaPct, setMultaPct] = useState(
+    detalhe.multa_percentual != null ? String(detalhe.multa_percentual) : '',
+  );
+  const [jurosPct, setJurosPct] = useState(
+    detalhe.juros_mensal_percentual != null
+      ? String(detalhe.juros_mensal_percentual)
+      : '',
+  );
+  const [verbas, setVerbas] = useState<VerbaInput[]>(
+    (detalhe.itens ?? []).map((i) => ({
+      descricao: i.descricao,
+      valor: String(i.valor),
+    })),
+  );
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  const somaVerbas = verbas.reduce(
+    (acc, v) => acc + (Number(v.valor.replace(',', '.')) || 0),
+    0,
+  );
+  const totalNum = Number(valor.replace(',', '.')) || 0;
+  const verbasBatem = verbas.length === 0 || Math.abs(somaVerbas - totalNum) < 0.005;
+
+  function setVerba(i: number, campo: keyof VerbaInput, v: string) {
+    setVerbas((vs) => vs.map((x, idx) => (idx === i ? { ...x, [campo]: v } : x)));
+  }
+  function addVerba() {
+    setVerbas((vs) => [...vs, { descricao: '', valor: '' }]);
+  }
+  function removerVerba(i: number) {
+    setVerbas((vs) => vs.filter((_, idx) => idx !== i));
+  }
+
+  async function salvar(e: FormEvent) {
+    e.preventDefault();
+    setErro('');
+    if (!descricao.trim()) return setErro('Descreva a conta.');
+    if (!Number.isFinite(totalNum) || totalNum <= 0) {
+      return setErro('Informe um valor maior que zero.');
+    }
+    const itens = verbas
+      .filter((v) => v.descricao.trim() && Number(v.valor.replace(',', '.')) > 0)
+      .map((v) => ({
+        descricao: v.descricao.trim(),
+        valor: String(Number(v.valor.replace(',', '.'))),
+      }));
+
+    setSalvando(true);
+    try {
+      await api.financasEditarPrevista(detalhe.id, {
+        descricao: descricao.trim(),
+        valor_total: String(totalNum),
+        categoria_id: categoriaId || null,
+        data_vencimento: vencimento || null,
+        multa_percentual: multaPct !== '' ? multaPct : null,
+        juros_mensal_percentual: jurosPct !== '' ? jurosPct : null,
+        itens, // substitui as verbas (mesmo vazio limpa)
+      });
+      onSaved();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Falha ao salvar.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Editar conta a pagar" maxWidth="max-w-lg">
+      <form onSubmit={salvar} className="space-y-4">
+        <div>
+          <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+            Descrição
+          </label>
+          <input
+            className="input"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            autoFocus
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+              Valor total
+            </label>
+            <input
+              className="input"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              inputMode="decimal"
+              placeholder="0,00"
+            />
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+              Vencimento
+            </label>
+            <input
+              type="date"
+              className="input"
+              value={vencimento}
+              onChange={(e) => setVencimento(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
+          <div>
+            <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+              Categoria
+            </label>
+            <select
+              className="input"
+              value={categoriaId}
+              onChange={(e) => setCategoriaId(e.target.value)}
+            >
+              <option value="">Sem categoria</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {`${'  '.repeat(c.depth)}${c.nome}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="w-20">
+            <label className="block text-[12px] text-ink-soft mb-1">Multa %</label>
+            <input
+              className="input"
+              value={multaPct}
+              onChange={(e) => setMultaPct(e.target.value)}
+              inputMode="decimal"
+              placeholder="2"
+            />
+          </div>
+          <div className="w-20">
+            <label className="block text-[12px] text-ink-soft mb-1">Juros %/mês</label>
+            <input
+              className="input"
+              value={jurosPct}
+              onChange={(e) => setJurosPct(e.target.value)}
+              inputMode="decimal"
+              placeholder="1"
+            />
+          </div>
+        </div>
+
+        {/* Editor de verbas (subitens do boleto) */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[13px] font-medium text-ink-soft">
+              Verbas (detalhamento)
+            </label>
+            <button
+              type="button"
+              onClick={addVerba}
+              className="text-[12px] text-brand hover:underline"
+            >
+              + adicionar
+            </button>
+          </div>
+          {verbas.length === 0 ? (
+            <p className="text-[12px] text-ink-mute">
+              Sem detalhamento. Adicione as verbas do boleto se quiser.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {verbas.map((v, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    className="input flex-1"
+                    value={v.descricao}
+                    onChange={(e) => setVerba(i, 'descricao', e.target.value)}
+                    placeholder="ex: Taxa de condomínio"
+                  />
+                  <input
+                    className="input w-28"
+                    value={v.valor}
+                    onChange={(e) => setVerba(i, 'valor', e.target.value)}
+                    inputMode="decimal"
+                    placeholder="0,00"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removerVerba(i)}
+                    className="text-ink-faint hover:text-red-600 px-1"
+                    aria-label="Remover verba"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <div
+                className={`text-[12px] ${verbasBatem ? 'text-ink-mute' : 'text-amber-600'}`}
+              >
+                Soma das verbas: {formatBRL(somaVerbas)}
+                {!verbasBatem && ` (difere do total ${formatBRL(totalNum)})`}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {erro && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {erro}
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-ghost px-4 py-2 text-sm"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={salvando}
+            className="btn-primary px-5 py-2 text-sm disabled:opacity-50"
+          >
+            {salvando ? 'Salvando…' : 'Salvar'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}

@@ -47,6 +47,7 @@ import type {
   LeituraConsumoListResponse,
   ComprovanteListResponse,
   ImportarBoletoResponse,
+  PrevistaUpdateInput,
   Usuario,
   UsuarioAdminItem,
   PapelItem,
@@ -507,6 +508,19 @@ export const api = {
   ): Promise<TransacaoResponse> {
     return request<TransacaoResponse>(
       `/api/financas/transacoes/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body, timeoutMs: 10_000 },
+    );
+  },
+
+  /** PATCH /api/financas/transacoes/{id}/conta-a-pagar — edita uma conta a
+   *  pagar (prevista): detalha verbas, ajusta valor/categoria/vencimento/encargos.
+   *  Não mexe no saldo (ainda não foi paga). */
+  financasEditarPrevista(
+    id: string,
+    body: PrevistaUpdateInput,
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>(
+      `/api/financas/transacoes/${encodeURIComponent(id)}/conta-a-pagar`,
       { method: 'PATCH', body, timeoutMs: 10_000 },
     );
   },

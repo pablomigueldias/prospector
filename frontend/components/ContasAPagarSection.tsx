@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react';
 
 import { CopiarLinha } from '@/components/CopiarLinha';
+import { EditarPrevistaModal } from '@/components/EditarPrevistaModal';
 import { PagarModal, type PagamentoAlvo } from '@/components/PagarModal';
-import { useTransacoes } from '@/hooks/useFinancas';
+import { useCategorias, useTransacoes } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
+import { achatarCategorias } from '@/lib/categorias';
 import { calcularEncargos } from '@/lib/encargos';
 import { formatBRL } from '@/lib/format';
-import { ApiError, type Conta, type TransacaoListItem } from '@/lib/types';
+import {
+  ApiError,
+  type Conta,
+  type TransacaoListItem,
+  type TransacaoResponse,
+} from '@/lib/types';
 
 interface Props {
   contas: Conta[];
@@ -57,10 +64,29 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
 
   const { transacoes, total, loading, refetch } = useTransacoes(filtro);
 
+  const { arvore } = useCategorias();
+  const categorias = useMemo(() => achatarCategorias(arvore), [arvore]);
+
   // Quitação (reusa o PagarModal). Busca o detalhe pra saber se já tem conta.
   const [pagando, setPagando] = useState<PagamentoAlvo | null>(null);
   const [carregandoPagar, setCarregandoPagar] = useState<string | null>(null);
   const [erro, setErro] = useState('');
+
+  // Edição da conta a pagar (detalhar verbas etc.) — busca o detalhe completo.
+  const [editando, setEditando] = useState<TransacaoResponse | null>(null);
+  const [carregandoEditar, setCarregandoEditar] = useState<string | null>(null);
+
+  async function abrirEdicao(t: TransacaoListItem) {
+    setErro('');
+    setCarregandoEditar(t.id);
+    try {
+      setEditando(await api.financasTransacao(t.id));
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Falha ao abrir a edição.');
+    } finally {
+      setCarregandoEditar(null);
+    }
+  }
 
   async function abrirPagamento(t: TransacaoListItem) {
     setErro('');
@@ -215,15 +241,27 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
                     pago
                   </span>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => abrirPagamento(t)}
-                    disabled={carregandoPagar === t.id}
-                    className="shrink-0 text-[11px] font-medium text-success border border-success-soft hover:bg-success-soft rounded-pill px-2.5 py-1 transition-colors disabled:opacity-50"
-                    title="Marcar como paga (move o saldo)"
-                  >
-                    {carregandoPagar === t.id ? '…' : '✓ Pagar'}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => abrirEdicao(t)}
+                      disabled={carregandoEditar === t.id}
+                      className="shrink-0 text-ink-faint hover:text-brand text-sm px-1 disabled:opacity-50"
+                      title="Editar (detalhar verbas, valor, vencimento…)"
+                      aria-label="Editar conta a pagar"
+                    >
+                      {carregandoEditar === t.id ? '…' : '✎'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => abrirPagamento(t)}
+                      disabled={carregandoPagar === t.id}
+                      className="shrink-0 text-[11px] font-medium text-success border border-success-soft hover:bg-success-soft rounded-pill px-2.5 py-1 transition-colors disabled:opacity-50"
+                      title="Marcar como paga (move o saldo)"
+                    >
+                      {carregandoPagar === t.id ? '…' : '✓ Pagar'}
+                    </button>
+                  </>
                 )}
               </div>
             );
@@ -238,6 +276,18 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
           onClose={() => setPagando(null)}
           onPaid={() => {
             setPagando(null);
+            recarregar();
+          }}
+        />
+      )}
+
+      {editando && (
+        <EditarPrevistaModal
+          detalhe={editando}
+          categorias={categorias}
+          onClose={() => setEditando(null)}
+          onSaved={() => {
+            setEditando(null);
             recarregar();
           }}
         />
