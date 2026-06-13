@@ -24,6 +24,7 @@ from app.api.schemas.financas import (
     TransacaoPagamentoResponse,
     TransacaoResponse,
 )
+from app.api.services.financas import encargos as encargos_service
 from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
@@ -58,6 +59,9 @@ def _to_response(t: Transacao) -> TransacaoResponse:
         data_competencia=t.data_competencia,
         data_pagamento=t.data_pagamento,
         data_vencimento=t.data_vencimento,
+        multa_percentual=t.multa_percentual,
+        juros_mensal_percentual=t.juros_mensal_percentual,
+        encargos_pagos=t.encargos_pagos,
         status=t.status,
         origem=t.origem,
         categoria_id=str(t.categoria_id) if t.categoria_id else None,
@@ -410,6 +414,9 @@ async def listar_transacoes(
                 data_competencia=t.data_competencia,
                 data_pagamento=t.data_pagamento,
                 data_vencimento=t.data_vencimento,
+                multa_percentual=t.multa_percentual,
+                juros_mensal_percentual=t.juros_mensal_percentual,
+                encargos_pagos=t.encargos_pagos,
                 status=t.status,
                 categoria_id=str(t.categoria_id) if t.categoria_id else None,
                 categoria_nome=cat_nome.get(t.categoria_id),
@@ -521,7 +528,19 @@ async def pagar_transacao(
         if t.status == "paga":
             raise TransacaoError("Essa transação já está paga.")
 
+        # Multa + juros até a data do pagamento (0 se no prazo / sem encargos).
+        # Não aplica em despesa dividida (mais de uma conta) — caso raro de boleto.
+        enc = encargos_service.calcular_encargos(
+            t.valor_total, t.data_vencimento, t.multa_percentual,
+            t.juros_mensal_percentual, quando,
+        )
+        aplica_enc = enc > 0 and len(t.pagamentos) <= 1
+
         if t.pagamentos:
+            if aplica_enc:
+                t.pagamentos[0].valor = Decimal(t.pagamentos[0].valor) + enc
+                t.valor_total = Decimal(t.valor_total) + enc
+                t.encargos_pagos = enc
             for p in t.pagamentos:
                 conta = await session.get(Conta, p.conta_id)
                 if conta is not None:
@@ -532,10 +551,14 @@ async def pagar_transacao(
             conta = await _buscar_conta(
                 session, _uuid(conta_id, campo="conta_id"), uid
             )
+            total = Decimal(t.valor_total) + (enc if aplica_enc else Decimal("0"))
             t.pagamentos.append(
-                TransacaoPagamento(conta_id=conta.id, valor=t.valor_total)
+                TransacaoPagamento(conta_id=conta.id, valor=total)
             )
-            saldo_service.aplicar_movimento(conta, t.tipo, t.valor_total)
+            if aplica_enc:
+                t.valor_total = total
+                t.encargos_pagos = enc
+            saldo_service.aplicar_movimento(conta, t.tipo, total)
 
         t.status = "paga"
         t.data_pagamento = quando

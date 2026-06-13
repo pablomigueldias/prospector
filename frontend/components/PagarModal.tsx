@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { Modal } from '@/components/Modal';
 import { api } from '@/lib/api';
+import { calcularEncargos } from '@/lib/encargos';
 import { formatBRL } from '@/lib/format';
 import { ApiError, type Conta } from '@/lib/types';
 
@@ -12,6 +13,10 @@ export interface PagamentoAlvo {
   valor: string;
   /** Conta já vinculada (prevista lançada com conta) ou null (boleto/recorrência). */
   contaIdAtual: string | null;
+  /** Encargos por atraso (boleto), pra projetar multa+juros até a data de pagamento. */
+  vencimento?: string | null;
+  multaPct?: string | number | null;
+  jurosPct?: string | number | null;
 }
 
 /**
@@ -38,6 +43,16 @@ export function PagarModal({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
+  // Multa + juros até a data escolhida (recalcula quando muda a data).
+  const enc = useMemo(
+    () =>
+      calcularEncargos(
+        alvo.valor, alvo.vencimento, alvo.multaPct, alvo.jurosPct, data,
+      ),
+    [alvo, data],
+  );
+  const totalComEncargos = Number(alvo.valor) + enc.total;
+
   async function confirmar(e: FormEvent) {
     e.preventDefault();
     setErro('');
@@ -62,12 +77,42 @@ export function PagarModal({
   return (
     <Modal open onClose={onClose} title="Registrar pagamento">
       <form onSubmit={confirmar} className="space-y-4">
-        <div className="card bg-bg-alt p-3 flex items-center justify-between">
-          <span className="text-sm text-ink truncate pr-2">{alvo.descricao}</span>
-          <strong className="text-sm text-ink shrink-0">
-            {formatBRL(alvo.valor)}
-          </strong>
+        <div className="card bg-bg-alt p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-ink truncate pr-2">{alvo.descricao}</span>
+            <span className="text-sm text-ink-soft shrink-0">
+              {formatBRL(alvo.valor)}
+            </span>
+          </div>
+          {enc.total > 0 && (
+            <div className="mt-2 pt-2 border-t border-line space-y-1 text-[12.5px]">
+              {enc.multa > 0 && (
+                <div className="flex justify-between text-ink-soft">
+                  <span>Multa por atraso</span>
+                  <span className="font-mono">+{formatBRL(enc.multa)}</span>
+                </div>
+              )}
+              {enc.juros > 0 && (
+                <div className="flex justify-between text-ink-soft">
+                  <span>Juros de mora ({enc.dias} {enc.dias === 1 ? 'dia' : 'dias'})</span>
+                  <span className="font-mono">+{formatBRL(enc.juros)}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="mt-2 pt-2 border-t border-line flex items-center justify-between">
+            <span className="text-[13px] font-medium text-ink">
+              {enc.total > 0 ? 'Total a pagar' : 'Valor'}
+            </span>
+            <strong className="text-sm text-ink">{formatBRL(totalComEncargos)}</strong>
+          </div>
         </div>
+
+        {enc.total > 0 && (
+          <p className="text-[12px] text-red-600 -mt-1">
+            Boleto vencido — multa e juros calculados até a data abaixo.
+          </p>
+        )}
 
         {precisaConta ? (
           <div>
@@ -125,7 +170,11 @@ export function PagarModal({
             disabled={salvando || (precisaConta && !contaId)}
             className="btn-primary px-5 py-2 text-sm disabled:opacity-50"
           >
-            {salvando ? 'Registrando…' : 'Confirmar pagamento'}
+            {salvando
+              ? 'Registrando…'
+              : enc.total > 0
+                ? `Pagar ${formatBRL(totalComEncargos)}`
+                : 'Confirmar pagamento'}
           </button>
         </div>
       </form>

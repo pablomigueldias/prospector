@@ -88,6 +88,8 @@ async def importar_boleto(
                 valor_total=extraido.valor_total,
                 data_competencia=competencia,
                 data_vencimento=extraido.vencimento,
+                multa_percentual=extraido.multa_percentual,
+                juros_mensal_percentual=extraido.juros_mensal_percentual,
                 status="prevista",          # boleto importado = a pagar
                 origem="importacao_boleto",
                 categoria_id=cat_id,

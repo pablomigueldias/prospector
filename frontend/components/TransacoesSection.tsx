@@ -168,6 +168,9 @@ export function TransacoesSection({
         descricao: det.descricao,
         valor: String(det.valor_total),
         contaIdAtual: det.pagamentos?.[0]?.conta_id ?? null,
+        vencimento: det.data_vencimento ?? null,
+        multaPct: det.multa_percentual ?? null,
+        jurosPct: det.juros_mensal_percentual ?? null,
       });
     } catch (err) {
       setErroEdicao(

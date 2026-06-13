@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { PagarModal, type PagamentoAlvo } from '@/components/PagarModal';
 import { useTransacoes } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
+import { calcularEncargos } from '@/lib/encargos';
 import { formatBRL } from '@/lib/format';
 import { ApiError, type Conta, type TransacaoListItem } from '@/lib/types';
 
@@ -70,6 +71,9 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
         descricao: det.descricao,
         valor: String(det.valor_total),
         contaIdAtual: det.pagamentos?.[0]?.conta_id ?? null,
+        vencimento: det.data_vencimento ?? null,
+        multaPct: det.multa_percentual ?? null,
+        jurosPct: det.juros_mensal_percentual ?? null,
       });
     } catch (err) {
       setErro(err instanceof ApiError ? err.message : 'Falha ao abrir o pagamento.');
@@ -89,7 +93,11 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
     let totalValor = 0;
     let vencidas = 0;
     for (const t of transacoes) {
-      totalValor += Number(t.valor_total);
+      const enc = calcularEncargos(
+        t.valor_total, t.data_vencimento,
+        t.multa_percentual, t.juros_mensal_percentual, hojeIso(),
+      );
+      totalValor += Number(t.valor_total) + enc.total;
       const dias = diasParaVencer(t.data_vencimento);
       if (dias !== null && dias >= 0) vencidas += 1;
     }
@@ -159,6 +167,13 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
           {transacoes.map((t) => {
             const venc = vencLabel(t.data_vencimento);
             const paga = aba === 'pagas';
+            // Juros/multa acumulados até hoje (só faz sentido nas a pagar vencidas).
+            const enc = paga
+              ? null
+              : calcularEncargos(
+                  t.valor_total, t.data_vencimento,
+                  t.multa_percentual, t.juros_mensal_percentual, hojeIso(),
+                );
             return (
               <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
                 <div className="min-w-0 flex-1">
@@ -181,8 +196,15 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
                     )}
                   </div>
                 </div>
-                <div className="shrink-0 font-display font-semibold tracking-tight text-sm text-ink">
-                  −{formatBRL(t.valor_total)}
+                <div className="shrink-0 text-right">
+                  <div className="font-display font-semibold tracking-tight text-sm text-ink">
+                    −{formatBRL(enc && enc.total > 0 ? Number(t.valor_total) + enc.total : t.valor_total)}
+                  </div>
+                  {enc && enc.total > 0 && (
+                    <div className="text-[10.5px] text-red-600">
+                      inclui +{formatBRL(enc.total)} juros/multa
+                    </div>
+                  )}
                 </div>
                 {paga ? (
                   <span className="shrink-0 text-[10px] uppercase tracking-wide text-success border border-success-soft rounded px-1.5 py-0.5">

@@ -447,6 +447,9 @@ export interface TransacaoListItem {
   data_competencia: string;
   data_pagamento?: string | null;
   data_vencimento?: string | null;
+  multa_percentual?: string | null;
+  juros_mensal_percentual?: string | null;
+  encargos_pagos?: string | null;
   status: string;
   categoria_id?: string | null;
   categoria_nome?: string | null;
@@ -476,6 +479,10 @@ export interface TransacaoResponse {
   valor_total: string;
   data_competencia: string;
   data_pagamento?: string | null;
+  data_vencimento?: string | null;
+  multa_percentual?: string | null;
+  juros_mensal_percentual?: string | null;
+  encargos_pagos?: string | null;
   status: string;
   categoria_id?: string | null;
   pagamentos?: TransacaoPagamento[];

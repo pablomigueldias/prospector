@@ -198,6 +198,9 @@ class TransacaoResponse(BaseModel):
     data_competencia: date
     data_pagamento: Optional[date] = None
     data_vencimento: Optional[date] = None
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
+    encargos_pagos: Optional[Decimal] = None
     status: str
     origem: str
     categoria_id: Optional[str] = None
@@ -218,6 +221,9 @@ class TransacaoListItem(BaseModel):
     data_competencia: date
     data_pagamento: Optional[date] = None
     data_vencimento: Optional[date] = None
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
+    encargos_pagos: Optional[Decimal] = None
     status: str
     categoria_id: Optional[str] = None
     categoria_nome: Optional[str] = None
@@ -442,6 +448,9 @@ class BoletoExtraido(BaseModel):
     beneficiario: Optional[str] = None
     vencimento: Optional[date] = None
     valor_total: Decimal
+    # Encargos por atraso impressos no boleto (ex.: multa 2% + juros 1% a.m.).
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
     verbas: List[VerbaBoleto] = Field(default_factory=list)
     leituras: List[LeituraBoleto] = Field(default_factory=list)
 

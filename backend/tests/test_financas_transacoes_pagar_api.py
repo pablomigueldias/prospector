@@ -27,10 +27,11 @@ TX = "/api/financas/transacoes"
 
 
 async def _inserir_prevista_sem_conta(
-    usuario_id: str, tx_id: str, valor: float
+    usuario_id: str, tx_id: str, valor: float,
+    *, vencimento=None, multa=None, juros=None,
 ) -> None:
     """Simula um boleto importado / recorrência: transação prevista sem
-    nenhum pagamento (sem conta)."""
+    nenhum pagamento (sem conta). Aceita encargos por atraso opcionais."""
     eng = create_async_engine(settings.database_url)
     try:
         async with eng.begin() as conn:
@@ -38,13 +39,15 @@ async def _inserir_prevista_sem_conta(
                 text(
                     "INSERT INTO financas.transacoes "
                     "(id, usuario_id, tipo, descricao, valor_total, "
-                    " data_competencia, status, origem) "
+                    " data_competencia, data_vencimento, multa_percentual, "
+                    " juros_mensal_percentual, status, origem) "
                     "VALUES (:id, :uid, 'despesa', 'Condomínio', :v, "
-                    " :comp, 'prevista', 'importacao_boleto')"
+                    " :comp, :venc, :multa, :juros, 'prevista', 'importacao_boleto')"
                 ),
                 {
                     "id": tx_id, "uid": usuario_id, "v": valor,
                     "comp": date.today().replace(day=1),
+                    "venc": vencimento, "multa": multa, "juros": juros,
                 },
             )
     finally:
@@ -145,6 +148,25 @@ def smoke_test() -> None:
             assert client.post(
                 f"{TX}/{uuid.uuid4()}/pagar", json={"conta_id": conta_id}
             ).status_code == 404
+
+            # ══ Caminho 3: boleto vencido com multa+juros ════════════
+            print("\n→ Test 7: boleto R$100 vencido 10d, multa 2% + juros 1%/mês")
+            from datetime import timedelta
+            tx3 = str(uuid.uuid4())
+            venc = date.today() - timedelta(days=10)
+            asyncio.run(_inserir_prevista_sem_conta(
+                usuario_id, tx3, 100, vencimento=venc, multa=2, juros=1,
+            ))
+            tx_ids.append(tx3)
+            saldo_antes = _saldo(client, conta_id)  # 750
+            rp3 = client.post(f"{TX}/{tx3}/pagar", json={"conta_id": conta_id})
+            assert rp3.status_code == 200, rp3.text
+            corpo = rp3.json()
+            # multa 2,00 + juros 100*1%*10/30 = 0,33 → encargos 2,33; total 102,33
+            assert float(corpo["encargos_pagos"]) == 2.33, corpo["encargos_pagos"]
+            assert float(corpo["valor_total"]) == 102.33, corpo["valor_total"]
+            assert round(saldo_antes - _saldo(client, conta_id), 2) == 102.33
+            print(f"   encargos {corpo['encargos_pagos']}, total {corpo['valor_total']}")
 
         finally:
             limpar_override()

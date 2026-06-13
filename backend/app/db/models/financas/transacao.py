@@ -44,6 +44,13 @@ class Transacao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # Vencimento (usado pelas previstas de recorrência pra marcar atraso).
     data_vencimento: Mapped[Optional[date]] = mapped_column(Date)
 
+    # Encargos por atraso, quando o boleto informa (ex.: multa 2% + juros 1% a.m.).
+    # Guardamos os percentuais pra projetar multa+juros até a data do pagamento.
+    multa_percentual: Mapped[Optional[float]] = mapped_column(Numeric(6, 4))
+    juros_mensal_percentual: Mapped[Optional[float]] = mapped_column(Numeric(6, 4))
+    # Quanto de multa+juros foi de fato somado ao pagar (registro/transparência).
+    encargos_pagos: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="prevista", server_default="prevista"
     )
