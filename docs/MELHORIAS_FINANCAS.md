@@ -91,6 +91,40 @@ Ordem de ataque por custo/benefício (evitar as dores mais caras primeiro):
 - ✅ **Importar vários boletos de uma vez** (2026-06-13) — arrasta/seleciona N PDFs/fotos; processa em lote com um card de resultado por arquivo.
 - 🟢 **Não feitos (de propósito):** passo de revisão antes de criar (conflita com o "nunca some / auto-cria" atual), sanity checks (valor 0 / data improvável — baixo valor), histórico dedicado (os dados já aparecem no editor + anexos).
 
+## 3d. Cartões profissionais (PRÓXIMO CAMPO — Pablo vai alimentar)
+Decisão 2026-06-13: depois de fechar o boleto, o cartão é o próximo a virar
+carro-chefe. Mesma régua do boleto: tornar útil de ponta a ponta e evitar dor
+de cabeça. Hoje o cartão já tem **CRUD** (criar/editar/excluir) e mostra as
+**faturas** (total em aberto, juros) — `GET /cartoes`, `/cartoes/{id}`,
+`/cartoes/{id}/faturas`. O backend **já faz** compra parcelada e boleto
+parcelado, mas **a tela não expõe**. Ordem sugerida de ataque:
+
+### Núcleo (o que destrava usar o cartão de verdade)
+- 🔴 **Lançar compra parcelada na tela** — `POST /api/financas/compras` (`CompraParceladaCreate`) já existe: "geladeira em 10x" gera as parcelas e joga nas faturas. Falta o formulário (descrição, valor total, nº de parcelas, cartão, 1ª competência, juros opcional). É o maior buraco hoje.
+- 🔴 **Lançar compra à vista no cartão** — compra de 1x que entra na fatura do mês (atalho do parcelado com parcelas=1).
+- 🔴 **Extrato da fatura** — abrir uma fatura e ver as compras/parcelas que a compõem (`GET /cartoes/{id}/faturas` traz o agregado; falta o detalhe item a item). Cruzar com `GET /compras/{id}`.
+- 🔴 **Pagar a fatura** — marcar a fatura do mês como paga, debitando de uma conta (move o saldo) e baixando as parcelas. **Não existe endpoint ainda** — criar (`POST /cartoes/{id}/faturas/{competencia}/pagar` ou similar), espelhando o `pagar_transacao` do boleto (conta, data, valor pago, encargos da fatura).
+
+### Boleto parcelado e projeção
+- 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`) já existe (boleto que vira N parcelas, sem fatura); falta UI. Encaixa com o importador: um boleto carnê → parcelas.
+- 🟡 **Projeção das próximas faturas** — "quanto já está comprometido nos próximos meses" (soma das parcelas futuras por mês). Ajuda a não se enrolar.
+- 🟡 **Limite e disponível** — guardar o limite do cartão e mostrar quanto já foi usado / quanto sobra (precisa de campo `limite` no cartão).
+
+### Lembrete e automação (reusa o que o boleto já tem)
+- 🟡 **Lembrete de fatura (Telegram)** — avisar quando a fatura fecha e quando vence, no mesmo digest diário do boleto (`app/jobs/lembretes.py`). Evita pagar fatura com juros.
+- 🟡 **Compra recorrente / assinatura no cartão** — Netflix, Spotify: cadastrar uma compra fixa mensal que entra na fatura sozinha (cruza com recorrências e com o "detector de assinaturas" do §8).
+- 🟢 **Categoria por compra** — categorizar cada compra do cartão (e auto-categoria por descrição, como no boleto).
+
+### Confiabilidade e conveniência
+- 🟢 **Importar fatura (PDF/CSV)** — ler a fatura inteira do banco e gerar as compras/parcelas de uma vez, conciliando com o que já existe (§9). O salto pra parar de digitar.
+- 🟢 **Estorno / ajuste de compra** — cancelar uma compra parcelada (remover as parcelas futuras) ou ajustar valor.
+- 🟢 **Antecipar parcelas** — pagar parcelas futuras adiantado e recalcular a fatura.
+- 🟢 **Anexar comprovante à compra/fatura** — igual ao boleto (depende do MinIO atrás do Caddy, §6).
+
+> Sugestão de 1º passo quando for pegar: **lançar compra parcelada + extrato da
+> fatura + pagar a fatura** (o trio que torna o cartão usável), depois projeção,
+> lembrete e importação. Cada item = 1 commit, smoke verde, no padrão do boleto.
+
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
 - 🔴 **Orçamento por categoria** — definir um teto mensal (ex.: R$ 800 em mercado) e o sistema acompanhar o consumido x previsto. *Ficou de fora no build original (sem tabela de metas).*
