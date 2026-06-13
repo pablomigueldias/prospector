@@ -30,6 +30,7 @@ from app.api.routers import importador as importador_router
 from app.api.routers import nlu as nlu_router
 from app.api.routers import telegram as telegram_router
 from app.api.routers import eventos as eventos_router
+from app.config import settings
 from app.utils.logger import get_logger
 
 
@@ -39,7 +40,27 @@ logger = get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 API da Reativa subindo...")
+    agendador = None
+    if settings.scheduler_enabled:
+        # Agendador in-process: 1x/dia processa recorrências e manda o lembrete
+        # de vencimento no Telegram. (1 worker → sem risco de envio duplicado.)
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from apscheduler.triggers.cron import CronTrigger
+
+        from app.jobs.lembretes import rotina_diaria
+
+        agendador = AsyncIOScheduler(timezone=settings.timezone)
+        agendador.add_job(
+            rotina_diaria,
+            CronTrigger(hour=settings.lembretes_hora, minute=0),
+            id="rotina_diaria",
+            replace_existing=True,
+        )
+        agendador.start()
+        logger.info("⏰ Agendador ligado (rotina diária às %sh).", settings.lembretes_hora)
     yield
+    if agendador is not None:
+        agendador.shutdown(wait=False)
     logger.info("👋 API encerrando.")
 
 

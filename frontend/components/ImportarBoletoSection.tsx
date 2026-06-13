@@ -26,24 +26,36 @@ export function ImportarBoletoSection({ onImportado }: Props) {
   const [categoriaId, setCategoriaId] = useState('');
   const [arrastando, setArrastando] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [progresso, setProgresso] = useState<{ atual: number; total: number } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<ImportarBoletoResponse | null>(null);
+  const [resultados, setResultados] = useState<
+    { nome: string; r: ImportarBoletoResponse }[]
+  >([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const enviar = useCallback(
-    async (file: File) => {
+    async (files: File[]) => {
+      if (files.length === 0) return;
       setEnviando(true);
       setErro(null);
-      setResultado(null);
-      try {
-        const r = await api.financasImportarBoleto(file, categoriaId || undefined);
-        setResultado(r);
-        if (r.conferido) onImportado?.();
-      } catch (e) {
-        setErro(e instanceof ApiError ? e.message : 'Falha ao importar o boleto.');
-      } finally {
-        setEnviando(false);
+      setResultados([]);
+      let algumNovo = false;
+      const acc: { nome: string; r: ImportarBoletoResponse }[] = [];
+      for (let i = 0; i < files.length; i++) {
+        setProgresso({ atual: i + 1, total: files.length });
+        try {
+          const r = await api.financasImportarBoleto(files[i], categoriaId || undefined);
+          acc.push({ nome: files[i].name, r });
+          if (r.transacao_id && !r.duplicado) algumNovo = true;
+        } catch (e) {
+          setErro(e instanceof ApiError ? e.message : 'Falha ao importar um boleto.');
+        }
       }
+      setResultados(acc);
+      setProgresso(null);
+      setEnviando(false);
+      // Recarrega o painel se algo novo entrou (não em duplicado).
+      if (algumNovo) onImportado?.();
     },
     [categoriaId, onImportado],
   );
@@ -52,8 +64,8 @@ export function ImportarBoletoSection({ onImportado }: Props) {
     (e: React.DragEvent) => {
       e.preventDefault();
       setArrastando(false);
-      const file = e.dataTransfer.files?.[0];
-      if (file) void enviar(file);
+      const files = Array.from(e.dataTransfer.files ?? []);
+      if (files.length) void enviar(files);
     },
     [enviar],
   );
@@ -88,21 +100,26 @@ export function ImportarBoletoSection({ onImportado }: Props) {
             ref={inputRef}
             type="file"
             accept={ACEITA}
+            multiple
             className="hidden"
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void enviar(file);
+              const files = Array.from(e.target.files ?? []);
+              if (files.length) void enviar(files);
               e.target.value = '';
             }}
           />
           <div className="text-3xl leading-none">{enviando ? '⏳' : '🧾'}</div>
           <div className="text-[15px] text-ink font-medium">
-            {enviando ? 'Lendo o boleto…' : 'Arraste um boleto aqui'}
+            {enviando
+              ? progresso
+                ? `Lendo boleto ${progresso.atual}/${progresso.total}…`
+                : 'Lendo…'
+              : 'Arraste um ou vários boletos aqui'}
           </div>
           <div className="text-[12.5px] text-ink-soft">
             {enviando
               ? 'A IA está extraindo as verbas — pode levar alguns segundos.'
-              : 'ou clique pra escolher um PDF ou foto'}
+              : 'ou clique pra escolher PDFs ou fotos'}
           </div>
         </div>
 
@@ -110,7 +127,13 @@ export function ImportarBoletoSection({ onImportado }: Props) {
           <div className="mt-3 text-[13px] text-red-600">{erro}</div>
         )}
 
-        {resultado && <ResultadoBoleto resultado={resultado} />}
+        {resultados.length > 0 && (
+          <div className="mt-4 space-y-3">
+            {resultados.map((item, i) => (
+              <ResultadoBoleto key={i} nome={item.nome} resultado={item.r} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Categoria opcional */}
@@ -141,20 +164,42 @@ export function ImportarBoletoSection({ onImportado }: Props) {
   );
 }
 
-function ResultadoBoleto({ resultado: r }: { resultado: ImportarBoletoResponse }) {
+function ResultadoBoleto({
+  resultado: r,
+  nome,
+}: {
+  resultado: ImportarBoletoResponse;
+  nome?: string;
+}) {
+  const dup = !!r.duplicado;
   const ok = r.conferido;
+  const criou = !!r.transacao_id; // virou conta a pagar (com ou sem verbas)
+  // 4 estados: 🔁 duplicado | ✅ conferido | ⚠️ a pagar sem verbas | ⛔ não criou
+  const titulo = dup
+    ? 'Boleto já lançado'
+    : ok
+      ? 'Despesa criada'
+      : criou
+        ? 'Lançado como a pagar'
+        : 'Revisão manual';
+  const icone = dup ? '🔁' : ok ? '✅' : criou ? '⚠️' : '⛔';
+  const borda = dup
+    ? 'border-l-brand'
+    : ok
+      ? 'border-l-success'
+      : criou
+        ? 'border-l-amber-500'
+        : 'border-l-line';
   return (
-    <div
-      className={[
-        'card mt-4 p-4 border-l-4',
-        ok ? 'border-l-success' : 'border-l-amber-500',
-      ].join(' ')}
-    >
+    <div className={['card p-4 border-l-4', borda].join(' ')}>
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-lg leading-none">{ok ? '✅' : '⚠️'}</span>
-        <strong className="text-[14px] text-ink">
-          {ok ? 'Despesa criada' : 'Revisão manual'}
-        </strong>
+        <span className="text-lg leading-none">{icone}</span>
+        <strong className="text-[14px] text-ink">{titulo}</strong>
+        {nome && (
+          <span className="text-[11.5px] text-ink-mute truncate ml-auto pl-2" title={nome}>
+            {nome}
+          </span>
+        )}
       </div>
       <p className="text-[13px] text-ink-soft m-0">{r.mensagem}</p>
 

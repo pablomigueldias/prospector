@@ -58,6 +58,9 @@ copiloto** (§8–§10) e polir as bordas.
 > Estas funções **já existem no backend**, só falta a interface no front.
 
 - ✅ **Importar boleto por foto/PDF pela web** (2026-06-13) — seção **Importar boleto** no dashboard: arraste (ou escolha) um PDF/foto, a IA lê as verbas e, se batem com o total, já cria a despesa **prevista**; senão guarda pra revisão manual. Categoria opcional. `POST /api/financas/importar/boleto`. Ref `frontend/components/ImportarBoletoSection.tsx`. Replica o "boleto por foto" do bot no desktop — era o item de maior valor da §3b.
+- ✅ **Juros/multa de boleto vencido** (2026-06-13) — a IA lê os encargos do boleto (multa % + juros de mora % a.m.); o painel A pagar mostra os vencidos já com os juros acumulados até hoje, e o modal de pagamento desdobra valor + multa + juros (N dias) = total (recalcula pela data). Ao pagar, o saldo desce pelo total e o que foi de encargos fica em `encargos_pagos`. `encargos.py` (back) / `lib/encargos.ts` (front). Migration `a1c7e9d2b4f0`. **Multa/juros editáveis no modal de pagamento** — corrige o que a IA leu errado e cobre **boletos antigos** (importados antes da feature, sem os percentuais); o valor digitado recalcula o total e fica salvo (`POST .../pagar` aceita `multa_percentual`/`juros_mensal_percentual`).
+- ✅ **Painel "Contas a pagar"** (2026-06-13) — seção **A pagar** com abas *A pagar* / *Pagas*, ordenada por vencimento, **vencidos em vermelho** + resumo (nº/total/vencidas) e botão ✓ Pagar. Filtro `status` (repetível) + `por_vencimento` no `GET /transacoes`; `data_vencimento` na lista. Ref `frontend/components/ContasAPagarSection.tsx`. **Boleto nunca some:** o importador agora cria a despesa a pagar mesmo quando não consegue separar as verbas (só o total; itens entram quando conferem) — antes ia pra "revisão manual" e não criava nada.
+- ✅ **Marcar prevista como paga pela tela** (2026-06-13) — botão **✓ Pagar** em toda transação não-paga (boleto importado, recorrência ou prevista do form). Modal escolhe a conta quando a transação ainda não tem (boleto/recorrência nascem sem) e move o saldo ao confirmar. `POST /api/financas/transacoes/{id}/pagar`. **Fecha o furo do importador**: antes o boleto virava prevista e não havia como quitar/controlar pela web. Ref `frontend/components/TransacoesSection.tsx` (PagarModal).
 - 🟡 **Compra parcelada no cartão** — `POST /api/financas/compras` (`CompraParceladaCreate`): lançar "geladeira em 10x no cartão" e o sistema gera as parcelas/faturas. Não existe na tela — hoje só dá pra cadastrar o cartão, não comprar nele.
 - 🟡 **Boleto parcelado** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`): boleto que vira N parcelas. Ausente no front.
 - 🟡 **Despesa dividida (split por N contas)** — `POST /api/financas/transacoes/despesa/dividida`: pagar uma despesa com mais de uma conta (ex.: metade VR, metade dinheiro). O form de lançamento só faz conta única. *(É também o que destrava editar transações divididas — ver §3 "Editar transação".)*
@@ -71,6 +74,56 @@ copiloto** (§8–§10) e polir as bordas.
 > Já cobertos na tela (pra referência): CRUD de conta/categoria/cartão/recorrência,
 > lançar despesa/receita simples, editar/excluir transação, lista filtrável,
 > resumo, relatório, faturas do cartão e a galeria de comprovantes (leitura).
+
+## 3c. Boletos profissionais (carro-chefe — Pablo vai alimentar muito)
+Meta declarada (2026-06-13): deixar o boleto "bem profissional e super útil".
+Ordem de ataque por custo/benefício (evitar as dores mais caras primeiro):
+
+- ✅ **Linha digitável + detector de duplicado** (2026-06-13) — IA extrai a linha digitável (só dígitos, `linha_digitavel`, migration `b2d8f1a3c6e1`); painel A pagar tem "copiar código"; importação não duplica boleto já lançado (chave: linha digitável, ou beneficiário+vencimento+valor). `CopiarLinha.tsx`.
+- ✅ **Lembrete de vencimento (Telegram)** (2026-06-13) — **APScheduler** no container da API roda 1x/dia (`lembretes_hora`, default 8h, tz America/Sao_Paulo) uma `rotina_diaria`: processa recorrências (gera previstas + marca atrasadas) e manda um **digest no Telegram** com vencidas + vencendo em até N dias (`lembretes_dias_antes`, default 3), já com juros/multa projetados. Pablo e Monique recebem (carteira junta). Liga/desliga por `SCHEDULER_ENABLED`/`LEMBRETES_ENABLED`. Endpoint manual de teste: `POST /api/financas/recorrencias/lembretes/enviar`. Ref `app/jobs/lembretes.py`.
+- ✅ **Marcar "atrasada" automático** (2026-06-13) — a `rotina_diaria` acima já roda o `_marcar_atrasadas` todo dia (cron das recorrências, antes só existia o endpoint manual).
+- ✅ **Editar a conta a pagar do boleto** (2026-06-13) — botão ✎ nas contas a pagar abre um editor (descrição, valor, vencimento, categoria, multa%, juros% e **editor de verbas** com add/remover + checagem soma×total). Não mexe no saldo (não foi paga). `PATCH /transacoes/{id}/conta-a-pagar` → `editar_prevista`. Ref `frontend/components/EditarPrevistaModal.tsx`. Resolve o "a IA não separou bem".
+- ✅ **Pagar valor diferente do boleto** (2026-06-13) — no modal de pagamento, marcar "Paguei um valor diferente" e informar o valor real (acordo/desconto/arredondamento); o saldo desce por esse valor e o `valor_total` passa a refletir o que saiu. `POST .../pagar` aceita `valor_pago`.
+- ✅ **Lembrar categoria/conta por beneficiário** (2026-06-13) — ao importar sem categoria, reaproveita a do último boleto do mesmo beneficiário (`ultima_categoria_por_descricao`); e no pagamento de um boleto sem conta, o modal já vem com a **última conta usada pra pagar esse beneficiário** (`GET /transacoes/{id}/sugestao-conta` → `ultima_conta_por_descricao`), com dica "Sugerida: X".
+- 🟡 **Virar conta fixa (recorrência)** — detectar boleto que se repete e oferecer transformar em recorrência.
+- ✅ **Ver/anexar comprovante no detalhe** (2026-06-13) — o editor da conta a pagar lista os anexos (boleto importado, recibos) com link e tem "+ anexar" (upload). `GET/POST /comprovantes?transacao_id`. **Funciona em dev** (MinIO em localhost); **em produção depende de expor o MinIO atrás do Caddy** (§6) pra a URL presignada abrir no navegador — tarefa de infra/deploy ainda pendente.
+- ✅ **Desconto por antecipação** (2026-06-13) — IA lê "desconto de R$X até DD/MM"; abate no pagamento se pago até a data.
+- ✅ **Importar vários boletos de uma vez** (2026-06-13) — arrasta/seleciona N PDFs/fotos; processa em lote com um card de resultado por arquivo.
+- 🟢 **Não feitos (de propósito):** passo de revisão antes de criar (conflita com o "nunca some / auto-cria" atual), sanity checks (valor 0 / data improvável — baixo valor), histórico dedicado (os dados já aparecem no editor + anexos).
+
+## 3d. Cartões profissionais (PRÓXIMO CAMPO — Pablo vai alimentar)
+Decisão 2026-06-13: depois de fechar o boleto, o cartão é o próximo a virar
+carro-chefe. Mesma régua do boleto: tornar útil de ponta a ponta e evitar dor
+de cabeça. Hoje o cartão já tem **CRUD** (criar/editar/excluir) e mostra as
+**faturas** (total em aberto, juros) — `GET /cartoes`, `/cartoes/{id}`,
+`/cartoes/{id}/faturas`. O backend **já faz** compra parcelada e boleto
+parcelado, mas **a tela não expõe**. Ordem sugerida de ataque:
+
+### Núcleo (o que destrava usar o cartão de verdade)
+- 🔴 **Lançar compra parcelada na tela** — `POST /api/financas/compras` (`CompraParceladaCreate`) já existe: "geladeira em 10x" gera as parcelas e joga nas faturas. Falta o formulário (descrição, valor total, nº de parcelas, cartão, 1ª competência, juros opcional). É o maior buraco hoje.
+- 🔴 **Lançar compra à vista no cartão** — compra de 1x que entra na fatura do mês (atalho do parcelado com parcelas=1).
+- 🔴 **Extrato da fatura** — abrir uma fatura e ver as compras/parcelas que a compõem (`GET /cartoes/{id}/faturas` traz o agregado; falta o detalhe item a item). Cruzar com `GET /compras/{id}`.
+- 🔴 **Pagar a fatura** — marcar a fatura do mês como paga, debitando de uma conta (move o saldo) e baixando as parcelas. **Não existe endpoint ainda** — criar (`POST /cartoes/{id}/faturas/{competencia}/pagar` ou similar), espelhando o `pagar_transacao` do boleto (conta, data, valor pago, encargos da fatura).
+
+### Boleto parcelado e projeção
+- 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`) já existe (boleto que vira N parcelas, sem fatura); falta UI. Encaixa com o importador: um boleto carnê → parcelas.
+- 🟡 **Projeção das próximas faturas** — "quanto já está comprometido nos próximos meses" (soma das parcelas futuras por mês). Ajuda a não se enrolar.
+- 🟡 **Limite e disponível** — guardar o limite do cartão e mostrar quanto já foi usado / quanto sobra (precisa de campo `limite` no cartão).
+
+### Lembrete e automação (reusa o que o boleto já tem)
+- 🟡 **Lembrete de fatura (Telegram)** — avisar quando a fatura fecha e quando vence, no mesmo digest diário do boleto (`app/jobs/lembretes.py`). Evita pagar fatura com juros.
+- 🟡 **Compra recorrente / assinatura no cartão** — Netflix, Spotify: cadastrar uma compra fixa mensal que entra na fatura sozinha (cruza com recorrências e com o "detector de assinaturas" do §8).
+- 🟢 **Categoria por compra** — categorizar cada compra do cartão (e auto-categoria por descrição, como no boleto).
+
+### Confiabilidade e conveniência
+- 🟢 **Importar fatura (PDF/CSV)** — ler a fatura inteira do banco e gerar as compras/parcelas de uma vez, conciliando com o que já existe (§9). O salto pra parar de digitar.
+- 🟢 **Estorno / ajuste de compra** — cancelar uma compra parcelada (remover as parcelas futuras) ou ajustar valor.
+- 🟢 **Antecipar parcelas** — pagar parcelas futuras adiantado e recalcular a fatura.
+- 🟢 **Anexar comprovante à compra/fatura** — igual ao boleto (depende do MinIO atrás do Caddy, §6).
+
+> Sugestão de 1º passo quando for pegar: **lançar compra parcelada + extrato da
+> fatura + pagar a fatura** (o trio que torna o cartão usável), depois projeção,
+> lembrete e importação. Cada item = 1 commit, smoke verde, no padrão do boleto.
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 

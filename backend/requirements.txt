@@ -38,3 +38,5 @@ qrcode[pil]==7.4.2
 tenacity==9.0.0
 python-slugify==8.0.4
 loguru==0.7.2
+# Agendador in-process (lembretes de vencimento + cron das recorrências)
+APScheduler==3.10.4

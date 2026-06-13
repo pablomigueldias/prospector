@@ -24,6 +24,7 @@ BOLETO_OK = {
     "beneficiario": "Condomínio Lello",
     "vencimento": "2026-06-10",
     "valor_total": 1107.52,
+    "linha_digitavel": "34191.79001 01043.510047 91020.150008 9 99990000110752",
     "verbas": [
         {"descricao": "Taxa de condomínio", "valor": 800.00},
         {"descricao": "Consumo de gás", "valor": 50.00},
@@ -38,7 +39,23 @@ BOLETO_OK = {
         {"tipo": "gas", "leitura_atual": 320.2, "leitura_anterior": 297.0, "consumo": 23.2, "valor": 50},
     ],
 }
-BOLETO_SOMA_ERRADA = {**BOLETO_OK, "verbas": [{"descricao": "Total", "valor": 1000.0}]}
+# Distintos do BOLETO_OK (outro beneficiário/vencimento/linha) pra não baterem
+# no detector de duplicado.
+BOLETO_SOMA_ERRADA = {
+    **BOLETO_OK, "beneficiario": "Escola Alfa", "vencimento": "2026-07-15",
+    "linha_digitavel": None, "verbas": [{"descricao": "Total", "valor": 1000.0}],
+}
+BOLETO_SEM_VALOR = {
+    **BOLETO_OK, "beneficiario": "Loja Beta", "vencimento": "2026-08-01",
+    "linha_digitavel": None, "valor_total": 0, "verbas": [],
+}
+# Mesmo beneficiário do BOLETO_OK, outro mês/valor/linha — pra testar a
+# auto-categoria (deve herdar a categoria do BOLETO_OK sem informar).
+BOLETO_MESMO_BENEF = {
+    "beneficiario": "Condomínio Lello", "vencimento": "2026-07-10",
+    "valor_total": 500, "linha_digitavel": "75691.23456 78901.234567 89012.345678 1 88880000050000",
+    "verbas": [{"descricao": "Taxa", "valor": 500}], "leituras": [],
+}
 
 
 async def _cleanup(usuario_id: str) -> None:
@@ -101,6 +118,8 @@ def smoke_test() -> None:
             assert tx["status"] == "prevista"
             assert tx["data_vencimento"] == "2026-06-10"
             assert tx["categoria_id"] == condominio
+            # linha digitável guardada só com dígitos
+            assert tx["linha_digitavel"] == "34191790010104351004791020150008999990000110752", tx["linha_digitavel"]
             soma = sum(float(i["valor"]) for i in tx["itens"])
             assert round(soma, 2) == 1107.52, soma
             print(f"   tx: {len(tx['itens'])} itens, soma {soma}, venc {tx['data_vencimento']}")
@@ -113,8 +132,8 @@ def smoke_test() -> None:
             assert all(x["transacao_id"] == b["transacao_id"] for x in leituras["items"])
             print(f"   leituras: {tipos} vinculadas à transação")
 
-            # ── 2. Boleto que NÃO confere → revisão manual, sem transação ─
-            print("\n→ Test 2: soma não bate → revisão manual")
+            # ── 2. Soma não bate → cria a pagar (sem itens), pra não sumir ─
+            print("\n→ Test 2: soma não bate → prevista sem itens (a pagar)")
             extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_SOMA_ERRADA)
             r2 = client.post(IMPORTAR, data={
                 "usuario_id": usuario_id,
@@ -122,9 +141,55 @@ def smoke_test() -> None:
             assert r2.status_code == 200, r2.text
             b2 = r2.json()
             assert b2["success"] and not b2["conferido"], b2
-            assert b2["transacao_id"] is None
+            assert b2["transacao_id"], "deveria criar a despesa a pagar mesmo sem conferir"
             assert b2["comprovante_id"]
+            tx2 = client.get(f"{TX}/{b2['transacao_id']}").json()
+            assert tx2["status"] == "prevista", tx2["status"]
+            assert tx2["itens"] == [], tx2["itens"]  # verbas não confiáveis → sem itens
+            assert float(tx2["valor_total"]) == 1107.52, tx2["valor_total"]
             print(f"   {b2['mensagem']}")
+
+            # ── 3. Sem valor legível → nada criado (só o arquivo) ─────────
+            print("\n→ Test 3: sem valor total → revisão manual (sem transação)")
+            extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_SEM_VALOR)
+            r3 = client.post(IMPORTAR, data={
+                "usuario_id": usuario_id,
+            }, files={"file": ("vazio.pdf", b"%PDF fake 3", "application/pdf")})
+            assert r3.status_code == 200, r3.text
+            b3 = r3.json()
+            assert b3["success"] and not b3["conferido"], b3
+            assert b3["transacao_id"] is None, b3
+            assert b3["comprovante_id"]
+            print(f"   {b3['mensagem']}")
+
+            # ── 4. Reimportar o BOLETO_OK → detecta duplicado, não cria ──
+            print("\n→ Test 4: reimportar boleto já lançado → duplicado")
+            antes = client.get(f"{TX}?status=prevista").json()["total"]
+            extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_OK)
+            r4 = client.post(IMPORTAR, data={
+                "usuario_id": usuario_id, "categoria_id": condominio,
+            }, files={"file": ("repetido.pdf", b"%PDF dup", "application/pdf")})
+            assert r4.status_code == 200, r4.text
+            b4 = r4.json()
+            assert b4["duplicado"] is True, b4
+            assert b4["transacao_id"] == b["transacao_id"], b4  # aponta pro existente
+            depois = client.get(f"{TX}?status=prevista").json()["total"]
+            assert depois == antes, (antes, depois)  # nada novo criado
+            print(f"   {b4['mensagem']}")
+
+            # ── 5. Mesmo beneficiário, SEM categoria → herda do histórico ─
+            print("\n→ Test 5: auto-categoria pelo beneficiário (sem informar)")
+            extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_MESMO_BENEF)
+            r5 = client.post(IMPORTAR, data={
+                "usuario_id": usuario_id,  # SEM categoria_id
+            }, files={"file": ("julho.pdf", b"%PDF jul", "application/pdf")})
+            assert r5.status_code == 200, r5.text
+            b5 = r5.json()
+            assert b5["transacao_id"] and not b5["duplicado"], b5
+            tx5 = client.get(f"{TX}/{b5['transacao_id']}").json()
+            assert tx5["categoria_id"] == condominio, tx5["categoria_id"]
+            assert "reaproveitada" in b5["mensagem"].lower(), b5["mensagem"]
+            print(f"   {b5['mensagem']}")
 
         finally:
             extrator.extrair_boleto_llm = original

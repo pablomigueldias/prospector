@@ -8,6 +8,7 @@ revisão manual (não cria nada, só guarda o extraído).
 from __future__ import annotations
 
 import asyncio
+import re
 import uuid
 from datetime import date
 from decimal import Decimal
@@ -22,6 +23,7 @@ from app.db.models.financas.leitura_consumo import TIPOS_CONSUMO, LeituraConsumo
 from app.db.models.financas.transacao import Transacao
 from app.db.models.financas.transacao_item import TransacaoItem
 from app.db.session import get_session
+from app.repositories.financas.transacao_repository import TransacaoRepository
 
 
 class ImportadorError(Exception):
@@ -69,12 +71,48 @@ async def importar_boleto(
         if extraido.vencimento else date.today().replace(day=1)
     )
 
+    # Linha digitável só com dígitos (chave forte de duplicata + copiar/colar).
+    linha = re.sub(r"\D", "", extraido.linha_digitavel or "") or None
+
+    # Sempre que houver um valor total, o boleto vira uma despesa **prevista**
+    # (a pagar) — assim ele nunca some de vista. As verbas (itens) e as leituras
+    # de consumo só entram quando a soma bate com o total (conferido); senão fica
+    # só o total, pra você conferir/detalhar depois.
+    criar = bool(extraido.valor_total and extraido.valor_total > 0)
+
+    duplicado = False
     transacao_id = None
     async with get_session() as session:
         comp_row = await session.get(Comprovante, _uuid(comp.id))
         comp_row.extraido_json = extraido.model_dump(mode="json")
 
-        if conferido:
+        repo = TransacaoRepository(session)
+        # Antes de criar, vê se esse boleto já não foi lançado (não duplicar).
+        existente = None
+        if criar:
+            existente = await repo.buscar_duplicado(
+                uid,
+                linha_digitavel=linha,
+                beneficiario=extraido.beneficiario,
+                vencimento=extraido.vencimento,
+                valor=extraido.valor_total,
+            )
+
+        # Sem categoria explícita? Reaproveita a do último boleto desse mesmo
+        # beneficiário (auto-categoriza recorrentes: condomínio, escola…).
+        auto_categoria = False
+        categoria_final = cat_id
+        if existente is None and criar and categoria_final is None:
+            categoria_final = await repo.ultima_categoria_por_descricao(
+                uid, extraido.beneficiario
+            )
+            auto_categoria = categoria_final is not None
+
+        if existente is not None:
+            duplicado = True
+            transacao_id = existente.id
+            comp_row.transacao_id = existente.id
+        elif criar:
             tx = Transacao(
                 usuario_id=uid,
                 tipo="despesa",
@@ -82,49 +120,70 @@ async def importar_boleto(
                 valor_total=extraido.valor_total,
                 data_competencia=competencia,
                 data_vencimento=extraido.vencimento,
+                multa_percentual=extraido.multa_percentual,
+                juros_mensal_percentual=extraido.juros_mensal_percentual,
+                desconto_valor=extraido.desconto_valor,
+                desconto_ate=extraido.desconto_ate,
+                linha_digitavel=linha,
                 status="prevista",          # boleto importado = a pagar
                 origem="importacao_boleto",
-                categoria_id=cat_id,
+                categoria_id=categoria_final,
                 itens=[
                     TransacaoItem(descricao=v.descricao, valor=v.valor)
                     for v in extraido.verbas
-                ],
+                ] if conferido else [],
             )
             session.add(tx)
             await session.flush()
             comp_row.transacao_id = tx.id
             transacao_id = tx.id
 
-            for le in extraido.leituras:
-                if le.tipo not in TIPOS_CONSUMO or le.leitura_atual is None:
-                    continue
-                session.add(LeituraConsumo(
-                    usuario_id=uid,
-                    tipo=le.tipo,
-                    mes_referencia=competencia,
-                    leitura_atual=le.leitura_atual,
-                    leitura_anterior=le.leitura_anterior,
-                    consumo=le.consumo,
-                    valor=le.valor,
-                    transacao_id=tx.id,
-                ))
+            if conferido:
+                for le in extraido.leituras:
+                    if le.tipo not in TIPOS_CONSUMO or le.leitura_atual is None:
+                        continue
+                    session.add(LeituraConsumo(
+                        usuario_id=uid,
+                        tipo=le.tipo,
+                        mes_referencia=competencia,
+                        leitura_atual=le.leitura_atual,
+                        leitura_anterior=le.leitura_anterior,
+                        consumo=le.consumo,
+                        valor=le.valor,
+                        transacao_id=tx.id,
+                    ))
 
         await session.commit()
 
-    if conferido:
+    if duplicado:
+        msg = (
+            f"Esse boleto já estava lançado (R${extraido.valor_total}"
+            + (f", vence {extraido.vencimento}" if extraido.vencimento else "")
+            + "). Não dupliquei."
+        )
+    elif conferido:
         msg = (
             f"Boleto importado: despesa de R${extraido.valor_total} "
             f"com {len(extraido.verbas)} verba(s)."
         )
+    elif criar:
+        msg = (
+            f"Lancei R${extraido.valor_total} como a pagar, mas não consegui "
+            "separar as verbas direito — confira/detalhe quando puder."
+        )
     else:
         msg = (
-            f"Verbas (R${soma}) não batem com o total (R${extraido.valor_total}). "
-            "Guardei o boleto pra revisão manual."
+            "Não consegui ler o valor do boleto. Guardei o arquivo pra "
+            "revisão manual."
         )
+
+    if auto_categoria:
+        msg += " Categoria reaproveitada do último boleto desse beneficiário."
 
     return ImportarBoletoResponse(
         success=True,
         conferido=conferido,
+        duplicado=duplicado,
         mensagem=msg,
         comprovante_id=comp.id,
         transacao_id=str(transacao_id) if transacao_id else None,

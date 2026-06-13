@@ -168,6 +168,48 @@ class TransacaoUpdate(BaseModel):
     status: str = Field("paga", description="prevista/paga/atrasada")
 
 
+class SugestaoContaResponse(BaseModel):
+    """Conta sugerida pra pagar (última usada com o mesmo beneficiário)."""
+    conta_id: Optional[str] = None
+    conta_nome: Optional[str] = None
+
+
+class ItemPrevistaInput(BaseModel):
+    descricao: str
+    valor: Decimal = Field(..., gt=0)
+
+
+class PrevistaUpdate(BaseModel):
+    """Edição de uma conta **a pagar** (prevista/atrasada) — sem mexer no saldo
+    (ela ainda não foi paga). Permite detalhar/corrigir o que a IA importou do
+    boleto: descrição, valor, categoria, vencimento, encargos e as verbas
+    (itens). Se ``itens`` vier, substitui as verbas atuais."""
+    descricao: str
+    valor_total: Decimal = Field(..., gt=0)
+    categoria_id: Optional[str] = None
+    data_vencimento: Optional[date] = None
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
+    itens: Optional[List[ItemPrevistaInput]] = None
+
+
+class PagarTransacaoRequest(BaseModel):
+    """Quita uma transação prevista/atrasada (move o saldo). ``conta_id`` só é
+    exigido quando a transação ainda não tem conta (boleto importado /
+    recorrência); se já tem pagamento(s), efetiva nas contas existentes.
+
+    ``multa_percentual``/``juros_mensal_percentual``: quando informados,
+    sobrescrevem (e salvam) os encargos da transação — pra corrigir o que a IA
+    leu ou preencher boletos antigos que não traziam essa informação."""
+    conta_id: Optional[str] = None
+    data_pagamento: Optional[date] = None
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
+    # Valor realmente pago — sobrescreve o total calculado (valor + encargos).
+    # Pra acordo/desconto/arredondamento; o saldo desce por esse valor.
+    valor_pago: Optional[Decimal] = None
+
+
 class TransacaoItemResponse(BaseModel):
     id: str
     categoria_id: Optional[str] = None
@@ -190,6 +232,12 @@ class TransacaoResponse(BaseModel):
     data_competencia: date
     data_pagamento: Optional[date] = None
     data_vencimento: Optional[date] = None
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
+    encargos_pagos: Optional[Decimal] = None
+    linha_digitavel: Optional[str] = None
+    desconto_valor: Optional[Decimal] = None
+    desconto_ate: Optional[date] = None
     status: str
     origem: str
     categoria_id: Optional[str] = None
@@ -209,6 +257,13 @@ class TransacaoListItem(BaseModel):
     valor_total: Decimal
     data_competencia: date
     data_pagamento: Optional[date] = None
+    data_vencimento: Optional[date] = None
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
+    encargos_pagos: Optional[Decimal] = None
+    linha_digitavel: Optional[str] = None
+    desconto_valor: Optional[Decimal] = None
+    desconto_ate: Optional[date] = None
     status: str
     categoria_id: Optional[str] = None
     categoria_nome: Optional[str] = None
@@ -433,6 +488,14 @@ class BoletoExtraido(BaseModel):
     beneficiario: Optional[str] = None
     vencimento: Optional[date] = None
     valor_total: Decimal
+    # Linha digitável (com ou sem pontos/espaços — normalizada no service).
+    linha_digitavel: Optional[str] = None
+    # Encargos por atraso impressos no boleto (ex.: multa 2% + juros 1% a.m.).
+    multa_percentual: Optional[Decimal] = None
+    juros_mensal_percentual: Optional[Decimal] = None
+    # Desconto por antecipação (ex.: "desconto de R$X até DD/MM").
+    desconto_valor: Optional[Decimal] = None
+    desconto_ate: Optional[date] = None
     verbas: List[VerbaBoleto] = Field(default_factory=list)
     leituras: List[LeituraBoleto] = Field(default_factory=list)
 
@@ -440,9 +503,10 @@ class BoletoExtraido(BaseModel):
 class ImportarBoletoResponse(BaseModel):
     success: bool                          # conseguiu ler o arquivo?
     conferido: bool                        # soma das verbas == total?
+    duplicado: bool = False                # já existe um boleto igual lançado?
     mensagem: str
     comprovante_id: Optional[str] = None
-    transacao_id: Optional[str] = None     # criada só quando conferido
+    transacao_id: Optional[str] = None     # criada (ou a já existente, se duplicado)
     extraido: Optional[BoletoExtraido] = None
 
 

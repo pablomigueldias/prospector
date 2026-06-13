@@ -5,6 +5,7 @@ import { CartoesSection } from '@/components/CartoesSection';
 import { CategoriaDonut } from '@/components/CategoriaDonut';
 import { CategoriasSection } from '@/components/CategoriasSection';
 import { ComprovantesGaleria } from '@/components/ComprovantesGaleria';
+import { ContasAPagarSection } from '@/components/ContasAPagarSection';
 import { ConsumoSection } from '@/components/ConsumoSection';
 import { ContasSection } from '@/components/ContasSection';
 import { DevSyncButton } from '@/components/DevSyncButton';
@@ -29,6 +30,7 @@ function mesSeguinte(ano: number, mes: number): [number, number] {
 const SECOES: { id: string; label: string }[] = [
   { id: 'sec-visao', label: 'Visão' },
   { id: 'sec-relatorio', label: 'Relatório' },
+  { id: 'sec-a-pagar', label: 'A pagar' },
   { id: 'sec-contas', label: 'Contas' },
   { id: 'sec-transacoes', label: 'Transações' },
   { id: 'sec-importar', label: 'Importar boleto' },
@@ -215,6 +217,9 @@ export default function FinancasScreen() {
 
       {/* Relatório: série mês a mês + top categorias do período + CSV */}
       <RelatorioSection ano={ano} mes={mes} />
+
+      {/* Contas a pagar (previstas/atrasadas) + as já pagas */}
+      <ContasAPagarSection contas={contas} onMutate={recarregarTudo} />
 
       {/* Contas + Reservas (com criar/editar/excluir) */}
       <div id="sec-contas" className="scroll-mt-16">

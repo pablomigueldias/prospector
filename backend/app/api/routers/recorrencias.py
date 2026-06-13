@@ -92,3 +92,14 @@ async def processar(
         return ProcessarRecorrenciasResponse(**resultado)
     except Exception as e:
         raise _handle(e)
+
+
+@router.post("/lembretes/enviar",
+             summary="Dispara o lembrete de vencimento no Telegram agora (teste)",
+             dependencies=[Depends(exige_editar)])
+async def disparar_lembretes() -> dict:
+    from app.jobs.lembretes import enviar_lembretes
+    try:
+        return await enviar_lembretes()
+    except Exception as e:
+        raise _handle(e)

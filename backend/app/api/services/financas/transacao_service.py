@@ -24,10 +24,12 @@ from app.api.schemas.financas import (
     TransacaoPagamentoResponse,
     TransacaoResponse,
 )
+from app.api.services.financas import encargos as encargos_service
 from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
 from app.db.models.financas.transacao import STATUS_TRANSACAO, Transacao
+from app.db.models.financas.transacao_item import TransacaoItem
 from app.db.models.financas.transacao_pagamento import TransacaoPagamento
 from app.db.session import get_session
 from app.repositories.financas.transacao_repository import TransacaoRepository
@@ -58,6 +60,12 @@ def _to_response(t: Transacao) -> TransacaoResponse:
         data_competencia=t.data_competencia,
         data_pagamento=t.data_pagamento,
         data_vencimento=t.data_vencimento,
+        multa_percentual=t.multa_percentual,
+        juros_mensal_percentual=t.juros_mensal_percentual,
+        encargos_pagos=t.encargos_pagos,
+        linha_digitavel=t.linha_digitavel,
+        desconto_valor=t.desconto_valor,
+        desconto_ate=t.desconto_ate,
         status=t.status,
         origem=t.origem,
         categoria_id=str(t.categoria_id) if t.categoria_id else None,
@@ -319,6 +327,31 @@ async def lancar_despesa_auto_split(
         )
 
 
+async def sugestao_conta_pagamento(
+    transacao_id: str, usuario_id_sessao: str
+) -> dict:
+    """Sugere a conta pra pagar uma conta a pagar: a última usada pra pagar o
+    mesmo beneficiário. Retorna {conta_id, conta_nome} (None se não houver)."""
+    tid = _uuid(transacao_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        t = await repo.get(tid)
+        if t is None:
+            raise TransacaoError("Transação não encontrada.")
+        if t.usuario_id != uid:
+            raise TransacaoError("A transação não pertence a esse usuário.")
+        conta_id = await repo.ultima_conta_por_descricao(uid, t.descricao)
+        nome = None
+        if conta_id is not None:
+            conta = await session.get(Conta, conta_id)
+            nome = conta.nome if conta is not None else None
+    return {
+        "conta_id": str(conta_id) if conta_id else None,
+        "conta_nome": nome,
+    }
+
+
 async def get_transacao(transacao_id: str) -> TransacaoResponse:
     async with get_session() as session:
         transacao = await TransacaoRepository(session).get(_uuid(transacao_id))
@@ -349,7 +382,9 @@ async def listar_transacoes(
     conta_id: Optional[str] = None,
     categoria_id: Optional[str] = None,
     tipo: Optional[str] = None,
+    status: Optional[List[str]] = None,
     busca: Optional[str] = None,
+    por_vencimento: bool = False,
     limit: int = 50,
     offset: int = 0,
 ) -> TransacaoListResponse:
@@ -360,6 +395,10 @@ async def listar_transacoes(
     catid = _uuid(categoria_id, campo="categoria_id") if categoria_id else None
     if tipo is not None and tipo not in ("despesa", "receita"):
         raise TransacaoError(f"Tipo inválido: {tipo!r}. Use despesa ou receita.")
+    if status:
+        invalidos = [s for s in status if s not in STATUS_TRANSACAO]
+        if invalidos:
+            raise TransacaoError(f"Status inválido: {', '.join(invalidos)}.")
     limit = max(1, min(int(limit), 200))
     offset = max(0, int(offset))
     termo = busca.strip() if busca and busca.strip() else None
@@ -373,7 +412,9 @@ async def listar_transacoes(
             conta_id=cid,
             categoria_id=catid,
             tipo=tipo,
+            status=status,
             busca=termo,
+            por_vencimento=por_vencimento,
             limit=limit,
             offset=offset,
         )
@@ -401,6 +442,13 @@ async def listar_transacoes(
                 valor_total=t.valor_total,
                 data_competencia=t.data_competencia,
                 data_pagamento=t.data_pagamento,
+                data_vencimento=t.data_vencimento,
+                multa_percentual=t.multa_percentual,
+                juros_mensal_percentual=t.juros_mensal_percentual,
+                encargos_pagos=t.encargos_pagos,
+                linha_digitavel=t.linha_digitavel,
+                desconto_valor=t.desconto_valor,
+                desconto_ate=t.desconto_ate,
                 status=t.status,
                 categoria_id=str(t.categoria_id) if t.categoria_id else None,
                 categoria_nome=cat_nome.get(t.categoria_id),
@@ -481,6 +529,156 @@ async def editar_transacao(
         await eventos.notificar(session, usuario_id, "transacao_editada")
         await session.commit()
         return _to_response(await repo.get(t.id))
+
+
+async def editar_prevista(
+    transacao_id: str, payload, usuario_id_sessao: str
+) -> TransacaoResponse:
+    """Edita uma conta **a pagar** (prevista/atrasada) sem tocar no saldo — ela
+    ainda não foi paga. Serve pra detalhar/corrigir o que veio do boleto:
+    descrição, valor, categoria, vencimento, encargos e as verbas (itens)."""
+    if not payload.descricao.strip():
+        raise TransacaoError("A conta a pagar precisa de uma descrição.")
+    tid = _uuid(transacao_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    categoria_id = (
+        _uuid(payload.categoria_id, campo="categoria_id")
+        if payload.categoria_id else None
+    )
+
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        t = await repo.get(tid)
+        if t is None:
+            raise TransacaoError("Transação não encontrada.")
+        if t.usuario_id != uid:
+            raise TransacaoError("A transação não pertence a esse usuário.")
+        if t.status == "paga":
+            raise TransacaoError(
+                "Essa transação já foi paga — não dá pra editar como conta a pagar."
+            )
+        if len(t.pagamentos) > 1:
+            raise TransacaoError(
+                "Essa conta é dividida em mais de uma conta — exclua e relance."
+            )
+        await _validar_categoria(session, categoria_id)
+
+        t.descricao = payload.descricao.strip()
+        t.valor_total = payload.valor_total
+        t.categoria_id = categoria_id
+        t.data_vencimento = payload.data_vencimento
+        if payload.multa_percentual is not None:
+            t.multa_percentual = payload.multa_percentual
+        if payload.juros_mensal_percentual is not None:
+            t.juros_mensal_percentual = payload.juros_mensal_percentual
+        # Prevista lançada com conta: mantém a soma do pagamento == total.
+        if len(t.pagamentos) == 1:
+            t.pagamentos[0].valor = payload.valor_total
+        # Substitui as verbas, se vieram (cascade delete-orphan limpa as antigas).
+        if payload.itens is not None:
+            t.itens.clear()
+            for it in payload.itens:
+                t.itens.append(
+                    TransacaoItem(descricao=it.descricao, valor=it.valor)
+                )
+
+        await eventos.notificar(session, uid, "transacao_editada")
+        await session.commit()
+        return _to_response(await repo.get(tid))
+
+
+async def pagar_transacao(
+    transacao_id: str,
+    *,
+    conta_id: Optional[str] = None,
+    data_pagamento: Optional[date] = None,
+    multa_percentual: Optional[Decimal] = None,
+    juros_mensal_percentual: Optional[Decimal] = None,
+    valor_pago: Optional[Decimal] = None,
+    usuario_id_sessao: str,
+) -> TransacaoResponse:
+    """Marca uma transação prevista/atrasada como **paga**, movendo o saldo.
+
+    - Se já tem pagamento(s) (ex.: prevista lançada com conta), só efetiva:
+      aplica no saldo o valor de cada pagamento existente.
+    - Se não tem nenhum (ex.: boleto importado ou recorrência, que nascem sem
+      conta), exige uma ``conta_id`` e cria o pagamento único com o valor total
+      antes de mexer no saldo.
+    """
+    tid = _uuid(transacao_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    quando = data_pagamento or date.today()
+
+    async with get_session() as session:
+        repo = TransacaoRepository(session)
+        t = await repo.get(tid)
+        if t is None:
+            raise TransacaoError("Transação não encontrada.")
+        if t.usuario_id != uid:
+            raise TransacaoError("A transação não pertence a esse usuário.")
+        if t.status == "paga":
+            raise TransacaoError("Essa transação já está paga.")
+
+        # Encargos informados na hora de pagar sobrescrevem (e salvam) os da
+        # transação — corrige o que a IA leu / preenche boleto antigo sem essa info.
+        if multa_percentual is not None:
+            t.multa_percentual = multa_percentual
+        if juros_mensal_percentual is not None:
+            t.juros_mensal_percentual = juros_mensal_percentual
+
+        # Encargos/valor manual só fazem sentido num pagamento único (não em
+        # despesa dividida em várias contas, caso raro de boleto).
+        unico = len(t.pagamentos) <= 1
+
+        # Conta destino: se ainda não tem pagamento (boleto/recorrência), exige.
+        nova_conta = None
+        if not t.pagamentos:
+            if not conta_id:
+                raise TransacaoError("Escolha a conta pra registrar o pagamento.")
+            nova_conta = await _buscar_conta(
+                session, _uuid(conta_id, campo="conta_id"), uid
+            )
+
+        if unico:
+            enc = encargos_service.calcular_encargos(
+                t.valor_total, t.data_vencimento, t.multa_percentual,
+                t.juros_mensal_percentual, quando,
+            )
+            # Desconto por antecipação: abate se paga até a data limite.
+            desc = Decimal("0")
+            if (t.desconto_valor and t.desconto_ate and quando <= t.desconto_ate):
+                desc = min(Decimal(t.desconto_valor), Decimal(t.valor_total))
+            if valor_pago is not None and valor_pago > 0:
+                # Valor manual manda — total exato que saiu da conta.
+                total_final = Decimal(valor_pago)
+                t.encargos_pagos = None
+            elif enc > 0:
+                total_final = Decimal(t.valor_total) + enc
+                t.encargos_pagos = enc
+            elif desc > 0:
+                total_final = Decimal(t.valor_total) - desc
+            else:
+                total_final = Decimal(t.valor_total)
+            t.valor_total = total_final
+            if t.pagamentos:
+                t.pagamentos[0].valor = total_final
+            else:
+                t.pagamentos.append(
+                    TransacaoPagamento(conta_id=nova_conta.id, valor=total_final)
+                )
+
+        # Aplica no saldo o valor de cada pagamento (já com o ajuste acima).
+        for p in t.pagamentos:
+            conta = await session.get(Conta, p.conta_id)
+            if conta is not None:
+                saldo_service.aplicar_movimento(conta, t.tipo, p.valor)
+
+        t.status = "paga"
+        t.data_pagamento = quando
+
+        await eventos.notificar(session, uid, "transacao_paga")
+        await session.commit()
+        return _to_response(await repo.get(tid))
 
 
 async def excluir_transacao(transacao_id: str) -> None:

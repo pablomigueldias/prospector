@@ -446,6 +446,13 @@ export interface TransacaoListItem {
   valor_total: string;
   data_competencia: string;
   data_pagamento?: string | null;
+  data_vencimento?: string | null;
+  multa_percentual?: string | null;
+  juros_mensal_percentual?: string | null;
+  encargos_pagos?: string | null;
+  linha_digitavel?: string | null;
+  desconto_valor?: string | null;
+  desconto_ate?: string | null;
   status: string;
   categoria_id?: string | null;
   categoria_nome?: string | null;
@@ -475,9 +482,33 @@ export interface TransacaoResponse {
   valor_total: string;
   data_competencia: string;
   data_pagamento?: string | null;
+  data_vencimento?: string | null;
+  multa_percentual?: string | null;
+  juros_mensal_percentual?: string | null;
+  encargos_pagos?: string | null;
+  linha_digitavel?: string | null;
+  desconto_valor?: string | null;
+  desconto_ate?: string | null;
   status: string;
   categoria_id?: string | null;
   pagamentos?: TransacaoPagamento[];
+  itens?: { id: string; descricao: string; valor: string; categoria_id?: string | null }[];
+}
+
+export interface VerbaInput {
+  descricao: string;
+  valor: string;
+}
+
+/** Edição de uma conta a pagar (prevista) — não mexe no saldo. */
+export interface PrevistaUpdateInput {
+  descricao: string;
+  valor_total: string;
+  categoria_id?: string | null;
+  data_vencimento?: string | null;
+  multa_percentual?: string | null;
+  juros_mensal_percentual?: string | null;
+  itens?: VerbaInput[] | null;
 }
 
 export interface TransacaoFiltro {
@@ -486,7 +517,11 @@ export interface TransacaoFiltro {
   conta_id?: string;
   categoria_id?: string;
   tipo?: 'despesa' | 'receita';
+  /** prevista/paga/atrasada — pode passar várias (ex.: a pagar = previstas+atrasadas). */
+  status?: string[];
   busca?: string;
+  /** Ordena por vencimento (vencidas primeiro) — usado no painel "A pagar". */
+  por_vencimento?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -713,6 +748,7 @@ export interface BoletoExtraido {
   beneficiario?: string | null;
   vencimento?: string | null;
   valor_total: string | number;
+  linha_digitavel?: string | null;
   verbas: VerbaBoleto[];
   leituras: LeituraBoleto[];
 }
@@ -720,6 +756,7 @@ export interface BoletoExtraido {
 export interface ImportarBoletoResponse {
   success: boolean;
   conferido: boolean;
+  duplicado?: boolean;
   mensagem: string;
   comprovante_id?: string | null;
   transacao_id?: string | null;

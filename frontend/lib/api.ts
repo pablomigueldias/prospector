@@ -45,8 +45,10 @@ import type {
   CartaoListResponse,
   FaturasCartao,
   LeituraConsumoListResponse,
+  Comprovante,
   ComprovanteListResponse,
   ImportarBoletoResponse,
+  PrevistaUpdateInput,
   Usuario,
   UsuarioAdminItem,
   PapelItem,
@@ -418,6 +420,33 @@ export const api = {
     });
   },
 
+  /** GET /api/financas/comprovantes?transacao_id=… — anexos de uma transação */
+  financasComprovantesDaTransacao(
+    transacaoId: string,
+  ): Promise<ComprovanteListResponse> {
+    return request<ComprovanteListResponse>(
+      `/api/financas/comprovantes?transacao_id=${encodeURIComponent(transacaoId)}`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  /** POST /api/financas/comprovantes — anexa um arquivo a uma transação */
+  financasAnexarComprovante(
+    transacaoId: string,
+    file: File,
+    tipo = 'comprovante',
+  ): Promise<Comprovante> {
+    const form = new FormData();
+    form.append('tipo', tipo);
+    form.append('file', file);
+    form.append('transacao_id', transacaoId);
+    return request<Comprovante>('/api/financas/comprovantes', {
+      method: 'POST',
+      body: form,
+      timeoutMs: 60_000,
+    });
+  },
+
   financasComprovantes(usuarioId: string, tipo?: string): Promise<ComprovanteListResponse> {
     const q = new URLSearchParams({ usuario_id: usuarioId });
     if (tipo) q.set('tipo', tipo);
@@ -462,7 +491,9 @@ export const api = {
     if (filtro.conta_id) q.set('conta_id', filtro.conta_id);
     if (filtro.categoria_id) q.set('categoria_id', filtro.categoria_id);
     if (filtro.tipo) q.set('tipo', filtro.tipo);
+    if (filtro.status) filtro.status.forEach((s) => q.append('status', s));
     if (filtro.busca) q.set('busca', filtro.busca);
+    if (filtro.por_vencimento) q.set('por_vencimento', 'true');
     if (filtro.limit != null) q.set('limit', String(filtro.limit));
     if (filtro.offset != null) q.set('offset', String(filtro.offset));
     const qs = q.toString();
@@ -506,6 +537,68 @@ export const api = {
     return request<TransacaoResponse>(
       `/api/financas/transacoes/${encodeURIComponent(id)}`,
       { method: 'PATCH', body, timeoutMs: 10_000 },
+    );
+  },
+
+  /** POST /api/financas/transacoes/{id}/tornar-recorrente — cria uma conta
+   *  fixa (recorrência) a partir do boleto e liga a transação a ela. */
+  financasTornarRecorrente(id: string): Promise<Recorrencia> {
+    return request<Recorrencia>(
+      `/api/financas/transacoes/${encodeURIComponent(id)}/tornar-recorrente`,
+      { method: 'POST', timeoutMs: 10_000 },
+    );
+  },
+
+  /** GET /api/financas/transacoes/{id}/sugestao-conta — conta sugerida pra
+   *  pagar (a última usada com o mesmo beneficiário). */
+  financasSugestaoConta(
+    id: string,
+  ): Promise<{ conta_id: string | null; conta_nome: string | null }> {
+    return request(
+      `/api/financas/transacoes/${encodeURIComponent(id)}/sugestao-conta`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  /** PATCH /api/financas/transacoes/{id}/conta-a-pagar — edita uma conta a
+   *  pagar (prevista): detalha verbas, ajusta valor/categoria/vencimento/encargos.
+   *  Não mexe no saldo (ainda não foi paga). */
+  financasEditarPrevista(
+    id: string,
+    body: PrevistaUpdateInput,
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>(
+      `/api/financas/transacoes/${encodeURIComponent(id)}/conta-a-pagar`,
+      { method: 'PATCH', body, timeoutMs: 10_000 },
+    );
+  },
+
+  /** POST /api/financas/transacoes/{id}/pagar — marca a prevista como paga e
+   *  move o saldo. `contaId` só é exigido quando a transação ainda não tem
+   *  conta (boleto importado / recorrência). */
+  financasPagarTransacao(
+    id: string,
+    opts: {
+      contaId?: string;
+      dataPagamento?: string;
+      multaPercentual?: string | null;
+      jurosMensalPercentual?: string | null;
+      valorPago?: string | null;
+    } = {},
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>(
+      `/api/financas/transacoes/${encodeURIComponent(id)}/pagar`,
+      {
+        method: 'POST',
+        body: {
+          conta_id: opts.contaId || null,
+          data_pagamento: opts.dataPagamento || null,
+          multa_percentual: opts.multaPercentual ?? null,
+          juros_mensal_percentual: opts.jurosMensalPercentual ?? null,
+          valor_pago: opts.valorPago ?? null,
+        },
+        timeoutMs: 10_000,
+      },
     );
   },
 
