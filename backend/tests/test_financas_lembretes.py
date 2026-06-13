@@ -36,12 +36,38 @@ async def _inserir(uid: str, desc: str, valor, venc, *, multa=None, juros=None,
     return tid
 
 
+async def _inserir_fatura(uid: str, nome: str, valor, venc) -> str:
+    """Cria um cartão do usuário + uma fatura não paga vencendo em `venc`."""
+    cid = str(uuid.uuid4())
+    fid = str(uuid.uuid4())
+    eng = create_async_engine(settings.database_url)
+    try:
+        async with eng.begin() as conn:
+            await conn.execute(text(
+                "INSERT INTO financas.cartoes "
+                "(id, usuario_id, nome, dia_fechamento, dia_vencimento, ativo) "
+                "VALUES (:id,:uid,:n,20,10,true)"
+            ), {"id": cid, "uid": uid, "n": nome})
+            await conn.execute(text(
+                "INSERT INTO financas.faturas "
+                "(id, cartao_id, mes_referencia, valor_total, vencimento, status) "
+                "VALUES (:id,:cid,:mr,:v,:venc,'fechada')"
+            ), {"id": fid, "cid": cid, "mr": venc.replace(day=1), "v": valor, "venc": venc})
+    finally:
+        await eng.dispose()
+    return fid
+
+
 async def _cleanup(uid: str) -> None:
     eng = create_async_engine(settings.database_url)
     try:
         async with eng.begin() as conn:
             await conn.execute(
                 text("DELETE FROM financas.transacoes WHERE usuario_id = :u"),
+                {"u": uuid.UUID(uid)},
+            )
+            await conn.execute(
+                text("DELETE FROM financas.cartoes WHERE usuario_id = :u"),
                 {"u": uuid.UUID(uid)},
             )
     finally:
@@ -72,8 +98,9 @@ def smoke_test() -> None:
                              multa=2, juros=1))                       # vencida + juros
         asyncio.run(_inserir(uid, "Luz", 200, hoje + timedelta(days=2)))  # vence em breve
         asyncio.run(_inserir(uid, "Escola", 900, hoje + timedelta(days=30)))  # fora da janela
+        asyncio.run(_inserir_fatura(uid, "Nubank", 1500, hoje + timedelta(days=3)))  # fatura na janela
 
-        print("\n→ Test 1: envia digest com vencida + próxima, ignora a distante")
+        print("\n→ Test 1: envia digest com vencida + próxima + fatura, ignora a distante")
         r = asyncio.run(lembretes.enviar_lembretes(ref=hoje))
         assert r["enviados"] == 1, r
         assert len(enviados) == 1
@@ -85,6 +112,8 @@ def smoke_test() -> None:
         # vencida 10 dias: 100 + multa 2 + juros 0,33 = 102,33
         assert "R$102,33" in texto, texto
         assert "juros/multa" in texto
+        # seção de faturas de cartão
+        assert "Faturas de cartão" in texto and "Nubank" in texto and "R$1.500,00" in texto, texto
         print("   " + texto.replace("\n", " | "))
 
         print("\n→ Test 2: desligado → não envia")

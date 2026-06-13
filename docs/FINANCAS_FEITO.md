@@ -42,6 +42,7 @@ Serve de histórico e de referência de onde cada coisa mora no código.
 - ✅ **Ver/anexar comprovante no detalhe** (2026-06-13) — o editor da conta a pagar lista os anexos com link e tem "+ anexar". `GET/POST /comprovantes?transacao_id`. ⚠️ Abrir no navegador **só funciona em dev** (MinIO localhost); prod depende do MinIO atrás do Caddy (ver pendência em `MELHORIAS_FINANCAS.md` §6).
 - ✅ **Lembrete de vencimento (Telegram)** (2026-06-13) — **APScheduler** no container da API roda 1x/dia (`lembretes_hora`, default 8h, tz America/Sao_Paulo) a `rotina_diaria`: processa recorrências (gera previstas + marca atrasadas) e manda um **digest** com vencidas + vencendo em até N dias (`lembretes_dias_antes`, default 3), com juros/multa. Liga/desliga por `SCHEDULER_ENABLED`/`LEMBRETES_ENABLED`. Teste manual: `POST /api/financas/recorrencias/lembretes/enviar`. Ref `app/jobs/lembretes.py`.
 - ✅ **Marcar "atrasada" automático** (2026-06-13) — a `rotina_diaria` roda o `_marcar_atrasadas` todo dia (resolve o cron das recorrências).
+- ✅ **Lembrete de fatura de cartão no digest** (2026-06-13) — o digest diário do Telegram ganhou uma seção **💳 Faturas de cartão** com as faturas não pagas que vencem na janela (`lembretes_dias_antes`), com nome do cartão, valor e "vence/venceu DD/MM" + total. Reusa `app/jobs/lembretes.py` (`_faturas_a_vencer`/`_montar_texto_faturas`). Evita pagar fatura com juros. Smoke `test_financas_lembretes` cobre.
 
 ## 3d. Cartões profissionais
 
