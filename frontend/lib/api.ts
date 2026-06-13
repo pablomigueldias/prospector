@@ -14,6 +14,7 @@ import type {
   CategoriaUpdateInput,
   LancamentoInput,
   DespesaDivididaInput,
+  NluInterpretacao,
   Recorrencia,
   RecorrenciaCreateInput,
   RecorrenciaListResponse,
@@ -560,6 +561,15 @@ export const api = {
       method: 'POST',
       body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
       timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/nlu/interpretar — texto livre → rascunho (não grava) */
+  financasNluInterpretar(texto: string): Promise<NluInterpretacao> {
+    return request<NluInterpretacao>('/api/financas/nlu/interpretar', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, texto },
+      timeoutMs: 30_000,
     });
   },
 

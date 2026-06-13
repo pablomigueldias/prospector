@@ -539,6 +539,18 @@ export interface LancamentoInput {
   status?: 'paga' | 'prevista';
 }
 
+export interface NluInterpretacao {
+  tipo: string;
+  valor: string;
+  descricao: string;
+  data: string;
+  conta_id?: string | null;
+  conta_nome?: string | null;
+  categoria_id?: string | null;
+  categoria_nome?: string | null;
+  texto_original: string;
+}
+
 export interface PagamentoInput {
   conta_id: string;
   valor: string;

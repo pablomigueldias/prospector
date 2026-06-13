@@ -13,6 +13,7 @@ import { ImportarBoletoSection } from '@/components/ImportarBoletoSection';
 import { RecorrenciasSection } from '@/components/RecorrenciasSection';
 import { RelatorioSection } from '@/components/RelatorioSection';
 import { StatCard } from '@/components/StatCard';
+import { NluLancarSection } from '@/components/NluLancarSection';
 import { TransacoesSection } from '@/components/TransacoesSection';
 import { useContas, useResumoMes } from '@/hooks/useFinancas';
 import { useFinancasEventos } from '@/hooks/useFinancasEventos';
@@ -232,6 +233,9 @@ export default function FinancasScreen() {
 
       {/* Transações: lista filtrável + lançar/excluir */}
       <div id="sec-transacoes" className="scroll-mt-16">
+        <div className="mb-4">
+          <NluLancarSection contas={contas} onMutate={recarregarTudo} />
+        </div>
         <TransacoesSection
           ano={ano}
           mes={mes}
