@@ -260,6 +260,8 @@ class RedacaoProposta(BaseModel):
     # Seletor: dos SEUS projetos/habilidades (max 3 / max 5)
     projetos_destacados: List[str] = Field(default_factory=list)
     habilidades_destacadas: List[str] = Field(default_factory=list)
+    # A/B: 2-3 primeiras linhas alternativas pra testar qual converte mais
+    variacoes_abertura: List[str] = Field(default_factory=list)
 
 
 class RedigirRequest(BaseModel):

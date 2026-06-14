@@ -203,6 +203,7 @@ function PropostaModal({
   const [prazo, setPrazo] = useState<string | null>(null);
   const [instrucoes, setInstrucoes] = useState('');
   const [copiado, setCopiado] = useState(false);
+  const [variacoes, setVariacoes] = useState<string[]>([]);
 
   // valores efetivos: o que foi editado, senão o que veio do servidor
   const textoEf = texto ?? proposta?.texto_enviado ?? '';
@@ -213,8 +214,16 @@ function PropostaModal({
     if (r) {
       setTexto(r.redacao.texto);
       setPrazo(r.redacao.prazo_sugerido ?? prazoEf);
+      setVariacoes(r.redacao.variacoes_abertura || []);
       void refetch();
     }
+  }
+
+  function usarAbertura(ab: string) {
+    const base = textoEf;
+    const idx = base.indexOf('\n\n');
+    const corpo = idx >= 0 ? base.slice(idx) : base ? `\n\n${base}` : '';
+    setTexto(`${ab.trim()}${corpo}`);
   }
 
   async function salvar() {
@@ -299,6 +308,26 @@ function PropostaModal({
               </button>
               {acoes.error && <div className="text-[12px] text-red-600 mt-1.5">{acoes.error.message}</div>}
             </div>
+
+            {variacoes.length > 0 && (
+              <div className="mb-3">
+                <div className="text-[12px] font-medium text-ink-soft mb-1.5">
+                  Aberturas alternativas (A/B) — clique pra usar
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {variacoes.map((ab, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="text-left text-[13px] text-ink-soft border border-line rounded p-2 hover:border-brand hover:bg-brand-soft/30"
+                      onClick={() => usarAbertura(ab)}
+                    >
+                      {ab}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <label className="text-[13px] text-ink-soft">
               Texto da proposta (revise antes de enviar na Workana)

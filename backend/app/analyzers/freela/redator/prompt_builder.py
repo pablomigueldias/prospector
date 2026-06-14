@@ -18,7 +18,8 @@ OUTPUT_SCHEMA = """
   "prazo_sugerido": "<ex: 7 dias>",
   "tom": "<tecnico | institucional>",
   "projetos_destacados": ["<nome EXATO de projeto do perfil, max 3>", "..."],
-  "habilidades_destacadas": ["<habilidade EXATA do perfil, max 5>", "..."]
+  "habilidades_destacadas": ["<habilidade EXATA do perfil, max 5>", "..."],
+  "variacoes_abertura": ["<1ª frase/abertura alternativa, ângulo diferente>", "<outra>", "<outra>"]
 }
 """
 
@@ -38,6 +39,9 @@ MESTRE do freelancer. Produza:
 - "projetos_destacados" e "habilidades_destacadas" (o SELETOR): escolha os que
   MAXIMIZAM relevância PRA ESTE projeto — até 3 projetos e até 5 habilidades,
   com os NOMES EXATOS como aparecem no perfil.
+- "variacoes_abertura": 2-3 PRIMEIRAS LINHAS alternativas pra proposta, cada uma
+  com um ângulo diferente (ex.: uma direta-ao-problema, uma com prova/resultado,
+  uma com pergunta). É pra você testar qual converte mais (A/B). Curtas.
 
 REGRAS (inegociáveis):
 - ANTI-MENTIRA: use SOMENTE experiência/projetos/skills que ESTÃO no perfil.

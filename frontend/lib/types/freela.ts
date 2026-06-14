@@ -191,6 +191,7 @@ export interface FreelaRedacao {
   tom?: string | null;
   projetos_destacados: string[];
   habilidades_destacadas: string[];
+  variacoes_abertura: string[];
 }
 
 export interface FreelaRedigirResponse {

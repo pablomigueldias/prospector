@@ -27,7 +27,8 @@ def parse_resposta(texto_cru: str) -> Optional[RedacaoProposta]:
     if not (redacao.texto or "").strip():
         return None
 
-    # Respeita os tetos do seletor (3 projetos / 5 habilidades).
+    # Respeita os tetos do seletor (3 projetos / 5 habilidades) e A/B (3).
     redacao.projetos_destacados = redacao.projetos_destacados[:3]
     redacao.habilidades_destacadas = redacao.habilidades_destacadas[:5]
+    redacao.variacoes_abertura = redacao.variacoes_abertura[:3]
     return redacao
