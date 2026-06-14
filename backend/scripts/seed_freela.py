@@ -32,6 +32,9 @@ WORKANA = {
             {"ate_usd": None, "pct": 0.05},
         ],
         "custo_servico_cliente_pct": 0.045,
+        # As faixas acima são em US$; ao fechar uma proposta, o líquido (R$) é
+        # convertido por esta taxa pra somar no acumulado do cliente.
+        "usd_brl": 5.20,
     },
     "lance_minimo_padrao": 760.0,
 }

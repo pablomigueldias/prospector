@@ -64,6 +64,9 @@ _COMISSAO_PADRAO = [
     {"ate_usd": None, "pct": 0.05},
 ]
 _CUSTO_SERVICO_PADRAO = 0.045
+# As faixas de comissão são em US$, mas você cota em R$. Ao fechar, convertemos
+# o líquido pra US$ por esta taxa (sobrescrevível em config_comissao.usd_brl).
+_USD_BRL_PADRAO = 5.20
 
 # Transições válidas que carimbam um timestamp na proposta.
 _CARIMBO = {
@@ -415,10 +418,39 @@ async def mudar_status(proposta_id: str, payload: PropostaStatusUpdate) -> Propo
         if novo == "perdida":
             dados["motivo_perda"] = payload.motivo_perda
 
+        # Cliente recorrente vale ouro: ao FECHAR pela 1ª vez, soma o líquido
+        # (convertido pra US$) ao acumulado do cliente → a comissão cai de faixa
+        # sozinha e o precificador fica correto sem você lembrar.
+        creditou_usd = 0.0
+        if (
+            novo == "fechada"
+            and proposta.data_fechamento is None  # 1ª vez que fecha (não duplica)
+            and proposta.valor_liquido_estimado
+        ):
+            projeto = await repo.get_projeto(proposta.projeto_id)
+            if projeto and projeto.cliente_id:
+                cliente = await repo.get_cliente(projeto.cliente_id)
+                if cliente:
+                    taxa = _USD_BRL_PADRAO
+                    if projeto.plataforma_id:
+                        plat = await repo.get_plataforma(projeto.plataforma_id)
+                        if plat and plat.config_comissao:
+                            taxa = float(plat.config_comissao.get("usd_brl", taxa))
+                    creditou_usd = round(float(proposta.valor_liquido_estimado) / taxa, 2)
+                    await repo.update_cliente(
+                        cliente.id,
+                        {"ja_me_pagou_usd": float(cliente.ja_me_pagou_usd) + creditou_usd},
+                    )
+
         proposta = await repo.update_proposta(pid, dados)
         # Auditoria: reusa a tabela de eventos (pipeline_events).
         detalhe = json.dumps(
-            {"proposta_id": proposta_id, "de": anterior, "para": novo},
+            {
+                "proposta_id": proposta_id,
+                "de": anterior,
+                "para": novo,
+                **({"creditou_usd": creditou_usd} if creditou_usd else {}),
+            },
             ensure_ascii=False,
         )
         session.add(PipelineEvent(evento=f"freela_proposta_{novo}", detalhe=detalhe))
