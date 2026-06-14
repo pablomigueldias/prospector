@@ -401,6 +401,7 @@ export interface Conta {
   nome: string;
   tipo: string;
   saldo_atual: string;
+  meta?: string | null;
   ativa: boolean;
   created_at?: string | null;
   updated_at?: string | null;
@@ -424,12 +425,14 @@ export interface ContaCreateInput {
   nome: string;
   tipo: TipoConta;
   saldo_atual?: string;
+  meta?: string | null;
 }
 
 export interface ContaUpdateInput {
   nome?: string;
   tipo?: TipoConta;
   ativa?: boolean;
+  meta?: string | null;
 }
 
 export interface CategoriaResumoItem {

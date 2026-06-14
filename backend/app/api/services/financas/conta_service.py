@@ -51,6 +51,7 @@ def _to_response(c: Conta) -> ContaResponse:
         nome=c.nome,
         tipo=c.tipo,
         saldo_atual=c.saldo_atual,
+        meta=c.meta,
         ativa=c.ativa,
         created_at=_iso(c.created_at),
         updated_at=_iso(c.updated_at),
@@ -67,6 +68,7 @@ async def criar_conta(payload: ContaCreate) -> ContaResponse:
         "nome": payload.nome.strip(),
         "tipo": payload.tipo,
         "saldo_atual": payload.saldo_atual,
+        "meta": payload.meta,
     }
     async with get_session() as session:
         conta = await ContaRepository(session).create(dados)
