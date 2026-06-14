@@ -13,6 +13,7 @@ import type {
   FreelaProjetoCreate,
   FreelaProposta,
   FreelaPropostaCreate,
+  FreelaNegociarResponse,
   FreelaRedigirResponse,
   FreelaStatus,
 } from '@/lib/types';
@@ -106,6 +107,11 @@ export function useFreelaActions() {
       run<FreelaRedigirResponse>(() => api.freelaPropostaRedigir(id, instrucoes)),
     [],
   );
+  const negociarProposta = useCallback(
+    (id: string, objecao: string) =>
+      run<FreelaNegociarResponse>(() => api.freelaPropostaNegociar(id, objecao)),
+    [],
+  );
   const criarCliente = useCallback(
     (body: FreelaClienteCreate) => run<FreelaCliente>(() => api.freelaClienteCriar(body)),
     [],
@@ -127,6 +133,7 @@ export function useFreelaActions() {
     removerProposta,
     atualizarProposta,
     redigirProposta,
+    negociarProposta,
     criarCliente,
     precificar,
   };

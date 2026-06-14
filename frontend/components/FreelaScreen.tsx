@@ -204,6 +204,8 @@ function PropostaModal({
   const [instrucoes, setInstrucoes] = useState('');
   const [copiado, setCopiado] = useState(false);
   const [variacoes, setVariacoes] = useState<string[]>([]);
+  const [objecao, setObjecao] = useState('');
+  const [negOpcoes, setNegOpcoes] = useState<string[]>([]);
 
   // valores efetivos: o que foi editado, senão o que veio do servidor
   const textoEf = texto ?? proposta?.texto_enviado ?? '';
@@ -224,6 +226,12 @@ function PropostaModal({
     const idx = base.indexOf('\n\n');
     const corpo = idx >= 0 ? base.slice(idx) : base ? `\n\n${base}` : '';
     setTexto(`${ab.trim()}${corpo}`);
+  }
+
+  async function negociar() {
+    if (!objecao.trim()) return;
+    const r = await acoes.negociarProposta(item.id, objecao.trim());
+    if (r) setNegOpcoes(r.opcoes);
   }
 
   async function salvar() {
@@ -338,6 +346,39 @@ function PropostaModal({
                 placeholder="Gere com a IA ou escreva aqui…"
               />
             </label>
+
+            {/* Assistente de negociação */}
+            <div className="rounded border border-line bg-bg-alt/50 p-3 mt-3">
+              <div className="text-[13px] font-medium text-ink mb-1.5">
+                🤝 Cliente pediu desconto? Defenda o valor
+              </div>
+              <div className="flex gap-2">
+                <input
+                  className="input flex-1"
+                  placeholder='O que o cliente falou — ex: "tá caro, faz por R$3000?"'
+                  value={objecao}
+                  onChange={(e) => setObjecao(e.target.value)}
+                />
+                <button type="button" className="btn-primary" onClick={negociar} disabled={acoes.loading || !objecao.trim()}>
+                  {acoes.loading ? '…' : 'Sugerir'}
+                </button>
+              </div>
+              {negOpcoes.length > 0 && (
+                <div className="flex flex-col gap-1.5 mt-2">
+                  {negOpcoes.map((o, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="text-left text-[13px] text-ink-soft border border-line rounded p-2 hover:border-brand hover:bg-brand-soft/30"
+                      title="Clique pra copiar"
+                      onClick={() => navigator.clipboard?.writeText(o)}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center justify-between mt-4">
               <button type="button" className="btn-ghost text-[13px]" onClick={copiar} disabled={!textoEf}>

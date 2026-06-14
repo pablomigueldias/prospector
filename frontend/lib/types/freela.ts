@@ -204,3 +204,8 @@ export interface FreelaRedigirResponse {
   proposta_id: string;
   redacao: FreelaRedacao;
 }
+
+export interface FreelaNegociarResponse {
+  proposta_id: string;
+  opcoes: string[];
+}

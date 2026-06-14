@@ -15,6 +15,10 @@ from app.analyzers.freela.analisador.parser import parse_resposta as parse_anali
 from app.analyzers.freela.analisador.prompt_builder import (
     construir_prompt as construir_prompt_analise,
 )
+from app.analyzers.freela.negociador.parser import parse_resposta as parse_negociacao
+from app.analyzers.freela.negociador.prompt_builder import (
+    construir_prompt as construir_prompt_negociacao,
+)
 from app.analyzers.freela.redator.parser import parse_resposta as parse_redacao
 from app.analyzers.freela.redator.prompt_builder import (
     construir_prompt as construir_prompt_redacao,
@@ -26,6 +30,8 @@ from app.api.schemas.freela import (
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
+    NegociarRequest,
+    NegociarResponse,
     RedigirRequest,
     RedigirResponse,
     KanbanColuna,
@@ -522,6 +528,35 @@ async def redigir_proposta(proposta_id: str, payload: RedigirRequest) -> Redigir
         )
 
     return RedigirResponse(proposta_id=proposta_id, redacao=redacao)
+
+
+async def negociar_proposta(proposta_id: str, payload: NegociarRequest) -> NegociarResponse:
+    if not payload.objecao.strip():
+        raise FreelaError("Cole o que o cliente falou (a objeção).")
+
+    pid = _uuid(proposta_id)
+    async with get_session() as session:
+        repo = FreelaRepository(session)
+        proposta = await repo.get_proposta(pid)
+        if proposta is None:
+            raise FreelaError("Proposta não encontrada.")
+        projeto = await repo.get_projeto(proposta.projeto_id)
+
+    perfil = await get_perfil()  # opcional: dá o tom; funciona sem
+    prompt = construir_prompt_negociacao(
+        payload.objecao,
+        perfil=perfil,
+        titulo=projeto.titulo if projeto else None,
+        valor_cotado=float(proposta.valor_cotado) if proposta.valor_cotado is not None else None,
+        descricao_projeto=projeto.descricao if projeto else None,
+    )
+    texto = _chamar_llm(prompt, operacao="negociar")
+
+    opcoes = parse_negociacao(texto)
+    if not opcoes:
+        raise FreelaError("A IA não retornou respostas válidas. Tente de novo.")
+
+    return NegociarResponse(proposta_id=proposta_id, opcoes=opcoes)
 
 
 # ══════════════════════════════════════════════════════════════════

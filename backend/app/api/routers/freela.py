@@ -14,6 +14,8 @@ from app.api.schemas.freela import (
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
+    NegociarRequest,
+    NegociarResponse,
     RedigirRequest,
     RedigirResponse,
     KanbanResponse,
@@ -230,6 +232,15 @@ async def mudar_status(proposta_id: str, body: PropostaStatusUpdate) -> Proposta
 async def redigir_proposta(proposta_id: str, body: RedigirRequest) -> RedigirResponse:
     try:
         return await freela_service.redigir_proposta(proposta_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/propostas/{proposta_id}/negociar", response_model=NegociarResponse,
+             summary="Sugestões de resposta à objeção do cliente (defende o valor)")
+async def negociar_proposta(proposta_id: str, body: NegociarRequest) -> NegociarResponse:
+    try:
+        return await freela_service.negociar_proposta(proposta_id, body)
     except Exception as e:
         raise _handle(e)
 

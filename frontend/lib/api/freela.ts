@@ -6,6 +6,7 @@ import type {
   FreelaCliente,
   FreelaClienteCreate,
   FreelaKanbanResponse,
+  FreelaNegociarResponse,
   FreelaRedigirResponse,
   FreelaMetricas,
   FreelaPlataforma,
@@ -88,6 +89,13 @@ export const freelaApi = {
   freelaProjetoPropostas(id: string): Promise<FreelaProposta[]> {
     return request<FreelaProposta[]>(`${BASE}/projetos/${encodeURIComponent(id)}/propostas`, {
       timeoutMs: T,
+    });
+  },
+  freelaPropostaNegociar(id: string, objecao: string): Promise<FreelaNegociarResponse> {
+    return request<FreelaNegociarResponse>(`${BASE}/propostas/${encodeURIComponent(id)}/negociar`, {
+      method: 'POST',
+      body: { objecao },
+      timeoutMs: 90_000,
     });
   },
   freelaProjetoAnalisar(id: string): Promise<FreelaAnalisarResponse> {

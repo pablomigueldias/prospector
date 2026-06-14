@@ -278,3 +278,16 @@ class RedigirRequest(BaseModel):
 class RedigirResponse(BaseModel):
     proposta_id: str
     redacao: RedacaoProposta
+
+
+# ══════════════════════════════════════════════════════════════════
+# Assistente de negociação (IA) — não persiste, é conselho
+# ══════════════════════════════════════════════════════════════════
+
+class NegociarRequest(BaseModel):
+    objecao: str  # o que o cliente falou (ex.: "tá caro", "consegue por R$1000?")
+
+
+class NegociarResponse(BaseModel):
+    proposta_id: str
+    opcoes: List[str]  # 2-3 respostas com estratégias diferentes
