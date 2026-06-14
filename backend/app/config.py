@@ -101,6 +101,20 @@ class Settings(BaseSettings):
     # só o .env de dev seta DEV_TOOLS_ENABLED=true.
     dev_tools_enabled: bool = False
 
+    # CORS — origens liberadas pro front. Como o front usa credentials:'include'
+    # (cookie de sessão), o navegador exige uma lista explícita; '*' não vale.
+    # Em dev o Next cai na 3001 quando a 3000 está ocupada, então as duas portas
+    # entram no default. Em produção, sobrescreva no .env:
+    #   CORS_ORIGINS=https://studio.reativesystems.com.br
+    cors_origins: str = (
+        "http://localhost:3000,http://127.0.0.1:3000,"
+        "http://localhost:3001,http://127.0.0.1:3001"
+    )
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
         env_file_encoding="utf-8",
