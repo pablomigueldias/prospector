@@ -8,6 +8,7 @@ import type {
   FaturasCartao,
   Conta,
   LeituraConsumo,
+  ProjecaoFaturas,
   Recorrencia,
   RelatorioResponse,
   ResumoMes,
@@ -67,6 +68,14 @@ export function useCartaoFaturas(cartaoId: string) {
     [cartaoId],
   );
   return { ...result, dados: result.data };
+}
+
+export function useProjecaoCartoes(meses = 6, recarregar = 0) {
+  const result = useFetch<ProjecaoFaturas>(
+    () => api.financasProjecaoCartoes(meses),
+    [meses, recarregar],
+  );
+  return { ...result, projecao: result.data };
 }
 
 export function useLeituras(tipo?: string) {

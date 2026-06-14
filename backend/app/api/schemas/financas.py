@@ -338,6 +338,20 @@ class FaturasCartaoResponse(BaseModel):
     total_juros: Decimal           # soma de valor_juros das parcelas do cartão
 
 
+class ProjecaoMesItem(BaseModel):
+    """Quanto está comprometido em faturas de cartão num mês (todos os cartões
+    somados)."""
+    mes_referencia: date           # 1º dia do mês
+    total: Decimal
+
+
+class ProjecaoFaturasResponse(BaseModel):
+    """Comprometido por mês nos próximos N meses, somando as faturas não pagas
+    de todos os cartões do usuário."""
+    meses: List[ProjecaoMesItem]
+    total: Decimal                 # soma do período
+
+
 class PagarFaturaRequest(BaseModel):
     """Pagamento de uma fatura: debita de uma conta e baixa a fatura."""
     conta_id: str

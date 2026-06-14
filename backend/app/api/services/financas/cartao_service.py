@@ -18,6 +18,8 @@ from app.api.schemas.financas import (
     FaturaResponse,
     FaturasCartaoResponse,
     PagarFaturaRequest,
+    ProjecaoFaturasResponse,
+    ProjecaoMesItem,
 )
 from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.cartao import Cartao
@@ -170,6 +172,41 @@ async def faturas_do_cartao(cartao_id: str) -> FaturasCartaoResponse:
         total_em_aberto=Decimal(em_aberto),
         total_juros=Decimal(juros),
     )
+
+
+async def projecao_faturas(usuario_id: str, meses: int = 6) -> ProjecaoFaturasResponse:
+    """Comprometido por mês nos próximos ``meses``, somando as faturas não pagas
+    de TODOS os cartões do usuário (cada parcela futura já caiu na fatura do seu
+    mês). Só retorna os meses que têm algo a pagar."""
+    uid = _uuid(usuario_id, campo="usuario_id")
+    meses = max(1, min(int(meses), 24))
+    hoje = date.today()
+    inicio = date(hoje.year, hoje.month, 1)
+    idx = hoje.year * 12 + (hoje.month - 1) + meses
+    fim = date(idx // 12, idx % 12 + 1, 1)
+
+    async with get_session() as session:
+        rows = (await session.execute(
+            select(
+                Fatura.mes_referencia,
+                func.coalesce(func.sum(Fatura.valor_total), 0),
+            )
+            .join(Cartao, Cartao.id == Fatura.cartao_id)
+            .where(
+                Cartao.usuario_id == uid,
+                Fatura.status != "paga",
+                Fatura.mes_referencia >= inicio,
+                Fatura.mes_referencia < fim,
+            )
+            .group_by(Fatura.mes_referencia)
+            .order_by(Fatura.mes_referencia)
+        )).all()
+
+    itens = [
+        ProjecaoMesItem(mes_referencia=m, total=Decimal(t)) for m, t in rows
+    ]
+    total = sum((i.total for i in itens), Decimal("0"))
+    return ProjecaoFaturasResponse(meses=itens, total=total)
 
 
 async def extrato_fatura(fatura_id: str) -> FaturaExtratoResponse:

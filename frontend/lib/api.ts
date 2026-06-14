@@ -62,6 +62,7 @@ import type {
   CompraCreateInput,
   Fatura,
   PagarFaturaInput,
+  ProjecaoFaturas,
   LeituraConsumoListResponse,
   LeituraConsumo,
   LeituraCreateInput,
@@ -462,6 +463,17 @@ export const api = {
   financasExcluirCompra(id: string): Promise<void> {
     return request<void>(`/api/financas/compras/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** GET /api/financas/cartoes/projecao — comprometido por mês (todos os cartões) */
+  financasProjecaoCartoes(meses = 6): Promise<ProjecaoFaturas> {
+    const q = new URLSearchParams({
+      usuario_id: FINANCAS_USUARIO_ID,
+      meses: String(meses),
+    });
+    return request<ProjecaoFaturas>(`/api/financas/cartoes/projecao?${q}`, {
       timeoutMs: 10_000,
     });
   },

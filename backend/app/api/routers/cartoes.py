@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies.financas import (
     exige_editar,
@@ -14,6 +14,7 @@ from app.api.schemas.financas import (
     FaturaResponse,
     FaturasCartaoResponse,
     PagarFaturaRequest,
+    ProjecaoFaturasResponse,
 )
 from app.api.services.financas import cartao_service
 from app.api.services.financas.cartao_service import CartaoError
@@ -87,6 +88,19 @@ async def pagar_fatura(
         return await cartao_service.pagar_fatura(
             fatura_id, body, usuario_id_sessao=usuario_id
         )
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/projecao", response_model=ProjecaoFaturasResponse,
+            summary="Comprometido por mês nos próximos N meses (todos os cartões)",
+            dependencies=[Depends(usuario_financas)])
+async def projecao(
+    meses: int = Query(6, ge=1, le=24, description="Quantos meses à frente"),
+    usuario_id: str = Depends(financas_usuario_id),
+) -> ProjecaoFaturasResponse:
+    try:
+        return await cartao_service.projecao_faturas(usuario_id, meses)
     except Exception as e:
         raise _handle(e)
 

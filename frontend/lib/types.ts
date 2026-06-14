@@ -872,6 +872,16 @@ export interface PagarFaturaInput {
   categoria_id?: string | null;
 }
 
+export interface ProjecaoMesItem {
+  mes_referencia: string; // "YYYY-MM-01"
+  total: string;
+}
+
+export interface ProjecaoFaturas {
+  meses: ProjecaoMesItem[];
+  total: string;
+}
+
 export interface CompraCreateInput {
   cartao_id: string;
   descricao: string;

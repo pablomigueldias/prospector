@@ -7,6 +7,7 @@ import {
   useCartoes,
   useCategorias,
   useContas,
+  useProjecaoCartoes,
 } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
@@ -16,6 +17,7 @@ import {
   type Cartao,
   type Fatura,
   type FaturaExtrato,
+  type ProjecaoFaturas,
 } from '@/lib/types';
 
 type ModalState =
@@ -26,6 +28,10 @@ type ModalState =
 export function CartoesSection() {
   const { cartoes, loading, refetch } = useCartoes();
   const [modal, setModal] = useState<ModalState>({ modo: 'fechado' });
+  // Bumpa quando um card muda (compra/estorno/pagar) pra a projeção atualizar.
+  const [mutacao, setMutacao] = useState(0);
+  const bump = () => setMutacao((n) => n + 1);
+  const { projecao } = useProjecaoCartoes(6, mutacao);
 
   return (
     <section className="mb-8">
@@ -49,15 +55,19 @@ export function CartoesSection() {
           Nenhum cartão cadastrado. Clique em “Novo cartão” pra começar.
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {cartoes.map((c) => (
-            <CartaoCard
-              key={c.id}
-              cartao={c}
-              onEditar={() => setModal({ modo: 'editar', cartao: c })}
-            />
-          ))}
-        </div>
+        <>
+          {projecao && projecao.meses.length > 0 && <ProjecaoBlock projecao={projecao} />}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {cartoes.map((c) => (
+              <CartaoCard
+                key={c.id}
+                cartao={c}
+                onEditar={() => setModal({ modo: 'editar', cartao: c })}
+                onMutou={bump}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {modal.modo !== 'fechado' && (
@@ -74,14 +84,61 @@ export function CartoesSection() {
   );
 }
 
+function ProjecaoBlock({ projecao }: { projecao: ProjecaoFaturas }) {
+  const maximo = Math.max(...projecao.meses.map((m) => Number(m.total)), 1);
+  return (
+    <div className="card p-4 mb-3">
+      <div className="flex items-baseline justify-between mb-3">
+        <h3 className="font-mono uppercase tracking-[0.1em] text-[10px] text-ink-mute m-0">
+          comprometido nos próximos meses
+        </h3>
+        <span className="text-[12px] text-ink-soft">
+          total{' '}
+          <span className="font-display font-semibold text-ink">
+            {formatBRL(projecao.total)}
+          </span>
+        </span>
+      </div>
+      <ul className="m-0 p-0 list-none flex items-end gap-3">
+        {projecao.meses.map((m) => {
+          const [a, mes] = m.mes_referencia.split('-').map(Number);
+          const altura = Math.max(4, Math.round((Number(m.total) / maximo) * 56));
+          return (
+            <li key={m.mes_referencia} className="flex-1 flex flex-col items-center gap-1.5">
+              <span className="text-[11px] tabular-nums text-ink-soft">
+                {formatBRL(m.total)}
+              </span>
+              <div
+                className="w-full rounded-t bg-brand/80"
+                style={{ height: altura }}
+                title={`${formatMesAno(a, mes)}: ${formatBRL(m.total)}`}
+              />
+              <span className="font-mono uppercase tracking-[0.08em] text-[9px] text-ink-mute">
+                {a && mes ? formatMesAno(a, mes) : m.mes_referencia}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function CartaoCard({
   cartao,
   onEditar,
+  onMutou,
 }: {
   cartao: Cartao;
   onEditar: () => void;
+  /** Avisa o pai que algo mudou (compra/estorno/pagamento) pra a projeção atualizar. */
+  onMutou?: () => void;
 }) {
   const { dados, loading, refetch } = useCartaoFaturas(cartao.id);
+  const recarregar = () => {
+    void refetch();
+    onMutou?.();
+  };
   const [comprando, setComprando] = useState(false);
   const [faturaAberta, setFaturaAberta] = useState<Fatura | null>(null);
   const [pagarDireto, setPagarDireto] = useState(false);
@@ -221,7 +278,7 @@ function CartaoCard({
           onClose={() => setComprando(false)}
           onSaved={() => {
             setComprando(false);
-            void refetch();
+            recarregar();
           }}
         />
       )}
@@ -234,7 +291,7 @@ function CartaoCard({
           onClose={() => setFaturaAberta(null)}
           onPaid={() => {
             setFaturaAberta(null);
-            void refetch();
+            recarregar();
           }}
         />
       )}
