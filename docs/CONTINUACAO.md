@@ -31,7 +31,9 @@ antes de subir). ~19 commits.
 
 **Quando for deployar:** rodar as **4 migrations** novas (já no `02-deploy.sh` no boot): `a1c7e9d2b4f0`/`b2d8f1a3c6e1`/`c3e9a4d7b8f2` (boleto, de antes) + `d4f0a1b2c3e5`/`e5a1b3c4d6f7`/`f6b2c8d4e7a9` (cartão/recorrência/orçamento). Conferir `ORCAMENTO_ALERTA_PCT` no `.env` do VPS (tem default).
 
-**Próxima pendência marcada (cartão):** 🔴 **botão "Pagar o mês / Pagar fatura" direto no card do cartão** (pedido do Pablo: todo fim de mês ele quita a fatura via boleto/pix e quer o atalho no próprio card — hoje só dá pelo painel *Contas a pagar* ou abrindo a fatura). É surfacing do `pagar_fatura` que já existe, sem backend novo. Está no `MELHORIAS_FINANCAS.md` §3d.
+**✅ Feito (2026-06-13, continuação):** botão **"Pagar fatura" direto no card do cartão** — atalho ao lado do "+ Compra" que abre o pagamento direto no form (conta/data/valor) apontando pra fatura mais antiga em aberto. Surfacing do `pagar_fatura`, sem backend novo (`CartoesSection.tsx`, prop `iniciarPagando`). Era a pendência marcada do cartão.
+
+**Próxima pendência (cartão), 🔴 em `MELHORIAS_FINANCAS.md` §3d:** *Importar a fatura do cartão por foto/PDF com IA* (igual ao boleto). Outras 🔴 fora do cartão: cadastrar conta + `/desfazer` no bot (§1), expor MinIO atrás do Caddy (§6), perguntas em linguagem natural + categorização que aprende (§8).
 
 ---
 

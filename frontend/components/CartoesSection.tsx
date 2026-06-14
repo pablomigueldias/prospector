@@ -84,7 +84,11 @@ function CartaoCard({
   const { dados, loading, refetch } = useCartaoFaturas(cartao.id);
   const [comprando, setComprando] = useState(false);
   const [faturaAberta, setFaturaAberta] = useState<Fatura | null>(null);
+  const [pagarDireto, setPagarDireto] = useState(false);
   const abertas = (dados?.faturas ?? []).filter((f) => f.status !== 'paga');
+  // Faturas vêm em ordem decrescente (mês mais novo primeiro); a que se paga
+  // agora é a mais antiga em aberto (vencendo/vencida) — a última da lista.
+  const faturaAPagar = abertas.length > 0 ? abertas[abertas.length - 1] : null;
 
   // Limite / disponível: o "em aberto" já soma todas as faturas não pagas
   // (inclui as parcelas dos próximos meses), então é o comprometido.
@@ -175,13 +179,33 @@ function CartaoCard({
           </div>
           <ul className="m-0 p-0 list-none flex flex-col gap-1.5">
             {abertas.slice(0, 4).map((f) => (
-              <FaturaRow key={f.id} fatura={f} onAbrir={() => setFaturaAberta(f)} />
+              <FaturaRow
+                key={f.id}
+                fatura={f}
+                onAbrir={() => {
+                  setPagarDireto(false);
+                  setFaturaAberta(f);
+                }}
+              />
             ))}
           </ul>
         </div>
       )}
 
-      <div className="flex justify-end mt-3 pt-3 border-t border-line-soft">
+      <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-line-soft">
+        {faturaAPagar && (
+          <button
+            type="button"
+            onClick={() => {
+              setPagarDireto(true);
+              setFaturaAberta(faturaAPagar);
+            }}
+            className="btn-ghost px-3 py-1 text-[13px]"
+            title="Pagar a fatura em aberto (boleto/pix)"
+          >
+            Pagar fatura
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setComprando(true)}
@@ -206,6 +230,7 @@ function CartaoCard({
         <FaturaExtratoModal
           cartaoId={cartao.id}
           fatura={faturaAberta}
+          iniciarPagando={pagarDireto}
           onClose={() => setFaturaAberta(null)}
           onPaid={() => {
             setFaturaAberta(null);
@@ -242,11 +267,13 @@ function FaturaRow({ fatura, onAbrir }: { fatura: Fatura; onAbrir: () => void })
 function FaturaExtratoModal({
   cartaoId,
   fatura,
+  iniciarPagando = false,
   onClose,
   onPaid,
 }: {
   cartaoId: string;
   fatura: Fatura;
+  iniciarPagando?: boolean;
   onClose: () => void;
   onPaid: () => void;
 }) {
@@ -255,7 +282,7 @@ function FaturaExtratoModal({
     [cartaoId, fatura.id],
   );
   const { contas } = useContas(true);
-  const [pagando, setPagando] = useState(false);
+  const [pagando, setPagando] = useState(iniciarPagando && fatura.status !== 'paga');
   const [contaId, setContaId] = useState('');
   const [dataPg, setDataPg] = useState(() => new Date().toISOString().slice(0, 10));
   const [valorPago, setValorPago] = useState('');
