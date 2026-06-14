@@ -13,6 +13,33 @@
 
 ---
 
+## 0.0. Sessão 2026-06-14 (noite) — CORS dev + Perfil Mestre + agente Workana
+
+**CORS do dev resolvido (fecha a "melhoria opcional" da seção 0.1).** O
+`allow_origins` deixou de ser hardcoded em `:3000`. Novo setting
+`cors_origins` em `app/config.py` (CSV → `cors_origins_list`), default cobrindo
+`localhost`/`127.0.0.1` nas portas **3000 e 3001**; `main.py` usa
+`settings.cors_origins_list`. Em produção: `CORS_ORIGINS=https://studio.reativesystems.com.br`
+no `.env`. *Pegadinha encontrada:* o servidor que segurava a :8000 era um
+processo **órfão** (reparentado pro `systemd` — terminal original fechado), por
+isso o `run.py serve` dava "Address already in use" e nada recarregava. Matar o
+órfão e subir fresco resolve. Verificado: preflight da :3001 → 200 com
+`access-control-allow-origin: http://localhost:3001`.
+
+**Perfil Mestre populado a partir do git.** `backend/scripts/seed_perfil_mestre.py`
+(seed versionado, merge não-destrutivo) gravou **22 habilidades + 6 projetos**
+reais no `pessoal_perfil_mestre`. Campos humanos (tom_escrita/experiências/
+formação) ficam pra preencher na tela. Rodar: `python scripts/seed_perfil_mestre.py`
+(`--dry` mostra, `--force` sobrescreve humanos).
+
+**Doc do agente freelancer (Workana).** `docs/Workana.md` reescrito pra o agente
+viver na **área Pessoal** do Prospector (`category=Pessoal`, tabelas
+`pessoal_freela_*`, reuso de `pipeline_event`/`ai_call`/`llm_provider` e consumo
+do `perfil-mestre`), não como repo separado. `docs/Perfil-Freelancer.md` tem o
+portfólio/qualidades extraídos dos repos.
+
+---
+
 ## 0.1. Sessão 2026-06-14 (tarde) — diagnóstico do front + refatoração
 
 **"Front não funcionava" = não estava no ar (não era bug).** Só os containers
