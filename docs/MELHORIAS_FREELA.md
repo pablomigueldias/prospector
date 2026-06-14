@@ -8,7 +8,8 @@ ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *p
 > implemento; o que entra pra valer sai daqui pro `docs/FREELA_FEITO.md`.
 > O plano-mãe é o `docs/Workana.md`; o que já está pronto, o `FREELA_FEITO.md`.
 
-Última revisão: **2026-06-14** (após Fases 1, 2, 6 e 3 — backend + tela + analisador IA).
+Última revisão: **2026-06-14** (Fases 1, 2, 3, 5 e 6 — o copiloto está completo).
+Sobra: refinos (§3/§4), Fase 7 (multi-plataforma) e fora-do-código (§6).
 
 ---
 
@@ -21,27 +22,26 @@ ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *p
   de precificação — todos entregues em 2026-06-14.
 - [ ] 🟢 **Drag-and-drop no Kanban** — hoje move por `select` (1 clique, sem
   dep). Arrastar carta entre colunas é mais gostoso, mas pede uma lib (dnd-kit).
-- [ ] 🟢 **Detalhe/edição da proposta** — abrir a proposta pra editar texto,
-  destaques e valores (hoje só cria com os campos do card e move status).
+- [x] ✅ **Detalhe/edição da proposta** — FEITO 2026-06-14: clicar no card do
+  Kanban abre o modal (editar texto/prazo, ver destaques, rascunhar com IA,
+  copiar, salvar).
 - [ ] 🟢 **CRUD de cliente na tela** — hoje cria cliente só via API; a tela só
   seleciona os existentes (no precificador e no form de projeto).
 
 ## 2. Inteligência / IA (Fases 3 e 5)
 
-> O esqueleto dos analyzers já existe (`app/analyzers/freela/analisador/`). O
-> redator/seletor seguem o mesmo molde: `prompt_builder.py` + `parser.py`,
-> chamando `llm_provider.gerar_texto()`. O analisador (Fase 3) já está pronto.
+> ✅ Analisador (Fase 3) e Redator+Seletor (Fase 5) PRONTOS, em
+> `app/analyzers/freela/{analisador,redator}/`. O que sobra aqui é refinamento.
 
 - [x] ✅ **Analisador de projeto (Fase 3)** — FEITO 2026-06-14: `POST
   /projetos/{id}/analisar` → `analise_json` (fit_score, recomendação, red flags,
   sinais do cliente, ganchos), botão na tela e fila ordenada por fit. Ver
   FREELA_FEITO.md.
-- [ ] 🔴 **Redator de proposta (Fase 5)** — rascunho ancorado no `perfil-mestre`
-  (regra anti-mentira: reorganiza a verdade, nunca inventa), no tom do projeto,
-  estrutura Workana (apresentação → plano → disponibilidade → prazo). PARA no
-  rascunho.
-- [ ] 🟡 **Seletor (Fase 5)** — recomenda os 3 projetos + 5 habilidades do
-  perfil que maximizam relevância pro projeto.
+- [x] ✅ **Redator de proposta (Fase 5)** — FEITO 2026-06-14: `POST
+  /propostas/{id}/redigir`, rascunho ancorado no perfil (estrutura Workana,
+  anti-mentira), modal da proposta na tela com editar/copiar. Ver FREELA_FEITO.
+- [x] ✅ **Seletor (Fase 5)** — FEITO: escolhe até 3 projetos + 5 habilidades do
+  perfil (sai junto do redator).
 - [ ] 🟢 **Auto-preencher o Projeto ao colar** — o analisador já extrai
   orçamento/habilidades/nº de propostas do texto; gravar direto nos campos
   (hoje você digita à mão).

@@ -91,9 +91,31 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
   (R$1.300–2.500, 64 propostas) retornou **fit 0 / "evite"** com red flags
   certeiras e ganchos vazios — exatamente o esperado.
 
+## Fase 5 — Redator + Seletor de proposta (IA)
+
+- ✅ **`POST /propostas/{id}/redigir`** (2026-06-14) — gera o rascunho da
+  proposta ancorado no `perfil-mestre` (estrutura Workana: apresentação → plano
+  → disponibilidade → prazo, citando um detalhe do projeto) e usa o
+  `analise_json` (ganchos) do projeto. **Seletor**: escolhe até 3 projetos + 5
+  habilidades do perfil. Analyzers em `app/analyzers/freela/redator/`.
+- ✅ **PARA no rascunho** — grava `texto_enviado`/`projetos_destacados`/
+  `habilidades_destacadas`/`prazo_proposto` na proposta; **nada é enviado**.
+  Regra anti-mentira (só projetos/skills do perfil).
+- ✅ **Na tela** — clicar no card do Kanban abre o **modal da proposta**:
+  valores, destaques (chips), "Rascunhar com IA" (com instruções extra),
+  textarea editável, **copiar** e salvar (PATCH). Também resolve o 🟢 "detalhe/
+  edição da proposta" do backlog.
+- ✅ **Verificado com LLM real** — projeto FastAPI/React/LLM (no núcleo do
+  perfil) selecionou os 3 projetos certos (Prospector, Content Factory,
+  Portfolio) e as 5 habilidades certas, com texto personalizado e persistido.
+
+> 🎉 **Ciclo completo na tela:** colar → **analisar** (fit/red flags) →
+> **precificar** → criar proposta → **rascunhar com IA** → revisar/copiar →
+> mover no Kanban. Capability `rascunha_proposta` ligada.
+
 ---
 
 ## Ainda NÃO feito (resumo — detalhe e prioridade em MELHORIAS_FREELA.md)
 
-- Fase 5 (Redator + Seletor com IA), Fase 7 (segunda plataforma) e refinos de
-  CRM (atualizar `ja_me_pagou_usd` ao fechar, limite de propostas).
+- Fase 7 (segunda plataforma) e refinos de CRM (atualizar `ja_me_pagou_usd` ao
+  fechar, limite de propostas, drag-and-drop no Kanban, CRUD de cliente na tela).

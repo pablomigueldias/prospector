@@ -60,8 +60,18 @@ cruza o texto colado + sinais do cliente com o `perfil-mestre`
 (`app/analyzers/freela/analisador/`) e grava `analise_json` (fit_score,
 recomendação vale/talvez/evite, red flags, ganchos). Botão "Analisar" no card da
 fila; a fila reordena por fit. Anti-mentira nos ganchos. **Verificado com LLM
-real:** o exemplo WordPress do `Workana.md` deu fit 0 / "evite". **Falta a IA da
-Fase 5** (redator + seletor de proposta) — é o próximo de maior impacto.
+real:** o exemplo WordPress do `Workana.md` deu fit 0 / "evite".
+
+**Redator + Seletor (Fase 5 — IA) FEITO — copiloto completo.** `POST
+/propostas/{id}/redigir` gera o rascunho ancorado no `perfil-mestre` (estrutura
+Workana, anti-mentira) e seleciona até 3 projetos + 5 habilidades
+(`app/analyzers/freela/redator/`). Na tela, clicar no card do Kanban abre o
+**modal da proposta** (editar texto/prazo, destaques, "Rascunhar com IA" com
+instruções extra, copiar, salvar). **Verificado com LLM real:** projeto FastAPI/
+React/LLM selecionou os 3 projetos e 5 skills certos do perfil. **Ciclo completo
+na tela:** colar → analisar → precificar → criar proposta → rascunhar com IA →
+revisar/copiar → mover no Kanban. Sobra só refino e Fase 7 (multi-plataforma) —
+ver `MELHORIAS_FREELA.md`. **9+ commits do freela na `main`, ainda sem push.**
 
 ---
 
