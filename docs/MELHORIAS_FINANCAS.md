@@ -48,17 +48,15 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 
 ## 3d. Cartões profissionais
 
-> O trio que torna o cartão usável (lançar compra, extrato da fatura, pagar a
-> fatura), a assinatura recorrente no cartão, o "pagar o mês" e o **atalho
-> "Pagar fatura" no próprio card** **já saíram** (ver `FINANCAS_FEITO.md` §3d).
-> Falta:
+> Já saíram (ver `FINANCAS_FEITO.md` §3d): o trio que torna o cartão usável
+> (lançar compra, extrato, pagar a fatura), a assinatura recorrente, o "pagar o
+> mês", o atalho "Pagar fatura" no card, a **projeção consolidada**, o **estorno
+> de compra** e a **auto-categoria por compra**. Falta:
 
-- 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` já existe (boleto carnê → N parcelas, sem fatura); falta UI. Encaixa com o importador.
-- 🟡 **Projeção das próximas faturas (avançada)** — o card já lista as próximas faturas com mês e total (projeção básica); falta uma visão consolidada "comprometido por mês nos próximos N meses" somando parcelas futuras de todos os cartões.
-- 🟢 **Categoria por compra** — categorizar cada compra do cartão (e auto-categoria por descrição, como no boleto).
-- 🟢 **Importar a fatura (PDF/CSV)** — ler a fatura inteira do banco e gerar as compras/parcelas de uma vez, conciliando (§9). Poderia reusar o pipeline do importador de boleto (IA multimodal).
-- 🟢 **Estorno / ajuste de compra** — cancelar uma compra parcelada (remover parcelas futuras) ou ajustar valor.
-- 🟢 **Antecipar parcelas** — pagar parcelas futuras adiantado e recalcular a fatura.
+- 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` já existe (boleto carnê → N parcelas, sem fatura); falta UI **e surfaçar/pagar as parcelas** (hoje a aba "A pagar" mostra `Transacao`, não `Parcela` de boleto — então o carnê some). É mais que um form.
+- 🟢 **Ajustar valor de compra** — o **estorno** (cancelar a compra inteira) já saiu; falta editar o valor/parcelas de uma compra existente sem excluir e relançar.
+- 🟢 **Antecipar parcelas** — pagar parcelas futuras adiantado e recalcular as faturas (mover parcela entre meses). O mais complexo do bloco.
+- 🟢 **Importar a fatura (PDF/CSV)** — ler a fatura inteira do banco e gerar as compras/parcelas de uma vez, conciliando (§9). **O Pablo pediu pra pular por ora.**
 - 🟢 **Anexar comprovante à compra/fatura** — igual ao boleto (depende do MinIO atrás do Caddy, §6).
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
