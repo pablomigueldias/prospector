@@ -789,6 +789,15 @@ export interface RelatorioResponse {
   media_despesas: string;
 }
 
+export interface ProjecaoMes {
+  ano: number;
+  mes: number;
+  saldo_atual: string;
+  a_pagar: string;
+  a_receber: string;
+  estimativa_sobra: string;
+}
+
 export interface Cartao {
   id: string;
   usuario_id: string;

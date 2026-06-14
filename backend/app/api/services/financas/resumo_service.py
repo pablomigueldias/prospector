@@ -5,12 +5,16 @@ import uuid
 from datetime import date
 from decimal import Decimal
 
+from sqlalchemy import func, select
+
 from app.api.schemas.financas import (
     CategoriaResumoItem,
+    ProjecaoMesResponse,
     RelatorioMesItem,
     RelatorioResponse,
     ResumoMesResponse,
 )
+from app.db.models.financas.conta import Conta
 from app.db.session import get_session
 from app.repositories.financas.transacao_repository import TransacaoRepository
 
@@ -60,6 +64,34 @@ async def resumo_mes(usuario_id: str, ano: int, mes: int) -> ResumoMesResponse:
             )
             for cid, nome, total in por_cat
         ],
+    )
+
+
+async def projecao_mes(usuario_id: str, ano: int, mes: int) -> ProjecaoMesResponse:
+    """Sobra estimada no fim do mês: saldo atual das contas + receitas previstas
+    − despesas a pagar (não pagas com vencimento até o fim do mês, incl. vencidas)."""
+    if not 1 <= mes <= 12:
+        raise ResumoError(f"Mês inválido: {mes}. Use 1..12.")
+    uid = _uuid(usuario_id, campo="usuario_id")
+    _, proximo = _intervalo_mes(ano, mes)
+
+    async with get_session() as session:
+        saldo_atual = await session.scalar(
+            select(func.coalesce(func.sum(Conta.saldo_atual), 0))
+            .where(Conta.usuario_id == uid, Conta.ativa.is_(True))
+        )
+        previstas = await TransacaoRepository(session).previstas_por_tipo(uid, proximo)
+
+    saldo_atual = Decimal(saldo_atual or 0)
+    a_pagar = previstas.get("despesa", Decimal("0"))
+    a_receber = previstas.get("receita", Decimal("0"))
+    return ProjecaoMesResponse(
+        ano=ano,
+        mes=mes,
+        saldo_atual=saldo_atual,
+        a_pagar=a_pagar,
+        a_receber=a_receber,
+        estimativa_sobra=saldo_atual + a_receber - a_pagar,
     )
 
 

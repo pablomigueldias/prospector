@@ -17,7 +17,7 @@ import { RelatorioSection } from '@/components/RelatorioSection';
 import { StatCard } from '@/components/StatCard';
 import { NluLancarSection } from '@/components/NluLancarSection';
 import { TransacoesSection } from '@/components/TransacoesSection';
-import { useContas, useResumoMes } from '@/hooks/useFinancas';
+import { useContas, useProjecaoMes, useResumoMes } from '@/hooks/useFinancas';
 import { useFinancasEventos } from '@/hooks/useFinancasEventos';
 import { FINANCAS_USUARIO_ID } from '@/lib/financas';
 import { formatBRL, formatMesAno } from '@/lib/format';
@@ -86,6 +86,7 @@ export default function FinancasScreen() {
 
   const { resumo, loading: resumoLoading, refetch: refetchResumo } = useResumoMes(ano, mes);
   const { contas, loading: contasLoading, refetch: refetchContas } = useContas(true);
+  const { projecaoMes, refetch: refetchProjecao } = useProjecaoMes(ano, mes);
 
   // Atualiza sozinho quando algo muda (ex.: gasto lançado pelo Telegram).
   const aoVivo = useFinancasEventos(
@@ -93,7 +94,8 @@ export default function FinancasScreen() {
     useCallback(() => {
       void refetchResumo();
       void refetchContas();
-    }, [refetchResumo, refetchContas]),
+      void refetchProjecao();
+    }, [refetchResumo, refetchContas, refetchProjecao]),
   );
 
   const saldoTotal = useMemo(
@@ -104,7 +106,8 @@ export default function FinancasScreen() {
   const recarregarTudo = useCallback(() => {
     void refetchResumo();
     void refetchContas();
-  }, [refetchResumo, refetchContas]);
+    void refetchProjecao();
+  }, [refetchResumo, refetchContas, refetchProjecao]);
 
   const saldoMes = Number(resumo?.saldo ?? 0);
 
@@ -235,6 +238,39 @@ export default function FinancasScreen() {
           loading={resumoLoading}
         />
       </div>
+
+      {/* Projeção de fim de mês: sobra estimada */}
+      {projecaoMes && (
+        <div className="card p-4 mb-7 flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-ink-mute mb-0.5">
+              Sobra estimada no fim do mês
+            </div>
+            <div
+              className={`font-display font-semibold tracking-tight text-xl ${
+                Number(projecaoMes.estimativa_sobra) >= 0
+                  ? 'text-success-ink'
+                  : 'text-red-600'
+              }`}
+            >
+              {formatBRL(projecaoMes.estimativa_sobra)}
+            </div>
+          </div>
+          <div className="text-[12.5px] text-ink-soft">
+            saldo hoje {formatBRL(projecaoMes.saldo_atual)}
+            {Number(projecaoMes.a_receber) > 0 && (
+              <> + a receber {formatBRL(projecaoMes.a_receber)}</>
+            )}
+            {' − '}a pagar {formatBRL(projecaoMes.a_pagar)}
+          </div>
+          {Number(projecaoMes.estimativa_sobra) < 0 && (
+            <div className="text-[12px] text-red-600 w-full">
+              ⚠️ As contas previstas do mês passam do que você tem. Reveja os
+              vencimentos ou segure gastos.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Despesas por categoria */}
       <section className="mb-8">

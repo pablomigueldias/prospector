@@ -9,6 +9,7 @@ import type {
   Conta,
   LeituraConsumo,
   ProjecaoFaturas,
+  ProjecaoMes,
   Recorrencia,
   RelatorioResponse,
   ResumoMes,
@@ -22,6 +23,14 @@ export function useResumoMes(ano: number, mes: number) {
     [ano, mes],
   );
   return { ...result, resumo: result.data };
+}
+
+export function useProjecaoMes(ano: number, mes: number) {
+  const result = useFetch<ProjecaoMes>(
+    () => api.financasProjecaoMes(ano, mes),
+    [ano, mes],
+  );
+  return { ...result, projecaoMes: result.data };
 }
 
 export function useRelatorio(

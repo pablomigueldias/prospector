@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies.financas import financas_usuario_id
-from app.api.schemas.financas import RelatorioResponse, ResumoMesResponse
+from app.api.schemas.financas import (
+    ProjecaoMesResponse,
+    RelatorioResponse,
+    ResumoMesResponse,
+)
 from app.api.services.financas import resumo_service
 from app.api.services.financas.resumo_service import ResumoError
 
@@ -21,6 +25,17 @@ async def resumo(
 ) -> ResumoMesResponse:
     try:
         return await resumo_service.resumo_mes(usuario_id, ano, mes)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/projecao", response_model=ProjecaoMesResponse,
+            summary="Projeção de fim de mês: sobra estimada")
+async def projecao(
+    ano: int, mes: int, usuario_id: str = Depends(financas_usuario_id),
+) -> ProjecaoMesResponse:
+    try:
+        return await resumo_service.projecao_mes(usuario_id, ano, mes)
     except Exception as e:
         raise _handle(e)
 

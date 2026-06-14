@@ -208,6 +208,28 @@ class TransacaoRepository:
         itens = list((await self.session.scalars(stmt)).all())
         return itens, int(total or 0)
 
+    async def previstas_por_tipo(
+        self, usuario_id: uuid.UUID, ate: date
+    ) -> Dict[str, Decimal]:
+        """Soma por tipo das transações NÃO pagas (prevista/atrasada) com data
+        efetiva (vencimento, ou competência se não tiver) anterior a ``ate``.
+        Usado na projeção de fim de mês — inclui as vencidas que ainda devem."""
+        efetiva = func.coalesce(Transacao.data_vencimento, Transacao.data_competencia)
+        stmt = (
+            select(
+                Transacao.tipo,
+                func.coalesce(func.sum(Transacao.valor_total), 0),
+            )
+            .where(
+                Transacao.usuario_id == usuario_id,
+                Transacao.status != "paga",
+                efetiva < ate,
+            )
+            .group_by(Transacao.tipo)
+        )
+        rows = await self.session.execute(stmt)
+        return {tipo: Decimal(total) for tipo, total in rows.all()}
+
     # ── Agregados do resumo do mês (filtro por data_competencia) ──────
     async def total_por_tipo(
         self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date

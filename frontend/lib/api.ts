@@ -54,6 +54,7 @@ import type {
   GerarCandidaturaResponse,
   CandidaturaEmailItem,
   ContaListResponse,
+  ProjecaoMes,
   ResumoMes,
   RelatorioResponse,
   CartaoListResponse,
@@ -379,6 +380,18 @@ export const api = {
       mes: String(mes),
     });
     return request<ResumoMes>(`/api/financas/resumo?${q}`, { timeoutMs: 10_000 });
+  },
+
+  /** GET /api/financas/resumo/projecao — sobra estimada do fim do mês */
+  financasProjecaoMes(ano: number, mes: number): Promise<ProjecaoMes> {
+    const q = new URLSearchParams({
+      usuario_id: FINANCAS_USUARIO_ID,
+      ano: String(ano),
+      mes: String(mes),
+    });
+    return request<ProjecaoMes>(`/api/financas/resumo/projecao?${q}`, {
+      timeoutMs: 10_000,
+    });
   },
 
   /** GET /api/financas/resumo/relatorio — série mês a mês + top categorias.

@@ -783,6 +783,17 @@ class ResumoMesResponse(BaseModel):
     por_categoria: List[CategoriaResumoItem]   # despesas, maior → menor
 
 
+class ProjecaoMesResponse(BaseModel):
+    """Projeção de fim de mês: parte do saldo atual e desconta o que ainda há a
+    pagar (previstas/atrasadas até o fim do mês), somando o a receber."""
+    ano: int
+    mes: int
+    saldo_atual: Decimal           # soma das contas ativas hoje
+    a_pagar: Decimal               # despesas não pagas com vencimento até o fim do mês
+    a_receber: Decimal             # receitas previstas até o fim do mês
+    estimativa_sobra: Decimal      # saldo_atual + a_receber − a_pagar
+
+
 class RelatorioMesItem(BaseModel):
     """Um mês na série do relatório (cronológico, mais antigo → mais novo)."""
     ano: int
