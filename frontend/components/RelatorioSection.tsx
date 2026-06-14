@@ -63,6 +63,18 @@ function baixarCsv(meses: RelatorioMesItem[]) {
 
 const PERIODOS = [3, 6, 12] as const;
 
+/** Imprime só a seção Relatório (vira PDF pelo "Salvar como PDF" do navegador).
+ *  Marca o body, dispara a impressão e limpa a marca quando o diálogo fecha. */
+function exportarPdf() {
+  const limpar = () => {
+    document.body.classList.remove('print-relatorio');
+    window.removeEventListener('afterprint', limpar);
+  };
+  window.addEventListener('afterprint', limpar);
+  document.body.classList.add('print-relatorio');
+  window.print();
+}
+
 export function RelatorioSection({ ano, mes }: Props) {
   const [meses, setMeses] = useState<number>(6);
   const [contaId, setContaId] = useState('');
@@ -177,7 +189,35 @@ export function RelatorioSection({ ano, mes }: Props) {
           >
             Exportar CSV
           </button>
+          <button
+            type="button"
+            onClick={exportarPdf}
+            disabled={!relatorio || !temDados}
+            className="btn-ghost px-3 py-1 text-[12.5px] disabled:opacity-40"
+            title="Imprimir / salvar como PDF"
+          >
+            Exportar PDF
+          </button>
         </div>
+      </div>
+
+      {/* Cabeçalho só na impressão (dá contexto ao PDF) */}
+      <div className="hidden print:block mb-4">
+        <div className="font-display font-semibold text-lg text-ink">
+          Relatório de finanças — {formatMesAno(ano, mes)} · últimos {meses} meses
+        </div>
+        {recortado && (
+          <div className="text-sm text-ink-soft mt-0.5">
+            Recorte:{' '}
+            {[
+              contaId && contas.find((c) => c.id === contaId)?.nome,
+              categoriaId &&
+                categoriasPlanas.find((c) => c.id === categoriaId)?.nome,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </div>
+        )}
       </div>
 
       {loading ? (
