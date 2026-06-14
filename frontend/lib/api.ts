@@ -64,6 +64,7 @@ import type {
   Fatura,
   CompraCategoriaSugestao,
   PagarFaturaInput,
+  PixParse,
   ProjecaoFaturas,
   LeituraConsumoListResponse,
   LeituraConsumo,
@@ -643,6 +644,15 @@ export const api = {
       method: 'POST',
       body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
       timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/pix/parse — lê um PIX copia-e-cola (valor/beneficiário) */
+  financasParsePix(codigo: string): Promise<PixParse> {
+    return request<PixParse>('/api/financas/pix/parse', {
+      method: 'POST',
+      body: { codigo },
+      timeoutMs: 8_000,
     });
   },
 

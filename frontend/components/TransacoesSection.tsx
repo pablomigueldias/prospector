@@ -537,6 +537,29 @@ function LancamentoForm({
   const podeDividir = !editando && tipo === 'despesa';
   const dividindo = podeDividir && dividir;
   const autoSplitAtivo = dividindo && autoSplit;
+
+  // Colar PIX copia-e-cola → preenche descrição e valor.
+  const [pixAberto, setPixAberto] = useState(false);
+  const [pixCodigo, setPixCodigo] = useState('');
+  const [pixErro, setPixErro] = useState('');
+  const [lendoPix, setLendoPix] = useState(false);
+
+  async function lerPix() {
+    setPixErro('');
+    if (!pixCodigo.trim()) return;
+    setLendoPix(true);
+    try {
+      const r = await api.financasParsePix(pixCodigo.trim());
+      if (r.beneficiario) setDescricao(r.beneficiario);
+      if (r.valor) setValor(String(r.valor).replace('.', ','));
+      setPixAberto(false);
+      setPixCodigo('');
+    } catch (err) {
+      setPixErro(err instanceof ApiError ? err.message : 'Não consegui ler o PIX.');
+    } finally {
+      setLendoPix(false);
+    }
+  }
   const valorNumPreview = Number(valor.replace(',', '.')) || 0;
   const somaPagamentos = pagamentos.reduce(
     (acc, p) => acc + (Number(p.valor.replace(',', '.')) || 0),
@@ -653,6 +676,53 @@ function LancamentoForm({
             </button>
           ))}
         </div>
+
+        {/* Colar PIX → preenche descrição + valor */}
+        {!editando && (
+          <div>
+            {!pixAberto ? (
+              <button
+                type="button"
+                onClick={() => setPixAberto(true)}
+                className="text-[12.5px] text-brand hover:underline"
+              >
+                📋 Colar código PIX
+              </button>
+            ) : (
+              <div className="space-y-2 border border-line-soft rounded-lg p-3">
+                <textarea
+                  className="input min-h-[64px] font-mono text-[11px]"
+                  value={pixCodigo}
+                  onChange={(e) => setPixCodigo(e.target.value)}
+                  placeholder="Cole aqui o PIX copia-e-cola…"
+                  autoFocus
+                />
+                {pixErro && <div className="text-[12px] text-red-600">{pixErro}</div>}
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPixAberto(false);
+                      setPixCodigo('');
+                      setPixErro('');
+                    }}
+                    className="text-[12.5px] text-ink-mute hover:text-ink px-2"
+                  >
+                    cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={lerPix}
+                    disabled={lendoPix || !pixCodigo.trim()}
+                    className="btn-primary px-3 py-1 text-[12.5px] disabled:opacity-50"
+                  >
+                    {lendoPix ? 'Lendo…' : 'Preencher'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-[13px] font-medium text-ink-soft mb-1.5">

@@ -442,6 +442,19 @@ class CompraCategoriaSugestao(BaseModel):
     categoria_nome: Optional[str] = None
 
 
+class PixParseRequest(BaseModel):
+    """Código PIX copia-e-cola (BR Code) pra extrair valor/beneficiário."""
+    codigo: str
+
+
+class PixParseResponse(BaseModel):
+    """Dados extraídos do PIX copia-e-cola (campos podem vir nulos)."""
+    valor: Optional[Decimal] = None
+    beneficiario: Optional[str] = None
+    cidade: Optional[str] = None
+    chave: Optional[str] = None
+
+
 # ══════════════════════════════════════════════════════════════════
 # Recorrências (despesas/receitas fixas)
 # ══════════════════════════════════════════════════════════════════

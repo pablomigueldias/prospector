@@ -634,6 +634,13 @@ export interface DespesaDivididaInput {
   status?: 'paga' | 'prevista';
 }
 
+export interface PixParse {
+  valor?: string | null;
+  beneficiario?: string | null;
+  cidade?: string | null;
+  chave?: string | null;
+}
+
 export interface DespesaAutoSplitInput {
   descricao: string;
   valor_total: string;
