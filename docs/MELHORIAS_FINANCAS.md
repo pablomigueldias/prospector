@@ -61,6 +61,63 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 > negativo no digest, roll-up de orçamento por categoria-mãe e reservas com
 > objetivo. Ver `FINANCAS_FEITO.md` §4. (Coach de metas com IA fica no §8.)
 
+## 4b. Dívidas e parcelamentos (acordos + empréstimos) — 🔴 PRIORIDADE
+
+> **Pedido do Pablo (2026-06-14):** um lugar pra **cadastrar e acompanhar dívidas
+> com parcelas mensais** — um *acordo* que ele fez e um *empréstimo* que paga todo
+> mês — vendo as **parcelas pendentes**, quanto já pagou, quanto **falta (saldo
+> devedor)**, e guardando o **comprovante** de cada parcela paga.
+
+**O que é, em uma frase:** uma dívida = valor total (ou valor da parcela) × **N
+parcelas mensais**, com credor/descrição, dia de vencimento e juros opcional;
+cada mês uma parcela vence, você paga (sai da conta), anexa o comprovante, e o
+**saldo devedor** cai até zerar. *Acordo* e *empréstimo* têm exatamente essa
+forma — o mesmo modelo serve pros dois.
+
+**Reusar o que já existe (não reinventar):**
+- **Recorrências → previstas** já fazem o pipeline `prevista → aparece em "A
+  pagar" → pagar (move saldo) → anexar comprovante` ponta a ponta. A diferença
+  da dívida é ser **finita (N parcelas)** e ter **saldo devedor**.
+- **Boleto parcelado** (`POST /api/financas/compras/boleto`, `BoletoParceladoCreate`,
+  `Parcela`) já cria N parcelas mensais **sem fatura** — mas hoje a aba "A pagar"
+  mostra `Transacao`, não `Parcela` de boleto, então o carnê "some" (ver §3d).
+- **Comprovantes** (anexar/ver) já existem; **ver no navegador depende do §6**
+  (MinIO atrás do Caddy) — anexar e listar já funcionam.
+
+**Forma recomendada de executar (fases, 1 commit cada):**
+
+1. 🔴 **Modelo + cadastro (MVP que reusa o pagar/comprovante).** Nova entidade
+   `Divida` (migration): `descricao`/credor, `valor_total` **ou** `valor_parcela`,
+   `total_parcelas`, `dia_vencimento`, `data_inicio`, `juros_percentual?`,
+   `categoria_id?`, `conta_id?` (de onde costuma pagar), `ativa`. Ao criar, o
+   sistema **gera as N previstas** como `Transacao` (status `prevista`,
+   `data_vencimento` de cada mês, ligadas por `divida_id`/`parcela_numero`). Assim
+   as parcelas **já caem em "A pagar"** e usam o **pagar + comprovante** que já
+   funcionam — zero pipeline novo. Forma de pagamento = conta/boleto (cartão fica
+   pro fluxo de fatura). Endpoints `POST/GET/PATCH/DELETE /api/financas/dividas`.
+2. 🔴 **Seção "Dívidas / Parcelamentos" no dashboard.** Um card por dívida com:
+   **total**, **pago**, **saldo devedor**, **barra de progresso** (parcela X de N),
+   **próxima parcela** (valor + vencimento) e o **histórico** das pagas com link
+   pro comprovante. `GET /api/financas/dividas/status` faz o roll-up (soma pagas ×
+   total). Reaproveita os componentes de barra/progresso das reservas/orçamentos.
+3. 🟡 **Rótulo da parcela em "A pagar".** Na conta a pagar gerada por dívida,
+   mostrar "parcela 3/12 · Empréstimo X" (o painel já lista previstas; só
+   surfaçar o vínculo `divida_id`). Resolve o "carnê some" do §3d de forma limpa.
+4. 🟡 **Quitação antecipada / baixa manual.** Marcar a dívida como quitada (ou
+   pagar várias parcelas de uma vez), recalculando o saldo devedor.
+5. 🟢 **Comprovante visível no navegador** — destravado pelo §6 (MinIO atrás do
+   Caddy). Até lá, anexar/listar funciona; abrir a imagem é a pendência.
+6. 🟢 **Entra no patrimônio líquido (§10)** — o saldo devedor das dívidas vira a
+   parcela "− dívidas" do patrimônio.
+
+> **Por que assim:** uma dívida que **gera `Transacao` prevista** (em vez de um
+> tipo de lançamento à parte) herda de graça "A pagar", pagar/move-saldo,
+> comprovantes, relatório e o digest de vencimento — só agregamos o que é
+> específico de dívida (N finito + saldo devedor + a visão de progresso).
+> Alternativa descartada: usar `Compra`/`Parcela` de boleto — funciona, mas
+> aquele caminho foi desenhado pra fatura de cartão e as parcelas não entram no
+> fluxo de pagamento atual (teria mais encanamento que reusar a previsão).
+
 ## 5. Importador / IA
 
 - 🟡 **Importar extrato bancário (OFX/CSV/PDF)** — conciliar muitos lançamentos de uma vez, não só boleto a boleto.
@@ -112,10 +169,10 @@ O módulo registra bem; o salto é ele **entender e antecipar**. Território de 
 ## Sugestão de ordem (se for tocar)
 
 1. ✅ ~~Cadastrar conta + desfazer no bot (§1)~~ — **feito** (`/conta`, `/contas`, `/desfazer`).
-2. **MinIO atrás do Caddy** (§6) — destrava ver comprovante no site.
-3. **Orçamento por categoria + alertas** (§4) — vira "organizador" de verdade.
+2. 🔴 **Dívidas e parcelamentos (§4b)** — *prioridade do Pablo:* cadastrar o acordo + o empréstimo, ver parcelas pendentes/saldo devedor e guardar comprovante. Fases 1–2 já entregam o essencial reusando o pagar/comprovante.
+3. **MinIO atrás do Caddy** (§6) — destrava ver comprovante no site (complementa o §4b fase 5).
 4. **Boleto parcelado + projeção/limite/lembrete de fatura** (§3d) — fecha o cartão.
-5. **Categorização automática + perguntas em linguagem natural** (§8) — o salto de "registrador" pra "copiloto".
+5. **Perguntas em linguagem natural** (§8) — o salto de "registrador" pra "copiloto" (a categorização automática já saiu).
 6. **Open Finance / importar fatura** (§9) — quando quiser matar o lançamento manual de vez.
 
 > Cada item vira um (ou poucos) commits no padrão do projeto: 1 step = 1 commit,
