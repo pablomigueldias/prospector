@@ -64,7 +64,7 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 ## 5. Importador / IA
 
 - 🟡 **Importar extrato bancário (OFX/CSV/PDF)** — conciliar muitos lançamentos de uma vez, não só boleto a boleto.
-- 🟡 **Categorização automática** — sugerir a categoria pela descrição (aprende com o histórico), reduzindo o "Editar" no card. (Hoje o boleto já reaproveita por beneficiário; isto é o geral.)
+- ✅ **Categorização automática** *(feito 2026-06-14)* — o form de lançamento (web) sugere a categoria pela descrição, reaproveitando a da última despesa igual do usuário (`GET /api/financas/transacoes/sugestao-categoria`). Ver §8. *Evolução futura:* match fuzzy/LLM além do exato.
 - 🟢 **Ler comprovante PIX / nota fiscal** — estender o importador além de boleto.
 
 ## 6. Confiabilidade & infraestrutura
@@ -87,7 +87,7 @@ O módulo registra bem; o salto é ele **entender e antecipar**. Território de 
 (Gemini/Groq, já no stack) + as consultas que já existem.
 
 - 🔴 **Perguntas em linguagem natural sobre os dados** — *"quanto gastei com mercado nos últimos 3 meses?"*, *"qual meu maior gasto de junho?"*. Um agente com *tool calling* sobre os endpoints de resumo/transações responde sem o usuário virar relatório. Vale no dashboard e no bot.
-- 🔴 **Categorização automática que aprende** — sugerir a categoria pela descrição usando o histórico do próprio usuário (confirmar com 1 toque). Reduz o atrito de lançar.
+- ✅ **Categorização automática que aprende** *(feito 2026-06-14)* — ao digitar a descrição no form de lançamento (web), o sistema pré-preenche a categoria com a da última despesa de mesma descrição do usuário (com aviso "categoria reaproveitada"; dá pra trocar). Backend `transacao_service.sugerir_categoria` + `GET /transacoes/sugestao-categoria`; smoke `test_financas_categoria_sugestao_api`. *Falta o salto IA:* sugerir por similaridade (não só descrição exata) e expor no bot.
 - 🟡 **Insights proativos (digest)** — resumo semanal/mensal automático no Telegram: "essa semana você gastou R$ X (−12% vs. média), top categoria: delivery".
 - 🟡 **Detector de assinaturas/recorrências não cadastradas** — achar cobranças que se repetem ("parece que você paga Spotify todo mês — quer cadastrar como conta fixa?").
 - 🟡 **Alerta de anomalia** — gasto muito fora do padrão da categoria/mês dispara um aviso ("R$ 800 em farmácia, 4x sua média").

@@ -327,6 +327,16 @@ export const financasApi = {
     });
   },
 
+  /** GET /api/financas/transacoes/sugestao-categoria — auto-categoria que aprende:
+   *  categoria da última despesa com a mesma descrição. */
+  financasSugestaoCategoria(descricao: string): Promise<CompraCategoriaSugestao> {
+    const q = new URLSearchParams({ descricao });
+    return request<CompraCategoriaSugestao>(
+      `/api/financas/transacoes/sugestao-categoria?${q}`,
+      { timeoutMs: 8_000 },
+    );
+  },
+
   /** POST /api/financas/nlu/interpretar — texto livre → rascunho (não grava) */
   financasNluInterpretar(texto: string): Promise<NluInterpretacao> {
     return request<NluInterpretacao>('/api/financas/nlu/interpretar', {

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from sqlalchemy import func
+
+from app.api.schemas.financas import CompraCategoriaSugestao
+
 from ._base import *  # noqa: F401,F403  (imports/TransacaoError compartilhados)
 from ._base import (  # noqa: F401  (helpers privados)
     _uuid, _iso, _to_response, _buscar_conta, _validar_categoria,
@@ -30,6 +34,35 @@ async def sugestao_conta_pagamento(
         "conta_id": str(conta_id) if conta_id else None,
         "conta_nome": nome,
     }
+
+
+async def sugerir_categoria(
+    usuario_id: str, descricao: str
+) -> CompraCategoriaSugestao:
+    """Auto-categoria que aprende: a categoria usada na última DESPESA do próprio
+    usuário com a mesma descrição. Reduz o atrito de categorizar lançamentos que
+    se repetem (mercado, posto, farmácia…). Nula quando não há histórico.
+    Reaproveita o schema CompraCategoriaSugestao (mesmo formato)."""
+    vazia = CompraCategoriaSugestao(categoria_id=None, categoria_nome=None)
+    if not descricao or not descricao.strip():
+        return vazia
+    uid = _uuid(usuario_id, campo="usuario_id")
+    async with get_session() as session:
+        row = (await session.execute(
+            select(Transacao.categoria_id, Categoria.nome)
+            .join(Categoria, Categoria.id == Transacao.categoria_id)
+            .where(
+                Transacao.usuario_id == uid,
+                Transacao.tipo == "despesa",
+                func.lower(Transacao.descricao) == descricao.strip().lower(),
+                Transacao.categoria_id.is_not(None),
+            )
+            .order_by(Transacao.created_at.desc())
+            .limit(1)
+        )).first()
+    if row is None:
+        return vazia
+    return CompraCategoriaSugestao(categoria_id=str(row[0]), categoria_nome=row[1])
 
 
 async def get_transacao(transacao_id: str) -> TransacaoResponse:

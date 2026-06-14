@@ -30,6 +30,7 @@ export function LancamentoForm({
   const [valor, setValor] = useState(inicial?.valor ?? '');
   const [contaId, setContaId] = useState(inicial?.contaId ?? contas[0]?.id ?? '');
   const [categoriaId, setCategoriaId] = useState(inicial?.categoriaId ?? '');
+  const [catReaproveitada, setCatReaproveitada] = useState('');
   const [data, setData] = useState(inicial?.data ?? hojeIso);
   const [prevista, setPrevista] = useState(inicial?.prevista ?? false);
   // Despesa dividida em N contas (ex.: metade VR, metade dinheiro). Só pra
@@ -70,6 +71,21 @@ export function LancamentoForm({
       setLendoPix(false);
     }
   }
+  // Auto-categoria que aprende: ao sair da descrição, se ainda não escolheu
+  // categoria (e é despesa nova), reaproveita a da última despesa igual.
+  async function sugerirCategoria() {
+    if (editando || tipo !== 'despesa' || categoriaId || !descricao.trim()) return;
+    try {
+      const s = await api.financasSugestaoCategoria(descricao.trim());
+      if (s.categoria_id) {
+        setCategoriaId(s.categoria_id);
+        setCatReaproveitada(s.categoria_nome ?? '');
+      }
+    } catch {
+      /* sugestão é best-effort — ignora falha */
+    }
+  }
+
   const valorNumPreview = Number(valor.replace(',', '.')) || 0;
   const somaPagamentos = pagamentos.reduce(
     (acc, p) => acc + (Number(p.valor.replace(',', '.')) || 0),
@@ -242,6 +258,7 @@ export function LancamentoForm({
             className="input"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
+            onBlur={sugerirCategoria}
             placeholder={tipo === 'despesa' ? 'ex: Mercado' : 'ex: Salário'}
             autoFocus
           />
@@ -307,7 +324,10 @@ export function LancamentoForm({
             <select
               className="input"
               value={categoriaId}
-              onChange={(e) => setCategoriaId(e.target.value)}
+              onChange={(e) => {
+                setCategoriaId(e.target.value);
+                setCatReaproveitada('');
+              }}
             >
               <option value="">Sem categoria</option>
               {categorias.map((c) => (
@@ -316,6 +336,11 @@ export function LancamentoForm({
                 </option>
               ))}
             </select>
+            {catReaproveitada && (
+              <p className="text-[11.5px] text-ink-mute mt-1 m-0">
+                categoria reaproveitada de um lançamento parecido ({catReaproveitada})
+              </p>
+            )}
           </div>
         </div>
 

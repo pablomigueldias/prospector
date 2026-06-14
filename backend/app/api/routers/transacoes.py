@@ -8,6 +8,7 @@ from app.api.dependencies.financas import (
     usuario_financas,
 )
 from app.api.schemas.financas import (
+    CompraCategoriaSugestao,
     DespesaAutoSplitCreate,
     DespesaCreate,
     DespesaDivididaCreate,
@@ -136,6 +137,19 @@ async def listar(
             limit=limit,
             offset=offset,
         )
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/sugestao-categoria", response_model=CompraCategoriaSugestao,
+            summary="Auto-categoria: categoria da última despesa com a mesma descrição",
+            dependencies=[Depends(usuario_financas)])
+async def sugestao_categoria(
+    descricao: str = Query(..., description="Descrição da despesa digitada"),
+    usuario_id: str = Depends(financas_usuario_id),
+) -> CompraCategoriaSugestao:
+    try:
+        return await transacao_service.sugerir_categoria(usuario_id, descricao)
     except Exception as e:
         raise _handle(e)
 

@@ -18,6 +18,7 @@ from .transferir import transferir
 from .consultas import (
     get_transacao,
     listar_transacoes,
+    sugerir_categoria,
     sugestao_conta_pagamento,
     ultima_transacao,
 )
@@ -33,6 +34,7 @@ __all__ = [
     "lancar_despesa_auto_split",
     "transferir",
     "sugestao_conta_pagamento",
+    "sugerir_categoria",
     "get_transacao",
     "listar_transacoes",
     "ultima_transacao",
