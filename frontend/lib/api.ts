@@ -457,6 +457,15 @@ export const api = {
     });
   },
 
+  /** DELETE /api/financas/compras/{id} — estorna a compra (remove parcelas e
+   *  abate das faturas). 400 se alguma parcela já entrou em fatura paga. */
+  financasExcluirCompra(id: string): Promise<void> {
+    return request<void>(`/api/financas/compras/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      timeoutMs: 10_000,
+    });
+  },
+
   financasPagarFatura(
     cartaoId: string,
     faturaId: string,

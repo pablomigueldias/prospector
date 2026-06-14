@@ -288,8 +288,26 @@ function FaturaExtratoModal({
   const [valorPago, setValorPago] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+  const [estornando, setEstornando] = useState<string | null>(null);
 
   const paga = fatura.status === 'paga';
+
+  async function estornar(compraId: string, descricao: string, totalParcelas: number) {
+    const aviso =
+      totalParcelas > 1
+        ? `Estornar a compra “${descricao}” inteira? As ${totalParcelas} parcelas (deste e dos próximos meses) somem e o valor sai das faturas.`
+        : `Estornar a compra “${descricao}”? Ela sai da fatura.`;
+    if (!window.confirm(aviso)) return;
+    setErro('');
+    setEstornando(compraId);
+    try {
+      await api.financasExcluirCompra(compraId);
+      onPaid(); // fecha + recarrega o card (parcelas podem estar em vários meses)
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Falha ao estornar a compra.');
+      setEstornando(null);
+    }
+  }
 
   async function pagar() {
     setErro('');
@@ -331,7 +349,7 @@ function FaturaExtratoModal({
               {data.itens.map((it) => (
                 <li
                   key={it.parcela_id}
-                  className="flex items-center justify-between gap-3 py-2 text-sm"
+                  className="flex items-center justify-between gap-3 py-2 text-sm group"
                 >
                   <div className="min-w-0">
                     <div className="text-ink truncate">{it.descricao}</div>
@@ -346,6 +364,22 @@ function FaturaExtratoModal({
                   <span className="text-ink tabular-nums shrink-0">
                     {formatBRL(it.valor)}
                   </span>
+                  {!paga && (
+                    <button
+                      type="button"
+                      onClick={() => estornar(it.compra_id, it.descricao, it.total_parcelas)}
+                      disabled={estornando === it.compra_id}
+                      className="shrink-0 text-ink-faint hover:text-red-600 text-sm px-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                      title={
+                        it.total_parcelas > 1
+                          ? 'Estornar a compra inteira (todas as parcelas)'
+                          : 'Estornar a compra'
+                      }
+                      aria-label="Estornar a compra"
+                    >
+                      {estornando === it.compra_id ? '…' : '✕'}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

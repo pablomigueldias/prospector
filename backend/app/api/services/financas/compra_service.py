@@ -11,7 +11,7 @@ from datetime import date
 from decimal import ROUND_DOWN, Decimal
 from typing import List, Optional, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,6 +21,7 @@ from app.api.schemas.financas import (
     CompraResponse,
     ParcelaResponse,
 )
+from app.api.services.financas import eventos
 from app.db.models.financas.cartao import Cartao
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.compra import Compra
@@ -325,3 +326,54 @@ async def get_compra(compra_id: str) -> CompraResponse:
         if compra is None:
             raise CompraError("Compra não encontrada.")
         return _to_response(compra)
+
+
+async def excluir_compra(compra_id: str, *, usuario_id: str) -> None:
+    """Estorna uma compra parcelada: remove as parcelas (cascade) e abate o
+    valor delas das faturas em que caíram. Bloqueia se alguma parcela já entrou
+    numa fatura paga (aí o certo é desfazer o pagamento da fatura primeiro).
+    Faturas que ficam sem parcela são removidas."""
+    cid = _uuid(compra_id)
+    uid = _uuid(usuario_id, campo="usuario_id")
+    async with get_session() as session:
+        compra = await _carregar_compra(session, cid)
+        if compra is None:
+            raise CompraError("Compra não encontrada.")
+        if compra.usuario_id != uid:
+            raise CompraError("A compra não pertence a esse usuário.")
+
+        # Faturas afetadas (parcelas de cartão); boleto parcelado não tem.
+        faturas: dict[uuid.UUID, Fatura] = {}
+        for p in compra.parcelas:
+            if p.fatura_id and p.fatura_id not in faturas:
+                f = await session.get(Fatura, p.fatura_id)
+                if f is not None:
+                    faturas[p.fatura_id] = f
+
+        for f in faturas.values():
+            if f.status == "paga":
+                raise CompraError(
+                    "Uma das parcelas já entrou numa fatura paga. "
+                    "Desfaça o pagamento da fatura antes de estornar a compra."
+                )
+
+        # Abate cada parcela da sua fatura antes de remover.
+        for p in compra.parcelas:
+            if p.fatura_id and p.fatura_id in faturas:
+                f = faturas[p.fatura_id]
+                novo = Decimal(f.valor_total) - Decimal(p.valor)
+                f.valor_total = novo if novo > 0 else Decimal("0")
+
+        await session.delete(compra)  # parcelas saem por cascade
+        await session.flush()
+
+        # Faturas que ficaram sem nenhuma parcela viram lixo — remove.
+        for fid, f in faturas.items():
+            restam = await session.scalar(
+                select(func.count()).select_from(Parcela).where(Parcela.fatura_id == fid)
+            )
+            if not restam:
+                await session.delete(f)
+
+        await eventos.notificar(session, uid, "compra_excluida")
+        await session.commit()

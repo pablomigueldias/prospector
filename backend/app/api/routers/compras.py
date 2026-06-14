@@ -60,3 +60,16 @@ async def detalhe(compra_id: str) -> CompraResponse:
         return await compra_service.get_compra(compra_id)
     except Exception as e:
         raise _handle(e)
+
+
+@router.delete("/{compra_id}", status_code=204,
+               summary="Estorna a compra: remove as parcelas e abate das faturas",
+               dependencies=[Depends(exige_editar)])
+async def excluir(
+    compra_id: str,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> None:
+    try:
+        await compra_service.excluir_compra(compra_id, usuario_id=usuario_id)
+    except Exception as e:
+        raise _handle(e)
