@@ -31,8 +31,7 @@ class OrcamentoError(Exception):
     """Erro de negócio de Orçamentos — vira HTTP 400/404 no router."""
 
 
-def _iso(dt) -> Optional[str]:
-    return dt.isoformat(timespec="seconds") if dt else None
+from app.api.services.financas._common import iso as _iso
 
 
 def _uuid(valor: str, *, campo: str = "id") -> uuid.UUID:

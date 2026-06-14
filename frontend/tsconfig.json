@@ -24,5 +24,6 @@
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": ["node_modules"]
+  "comment": "e2e/ e playwright.config.ts ficam fora do typecheck/build do app — o Playwright tem toolchain própria e só é instalado sob demanda (npm i -D @playwright/test).",
+  "exclude": ["node_modules", "e2e", "playwright.config.ts"]
 }

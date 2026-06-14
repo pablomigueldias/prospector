@@ -9,6 +9,39 @@
 
 ---
 
+## 0.1. Sessão 2026-06-14 (tarde) — diagnóstico do front + refatoração
+
+**"Front não funcionava" = não estava no ar (não era bug).** Só os containers
+`db` e `minio` estavam de pé; **API (:8000) e web (:3000) não rodavam**. Subidos
+em dev: typecheck limpo, build verde, rotas `/login` `/agents/prospector`
+`/conta` todas 200. Para rodar local: `cd backend && source venv/bin/activate &&
+python run.py serve --port 8000` + `cd frontend && npm run dev`.
+
+**Login no dev "não logava" — causa: porta + CORS.** Se o `next dev` sobe na
+**:3001** (acontece quando a :3000 já está ocupada), o login falha: o CORS do
+backend (`backend/app/api/main.py:82`) só libera `localhost:3000` /
+`127.0.0.1:3000`. Solução: rodar o front na **:3000**. A senha do admin no dev é
+a `ADMIN_SENHA_INICIAL` do `backend/.env` (2FA desativado). *Melhoria opcional:*
+adicionar `localhost:3001` ao CORS de dev pra um pulo de porta não quebrar login.
+
+**Refatoração de escalabilidade — ✅ OS 7 PASSOS FEITOS** (um commit cada,
+typecheck/build/smokes verdes entre cada). *(O doc de planejamento
+`ORGANIZACAO_REFATORACAO.md` foi removido depois de concluído — o registro do
+que foi feito ficou aqui.)*
+1. `lib/types.ts` (1007) → `lib/types/<dominio>/` + barrel.
+2. `lib/api.ts` (1070) → `lib/api/<dominio>` + `client.ts` (paridade: 92 métodos).
+3. 3 componentes-deus → `components/financas/{cartoes,transacoes,recorrencias}/`.
+4. `schemas/financas.py` (836) → pacote (12 submódulos, 80 schemas).
+5. `transacao_service.py` (788) → pacote + `_common.py` (`iso()` dedup).
+6. `bot_service.py` (547) → pacote (_base/comandos/nlu/arquivo; dispatch no `__init__`).
+7. **pytest** como runner único dos 60 smokes (subprocesso) — **58 passed, 2 xfailed**
+   (falhas pré-existentes) — + scaffold **Playwright** (login+screenshot, `npm run e2e`).
+
+Pendência herdada (não bloqueante): sub-dividir o `lib/types/financas.ts`
+(~620 linhas) e rodar o E2E do Playwright (precisa `npx playwright install chromium`).
+
+---
+
 ## 0. Onde paramos — na `main`, ainda NÃO deployado no VPS ⏸️
 
 Tudo abaixo está **commitado, com smoke/build verde, e já na `main` no GitHub**
@@ -46,7 +79,7 @@ Tudo abaixo está **commitado, com smoke/build verde, e já na `main` no GitHub*
 - **Onda 3 do "resolver tudo" (2026-06-13) — §4 Metas (fechado):** (1) **projeção de fim de mês** (card "sobra estimada" no dashboard, `GET /resumo/projecao`); (2) **alerta de saldo negativo** no digest; (3) **roll-up de orçamento** (categoria-mãe soma as filhas); (4) **reservas com objetivo** (meta + barra de progresso). 5 smokes novos, build verde. ⚠️ **Migration nova `a7c3e1f9d2b8`** (`contas.meta`) — roda no `02-deploy.sh` no deploy; já aplicada no dev.
 
 - **Correções + reserva (2026-06-14):** (1) **fix dos gráficos** que não apareciam (barras do Consumo e da projeção de cartões — `bg-brand/80` sobre oklch + cor clara); (2) **guardar na reserva** — transferência entre contas (`POST /transacoes/transferencia`), debita origem/credita destino e **não conta no resumo**; botão "+ Guardar aqui" no card da reserva. Smoke novo. Migration nenhuma.
-- **Doc novo `docs/ORGANIZACAO_REFATORACAO.md`** — diagnóstico de escalabilidade: arquivos-deus (>1000 linhas: `api.ts`, `CartoesSection.tsx`, `types.ts`, `TransacoesSection.tsx`; back: `schemas/financas.py`, `transacao_service.py`) + plano incremental de quebra por domínio (vertical slices). Pendência de refatoração separada das features.
+- **Refatoração de escalabilidade (planejada e EXECUTADA em 2026-06-14)** — os arquivos-deus (`api.ts`, `types.ts`, `CartoesSection/TransacoesSection/RecorrenciasSection.tsx`; back: `schemas/financas.py`, `transacao_service.py`, `bot_service.py`) foram quebrados por domínio (vertical slices) + pytest como runner único dos smokes + scaffold Playwright. Ver o resumo dos 7 passos no §0.1. O doc de planejamento foi removido após a conclusão.
 
 **Próximas ondas sugeridas:** §1 (confirmação rica do bot); §8 IA (perguntas em linguagem natural 🔴, categorização que aprende 🔴, detector de assinaturas, anomalias, coach de metas); §7 segurança (exportar dados, 2FA obrigatório, auditoria no front); §10 patrimônio líquido; §5 importar extrato (OFX/CSV).
 
