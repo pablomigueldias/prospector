@@ -144,6 +144,13 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
   (baixo/medio/alto): alto quando há sinais de golpe (cliente não verificado,
   pede contato/pagamento fora, oferta boa demais, escopo vago). Badge "⚠️ risco"
   na fila e no painel de análise.
+- ✅ **Assistente de negociação (§8)** — `POST /propostas/{id}/negociar`: dada a
+  objeção do cliente, gera 2–3 respostas com estratégias diferentes (defende o
+  valor / troca escopo por preço / concessão condicionada), no seu tom, nunca
+  desconto seco. Analyzer `negociador`; no modal, painel "defenda o valor".
+- ✅ **Pedir avaliação 5★ ao fechar (§10)** — quando a proposta está "fechada",
+  o modal mostra uma mensagem pronta de pedido de avaliação (puro front) com
+  botão copiar. A 1ª avaliação é a que mais destrava projetos futuros.
 
 ---
 

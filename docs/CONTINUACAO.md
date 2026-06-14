@@ -101,6 +101,15 @@ de cada um verde. **Total: 6 alavancas na `main` sem push/deploy.** Restam no
 backlog: win-rate por categoria, scam radar, templates vencedores, negociação,
 limite de propostas, pedir avaliação, multi-plataforma (§5).
 
+**+ 3 alavancas (mesma sessão):** (7) **Scam/risco radar** — analisador
+classifica `risco` (badge "⚠️ risco" na fila/painel); (8) **Assistente de
+negociação** — `POST /negociar` gera 2–3 respostas que defendem o valor; (9)
+**Pedir avaliação 5★** — mensagem pronta no modal quando "fechada". **Total: 9
+alavancas de desempenho na `main`, sem push/deploy.** Restam (menor prioridade):
+win-rate por categoria, templates vencedores, checklist anti-genérico, limite de
+propostas, motivo de perda estruturado, acompanhar prazo, relatório mensal,
+multimoeda e multi-plataforma (§5/99freelas).
+
 ---
 
 ## 0.1. Sessão 2026-06-14 (tarde) — diagnóstico do front + refatoração

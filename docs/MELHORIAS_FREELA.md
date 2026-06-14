@@ -120,9 +120,9 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
 - [ ] 🟡 **Banco de propostas vencedoras (templates).** Quando uma proposta
   FECHA, marcar como "modelo": o redator passa a se inspirar nas suas que deram
   certo (estilo `blocos_curriculo` do perfil). Você melhora sozinho com o tempo.
-- [ ] 🟡 **Assistente de negociação.** Quando o cliente pede desconto, gerar
-  respostas que **defendem o valor** (ou cortam escopo em vez de preço), no seu
-  tom. Negociar mal é onde mais se perde margem.
+- [x] ✅ **Assistente de negociação.** FEITO 2026-06-14: `POST /negociar` gera
+  2–3 respostas (defende valor / troca escopo / concessão condicionada); painel
+  no modal. Ver FREELA_FEITO.
 - [ ] 🟢 **Checklist anti-genérico antes de enviar.** A IA confere se a proposta
   cita um detalhe REAL do projeto, propõe um plano e tem prazo — e avisa se
   soou copia-cola.
@@ -148,9 +148,8 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
   2026-06-14: job `freela_followup.py` na rotina diária avisa no Telegram sobre
   propostas "enviada" há ≥ N dias sem resposta. *(Refino futuro: dedup pra não
   repetir o lembrete todo dia da mesma proposta.)*
-- [ ] 🟡 **Pedir avaliação 5★ ao entregar.** Ao marcar "fechada/entregue",
-  lembrar (e rascunhar) o pedido natural de avaliação — a 1ª nota é a mais
-  difícil e a que mais destrava projetos futuros.
+- [x] ✅ **Pedir avaliação 5★ ao entregar.** FEITO 2026-06-14: modal mostra a
+  mensagem pronta quando a proposta está "fechada" (botão copiar).
 - [ ] 🟢 **Acompanhar prazo de entrega.** Depois de fechar, guardar o prazo
   prometido e avisar quando estiver perto — entregar no prazo = avaliação melhor
   = mais trabalho.
