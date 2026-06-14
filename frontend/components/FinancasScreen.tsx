@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { IconPlus } from '@/components/Icon';
+import { BuscaGlobalModal } from '@/components/BuscaGlobalModal';
 import { CartoesSection } from '@/components/CartoesSection';
 import { CategoriaDonut } from '@/components/CategoriaDonut';
 import { CategoriasSection } from '@/components/CategoriasSection';
@@ -48,9 +49,9 @@ function irPara(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function SecaoNav() {
+function SecaoNav({ onBuscar }: { onBuscar: () => void }) {
   return (
-    <nav className="sticky top-0 z-30 -mx-8 px-8 py-2.5 mb-6 bg-bg/90 backdrop-blur border-b border-line-soft flex flex-wrap gap-1.5">
+    <nav className="sticky top-0 z-30 -mx-8 px-8 py-2.5 mb-6 bg-bg/90 backdrop-blur border-b border-line-soft flex flex-wrap items-center gap-1.5">
       {SECOES.map((s) => (
         <button
           key={s.id}
@@ -61,6 +62,17 @@ function SecaoNav() {
           {s.label}
         </button>
       ))}
+      <button
+        type="button"
+        onClick={onBuscar}
+        className="ml-auto inline-flex items-center gap-1.5 text-[12.5px] text-ink-soft hover:text-ink border border-line hover:bg-line-soft rounded-pill px-3 py-1 transition-colors"
+        title="Buscar lançamentos em todos os meses  ·  atalho: /"
+      >
+        🔍 Buscar
+        <kbd className="font-mono text-[10px] text-ink-mute border border-line rounded px-1">
+          /
+        </kbd>
+      </button>
     </nav>
   );
 }
@@ -110,6 +122,9 @@ export default function FinancasScreen() {
     setTimeout(() => irPara('sec-transacoes'), 50);
   }, []);
 
+  // Busca global (atalho "/" ou botão na sub-nav).
+  const [buscaAberta, setBuscaAberta] = useState(false);
+
   // Atalhos: "N" (fora de campos) ou Ctrl/Cmd+K abrem o lançamento.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -124,6 +139,11 @@ export default function FinancasScreen() {
       if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         if (podeLancar) setLancarAberto(true);
+        return;
+      }
+      if (!digitando && e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setBuscaAberta(true);
         return;
       }
       if (
@@ -156,7 +176,7 @@ export default function FinancasScreen() {
       </header>
 
       {/* Atalhos pra pular entre as seções (fica grudado no topo ao rolar) */}
-      <SecaoNav />
+      <SecaoNav onBuscar={() => setBuscaAberta(true)} />
 
       {/* Navegação de mês */}
       <div id="sec-visao" className="scroll-mt-16 flex items-center gap-3 mb-5">
@@ -305,6 +325,13 @@ export default function FinancasScreen() {
         </h2>
         <ComprovantesGaleria />
       </section>
+
+      {buscaAberta && (
+        <BuscaGlobalModal
+          onVerMes={verMesNaLista}
+          onClose={() => setBuscaAberta(false)}
+        />
+      )}
 
       {/* Ferramenta de dev (some em produção) */}
       <DevSyncButton />
