@@ -156,7 +156,16 @@ app/api/services/financas/  transacao/  lancar.py  pagar.py  listar.py  transfer
    router mapeia pra HTTP — unificá-lo mudaria o tipo do erro. `_intervalo_mes`
    também ficou local (assinaturas diferentes entre transacao e resumo). Import
    da app + bateria de 9 smokes financas verdes.
-6. **`bot_service.py`** — separar dispatch / comandos / NLU-card / arquivo.
+6. ✅ **`bot_service.py` → pacote** *(feito 2026-06-14)* — `bot_service/` com
+   `_base.py` (config/`mapa_chat_usuario`/`_responder`/helpers puros),
+   `comandos.py` (/gasto /ganho /saldo /resumo /contas /conta /desfazer),
+   `nlu.py` (texto livre → card → `_confirmar`) e `arquivo.py` (boleto por
+   foto/PDF). O **roteamento** (`processar_update`/`_callback`) ficou no
+   `__init__.py` de propósito: os smokes fazem `monkeypatch` de
+   `bot_service.mapa_chat_usuario`, então o roteador precisa lê-lo **deste**
+   namespace (senão o patch não chega numa cópia importada em submódulo). Os
+   patches de `tg.*` (módulo) funcionam de qualquer jeito. 7 smokes do bot
+   verdes.
 7. **Infra de teste:** adotar `pytest` (manter os smokes como casos), e um
    Playwright mínimo (login + screenshot) — cobre o §6 do MELHORIAS.
 
