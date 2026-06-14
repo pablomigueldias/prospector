@@ -12,7 +12,7 @@ from decimal import Decimal, InvalidOperation
 from datetime import date
 from typing import Optional
 
-from app.api.schemas.financas import DespesaCreate, ReceitaCreate
+from app.api.schemas.financas import ContaCreate, DespesaCreate, ReceitaCreate
 from app.api.services.financas import (
     conta_service,
     importador_service,
@@ -20,7 +20,10 @@ from app.api.services.financas import (
     resumo_service,
     transacao_service,
 )
+from app.api.services.financas.conta_service import ContaError
 from app.api.services.financas.nlu_service import NLUError
+from app.api.services.financas.transacao_service import TransacaoError
+from app.db.models.financas.conta import TIPOS_CONTA
 from app.config import settings
 from app.db.models.financas.bot_rascunho import BotRascunho
 from app.db.session import get_session
@@ -47,6 +50,13 @@ AJUDA = (
     "📊 <b>Consultar</b>\n"
     "• /saldo — saldo das suas contas\n"
     "• /resumo — receitas x despesas do mês\n"
+    "\n"
+    "🏦 <b>Contas</b>\n"
+    "• /contas — listar suas contas\n"
+    "• <code>/conta Nubank corrente</code> — criar uma conta\n"
+    "\n"
+    "↩️ <b>Errou?</b>\n"
+    "• /desfazer — apaga o último lançamento\n"
     "\n"
     "ℹ️ Reveja isto quando quiser com /help."
 )
@@ -114,6 +124,15 @@ async def processar_update(update: dict) -> dict:
     if texto.startswith("/resumo"):
         return await _resumo_mes(chat_id, usuario_id)
 
+    if texto.startswith("/contas"):
+        return await _listar_contas(chat_id, usuario_id)
+
+    if texto.startswith("/conta"):
+        return await _cmd_conta(chat_id, usuario_id, texto)
+
+    if texto.startswith(("/desfazer", "/undo")):
+        return await _cmd_desfazer(chat_id, usuario_id)
+
     if texto and not texto.startswith("/"):
         intent = _consulta_intent(texto)
         if intent == "saldo":
@@ -164,6 +183,73 @@ async def _resumo_mes(chat_id: str, usuario_id: str) -> dict:
             linhas.append(f"• {c.categoria_nome}: R$ {c.total}")
     await _responder(chat_id, "\n".join(linhas))
     return {"ok": True, "consulta": "resumo"}
+
+
+async def _listar_contas(chat_id: str, usuario_id: str) -> dict:
+    contas = (await conta_service.listar_contas(usuario_id, apenas_ativas=True)).items
+    if not contas:
+        await _responder(
+            chat_id,
+            "Você ainda não tem contas.\n"
+            "Crie uma com <code>/conta Nubank corrente</code>.",
+        )
+        return {"ok": True, "comando": "contas", "total": 0}
+    linhas = [f"• <b>{c.nome}</b> ({c.tipo}): R$ {c.saldo_atual}" for c in contas]
+    await _responder(chat_id, "🏦 <b>Suas contas</b>\n" + "\n".join(linhas))
+    return {"ok": True, "comando": "contas", "total": len(contas)}
+
+
+async def _cmd_conta(chat_id: str, usuario_id: str, texto: str) -> dict:
+    """Cria uma conta: /conta <nome…> [tipo]. O último token vira o tipo se for
+    um tipo válido; senão tudo é o nome e o tipo cai pra 'corrente'."""
+    args = texto.split()[1:]
+    if not args:
+        await _responder(
+            chat_id,
+            "Uso: <code>/conta &lt;nome&gt; [tipo]</code>\n"
+            "Ex.: <code>/conta Nubank corrente</code>\n"
+            f"Tipos: {', '.join(TIPOS_CONTA)} (padrão: corrente).",
+        )
+        return {"ok": True, "comando": "conta", "erro": "uso"}
+
+    tipo = "corrente"
+    if len(args) > 1 and args[-1].lower() in TIPOS_CONTA:
+        tipo = args[-1].lower()
+        args = args[:-1]
+    nome = " ".join(args)
+
+    try:
+        conta = await conta_service.criar_conta(
+            ContaCreate(usuario_id=usuario_id, nome=nome, tipo=tipo)
+        )
+    except ContaError as e:
+        await _responder(chat_id, f"🤔 {e}")
+        return {"ok": True, "comando": "conta", "erro": "negocio"}
+
+    await _responder(
+        chat_id,
+        f"✅ Conta criada: <b>{conta.nome}</b> ({conta.tipo}).\n"
+        "Já dá pra lançar nela.",
+    )
+    return {"ok": True, "comando": "conta", "conta_id": conta.id}
+
+
+async def _cmd_desfazer(chat_id: str, usuario_id: str) -> dict:
+    """Apaga o último lançamento criado (revertendo o saldo, se estava pago)."""
+    ultima = await transacao_service.ultima_transacao(usuario_id)
+    if ultima is None:
+        await _responder(chat_id, "Não tem nada pra desfazer 🤷")
+        return {"ok": True, "comando": "desfazer", "nada": True}
+    try:
+        await transacao_service.excluir_transacao(ultima.id)
+    except TransacaoError as e:
+        await _responder(chat_id, f"🤔 {e}")
+        return {"ok": True, "comando": "desfazer", "erro": "negocio"}
+    await _responder(
+        chat_id,
+        f"↩️ Desfeito: <b>{ultima.descricao}</b> R$ {ultima.valor_total}.",
+    )
+    return {"ok": True, "comando": "desfazer", "transacao_id": ultima.id}
 
 
 async def _arquivo(chat_id: str, usuario_id: str, msg: dict) -> dict:

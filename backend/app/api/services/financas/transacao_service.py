@@ -697,6 +697,27 @@ async def pagar_transacao(
         return _to_response(await repo.get(tid))
 
 
+async def ultima_transacao(usuario_id: str) -> Optional[TransacaoResponse]:
+    """A transação criada mais recentemente pelo usuário (pro /desfazer do bot).
+    Ordena por created_at — é o 'último lançamento', não a competência mais nova."""
+    uid = _uuid(usuario_id, campo="usuario_id")
+    async with get_session() as session:
+        from sqlalchemy.orm import selectinload
+
+        stmt = (
+            select(Transacao)
+            .options(
+                selectinload(Transacao.itens),
+                selectinload(Transacao.pagamentos),
+            )
+            .where(Transacao.usuario_id == uid)
+            .order_by(Transacao.created_at.desc())
+            .limit(1)
+        )
+        t = await session.scalar(stmt)
+        return _to_response(t) if t is not None else None
+
+
 async def excluir_transacao(transacao_id: str) -> None:
     """Remove a transação e reverte o saldo das contas (se estava paga).
     Cascateia pagamentos/itens/comprovantes; zera leituras ligadas."""

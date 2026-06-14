@@ -31,9 +31,11 @@ antes de subir). ~19 commits.
 
 **Quando for deployar:** rodar as **4 migrations** novas (já no `02-deploy.sh` no boot): `a1c7e9d2b4f0`/`b2d8f1a3c6e1`/`c3e9a4d7b8f2` (boleto, de antes) + `d4f0a1b2c3e5`/`e5a1b3c4d6f7`/`f6b2c8d4e7a9` (cartão/recorrência/orçamento). Conferir `ORCAMENTO_ALERTA_PCT` no `.env` do VPS (tem default).
 
-**✅ Feito (2026-06-13, continuação):** botão **"Pagar fatura" direto no card do cartão** — atalho ao lado do "+ Compra" que abre o pagamento direto no form (conta/data/valor) apontando pra fatura mais antiga em aberto. Surfacing do `pagar_fatura`, sem backend novo (`CartoesSection.tsx`, prop `iniciarPagando`). Era a pendência marcada do cartão.
+**✅ Feito (2026-06-13, continuação):**
+- Botão **"Pagar fatura" direto no card do cartão** — atalho ao lado do "+ Compra" que abre o pagamento direto no form (conta/data/valor) apontando pra fatura mais antiga em aberto. Surfacing do `pagar_fatura`, sem backend novo (`CartoesSection.tsx`, prop `iniciarPagando`).
+- **Bot: cadastrar conta + desfazer** — `/contas` (lista), `/conta <nome> [tipo]` (cria) e `/desfazer` (apaga o último lançamento, reverte saldo). Tira o atrito de onboarding (não precisa mais do site pra criar a 1ª conta). Backend novo só `transacao_service.ultima_transacao`. Smoke `test_financas_bot_conta_desfazer_api.py`. *Nota:* se quiser no menu do BotFather, republicar `setMyCommands`.
 
-**Próxima pendência (cartão), 🔴 em `MELHORIAS_FINANCAS.md` §3d:** *Importar a fatura do cartão por foto/PDF com IA* (igual ao boleto). Outras 🔴 fora do cartão: cadastrar conta + `/desfazer` no bot (§1), expor MinIO atrás do Caddy (§6), perguntas em linguagem natural + categorização que aprende (§8).
+**Próximas 🔴 (em `MELHORIAS_FINANCAS.md`):** importar a fatura do cartão por foto/PDF com IA (§3d, **o Pablo pediu pra pular por ora**); expor MinIO atrás do Caddy (§6 — infra); perguntas em linguagem natural + categorização que aprende (§8).
 
 ---
 

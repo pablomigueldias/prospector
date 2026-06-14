@@ -13,6 +13,12 @@ Serve de histórico e de referência de onde cada coisa mora no código.
 
 ---
 
+## 1b. Bot do Telegram
+
+- ✅ **Comandos base** (2026-06) — `/gasto`, `/ganho`, `/saldo`, `/resumo`, `/help`, `/start` + linguagem natural (card de confirmação) + boleto por foto/PDF. Ref `app/api/services/financas/bot_service.py`.
+- ✅ **Cadastrar conta pelo bot** (2026-06-13) — `/contas` lista as contas (nome, tipo, saldo); `/conta <nome> [tipo]` cria (ex.: `/conta Nubank corrente`). O último token vira o **tipo** se for válido (`corrente/dinheiro/vr/va/reserva/cartao_credito`), senão tudo é o nome e o tipo cai pra `corrente`. Tira o atrito de onboarding (não precisa mais do site só pra criar a 1ª conta). Reusa `conta_service.criar_conta`.
+- ✅ **Desfazer o último lançamento** (2026-06-13) — `/desfazer` (ou `/undo`) apaga a transação **criada** mais recentemente, revertendo o saldo se estava paga. Backend novo: `transacao_service.ultima_transacao` (ordena por `created_at`). Reusa `excluir_transacao`. Smoke `tests/test_financas_bot_conta_desfazer_api.py`. **Nota de deploy:** se quiser que apareçam no menu do BotFather, republicar `setMyCommands` (o dispatcher já responde de qualquer forma).
+
 ## 1. Dashboard web & relatórios
 
 - ✅ **CRUD completo no front** (2026-06-10) — criar/editar/excluir **conta**, **categoria**, **cartão** e **recorrência** por modal, e **lançar/excluir** transação (com reversão de saldo). Tudo sem depender de API/bot.

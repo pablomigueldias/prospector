@@ -12,8 +12,6 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 
 ## 1. Bot do Telegram (onde você mais usa)
 
-- 🔴 **Cadastrar conta pelo bot** — `/conta Nubank corrente` e `/contas` pra listar. Hoje precisa do site só pra criar a 1ª conta; é o maior atrito de onboarding.
-- 🔴 **Editar/excluir o último lançamento** — `/desfazer` ou um botão "↩️ Desfazer" no card de confirmação. Erro de digitação acontece direto.
 - 🟡 **Lançar despesa prevista / agendada** — *"vou pagar 200 de luz dia 10"* → cria como `prevista`. Hoje o bot só lança como `paga`.
 - 🟡 **Resumo por período** — `/resumo julho`, `/resumo semana`, e "quanto gastei em mercado esse mês?".
 - 🟡 **Confirmação mais rica** — no card, deixar trocar a **categoria** e a **conta** por botões (hoje só Confirmar/Cancelar/Editar).
@@ -122,7 +120,7 @@ O módulo registra bem; o salto é ele **entender e antecipar**. Território de 
 
 ## Sugestão de ordem (se for tocar)
 
-1. **Cadastrar conta + desfazer no bot** (§1) — tira o atrito do dia a dia.
+1. ✅ ~~Cadastrar conta + desfazer no bot (§1)~~ — **feito** (`/conta`, `/contas`, `/desfazer`).
 2. **MinIO atrás do Caddy** (§6) — destrava ver comprovante no site.
 3. **Orçamento por categoria + alertas** (§4) — vira "organizador" de verdade.
 4. **Boleto parcelado + projeção/limite/lembrete de fatura** (§3d) — fecha o cartão.
