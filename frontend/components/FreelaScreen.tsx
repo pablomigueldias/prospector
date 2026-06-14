@@ -12,6 +12,7 @@ import {
 } from '@/hooks/useFreela';
 import {
   FREELA_STATUS,
+  type FreelaAnalise,
   type FreelaKanbanColuna,
   type FreelaPrecificarResponse,
   type FreelaProjetoListItem,
@@ -129,6 +130,11 @@ export default function FreelaScreen() {
             prazo_proposto: prazo,
           });
           if (p) refetchTudo();
+        }}
+        onAnalisar={async (id) => {
+          const r = await acoes.analisarProjeto(id);
+          if (r) void projetos.refetch();
+          return r?.analise ?? null;
         }}
         onRemover={async (id) => {
           if (confirm('Remover este projeto e suas propostas?')) {
@@ -314,6 +320,7 @@ function FilaProjetos({
   items,
   loading,
   onCriarProposta,
+  onAnalisar,
   onRemover,
 }: {
   items: FreelaProjetoListItem[];
@@ -325,6 +332,7 @@ function FilaProjetos({
     horas: number | null,
     prazo: string | null,
   ) => void;
+  onAnalisar: (id: string) => Promise<FreelaAnalise | null>;
   onRemover: (id: string) => void;
 }) {
   if (loading) {
@@ -346,15 +354,28 @@ function FilaProjetos({
   return (
     <div className="flex flex-col gap-2">
       {items.map((p) => (
-        <ProjetoCard key={p.id} p={p} onCriarProposta={onCriarProposta} onRemover={onRemover} />
+        <ProjetoCard
+          key={p.id}
+          p={p}
+          onCriarProposta={onCriarProposta}
+          onAnalisar={onAnalisar}
+          onRemover={onRemover}
+        />
       ))}
     </div>
   );
 }
 
+const RECOMENDACAO_COR: Record<string, string> = {
+  vale: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  talvez: 'bg-amber-50 text-amber-700 border-amber-200',
+  evite: 'bg-red-50 text-red-700 border-red-200',
+};
+
 function ProjetoCard({
   p,
   onCriarProposta,
+  onAnalisar,
   onRemover,
 }: {
   p: FreelaProjetoListItem;
@@ -365,6 +386,7 @@ function ProjetoCard({
     horas: number | null,
     prazo: string | null,
   ) => void;
+  onAnalisar: (id: string) => Promise<FreelaAnalise | null>;
   onRemover: (id: string) => void;
 }) {
   const [abrir, setAbrir] = useState(false);
@@ -372,11 +394,20 @@ function ProjetoCard({
   const [liquido, setLiquido] = useState('');
   const [horas, setHoras] = useState('');
   const [prazo, setPrazo] = useState('');
+  const [analise, setAnalise] = useState<FreelaAnalise | null>(null);
+  const [analisando, setAnalisando] = useState(false);
 
   const orcamento =
     p.faixa_orcamento_min != null || p.faixa_orcamento_max != null
       ? `${formatBRL(p.faixa_orcamento_min ?? 0)} – ${formatBRL(p.faixa_orcamento_max ?? 0)}`
       : null;
+
+  async function analisar() {
+    setAnalisando(true);
+    const a = await onAnalisar(p.id);
+    if (a) setAnalise(a);
+    setAnalisando(false);
+  }
 
   return (
     <div className="card p-4">
@@ -393,13 +424,19 @@ function ProjetoCard({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {p.fit_score != null ? (
+          {p.tem_analise && p.fit_score != null ? (
             <span className="text-[12px] font-medium px-2 py-0.5 rounded bg-brand-soft text-brand-ink">
               fit {p.fit_score}
             </span>
-          ) : (
-            <span className="text-[12px] text-ink-faint">sem análise</span>
-          )}
+          ) : null}
+          <button
+            type="button"
+            className="btn-ghost text-[13px]"
+            onClick={analisar}
+            disabled={analisando}
+          >
+            {analisando ? 'Analisando…' : p.tem_analise ? 'Reanalisar' : '🔎 Analisar'}
+          </button>
           <button
             type="button"
             className="btn-ghost text-[13px]"
@@ -417,6 +454,43 @@ function ProjetoCard({
           </button>
         </div>
       </div>
+
+      {analise && (
+        <div className="mt-3 border-t border-line pt-3 text-[13px]">
+          <div className="flex items-center gap-2 mb-1.5">
+            {analise.recomendacao && (
+              <span
+                className={`text-[12px] font-medium px-2 py-0.5 rounded border ${
+                  RECOMENDACAO_COR[analise.recomendacao] ?? 'bg-bg-alt text-ink-soft border-line'
+                }`}
+              >
+                {analise.recomendacao} · fit {analise.fit_score}
+              </span>
+            )}
+          </div>
+          {analise.veredito && <p className="text-ink-soft m-0 mb-2">{analise.veredito}</p>}
+          {analise.red_flags.length > 0 && (
+            <div className="mb-1.5">
+              <span className="text-[12px] font-medium text-red-600">Red flags:</span>
+              <ul className="list-disc ml-5 text-ink-soft">
+                {analise.red_flags.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {analise.ganchos.length > 0 && (
+            <div>
+              <span className="text-[12px] font-medium text-emerald-700">Ganchos (seu perfil):</span>
+              <ul className="list-disc ml-5 text-ink-soft">
+                {analise.ganchos.map((g, i) => (
+                  <li key={i}>{g}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {abrir && (
         <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-2 items-end border-t border-line pt-3">

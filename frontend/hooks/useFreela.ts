@@ -4,6 +4,7 @@ import { useFetch } from './useFetch';
 import { api } from '@/lib/api';
 import { ApiError } from '@/lib/types';
 import type {
+  FreelaAnalisarResponse,
   FreelaCliente,
   FreelaClienteCreate,
   FreelaPrecificarRequest,
@@ -69,6 +70,10 @@ export function useFreelaActions() {
     (id: string) => run<void>(() => api.freelaProjetoRemover(id)),
     [],
   );
+  const analisarProjeto = useCallback(
+    (id: string) => run<FreelaAnalisarResponse>(() => api.freelaProjetoAnalisar(id)),
+    [],
+  );
   const criarProposta = useCallback(
     (body: FreelaPropostaCreate) => run<FreelaProposta>(() => api.freelaPropostaCriar(body)),
     [],
@@ -97,6 +102,7 @@ export function useFreelaActions() {
     error,
     criarProjeto,
     removerProjeto,
+    analisarProjeto,
     criarProposta,
     mudarStatus,
     removerProposta,

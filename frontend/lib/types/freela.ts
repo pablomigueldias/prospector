@@ -165,3 +165,19 @@ export interface FreelaPrecificarResponse {
   liquido_por_hora?: number | null;
   alerta?: string | null;
 }
+
+export interface FreelaAnalise {
+  fit_score: number;
+  recomendacao?: string | null; // vale | talvez | evite
+  veredito?: string | null;
+  requisitos: string[];
+  stack: string[];
+  red_flags: string[];
+  sinais_cliente: string[];
+  ganchos: string[];
+}
+
+export interface FreelaAnalisarResponse {
+  projeto_id: string;
+  analise: FreelaAnalise;
+}
