@@ -13,6 +13,7 @@ import type {
   FreelaProjetoCreate,
   FreelaProposta,
   FreelaPropostaCreate,
+  FreelaRedigirResponse,
   FreelaStatus,
 } from '@/lib/types';
 
@@ -38,6 +39,14 @@ export function useFreelaPlataformas() {
 export function useFreelaClientes() {
   const result = useFetch(() => api.freelaClientes(), []);
   return { ...result, items: result.data ?? [] };
+}
+
+export function useFreelaProposta(id: string | undefined) {
+  const result = useFetch<FreelaProposta>(
+    () => (id ? api.freelaPropostaDetalhe(id) : Promise.reject(new Error('sem id'))),
+    [id],
+  );
+  return { ...result, proposta: result.data };
 }
 
 function toApiError(err: unknown): ApiError {
@@ -87,6 +96,16 @@ export function useFreelaActions() {
     (id: string) => run<void>(() => api.freelaPropostaRemover(id)),
     [],
   );
+  const atualizarProposta = useCallback(
+    (id: string, body: Partial<FreelaProposta>) =>
+      run<FreelaProposta>(() => api.freelaPropostaAtualizar(id, body)),
+    [],
+  );
+  const redigirProposta = useCallback(
+    (id: string, instrucoes?: string | null) =>
+      run<FreelaRedigirResponse>(() => api.freelaPropostaRedigir(id, instrucoes)),
+    [],
+  );
   const criarCliente = useCallback(
     (body: FreelaClienteCreate) => run<FreelaCliente>(() => api.freelaClienteCriar(body)),
     [],
@@ -106,6 +125,8 @@ export function useFreelaActions() {
     criarProposta,
     mudarStatus,
     removerProposta,
+    atualizarProposta,
+    redigirProposta,
     criarCliente,
     precificar,
   };

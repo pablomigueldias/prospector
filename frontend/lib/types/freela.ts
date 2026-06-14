@@ -181,3 +181,16 @@ export interface FreelaAnalisarResponse {
   projeto_id: string;
   analise: FreelaAnalise;
 }
+
+export interface FreelaRedacao {
+  texto: string;
+  prazo_sugerido?: string | null;
+  tom?: string | null;
+  projetos_destacados: string[];
+  habilidades_destacadas: string[];
+}
+
+export interface FreelaRedigirResponse {
+  proposta_id: string;
+  redacao: FreelaRedacao;
+}

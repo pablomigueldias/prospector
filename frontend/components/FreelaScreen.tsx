@@ -9,11 +9,13 @@ import {
   useFreelaMetricas,
   useFreelaPlataformas,
   useFreelaProjetos,
+  useFreelaProposta,
 } from '@/hooks/useFreela';
 import {
   FREELA_STATUS,
   type FreelaAnalise,
   type FreelaKanbanColuna,
+  type FreelaKanbanItem,
   type FreelaPrecificarResponse,
   type FreelaProjetoListItem,
   type FreelaStatus,
@@ -38,6 +40,7 @@ export default function FreelaScreen() {
   const acoes = useFreelaActions();
 
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [propostaAberta, setPropostaAberta] = useState<FreelaKanbanItem | null>(null);
 
   function refetchTudo() {
     void kanban.refetch();
@@ -151,6 +154,7 @@ export default function FreelaScreen() {
       <Kanban
         colunas={kanban.colunas}
         loading={kanban.loading}
+        onAbrir={setPropostaAberta}
         onMover={async (id, status) => {
           let motivo: string | null = null;
           if (status === 'perdida') {
@@ -166,6 +170,168 @@ export default function FreelaScreen() {
           }
         }}
       />
+
+      {propostaAberta && (
+        <PropostaModal
+          item={propostaAberta}
+          onClose={() => setPropostaAberta(null)}
+          onMudou={refetchTudo}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Modal de detalhe/edição da proposta (+ redator IA) ────────────
+
+function PropostaModal({
+  item,
+  onClose,
+  onMudou,
+}: {
+  item: FreelaKanbanItem;
+  onClose: () => void;
+  onMudou: () => void;
+}) {
+  const { proposta, loading, refetch } = useFreelaProposta(item.id);
+  const acoes = useFreelaActions();
+
+  const [texto, setTexto] = useState<string | null>(null);
+  const [prazo, setPrazo] = useState<string | null>(null);
+  const [instrucoes, setInstrucoes] = useState('');
+  const [copiado, setCopiado] = useState(false);
+
+  // valores efetivos: o que foi editado, senão o que veio do servidor
+  const textoEf = texto ?? proposta?.texto_enviado ?? '';
+  const prazoEf = prazo ?? proposta?.prazo_proposto ?? '';
+
+  async function redigir() {
+    const r = await acoes.redigirProposta(item.id, instrucoes || null);
+    if (r) {
+      setTexto(r.redacao.texto);
+      setPrazo(r.redacao.prazo_sugerido ?? prazoEf);
+      void refetch();
+    }
+  }
+
+  async function salvar() {
+    await acoes.atualizarProposta(item.id, {
+      texto_enviado: textoEf,
+      prazo_proposto: prazoEf || null,
+    });
+    onMudou();
+    onClose();
+  }
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(textoEf);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1500);
+    } catch {
+      /* clipboard pode falhar em http; ignora */
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center overflow-y-auto p-4"
+      onClick={onClose}
+    >
+      <div
+        className="card w-full max-w-[680px] my-8 p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <div className="eyebrow mb-1">Proposta</div>
+            <h3 className="font-display font-semibold text-lg text-ink m-0 truncate">
+              {item.projeto_titulo}
+            </h3>
+            {item.cliente_nome && (
+              <div className="text-[13px] text-ink-mute">{item.cliente_nome}</div>
+            )}
+          </div>
+          <button type="button" className="text-ink-mute hover:text-ink text-xl leading-none" onClick={onClose}>
+            ×
+          </button>
+        </div>
+
+        {loading && !proposta ? (
+          <div className="text-sm text-ink-mute">Carregando…</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-3 mb-4 text-[13px]">
+              <Info titulo="Cotado" valor={proposta?.valor_cotado != null ? formatBRL(proposta.valor_cotado) : '—'} />
+              <Info titulo="Líquido" valor={proposta?.valor_liquido_estimado != null ? formatBRL(proposta.valor_liquido_estimado) : '—'} />
+              <label className="text-ink-soft">
+                Prazo
+                <input className="input mt-1" value={prazoEf} onChange={(e) => setPrazo(e.target.value)} />
+              </label>
+            </div>
+
+            {/* Destaques do seletor */}
+            {(proposta?.projetos_destacados?.length || proposta?.habilidades_destacadas?.length) ? (
+              <div className="mb-4 flex flex-wrap gap-1.5">
+                {proposta?.projetos_destacados?.map((p) => (
+                  <span key={p} className="text-[11px] px-2 py-0.5 rounded bg-brand-soft text-brand-ink">{p}</span>
+                ))}
+                {proposta?.habilidades_destacadas?.map((h) => (
+                  <span key={h} className="text-[11px] px-2 py-0.5 rounded bg-bg-alt text-ink-soft border border-line">{h}</span>
+                ))}
+              </div>
+            ) : null}
+
+            {/* Redator IA */}
+            <div className="rounded border border-line bg-bg-alt/50 p-3 mb-3">
+              <div className="text-[13px] font-medium text-ink mb-1.5">✍️ Rascunhar com IA</div>
+              <input
+                className="input mb-2"
+                placeholder="Instruções extra (opcional) — ex: cita teste no Safari iOS"
+                value={instrucoes}
+                onChange={(e) => setInstrucoes(e.target.value)}
+              />
+              <button type="button" className="btn-primary" onClick={redigir} disabled={acoes.loading}>
+                {acoes.loading ? 'Gerando…' : proposta?.texto_enviado ? 'Regerar rascunho' : 'Gerar rascunho'}
+              </button>
+              {acoes.error && <div className="text-[12px] text-red-600 mt-1.5">{acoes.error.message}</div>}
+            </div>
+
+            <label className="text-[13px] text-ink-soft">
+              Texto da proposta (revise antes de enviar na Workana)
+              <textarea
+                className="input mt-1 min-h-[260px] font-mono text-[13px]"
+                value={textoEf}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Gere com a IA ou escreva aqui…"
+              />
+            </label>
+
+            <div className="flex items-center justify-between mt-4">
+              <button type="button" className="btn-ghost text-[13px]" onClick={copiar} disabled={!textoEf}>
+                {copiado ? '✓ Copiado' : 'Copiar texto'}
+              </button>
+              <div className="flex gap-2">
+                <button type="button" className="btn-ghost" onClick={onClose}>
+                  Fechar
+                </button>
+                <button type="button" className="btn-primary" onClick={salvar} disabled={acoes.loading}>
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Info({ titulo, valor }: { titulo: string; valor: string }) {
+  return (
+    <div>
+      <div className="text-[11px] uppercase tracking-wide text-ink-mute">{titulo}</div>
+      <div className="text-ink text-[14px] mt-1">{valor}</div>
     </div>
   );
 }
@@ -541,11 +707,13 @@ function ProjetoCard({
 function Kanban({
   colunas,
   loading,
+  onAbrir,
   onMover,
   onRemover,
 }: {
   colunas: FreelaKanbanColuna[];
   loading: boolean;
+  onAbrir: (item: FreelaKanbanItem) => void;
   onMover: (id: string, status: FreelaStatus) => void;
   onRemover: (id: string) => void;
 }) {
@@ -573,9 +741,14 @@ function Kanban({
           <div className="flex flex-col gap-2">
             {col.items.map((it) => (
               <div key={it.id} className="card p-3">
-                <div className="text-[13px] font-medium text-ink truncate" title={it.projeto_titulo}>
+                <button
+                  type="button"
+                  className="text-[13px] font-medium text-ink truncate text-left w-full hover:text-brand"
+                  title="Abrir proposta"
+                  onClick={() => onAbrir(it)}
+                >
                   {it.projeto_titulo}
-                </div>
+                </button>
                 {it.cliente_nome && (
                   <div className="text-[11px] text-ink-mute truncate">{it.cliente_nome}</div>
                 )}
