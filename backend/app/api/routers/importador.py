@@ -2,6 +2,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from app.analyzers.boleto.extrator import BoletoSemChave
+from app.analyzers.gemini.client import GeminiSemChave
 from app.api.dependencies.financas import exige_editar, financas_usuario_id
 from app.api.schemas.financas import ImportarBoletoResponse
 from app.api.services.financas import importador_service
@@ -9,8 +11,17 @@ from app.api.services.financas.importador_service import ImportadorError
 
 router = APIRouter(prefix="/api/financas/importar", tags=["financas:importador"])
 
+_SEM_CHAVE_MSG = (
+    "A leitura de boleto por IA não está configurada (falta a GEMINI_API_KEY). "
+    "Lance o boleto manualmente por enquanto."
+)
+
 
 def _handle(e: Exception) -> HTTPException:
+    # Sem chave do Gemini não é erro do servidor — é configuração. Vira 400
+    # com mensagem clara em vez de um 500 cru.
+    if isinstance(e, (BoletoSemChave, GeminiSemChave)):
+        return HTTPException(status_code=400, detail=_SEM_CHAVE_MSG)
     if isinstance(e, ImportadorError):
         msg = str(e)
         status = 404 if "não encontrad" in msg.lower() else 400

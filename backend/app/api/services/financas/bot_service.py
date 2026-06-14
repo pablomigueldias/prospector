@@ -12,6 +12,8 @@ from decimal import Decimal, InvalidOperation
 from datetime import date
 from typing import Optional
 
+from app.analyzers.boleto.extrator import BoletoSemChave
+from app.analyzers.gemini.client import GeminiSemChave
 from app.api.schemas.financas import ContaCreate, DespesaCreate, ReceitaCreate
 from app.api.services.financas import (
     conta_service,
@@ -268,10 +270,18 @@ async def _arquivo(chat_id: str, usuario_id: str, msg: dict) -> dict:
     caminho = await asyncio.to_thread(tg.get_file_path, file_id)
     conteudo = await asyncio.to_thread(tg.download_file, caminho)
 
-    resp = await importador_service.importar_boleto(
-        usuario_id=usuario_id, conteudo=conteudo,
-        nome_original=nome, content_type=mime,
-    )
+    try:
+        resp = await importador_service.importar_boleto(
+            usuario_id=usuario_id, conteudo=conteudo,
+            nome_original=nome, content_type=mime,
+        )
+    except (BoletoSemChave, GeminiSemChave):
+        await _responder(
+            chat_id,
+            "🤖 A leitura por IA não está configurada agora (falta a chave do "
+            "Gemini). Lance pelo <code>/gasto</code> por enquanto.",
+        )
+        return {"ok": True, "tipo": "arquivo", "erro": "sem_chave"}
     prefixo = "✅" if resp.conferido else ("⚠️" if resp.success else "❌")
     await _responder(chat_id, f"{prefixo} {resp.mensagem}")
     return {"ok": True, "tipo": "arquivo", "conferido": resp.conferido,
