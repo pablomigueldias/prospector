@@ -15,6 +15,7 @@ import { formatBRL, formatMesAno } from '@/lib/format';
 import {
   ApiError,
   type Cartao,
+  type Compra,
   type Fatura,
   type FaturaExtrato,
   type ProjecaoFaturas,
@@ -346,8 +347,28 @@ function FaturaExtratoModal({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
   const [estornando, setEstornando] = useState<string | null>(null);
+  const [verCompra, setVerCompra] = useState<string | null>(null);
+  const [compraDet, setCompraDet] = useState<Compra | null>(null);
+  const [carregandoCompra, setCarregandoCompra] = useState(false);
 
   const paga = fatura.status === 'paga';
+
+  async function alternarParcelas(compraId: string) {
+    if (verCompra === compraId) {
+      setVerCompra(null);
+      return;
+    }
+    setVerCompra(compraId);
+    setCompraDet(null);
+    setCarregandoCompra(true);
+    try {
+      setCompraDet(await api.financasCompra(compraId));
+    } catch {
+      setCompraDet(null);
+    } finally {
+      setCarregandoCompra(false);
+    }
+  }
 
   async function estornar(compraId: string, descricao: string, totalParcelas: number) {
     const aviso =
@@ -404,38 +425,78 @@ function FaturaExtratoModal({
           ) : (
             <ul className="m-0 p-0 list-none flex flex-col divide-y divide-line-soft">
               {data.itens.map((it) => (
-                <li
-                  key={it.parcela_id}
-                  className="flex items-center justify-between gap-3 py-2 text-sm group"
-                >
-                  <div className="min-w-0">
-                    <div className="text-ink truncate">{it.descricao}</div>
-                    <div className="font-mono uppercase tracking-[0.08em] text-[10px] text-ink-mute">
-                      {it.numero}/{it.total_parcelas}
-                      {it.categoria_nome ? ` · ${it.categoria_nome}` : ''}
-                      {Number(it.valor_juros) > 0
-                        ? ` · juros ${formatBRL(it.valor_juros)}`
-                        : ''}
+                <li key={it.parcela_id} className="py-2 text-sm group">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-ink truncate">{it.descricao}</div>
+                      <div className="font-mono uppercase tracking-[0.08em] text-[10px] text-ink-mute">
+                        {it.numero}/{it.total_parcelas}
+                        {it.categoria_nome ? ` · ${it.categoria_nome}` : ''}
+                        {Number(it.valor_juros) > 0
+                          ? ` · juros ${formatBRL(it.valor_juros)}`
+                          : ''}
+                      </div>
                     </div>
+                    <span className="text-ink tabular-nums shrink-0">
+                      {formatBRL(it.valor)}
+                    </span>
+                    {it.total_parcelas > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => alternarParcelas(it.compra_id)}
+                        className="shrink-0 text-ink-faint hover:text-brand text-sm px-1 transition-colors"
+                        title="Ver todas as parcelas desta compra"
+                        aria-label="Ver parcelas da compra"
+                      >
+                        {verCompra === it.compra_id ? '▾' : 'ⓘ'}
+                      </button>
+                    )}
+                    {!paga && (
+                      <button
+                        type="button"
+                        onClick={() => estornar(it.compra_id, it.descricao, it.total_parcelas)}
+                        disabled={estornando === it.compra_id}
+                        className="shrink-0 text-ink-faint hover:text-red-600 text-sm px-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                        title={
+                          it.total_parcelas > 1
+                            ? 'Estornar a compra inteira (todas as parcelas)'
+                            : 'Estornar a compra'
+                        }
+                        aria-label="Estornar a compra"
+                      >
+                        {estornando === it.compra_id ? '…' : '✕'}
+                      </button>
+                    )}
                   </div>
-                  <span className="text-ink tabular-nums shrink-0">
-                    {formatBRL(it.valor)}
-                  </span>
-                  {!paga && (
-                    <button
-                      type="button"
-                      onClick={() => estornar(it.compra_id, it.descricao, it.total_parcelas)}
-                      disabled={estornando === it.compra_id}
-                      className="shrink-0 text-ink-faint hover:text-red-600 text-sm px-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-                      title={
-                        it.total_parcelas > 1
-                          ? 'Estornar a compra inteira (todas as parcelas)'
-                          : 'Estornar a compra'
-                      }
-                      aria-label="Estornar a compra"
-                    >
-                      {estornando === it.compra_id ? '…' : '✕'}
-                    </button>
+
+                  {verCompra === it.compra_id && (
+                    <div className="mt-2 ml-2 pl-3 border-l-2 border-line-soft">
+                      {carregandoCompra || !compraDet ? (
+                        <div className="h-10 animate-pulse" />
+                      ) : (
+                        <ul className="m-0 p-0 list-none flex flex-col gap-1">
+                          {compraDet.parcelas
+                            .slice()
+                            .sort((a, b) => a.numero - b.numero)
+                            .map((p) => (
+                              <li
+                                key={p.id}
+                                className="flex items-center justify-between text-[12px] text-ink-soft"
+                              >
+                                <span className="font-mono text-[10px] text-ink-mute">
+                                  {p.numero}/{p.total_parcelas} · vence {p.vencimento}
+                                </span>
+                                <span className="tabular-nums">
+                                  {formatBRL(p.valor)}
+                                  {Number(p.valor_juros) > 0
+                                    ? ` (juros ${formatBRL(p.valor_juros)})`
+                                    : ''}
+                                </span>
+                              </li>
+                            ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
                 </li>
               ))}
