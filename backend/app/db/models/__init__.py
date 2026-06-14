@@ -21,6 +21,12 @@ from app.db.models.pessoal.perfil_mestre import PerfilMestre
 from app.db.models.pessoal.vaga import Vaga
 from app.db.models.pessoal.candidatura_email import CandidaturaEmail
 
+# ── Agente Freelancer / Workana (tabelas pessoal_freela_*) ─────────
+from app.db.models.pessoal.freela.plataforma import Plataforma
+from app.db.models.pessoal.freela.cliente import Cliente as FreelaCliente
+from app.db.models.pessoal.freela.projeto import Projeto as FreelaProjeto
+from app.db.models.pessoal.freela.proposta import Proposta as FreelaProposta
+
 # ── Organizador Financeiro (schema financas) — domínio pessoal ─────
 from app.db.models.financas.conta import Conta
 from app.db.models.financas.categoria import Categoria
@@ -59,6 +65,11 @@ __all__ = [
     "PerfilMestre",
     "Vaga",
     "CandidaturaEmail",
+    # freela (Workana)
+    "Plataforma",
+    "FreelaCliente",
+    "FreelaProjeto",
+    "FreelaProposta",
     # financas
     "Conta",
     "Categoria",

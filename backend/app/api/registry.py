@@ -150,6 +150,25 @@ _AGENTS: List[Agent] = [
             "bot_telegram": True,
         },
     ),
+    Agent(
+        slug="freela",
+        name="Freela",
+        description=(
+            "Copiloto de propostas freelancer (Workana): você cola o projeto, "
+            "a IA analisa o fit, precifica embutindo a comissão e rascunha a "
+            "proposta ancorada nos seus projetos. Você revisa e envia na mão."
+        ),
+        icon="ti-briefcase",
+        status="active",
+        order=130,
+        category="Pessoal",
+        capabilities={
+            "crm_propostas": True,
+            "analisa_projeto": False,   # Fase 3 (IA)
+            "precifica": False,         # Fase 4
+            "rascunha_proposta": False,  # Fase 5 (IA)
+        },
+    ),
 ]
 
 
