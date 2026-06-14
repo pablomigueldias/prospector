@@ -8,7 +8,7 @@ ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *p
 > implemento; o que entra pra valer sai daqui pro `docs/FREELA_FEITO.md`.
 > O plano-mãe é o `docs/Workana.md`; o que já está pronto, o `FREELA_FEITO.md`.
 
-Última revisão: **2026-06-14** (após Fases 1, 2 e 6 — backend + tela).
+Última revisão: **2026-06-14** (após Fases 1, 2, 6 e 3 — backend + tela + analisador IA).
 
 ---
 
@@ -28,15 +28,15 @@ ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *p
 
 ## 2. Inteligência / IA (Fases 3 e 5)
 
-> O esqueleto dos analyzers ainda não existe (`app/analyzers/freela/`). Cada um
-> = `prompt_builder.py` + `parser.py`, chamando `llm_provider.gerar_texto()`.
+> O esqueleto dos analyzers já existe (`app/analyzers/freela/analisador/`). O
+> redator/seletor seguem o mesmo molde: `prompt_builder.py` + `parser.py`,
+> chamando `llm_provider.gerar_texto()`. O analisador (Fase 3) já está pronto.
 
-- [ ] 🔴 **Analisador de projeto (Fase 3)** — texto colado → `analise_json`:
-  requisitos, **fit_score** (0–100) contra o perfil-mestre, **red flags**
-  (orçamento incompatível, cliente sem pagamento verificado, muito concorrido),
-  sinais do cliente e ganchos. Já tem `POST /projetos/{id}/analisar` previsto
-  (capability `analisa_projeto` no registry está `False`).
-- [ ] 🟡 **Redator de proposta (Fase 5)** — rascunho ancorado no `perfil-mestre`
+- [x] ✅ **Analisador de projeto (Fase 3)** — FEITO 2026-06-14: `POST
+  /projetos/{id}/analisar` → `analise_json` (fit_score, recomendação, red flags,
+  sinais do cliente, ganchos), botão na tela e fila ordenada por fit. Ver
+  FREELA_FEITO.md.
+- [ ] 🔴 **Redator de proposta (Fase 5)** — rascunho ancorado no `perfil-mestre`
   (regra anti-mentira: reorganiza a verdade, nunca inventa), no tom do projeto,
   estrutura Workana (apresentação → plano → disponibilidade → prazo). PARA no
   rascunho.

@@ -53,8 +53,15 @@ fluxo "sugiro→você escolhe→eu movo pro feito": `docs/MELHORIAS_FREELA.md`
 `hooks/useFreela`, permissão `pessoal.ver`): métricas, **precificador
 interativo**, **fila de oportunidades** (colar projeto + criar proposta inline)
 e **Kanban** (mover status por select, remover). Typecheck e `npm run build`
-verdes. O agente agora é **usável pela tela**, não só pelo Swagger. Falta a IA:
-Fase 3 (analisador — fit score/red flags) e Fase 5 (redator + seletor).
+verdes. O agente agora é **usável pela tela**, não só pelo Swagger.
+
+**Analisador de projeto (Fase 3 — IA) FEITO.** `POST /projetos/{id}/analisar`
+cruza o texto colado + sinais do cliente com o `perfil-mestre`
+(`app/analyzers/freela/analisador/`) e grava `analise_json` (fit_score,
+recomendação vale/talvez/evite, red flags, ganchos). Botão "Analisar" no card da
+fila; a fila reordena por fit. Anti-mentira nos ganchos. **Verificado com LLM
+real:** o exemplo WordPress do `Workana.md` deu fit 0 / "evite". **Falta a IA da
+Fase 5** (redator + seletor de proposta) — é o próximo de maior impacto.
 
 ---
 

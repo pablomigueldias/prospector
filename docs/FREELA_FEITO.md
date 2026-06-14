@@ -74,10 +74,26 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
 
 > A partir daqui o agente é **usável pela tela** (não só Swagger). Falta a IA.
 
+## Fase 3 — Analisador de projeto (IA)
+
+- ✅ **`POST /projetos/{id}/analisar`** (2026-06-14) — cruza o texto colado +
+  sinais do cliente com o `perfil-mestre` via `llm_provider` (Gemini→Groq→
+  Ollama) e grava `analise_json`: `fit_score` (0–100), `recomendacao`
+  (vale/talvez/evite), `veredito`, `requisitos`, `stack`, `red_flags`,
+  `sinais_cliente` e `ganchos`. Analyzers em `app/analyzers/freela/analisador/`
+  (prompt_builder + parser). Protege proposta escassa: diz onde vale gastar bala.
+- ✅ **Regra anti-mentira** — `ganchos` só com o que ESTÁ no perfil (nada
+  inventado), igual ao agente de candidatura.
+- ✅ **Na tela** — botão "Analisar"/"Reanalisar" no card do projeto mostra a
+  recomendação colorida + veredito + red flags + ganchos; a fila reordena por
+  fit. Capabilities `analisa_projeto`/`precifica` ligadas no registry.
+- ✅ **Verificado com LLM real** — exemplo WordPress/Salient do `Workana.md`
+  (R$1.300–2.500, 64 propostas) retornou **fit 0 / "evite"** com red flags
+  certeiras e ganchos vazios — exatamente o esperado.
+
 ---
 
 ## Ainda NÃO feito (resumo — detalhe e prioridade em MELHORIAS_FREELA.md)
 
-- Fase 3 (Analisador de projeto — fit score/red flags), Fase 5 (Redator +
-  Seletor com IA), Fase 7 (segunda plataforma) e refinos de CRM (atualizar
-  `ja_me_pagou_usd` ao fechar, limite de propostas).
+- Fase 5 (Redator + Seletor com IA), Fase 7 (segunda plataforma) e refinos de
+  CRM (atualizar `ja_me_pagou_usd` ao fechar, limite de propostas).
