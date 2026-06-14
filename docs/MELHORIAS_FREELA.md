@@ -8,10 +8,94 @@ ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *p
 > implemento; o que entra pra valer sai daqui pro `docs/FREELA_FEITO.md`.
 > O plano-mãe é o `docs/Workana.md`; o que já está pronto, o `FREELA_FEITO.md`.
 
-Última revisão: **2026-06-14** (Fases 1, 2, 3, 5 e 6 — o copiloto está completo).
-Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso, as
-**🚀 Alavancas de desempenho (§7–§10)** — features que mexem no resultado
-(fechar mais, cobrar melhor, não perder dinheiro). Comece por elas.
+Última revisão: **2026-06-14** (Fases 1, 2, 3, 5 e 6 + 9 alavancas §7–§10).
+**👉 Foco AGORA: §0 — landar o 1º cliente** (ver abaixo). As §7–§10 já feitas
+rendem mais *depois* que você começa a fechar; o gargalo de hoje é outro.
+
+---
+
+# 🎯 §0. FASE ATUAL — muitas propostas, ZERO cliente ainda (cold start)
+
+> **Contexto real (2026-06-14):** o Pablo ainda não fechou nenhum projeto.
+> Está mandando várias propostas pra cravar o **primeiro cliente**. Aqui o
+> cliente não tem como te julgar por reputação (você não tem nota) — então a
+> **proposta** e o **perfil** são 100% do que decide. A métrica que importa
+> nesta fase é **TAXA DE RESPOSTA**, não de fechamento. Esta seção é a
+> prioridade; as alavancas §7–§10 (negociação, cliente recorrente, forecast de
+> fechado, pedir avaliação) só pagam *depois* do 1º cliente.
+
+**O problema central do cold start:** sem avaliações, o cliente desconfia. Tudo
+abaixo ataca isso — ou ajudando a *escolher onde gastar a proposta escassa*, ou
+*compensando a falta de reputação com prova externa e proposta impecável*, ou
+*medindo o que faz o cliente responder* (pra você melhorar rápido com pouco dado).
+
+### A) Escrever a proposta que vence sem reputação
+
+- [ ] 🔴 **Modo "cold start" no redator.** O redator deve, enquanto você tem 0
+  avaliações, **compensar a falta de nota**: (1) puxar prova EXTERNA do perfil —
+  **link do GitHub, portfólio e do projeto no ar** (você já tem isso no
+  `Perfil-Freelancer.md`); (2) oferecer **redução de risco pro cliente**
+  (entrega em etapas/marcos, "só aprova e paga ao ver funcionando", mini-escopo
+  pago de teste); (3) tom confiante sem mencionar que é "iniciante". É a maior
+  alavanca da fase. *(Hoje o redator ancora no perfil, mas não trata o cold
+  start explicitamente nem injeta os links.)*
+- [ ] 🔴 **Checklist anti-genérico antes de enviar (gate de qualidade).** Um
+  passo de IA que, no rascunho pronto, confere e pontua: cita um **detalhe real**
+  do projeto? propõe um **plano em passos**? tem **prazo**? tem **prova/link**?
+  evita clichê ("sou apaixonado por...")? Mostra um selo "pronta / fraca" + o que
+  faltou. Como proposta é escassa, **nenhuma sai genérica**. *(Era §8 🟢; sobe
+  pra 🔴 nesta fase.)*
+- [ ] 🟡 **Completude do perfil puxa a qualidade.** O redator fica MUITO melhor
+  com `tom_escrita`, `experiencias` e `o_que_procuro` preenchidos — hoje vazios.
+  Um aviso na tela ("seu perfil está 60% — preencher tom e experiências melhora
+  todas as propostas") + atalho pro Perfil Mestre.
+
+### B) Escolher onde gastar a proposta (ela é escassa)
+
+- [ ] 🔴 **Velocidade — "projeto fresco" em destaque.** (já estava em §7) Em
+  projeto com 64 propostas, o cliente lê as primeiras. Guardar a **data de
+  publicação** (você informa ao colar) e marcar/ordenar a fila por "novo +
+  pouco concorrido". Responder cedo é uma das poucas vantagens que independem de
+  reputação.
+- [ ] 🔴 **Detector de "bom 1º projeto".** Um selo pra projetos que são a melhor
+  aposta pra cravar a 1ª nota: **escopo pequeno**, **cliente com pagamento
+  verificado**, **poucas propostas**, **dentro do seu núcleo** e **orçamento
+  saudável**. Estratégia clássica: aceitar 1–2 menores pra destravar reputação —
+  a ferramenta aponta quais.
+- [ ] 🟡 **Contador de propostas do período (recurso escasso).** O plano grátis
+  dá poucas propostas/período. Registrar quantas você mandou e quantas restam,
+  e alertar — pra não gastar bala em projeto de fit baixo. (cf. §3 "limite de
+  propostas")
+
+### C) Medir o que FAZ o cliente responder (aprender rápido)
+
+- [ ] 🔴 **Métricas da fase = TAXA DE RESPOSTA, não fechamento.** O painel hoje
+  destaca "líquido fechado / forecast" — irrelevante com 0 cliente. Trocar o
+  foco (ou um modo "cold start") pra: **propostas enviadas**, **taxa de
+  resposta**, **tempo até resposta** e **quantas viraram conversa**. É o que diz
+  se você está melhorando AGORA.
+- [ ] 🟡 **Resposta por ângulo de abertura (A/B real).** Você já gera 2–3
+  aberturas (A/B). Registrar **qual ângulo você usou** em cada proposta e cruzar
+  com quem **respondeu** → descobre que tipo de abertura converte (direta / com
+  prova / com pergunta). Aprendizado com pouquíssimo dado.
+- [ ] 🟡 **Resposta por categoria/stack.** (cf. §7 win-rate, mas com RESPOSTA)
+  Taxa de resposta por stack do projeto → mostra onde vale insistir (provável:
+  React/FastAPI/IA, o seu núcleo) e onde parar de gastar proposta.
+
+### D) Credibilidade fora da ferramenta (o que mais trava o 1º sim)
+
+- [ ] 🟡 **Checklist do "círculo de credibilidade".** (do `Workana.md` §7) Um
+  lembrete/checklist na tela: perfil Workana com headline específica + foto +
+  **identidade verificada**; **portfólio na Workana** com os mesmos projetos do
+  `Perfil-Freelancer.md` (print + problema→solução→resultado); GitHub com repos
+  pinados; tudo coerente com o LinkedIn. Sem isso, a melhor proposta ainda
+  esbarra na desconfiança.
+
+> **Recomendação de ordem:** comece por **A** (modo cold start + checklist
+> anti-genérico) e pelo **C** (painel focado em resposta) — juntos, fazem cada
+> proposta valer mais e te mostram se está melhorando. Depois **B** (velocidade
+> + bom 1º projeto) pra escolher melhor onde gastar. **D** é fora do código, mas
+> destrava muito o 1º sim.
 
 ---
 
