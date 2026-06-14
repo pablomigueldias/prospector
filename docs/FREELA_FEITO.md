@@ -54,11 +54,30 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
 > **Verificado:** smoke test do service (round-trip no banco) verde; API sobe e
 > expõe as 20 rotas em `/api/pessoal/freela/*` (401 sem auth, como esperado).
 
+## Fase 6 — Tela do agente (painel)
+
+- ✅ **`<FreelaScreen>` plugada no `[slug].tsx`** (2026-06-14) — slice de front
+  completo: `lib/types/freela.ts`, `lib/api/freela.ts`, `hooks/useFreela.ts`,
+  `components/FreelaScreen.tsx`; permissão `pessoal.ver` em `lib/permissions.ts`.
+  Reusa o design system (`StatCard`, `.card`, `.btn-*`, `.input`, tokens OKLCH).
+- ✅ **Métricas no topo** — `StatCard` de propostas, taxa de resposta, taxa de
+  fechamento e líquido fechado (`GET /metricas`).
+- ✅ **Precificador interativo** (Fase 4 no front) — "quero receber R$X" +
+  cliente (ou US$ já pago) + horas/valor-hora → mostra comissão, valor a cotar,
+  cliente paga, líquido/hora e alerta de lance mínimo (`POST /precificar`).
+- ✅ **Fila de oportunidades** — colar projeto (form com orçamento/nº propostas)
+  e lista ordenada por fit; cada card cria proposta inline (cotar/líquido/horas/
+  prazo) ou é removido.
+- ✅ **Kanban de propostas** — colunas pelos 7 status; mover por `select`
+  (1 clique → `POST /status`, pede motivo se "perdida"), valor + dias desde o
+  envio, remover. **Verificado:** typecheck e `npm run build` verdes.
+
+> A partir daqui o agente é **usável pela tela** (não só Swagger). Falta a IA.
+
 ---
 
 ## Ainda NÃO feito (resumo — detalhe e prioridade em MELHORIAS_FREELA.md)
 
-- Fase 3 (Analisador), Fase 4 (widget de precificação no front), Fase 5
-  (Redator + Seletor com IA), Fase 6 (tela/painel Kanban no Next), Fase 7
-  (segunda plataforma). **A tela ainda não existe** — hoje o agente é usável só
-  via API/Swagger.
+- Fase 3 (Analisador de projeto — fit score/red flags), Fase 5 (Redator +
+  Seletor com IA), Fase 7 (segunda plataforma) e refinos de CRM (atualizar
+  `ja_me_pagou_usd` ao fechar, limite de propostas).

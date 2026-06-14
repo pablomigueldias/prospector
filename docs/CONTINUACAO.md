@@ -46,8 +46,15 @@ agente no `registry.py` (slug=`freela`, order=130), e API `/api/pessoal/freela`
 Workana em `scripts/seed_freela.py`. Smoke test do service bate com a tabela do
 `Workana.md`. **Pendências e próximos passos** vivem agora em dois docs novos no
 fluxo "sugiro→você escolhe→eu movo pro feito": `docs/MELHORIAS_FREELA.md`
-(backlog priorizado) e `docs/FREELA_FEITO.md` (entregue). **Falta a tela** (Fase
-6) e as fases de IA (3/5) — hoje o agente só roda via Swagger.
+(backlog priorizado) e `docs/FREELA_FEITO.md` (entregue).
+
+**Tela do `freela` construída — Fase 6 FEITA.** `<FreelaScreen>` plugada no
+`[slug].tsx` (slice de front: `lib/types/freela`, `lib/api/freela`,
+`hooks/useFreela`, permissão `pessoal.ver`): métricas, **precificador
+interativo**, **fila de oportunidades** (colar projeto + criar proposta inline)
+e **Kanban** (mover status por select, remover). Typecheck e `npm run build`
+verdes. O agente agora é **usável pela tela**, não só pelo Swagger. Falta a IA:
+Fase 3 (analisador — fit score/red flags) e Fase 5 (redator + seletor).
 
 ---
 

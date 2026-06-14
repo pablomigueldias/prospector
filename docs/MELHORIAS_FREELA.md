@@ -8,25 +8,23 @@ ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *p
 > implemento; o que entra pra valer sai daqui pro `docs/FREELA_FEITO.md`.
 > O plano-mãe é o `docs/Workana.md`; o que já está pronto, o `FREELA_FEITO.md`.
 
-Última revisão: **2026-06-14** (após Fase 1 + Fase 2).
+Última revisão: **2026-06-14** (após Fases 1, 2 e 6 — backend + tela).
 
 ---
 
-## 1. Tela / Painel (Fase 6) — hoje o maior buraco
+## 1. Tela / Painel (Fase 6) — ✅ FEITO (ver FREELA_FEITO.md)
 
-> O backend já faz tudo; **não há interface**. Sem tela, o agente só roda via
-> Swagger. Isto é o que mais destrava uso no dia a dia.
+> A tela existe: métricas + precificador + fila de oportunidades + Kanban.
+> O que sobrou aqui são refinamentos, não bloqueadores.
 
-- [ ] 🔴 **Tela do agente** — `pages/agents/[slug].tsx` (case `freela`) +
-  `<FreelaScreen>`, reusando o design system (`StatCard`, `.card`, `.btn-*`).
-- [ ] 🔴 **Board Kanban** — colunas = status; cards com cliente, valor cotado,
-  líquido e dias desde o envio; **mover com 1 clique** (chama `/status`).
-- [ ] 🔴 **Fila de oportunidades** — lista de projetos ordenada por fit, com o
-  botão "colar projeto" (textarea → `POST /projetos`).
-- [ ] 🟡 **Métricas no topo** — `StatCard` pra taxa de resposta/fechamento,
-  líquido total e ticket médio (`GET /metricas`).
-- [ ] 🟡 **Widget de precificação** (Fase 4 no front) — campo "quero receber X"
-  → mostra valor a cotar / cliente paga / alerta de lance mínimo (`/precificar`).
+- [x] ✅ Tela do agente, Board Kanban, Fila de oportunidades, Métricas e Widget
+  de precificação — todos entregues em 2026-06-14.
+- [ ] 🟢 **Drag-and-drop no Kanban** — hoje move por `select` (1 clique, sem
+  dep). Arrastar carta entre colunas é mais gostoso, mas pede uma lib (dnd-kit).
+- [ ] 🟢 **Detalhe/edição da proposta** — abrir a proposta pra editar texto,
+  destaques e valores (hoje só cria com os campos do card e move status).
+- [ ] 🟢 **CRUD de cliente na tela** — hoje cria cliente só via API; a tela só
+  seleciona os existentes (no precificador e no form de projeto).
 
 ## 2. Inteligência / IA (Fases 3 e 5)
 
