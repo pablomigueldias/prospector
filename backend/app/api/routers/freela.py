@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies.auth import require_permission
 from app.api.schemas.freela import (
+    AnalisarProjetoResponse,
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
@@ -173,6 +174,15 @@ async def remover_projeto(projeto_id: str) -> None:
 async def propostas_do_projeto(projeto_id: str) -> List[PropostaResponse]:
     try:
         return await freela_service.listar_propostas_do_projeto(projeto_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/projetos/{projeto_id}/analisar", response_model=AnalisarProjetoResponse,
+             summary="Analisa o projeto (fit + red flags + ganchos) com IA")
+async def analisar_projeto(projeto_id: str) -> AnalisarProjetoResponse:
+    try:
+        return await freela_service.analisar_projeto(projeto_id)
     except Exception as e:
         raise _handle(e)
 

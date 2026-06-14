@@ -11,7 +11,14 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
+from app.analyzers.freela.analisador.parser import parse_resposta as parse_analise
+from app.analyzers.freela.analisador.prompt_builder import (
+    construir_prompt as construir_prompt_analise,
+)
+from app.analyzers.llm_provider import gerar_texto
 from app.api.schemas.freela import (
+    AnalisarProjetoResponse,
+    AnaliseFreela,
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
@@ -38,7 +45,11 @@ from app.db.models.pessoal.freela.projeto import Projeto
 from app.db.models.pessoal.freela.proposta import STATUS_PROPOSTA, Proposta
 from app.db.models.pipeline_event import PipelineEvent
 from app.db.session import get_session
+from app.api.services.pessoal.perfil_service import get_perfil
 from app.repositories.pessoal.freela_repository import FreelaRepository
+from app.utils.logger import get_logger
+
+logger = get_logger()
 
 # Faixas de comissão padrão (Workana) caso a plataforma não tenha config.
 _COMISSAO_PADRAO = [
@@ -274,6 +285,73 @@ async def deletar_projeto(projeto_id: str) -> None:
         ok = await FreelaRepository(session).delete_projeto(_uuid(projeto_id))
         if not ok:
             raise FreelaError("Projeto não encontrado.")
+
+
+# ── IA: análise de projeto (Fase 3) ──────────────────────────────
+
+def _chamar_llm(prompt: str, *, operacao: str) -> str:
+    try:
+        return gerar_texto(prompt, json_mode=True, agente="freela", operacao=operacao)
+    except Exception as e:
+        logger.error("freela: falha na LLM (%s): %s", operacao, e)
+        raise FreelaError(
+            "Não consegui falar com o modelo de IA. "
+            "Verifique a conexão/configuração e tente de novo."
+        )
+
+
+def _sinais_cliente_texto(cliente: Optional[Cliente]) -> Optional[str]:
+    if cliente is None:
+        return None
+    partes = []
+    partes.append("pagamento verificado" if cliente.pagamento_verificado else "pagamento NÃO verificado")
+    if cliente.rating is not None:
+        partes.append(f"rating {cliente.rating}")
+    if cliente.projetos_pagos is not None:
+        partes.append(f"{cliente.projetos_pagos} projetos pagos")
+    if float(cliente.ja_me_pagou_usd) > 0:
+        partes.append(f"já me pagou US$ {cliente.ja_me_pagou_usd} (recorrente)")
+    return "; ".join(partes)
+
+
+async def analisar_projeto(projeto_id: str) -> AnalisarProjetoResponse:
+    perfil = await get_perfil()
+    if perfil is None:
+        raise FreelaError(
+            "Cadastre seu Perfil Mestre antes de analisar projetos — "
+            "a análise cruza o projeto com quem você é."
+        )
+
+    pid = _uuid(projeto_id)
+    async with get_session() as session:
+        repo = FreelaRepository(session)
+        projeto = await repo.get_projeto(pid)
+        if projeto is None:
+            raise FreelaError("Projeto não encontrado.")
+
+        faixa = None
+        if projeto.faixa_orcamento_min is not None or projeto.faixa_orcamento_max is not None:
+            faixa = f"R$ {projeto.faixa_orcamento_min or '?'} – R$ {projeto.faixa_orcamento_max or '?'}"
+        cliente = await repo.get_cliente(projeto.cliente_id) if projeto.cliente_id else None
+
+        prompt = construir_prompt_analise(
+            projeto.descricao,
+            perfil,
+            titulo=projeto.titulo,
+            faixa_orcamento=faixa,
+            n_propostas=projeto.n_propostas_concorrentes,
+            n_interessados=projeto.n_interessados,
+            sinais_cliente=_sinais_cliente_texto(cliente),
+        )
+        texto = _chamar_llm(prompt, operacao="analisar")
+
+        analise = parse_analise(texto)
+        if analise is None:
+            raise FreelaError("A IA não retornou uma análise válida. Tente de novo.")
+
+        await repo.salvar_analise_projeto(pid, analise.model_dump(mode="json"))
+
+    return AnalisarProjetoResponse(projeto_id=projeto_id, analise=analise)
 
 
 # ══════════════════════════════════════════════════════════════════

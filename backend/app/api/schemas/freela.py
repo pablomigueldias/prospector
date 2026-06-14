@@ -223,3 +223,23 @@ class PrecificarResponse(BaseModel):
     abaixo_do_lance_minimo: bool = False
     liquido_por_hora: Optional[float] = None
     alerta: Optional[str] = None  # ex: "abaixo do seu valor-hora alvo"
+
+
+# ══════════════════════════════════════════════════════════════════
+# Analisador de projeto (Fase 3 — IA) → grava em projeto.analise_json
+# ══════════════════════════════════════════════════════════════════
+
+class AnaliseFreela(BaseModel):
+    fit_score: int = 0                 # 0-100: é a sua praia?
+    recomendacao: Optional[str] = None  # vale / talvez / evite
+    veredito: Optional[str] = None      # 1 frase: gasto proposta aqui?
+    requisitos: List[str] = Field(default_factory=list)
+    stack: List[str] = Field(default_factory=list)
+    red_flags: List[str] = Field(default_factory=list)
+    sinais_cliente: List[str] = Field(default_factory=list)
+    ganchos: List[str] = Field(default_factory=list)  # o que do perfil conversa
+
+
+class AnalisarProjetoResponse(BaseModel):
+    projeto_id: str
+    analise: AnaliseFreela
