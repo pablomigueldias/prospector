@@ -114,8 +114,16 @@ app/api/services/financas/  transacao/  lancar.py  pagar.py  listar.py  transfer
    linhas (domínio único, mas acima do teto) — sub-dividir depois em
    `types/financas/` (conta / transacao / cartao / recorrencia / orcamento /
    resumo / boleto). (Alternativa de longo prazo: **gerar do OpenAPI**.)
-2. **`frontend/lib/api.ts` → `lib/api/<dominio>.ts`** com um `client.ts`
-   (`request`) compartilhado + barrel `api`.
+2. ✅ **`frontend/lib/api.ts` → `lib/api/<dominio>.ts`** *(feito 2026-06-14)* —
+   `client.ts` com o `request`/CSRF/timeout compartilhado + módulos
+   `core/prospector/outreach/pessoal/financas/auth.ts`, cada um exportando um
+   objeto (`coreApi`, `financasApi`, …). O `index.ts` compõe o `api` plano por
+   união (`{ ...coreApi, ...financasApi }`), então `api.financasContas(...)`
+   segue igual. **Paridade verificada:** 92 métodos antes = 92 depois (diff
+   vazio). typecheck + build verdes. *Gotcha de dev:* ao trocar um arquivo por
+   uma pasta de mesmo nome, reinicie o `next dev` com `.next` limpo **antes** de
+   subir (não apague `.next` com o server rodando — corrompe o cache e o dev
+   passa a procurar o arquivo velho).
 3. **Quebrar os 3 componentes-deus** (`CartoesSection`, `TransacoesSection`,
    `RecorrenciasSection`) em subcomponentes na pasta do domínio.
 4. **`schemas/financas.py` → pacote `schemas/financas/`** com `__init__`
