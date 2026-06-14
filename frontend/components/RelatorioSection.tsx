@@ -13,7 +13,8 @@ import {
 } from 'recharts';
 
 import { CategoriaDonut } from '@/components/CategoriaDonut';
-import { useRelatorio } from '@/hooks/useFinancas';
+import { useCategorias, useContas, useRelatorio } from '@/hooks/useFinancas';
+import { achatarCategorias } from '@/lib/categorias';
 import { formatBRL, formatMesAno } from '@/lib/format';
 import type { RelatorioMesItem } from '@/lib/types';
 
@@ -64,7 +65,17 @@ const PERIODOS = [3, 6, 12] as const;
 
 export function RelatorioSection({ ano, mes }: Props) {
   const [meses, setMeses] = useState<number>(6);
-  const { relatorio, loading } = useRelatorio(ano, mes, meses);
+  const [contaId, setContaId] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
+  const { relatorio, loading } = useRelatorio(ano, mes, meses, {
+    contaId: contaId || undefined,
+    categoriaId: categoriaId || undefined,
+  });
+
+  const { contas } = useContas(true);
+  const { arvore } = useCategorias();
+  const categoriasPlanas = useMemo(() => achatarCategorias(arvore), [arvore]);
+  const recortado = !!contaId || !!categoriaId;
 
   const dados = useMemo(
     () =>
@@ -118,6 +129,45 @@ export function RelatorioSection({ ano, mes }: Props) {
               </button>
             ))}
           </div>
+          {/* Recorte por conta / categoria */}
+          <select
+            className="input w-auto py-1 text-[12.5px]"
+            value={contaId}
+            onChange={(e) => setContaId(e.target.value)}
+            title="Recortar o relatório por conta"
+          >
+            <option value="">Conta: todas</option>
+            {contas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+          <select
+            className="input w-auto py-1 text-[12.5px]"
+            value={categoriaId}
+            onChange={(e) => setCategoriaId(e.target.value)}
+            title="Recortar o relatório por categoria"
+          >
+            <option value="">Categoria: todas</option>
+            {categoriasPlanas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {`${'  '.repeat(c.depth)}${c.nome}`}
+              </option>
+            ))}
+          </select>
+          {recortado && (
+            <button
+              type="button"
+              onClick={() => {
+                setContaId('');
+                setCategoriaId('');
+              }}
+              className="text-[12.5px] text-ink-mute hover:text-ink px-1"
+            >
+              limpar
+            </button>
+          )}
           <button
             type="button"
             onClick={() => relatorio && baixarCsv(relatorio.meses)}
@@ -134,7 +184,8 @@ export function RelatorioSection({ ano, mes }: Props) {
         <div className="card p-6 h-[320px] animate-pulse" />
       ) : !temDados ? (
         <div className="card p-6 text-center text-ink-soft text-sm">
-          Sem lançamentos nos últimos {meses} meses.
+          Sem lançamentos nos últimos {meses} meses
+          {recortado ? ' com esse recorte' : ''}.
         </div>
       ) : (
         <>

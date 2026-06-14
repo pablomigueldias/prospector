@@ -377,12 +377,14 @@ export const api = {
     return request<ResumoMes>(`/api/financas/resumo?${q}`, { timeoutMs: 10_000 });
   },
 
-  /** GET /api/financas/resumo/relatorio — série mês a mês + top categorias */
+  /** GET /api/financas/resumo/relatorio — série mês a mês + top categorias.
+   *  Recorte opcional por conta e/ou categoria. */
   financasRelatorio(
     usuarioId: string,
     ano: number,
     mes: number,
     meses = 6,
+    filtro?: { contaId?: string; categoriaId?: string },
   ): Promise<RelatorioResponse> {
     const q = new URLSearchParams({
       usuario_id: usuarioId,
@@ -390,6 +392,8 @@ export const api = {
       mes: String(mes),
       meses: String(meses),
     });
+    if (filtro?.contaId) q.set('conta_id', filtro.contaId);
+    if (filtro?.categoriaId) q.set('categoria_id', filtro.categoriaId);
     return request<RelatorioResponse>(`/api/financas/resumo/relatorio?${q}`, {
       timeoutMs: 10_000,
     });

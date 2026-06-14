@@ -23,10 +23,21 @@ export function useResumoMes(ano: number, mes: number) {
   return { ...result, resumo: result.data };
 }
 
-export function useRelatorio(ano: number, mes: number, meses = 6) {
+export function useRelatorio(
+  ano: number,
+  mes: number,
+  meses = 6,
+  filtro?: { contaId?: string; categoriaId?: string },
+) {
+  const contaId = filtro?.contaId ?? '';
+  const categoriaId = filtro?.categoriaId ?? '';
   const result = useFetch<RelatorioResponse>(
-    () => api.financasRelatorio(FINANCAS_USUARIO_ID, ano, mes, meses),
-    [ano, mes, meses],
+    () =>
+      api.financasRelatorio(FINANCAS_USUARIO_ID, ano, mes, meses, {
+        contaId: contaId || undefined,
+        categoriaId: categoriaId || undefined,
+      }),
+    [ano, mes, meses, contaId, categoriaId],
   );
   return { ...result, relatorio: result.data };
 }

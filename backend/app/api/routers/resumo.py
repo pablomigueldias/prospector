@@ -31,9 +31,14 @@ async def relatorio(
     ano: int,
     mes: int,
     meses: int = Query(6, ge=1, le=24, description="Quantos meses até o âncora"),
+    conta_id: str | None = Query(None, description="Recorte: só esta conta"),
+    categoria_id: str | None = Query(None, description="Recorte: só esta categoria"),
     usuario_id: str = Depends(financas_usuario_id),
 ) -> RelatorioResponse:
     try:
-        return await resumo_service.relatorio(usuario_id, ano, mes, meses)
+        return await resumo_service.relatorio(
+            usuario_id, ano, mes, meses,
+            conta_id=conta_id, categoria_id=categoria_id,
+        )
     except Exception as e:
         raise _handle(e)

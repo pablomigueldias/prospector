@@ -227,12 +227,41 @@ class TransacaoRepository:
         rows = await self.session.execute(stmt)
         return {tipo: Decimal(total) for tipo, total in rows.all()}
 
+    def _filtros_relatorio(
+        self,
+        conta_id: Optional[uuid.UUID],
+        categoria_id: Optional[uuid.UUID],
+    ) -> list:
+        """Condições extras opcionais do relatório (recorte por conta/categoria).
+        Conta usa EXISTS sobre os pagamentos (sem fanout de linhas em splits);
+        previstas sem pagamento ficam de fora do recorte por conta — o que é
+        correto, já que ainda não moveram nenhuma conta."""
+        extra: list = []
+        if categoria_id is not None:
+            extra.append(Transacao.categoria_id == categoria_id)
+        if conta_id is not None:
+            extra.append(
+                select(TransacaoPagamento.id)
+                .where(
+                    TransacaoPagamento.transacao_id == Transacao.id,
+                    TransacaoPagamento.conta_id == conta_id,
+                )
+                .exists()
+            )
+        return extra
+
     async def totais_por_mes(
-        self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date
+        self,
+        usuario_id: uuid.UUID,
+        inicio: date,
+        proximo_mes: date,
+        *,
+        conta_id: Optional[uuid.UUID] = None,
+        categoria_id: Optional[uuid.UUID] = None,
     ) -> List[Tuple[int, int, str, Decimal]]:
         """(ano, mes, tipo, total) por mês de competência no intervalo, pra
         montar a série do relatório. Meses sem lançamento não aparecem (o
-        service preenche zero)."""
+        service preenche zero). Aceita recorte por conta/categoria."""
         ano = func.extract("year", Transacao.data_competencia)
         mes = func.extract("month", Transacao.data_competencia)
         stmt = (
@@ -246,6 +275,7 @@ class TransacaoRepository:
                 Transacao.usuario_id == usuario_id,
                 Transacao.data_competencia >= inicio,
                 Transacao.data_competencia < proximo_mes,
+                *self._filtros_relatorio(conta_id, categoria_id),
             )
             .group_by("ano", "mes", Transacao.tipo)
         )
@@ -255,10 +285,17 @@ class TransacaoRepository:
         ]
 
     async def despesas_por_categoria(
-        self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date
+        self,
+        usuario_id: uuid.UUID,
+        inicio: date,
+        proximo_mes: date,
+        *,
+        conta_id: Optional[uuid.UUID] = None,
+        categoria_id: Optional[uuid.UUID] = None,
     ) -> List[Tuple[Optional[uuid.UUID], Optional[str], Decimal]]:
         """(categoria_id, categoria_nome, total) das despesas do mês,
-        maior total primeiro. categoria_id null = sem categoria."""
+        maior total primeiro. categoria_id null = sem categoria. Aceita
+        recorte por conta/categoria."""
         soma = func.coalesce(func.sum(Transacao.valor_total), 0)
         stmt = (
             select(Transacao.categoria_id, Categoria.nome, soma.label("total"))
@@ -269,6 +306,7 @@ class TransacaoRepository:
                 Transacao.tipo == "despesa",
                 Transacao.data_competencia >= inicio,
                 Transacao.data_competencia < proximo_mes,
+                *self._filtros_relatorio(conta_id, categoria_id),
             )
             .group_by(Transacao.categoria_id, Categoria.nome)
             .order_by(soma.desc())

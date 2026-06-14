@@ -71,15 +71,24 @@ def _passo_meses(ano: int, mes: int, delta: int) -> tuple[int, int]:
 
 
 async def relatorio(
-    usuario_id: str, ano: int, mes: int, meses: int = 6
+    usuario_id: str,
+    ano: int,
+    mes: int,
+    meses: int = 6,
+    *,
+    conta_id: str | None = None,
+    categoria_id: str | None = None,
 ) -> RelatorioResponse:
     """Série dos últimos ``meses`` (terminando em ano/mes): receita/despesa/saldo
     por mês, top categorias do período e totais consolidados. Meses sem
-    lançamento entram zerados pra a série não ter buracos."""
+    lançamento entram zerados pra a série não ter buracos. Aceita recorte
+    opcional por conta (ex.: "só Nubank") ou categoria (ex.: "só Mercado")."""
     if not 1 <= mes <= 12:
         raise ResumoError(f"Mês inválido: {mes}. Use 1..12.")
     meses = max(1, min(int(meses), 24))
     uid = _uuid(usuario_id, campo="usuario_id")
+    cid = _uuid(conta_id, campo="conta_id") if conta_id else None
+    catid = _uuid(categoria_id, campo="categoria_id") if categoria_id else None
 
     # Janela [inicio, proximo): do 1º dia do mês mais antigo até o 1º do mês
     # seguinte ao âncora.
@@ -90,8 +99,12 @@ async def relatorio(
 
     async with get_session() as session:
         repo = TransacaoRepository(session)
-        linhas = await repo.totais_por_mes(uid, inicio, proximo)
-        por_cat = await repo.despesas_por_categoria(uid, inicio, proximo)
+        linhas = await repo.totais_por_mes(
+            uid, inicio, proximo, conta_id=cid, categoria_id=catid
+        )
+        por_cat = await repo.despesas_por_categoria(
+            uid, inicio, proximo, conta_id=cid, categoria_id=catid
+        )
 
     # Indexa (ano, mes) → {receita, despesa}.
     por_mes: dict[tuple[int, int], dict[str, Decimal]] = {}
