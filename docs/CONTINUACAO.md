@@ -44,6 +44,27 @@ que foi feito ficou aqui.)*
 Pendência herdada (não bloqueante): sub-dividir o `lib/types/financas.ts`
 (~620 linhas) e rodar o E2E do Playwright (precisa `npx playwright install chromium`).
 
+**Tudo acima + os 2 itens abaixo estão na `main`, no GitHub E DEPLOYADOS** (commit
+`595540f`, site no ar — health 200).
+
+**Bugfix — "Contas a pagar / Transação não encontrada":** ao clicar Pagar/Editar/↻
+numa conta a pagar que já saiu da lista (paga/removida noutra aba, no bot, ou
+prevista de cartão antiga limpa pela recorrência forma-aware), dava 404 e um
+banner vermelho. **Não era o refactor** (`get_transacao` intacto; itens listados
+resolvem o detalhe). Fix de robustez: o painel trata 404 numa ação por linha
+recarregando a lista + aviso leve (`ContasAPagarSection.tsx`, helper `aoFalhar`).
+
+**Melhoria §8 — auto-categoria que aprende:** no form de lançamento (web), ao sair
+da descrição o sistema pré-preenche a categoria com a da última despesa de mesma
+descrição (aviso "categoria reaproveitada", trocável). Backend
+`transacao_service.sugerir_categoria` + `GET /api/financas/transacoes/sugestao-categoria`
+(antes de `/{id}`); front `api.financasSugestaoCategoria` + `onBlur` no
+`LancamentoForm`; smoke `test_financas_categoria_sugestao_api` (5 casos).
+
+**Próximo melhor passo (§8, o salto pra copiloto):** perguntas em linguagem
+natural sobre os dados (tool-calling sobre resumo/transações) — no dashboard e no
+bot. Depois: expor a auto-categoria no bot, detector de assinaturas, insights no digest.
+
 ---
 
 ## 0. Onde paramos — na `main` E DEPLOYADO no VPS ✅ (2026-06-14)
