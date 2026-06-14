@@ -882,6 +882,11 @@ export interface ProjecaoFaturas {
   total: string;
 }
 
+export interface CompraCategoriaSugestao {
+  categoria_id?: string | null;
+  categoria_nome?: string | null;
+}
+
 export interface CompraCreateInput {
   cartao_id: string;
   descricao: string;

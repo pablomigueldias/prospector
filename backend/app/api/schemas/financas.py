@@ -435,6 +435,13 @@ class CompraResponse(BaseModel):
     updated_at: Optional[str] = None
 
 
+class CompraCategoriaSugestao(BaseModel):
+    """Categoria da última compra com a mesma descrição (auto-categoria do
+    cartão). Vem nula quando não há histórico."""
+    categoria_id: Optional[str] = None
+    categoria_nome: Optional[str] = None
+
+
 # ══════════════════════════════════════════════════════════════════
 # Recorrências (despesas/receitas fixas)
 # ══════════════════════════════════════════════════════════════════

@@ -17,6 +17,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.schemas.financas import (
     BoletoParceladoCreate,
+    CompraCategoriaSugestao,
     CompraParceladaCreate,
     CompraResponse,
     ParcelaResponse,
@@ -326,6 +327,32 @@ async def get_compra(compra_id: str) -> CompraResponse:
         if compra is None:
             raise CompraError("Compra não encontrada.")
         return _to_response(compra)
+
+
+async def sugerir_categoria(
+    usuario_id: str, descricao: str
+) -> CompraCategoriaSugestao:
+    """Categoria usada na última compra com a mesma descrição (reaproveita pra
+    auto-categorizar compras que se repetem). Nula quando não há histórico."""
+    vazia = CompraCategoriaSugestao(categoria_id=None, categoria_nome=None)
+    if not descricao or not descricao.strip():
+        return vazia
+    uid = _uuid(usuario_id, campo="usuario_id")
+    async with get_session() as session:
+        row = (await session.execute(
+            select(Compra.categoria_id, Categoria.nome)
+            .join(Categoria, Categoria.id == Compra.categoria_id)
+            .where(
+                Compra.usuario_id == uid,
+                func.lower(Compra.descricao) == descricao.strip().lower(),
+                Compra.categoria_id.is_not(None),
+            )
+            .order_by(Compra.created_at.desc())
+            .limit(1)
+        )).first()
+    if row is None:
+        return vazia
+    return CompraCategoriaSugestao(categoria_id=str(row[0]), categoria_nome=row[1])
 
 
 async def excluir_compra(compra_id: str, *, usuario_id: str) -> None:

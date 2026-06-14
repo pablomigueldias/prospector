@@ -61,6 +61,7 @@ import type {
   Compra,
   CompraCreateInput,
   Fatura,
+  CompraCategoriaSugestao,
   PagarFaturaInput,
   ProjecaoFaturas,
   LeituraConsumoListResponse,
@@ -465,6 +466,21 @@ export const api = {
       method: 'DELETE',
       timeoutMs: 10_000,
     });
+  },
+
+  /** GET /api/financas/compras/sugestao-categoria — categoria da última compra
+   *  com a mesma descrição (auto-categoria do cartão). */
+  financasSugestaoCategoriaCompra(
+    descricao: string,
+  ): Promise<CompraCategoriaSugestao> {
+    const q = new URLSearchParams({
+      usuario_id: FINANCAS_USUARIO_ID,
+      descricao,
+    });
+    return request<CompraCategoriaSugestao>(
+      `/api/financas/compras/sugestao-categoria?${q}`,
+      { timeoutMs: 8_000 },
+    );
   },
 
   /** GET /api/financas/cartoes/projecao — comprometido por mês (todos os cartões) */

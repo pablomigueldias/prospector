@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies.financas import (
     exige_editar,
@@ -7,6 +7,7 @@ from app.api.dependencies.financas import (
 )
 from app.api.schemas.financas import (
     BoletoParceladoCreate,
+    CompraCategoriaSugestao,
     CompraParceladaCreate,
     CompraResponse,
 )
@@ -48,6 +49,19 @@ async def criar_boleto_parcelado(
     body.usuario_id = usuario_id  # dono = sessão
     try:
         return await compra_service.criar_compra_boleto_parcelada(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/sugestao-categoria", response_model=CompraCategoriaSugestao,
+            summary="Categoria da última compra com a mesma descrição",
+            dependencies=[Depends(usuario_financas)])
+async def sugestao_categoria(
+    descricao: str = Query(..., description="Descrição da compra digitada"),
+    usuario_id: str = Depends(financas_usuario_id),
+) -> CompraCategoriaSugestao:
+    try:
+        return await compra_service.sugerir_categoria(usuario_id, descricao)
     except Exception as e:
         raise _handle(e)
 

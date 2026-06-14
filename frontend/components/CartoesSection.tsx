@@ -554,10 +554,26 @@ function CompraForm({
     () => new Date().toISOString().slice(0, 10),
   );
   const [categoriaId, setCategoriaId] = useState('');
+  const [catReaproveitada, setCatReaproveitada] = useState('');
   const [comJuros, setComJuros] = useState(false);
   const [juros, setJuros] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+
+  // Auto-categoria: ao sair do campo de descrição, se ainda não escolheu
+  // categoria, reaproveita a da última compra com a mesma descrição.
+  async function sugerirCategoria() {
+    if (categoriaId || !descricao.trim()) return;
+    try {
+      const s = await api.financasSugestaoCategoriaCompra(descricao.trim());
+      if (s.categoria_id) {
+        setCategoriaId(s.categoria_id);
+        setCatReaproveitada(s.categoria_nome ?? '');
+      }
+    } catch {
+      /* sugestão é best-effort — ignora falha */
+    }
+  }
 
   const nParcelas = Number(parcelas);
   const valorNum = Number(valor.replace(',', '.'));
@@ -614,6 +630,7 @@ function CompraForm({
             className="input"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
+            onBlur={sugerirCategoria}
             placeholder="ex: Geladeira"
             autoFocus
           />
@@ -671,7 +688,10 @@ function CompraForm({
           <select
             className="input"
             value={categoriaId}
-            onChange={(e) => setCategoriaId(e.target.value)}
+            onChange={(e) => {
+              setCategoriaId(e.target.value);
+              setCatReaproveitada('');
+            }}
           >
             <option value="">Sem categoria</option>
             {categorias.map((c) => (
@@ -680,6 +700,11 @@ function CompraForm({
               </option>
             ))}
           </select>
+          {catReaproveitada && (
+            <p className="text-[11.5px] text-ink-mute mt-1 m-0">
+              categoria reaproveitada de uma compra parecida ({catReaproveitada})
+            </p>
+          )}
         </div>
 
         <div>
