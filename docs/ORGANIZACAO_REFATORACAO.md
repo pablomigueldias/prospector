@@ -166,8 +166,17 @@ app/api/services/financas/  transacao/  lancar.py  pagar.py  listar.py  transfer
    namespace (senão o patch não chega numa cópia importada em submódulo). Os
    patches de `tg.*` (módulo) funcionam de qualquer jeito. 7 smokes do bot
    verdes.
-7. **Infra de teste:** adotar `pytest` (manter os smokes como casos), e um
-   Playwright mínimo (login + screenshot) — cobre o §6 do MELHORIAS.
+7. ✅ **Infra de teste** *(feito 2026-06-14)* — **pytest** como runner único:
+   `backend/pytest.ini` + `tests/test_smoke_suite.py` parametriza os 60 smokes
+   históricos e roda **cada um num subprocesso** (`python -m tests.x`), porque
+   rodar in-process quebra (cada `main()` chama `asyncio.run()` e o engine async
+   global do SQLAlchemy fica preso ao 1º event loop). Pula a suíte se a API
+   (:8000) estiver fora; `_XFAIL` marca 2 falhas pré-existentes (auth logout sem
+   CSRF; seed vs banco de dev com categoria extra). `pip install -r
+   requirements-dev.txt` traz o pytest. Resultado: **58 passed, 2 xfailed**.
+   **Playwright** mínimo (login + screenshot): `frontend/playwright.config.ts` +
+   `e2e/login.spec.ts` + script `npm run e2e`. ⚠️ Precisa do install único
+   (`npm i && npx playwright install chromium`) e do front na **:3000** (CORS).
 
 > Cada item acima é independente e cabe em 1–3 commits. Nenhum muda
 > comportamento — então o smoke/build verde é a rede de segurança.
