@@ -13,6 +13,7 @@ import type {
   CategoriaTreeResponse,
   CategoriaUpdateInput,
   LancamentoInput,
+  DespesaAutoSplitInput,
   DespesaDivididaInput,
   NluInterpretacao,
   PagamentoMesPreview,
@@ -627,6 +628,18 @@ export const api = {
     body: DespesaDivididaInput,
   ): Promise<TransacaoResponse> {
     return request<TransacaoResponse>('/api/financas/transacoes/despesa/dividida', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/transacoes/despesa/auto-split — esgota o VR/VA e joga o
+   *  resto no dinheiro. Sempre paga. */
+  financasLancarDespesaAutoSplit(
+    body: DespesaAutoSplitInput,
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>('/api/financas/transacoes/despesa/auto-split', {
       method: 'POST',
       body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
       timeoutMs: 10_000,

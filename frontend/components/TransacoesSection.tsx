@@ -525,12 +525,18 @@ function LancamentoForm({
   // Despesa dividida em N contas (ex.: metade VR, metade dinheiro). Só pra
   // despesa nova (edição de dividida não é suportada — orienta excluir/relançar).
   const [dividir, setDividir] = useState(false);
+  // Modo automático: esgota o VR/VA e joga o resto no dinheiro (sem digitar
+  // valores). Usa o endpoint /despesa/auto-split. Sempre paga.
+  const [autoSplit, setAutoSplit] = useState(false);
+  const [vrId, setVrId] = useState(contas[0]?.id ?? '');
+  const [fallbackId, setFallbackId] = useState(contas[1]?.id ?? contas[0]?.id ?? '');
   const [pagamentos, setPagamentos] = useState<{ conta_id: string; valor: string }[]>([
     { conta_id: contas[0]?.id ?? '', valor: '' },
     { conta_id: contas[1]?.id ?? contas[0]?.id ?? '', valor: '' },
   ]);
   const podeDividir = !editando && tipo === 'despesa';
   const dividindo = podeDividir && dividir;
+  const autoSplitAtivo = dividindo && autoSplit;
   const valorNumPreview = Number(valor.replace(',', '.')) || 0;
   const somaPagamentos = pagamentos.reduce(
     (acc, p) => acc + (Number(p.valor.replace(',', '.')) || 0),
@@ -554,6 +560,27 @@ function LancamentoForm({
 
     setSalvando(true);
     try {
+      if (autoSplitAtivo) {
+        if (!vrId || !fallbackId) {
+          setSalvando(false);
+          return setErro('Escolha a conta que esgota (VR) e a que cobre o resto.');
+        }
+        if (vrId === fallbackId) {
+          setSalvando(false);
+          return setErro('As contas de VR e do resto precisam ser diferentes.');
+        }
+        await api.financasLancarDespesaAutoSplit({
+          descricao: descricao.trim(),
+          valor_total: String(valorNum),
+          conta_vr_id: vrId,
+          conta_fallback_id: fallbackId,
+          categoria_id: categoriaId || null,
+          data_competencia: data || null,
+        });
+        onSaved();
+        return;
+      }
+
       if (dividindo) {
         const pags = pagamentos
           .filter((p) => p.conta_id && Number(p.valor.replace(',', '.')) > 0)
@@ -724,6 +751,73 @@ function LancamentoForm({
         )}
 
         {dividindo && (
+          <div className="flex gap-2 text-[13px]">
+            {([
+              [false, 'Valores manuais'],
+              [true, 'Auto (esgota o VR)'],
+            ] as const).map(([modo, rotulo]) => (
+              <button
+                key={rotulo}
+                type="button"
+                onClick={() => setAutoSplit(modo)}
+                className={`flex-1 py-1.5 rounded-lg border transition-colors ${
+                  autoSplit === modo
+                    ? 'border-brand bg-brand-soft text-brand-ink'
+                    : 'border-line text-ink-soft hover:border-ink-mute'
+                }`}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {autoSplitAtivo && (
+          <div className="space-y-2 border border-line-soft rounded-lg p-3">
+            <p className="text-[12.5px] text-ink-mute m-0">
+              Gasta o que tiver na 1ª conta (VR/VA) e joga o que faltar na 2ª.
+              Lançado como pago.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11.5px] text-ink-mute mb-1">
+                  Esgota primeiro (VR/VA)
+                </label>
+                <select
+                  className="input"
+                  value={vrId}
+                  onChange={(e) => setVrId(e.target.value)}
+                >
+                  <option value="">Conta…</option>
+                  {contas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11.5px] text-ink-mute mb-1">
+                  Cobre o resto
+                </label>
+                <select
+                  className="input"
+                  value={fallbackId}
+                  onChange={(e) => setFallbackId(e.target.value)}
+                >
+                  <option value="">Conta…</option>
+                  {contas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {dividindo && !autoSplit && (
           <div className="space-y-2 border border-line-soft rounded-lg p-3">
             {pagamentos.map((p, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -779,14 +873,16 @@ function LancamentoForm({
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm text-ink-soft">
-          <input
-            type="checkbox"
-            checked={prevista}
-            onChange={(e) => setPrevista(e.target.checked)}
-          />
-          Lançar como prevista (não mexe no saldo ainda)
-        </label>
+        {!autoSplitAtivo && (
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
+            <input
+              type="checkbox"
+              checked={prevista}
+              onChange={(e) => setPrevista(e.target.checked)}
+            />
+            Lançar como prevista (não mexe no saldo ainda)
+          </label>
+        )}
 
         {erro && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">

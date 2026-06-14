@@ -634,6 +634,16 @@ export interface DespesaDivididaInput {
   status?: 'paga' | 'prevista';
 }
 
+export interface DespesaAutoSplitInput {
+  descricao: string;
+  valor_total: string;
+  conta_vr_id: string;
+  conta_fallback_id: string;
+  categoria_id?: string | null;
+  data_competencia?: string | null;
+  notas?: string | null;
+}
+
 /** Payload pra editar uma transação (PATCH). Inclui o `tipo` porque a edição
  *  pode trocar despesa↔receita. */
 export interface TransacaoEditInput {
