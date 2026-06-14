@@ -100,18 +100,18 @@ function ProjecaoBlock({ projecao }: { projecao: ProjecaoFaturas }) {
           </span>
         </span>
       </div>
-      <ul className="m-0 p-0 list-none flex items-end gap-3">
+      <ul className="m-0 p-0 list-none flex items-end gap-3 min-h-[88px]">
         {projecao.meses.map((m) => {
           const [a, mes] = m.mes_referencia.split('-').map(Number);
-          const altura = Math.max(4, Math.round((Number(m.total) / maximo) * 56));
+          const altura = Math.max(6, Math.round((Number(m.total) / maximo) * 56));
           return (
-            <li key={m.mes_referencia} className="flex-1 flex flex-col items-center gap-1.5">
+            <li key={m.mes_referencia} className="flex-1 flex flex-col items-center justify-end gap-1.5">
               <span className="text-[11px] tabular-nums text-ink-soft">
                 {formatBRL(m.total)}
               </span>
               <div
-                className="w-full rounded-t bg-brand/80"
-                style={{ height: altura }}
+                className="w-full max-w-[40px] rounded-t bg-brand"
+                style={{ height: `${altura}px` }}
                 title={`${formatMesAno(a, mes)}: ${formatBRL(m.total)}`}
               />
               <span className="font-mono uppercase tracking-[0.08em] text-[9px] text-ink-mute">

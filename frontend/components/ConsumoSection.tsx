@@ -230,20 +230,26 @@ function ConsumoCard({ tipo, leituras }: { tipo: string; leituras: LeituraConsum
           {ultimo.toLocaleString('pt-BR')} <span className="text-ink-mute text-[11px]">último</span>
         </span>
       </div>
-      <div className="flex items-end gap-1 h-12">
-        {leituras.map((l) => {
-          const v = Number(l.consumo ?? 0);
-          const h = Math.round((v / max) * 100);
-          return (
-            <div
-              key={l.id}
-              className="flex-1 bg-brand-soft rounded-sm min-h-[2px]"
-              style={{ height: `${h}%` }}
-              title={`${l.mes_referencia}: ${v.toLocaleString('pt-BR')}`}
-            />
-          );
-        })}
-      </div>
+      {leituras.length === 0 ? (
+        <div className="h-12 flex items-center text-[12px] text-ink-mute">
+          Sem leituras ainda.
+        </div>
+      ) : (
+        <div className="flex items-end justify-start gap-1.5 h-12">
+          {leituras.map((l) => {
+            const v = Number(l.consumo ?? 0);
+            const h = Math.max(6, Math.round((v / max) * 100));
+            return (
+              <div
+                key={l.id}
+                className="flex-1 max-w-[28px] bg-brand rounded-sm min-h-[3px]"
+                style={{ height: `${h}%` }}
+                title={`${l.mes_referencia}: ${v.toLocaleString('pt-BR')}`}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
