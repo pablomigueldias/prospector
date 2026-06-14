@@ -95,7 +95,7 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
       await api.financasTornarRecorrente(t.id);
       recarregar();
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Falha ao tornar recorrente.');
+      aoFalhar(err, 'Falha ao tornar recorrente.');
     } finally {
       setRecorrendo(null);
     }
@@ -107,7 +107,7 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
     try {
       setEditando(await api.financasTransacao(t.id));
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Falha ao abrir a edição.');
+      aoFalhar(err, 'Falha ao abrir a edição.');
     } finally {
       setCarregandoEditar(null);
     }
@@ -136,7 +136,7 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
         descontoAte: det.desconto_ate ?? null,
       });
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Falha ao abrir o pagamento.');
+      aoFalhar(err, 'Falha ao abrir o pagamento.');
     } finally {
       setCarregandoPagar(null);
     }
@@ -146,6 +146,18 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
     void refetch();
     onMutate();
   };
+
+  /** Trata falha de uma ação por linha. Se a transação sumiu (404 — paga/removida
+   *  noutra aba, no bot ou regerada pela recorrência), a lista estava obsoleta:
+   *  recarrega e mostra um aviso leve em vez do erro vermelho. */
+  function aoFalhar(err: unknown, fallback: string) {
+    if (err instanceof ApiError && err.status === 404) {
+      setErro('Essa conta saiu da lista (já foi paga ou removida). Atualizei aqui.');
+      void refetch();
+      return;
+    }
+    setErro(err instanceof ApiError ? err.message : fallback);
+  }
 
   // Resumo do que está a pagar (só faz sentido na aba "a pagar").
   const resumo = useMemo(() => {
