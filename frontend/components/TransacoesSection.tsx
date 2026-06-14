@@ -23,6 +23,9 @@ interface Props {
   /** Modal "novo lançamento" controlado de fora (FAB / atalho de teclado). */
   novoAberto: boolean;
   onNovoAbertoChange: (aberto: boolean) => void;
+  /** Cada incremento força a lista a focar o mês do dashboard (ex.: clique
+   *  num mês do gráfico do Relatório). */
+  focarMesSinal?: number;
 }
 
 function dataCurta(iso: string): string {
@@ -70,6 +73,7 @@ export function TransacoesSection({
   onMutate,
   novoAberto,
   onNovoAbertoChange,
+  focarMesSinal,
 }: Props) {
   // Restaura os últimos filtros usados (uma vez, na montagem).
   const inicial = useMemo(carregarFiltros, []);
@@ -87,6 +91,12 @@ export function TransacoesSection({
     const t = setTimeout(() => setBusca(buscaInput.trim()), 400);
     return () => clearTimeout(t);
   }, [buscaInput]);
+
+  // Clique num mês do gráfico do Relatório → garante que a lista mostre só o
+  // mês do dashboard (ignora o filtro "todos os meses" que estivesse ligado).
+  useEffect(() => {
+    if (focarMesSinal) setSoEsteMes(true);
+  }, [focarMesSinal]);
 
   // Lembra os filtros pra próxima visita.
   useEffect(() => {

@@ -22,6 +22,8 @@ interface Props {
   /** Mês âncora (o selecionado no topo do dashboard). A série termina nele. */
   ano: number;
   mes: number;
+  /** Clique num mês do gráfico → abre a lista de transações daquele mês. */
+  onVerMes?: (ano: number, mes: number) => void;
 }
 
 // Cores do design system (oklch) reaproveitadas no gráfico.
@@ -75,7 +77,7 @@ function exportarPdf() {
   window.print();
 }
 
-export function RelatorioSection({ ano, mes }: Props) {
+export function RelatorioSection({ ano, mes, onVerMes }: Props) {
   const [meses, setMeses] = useState<number>(6);
   const [contaId, setContaId] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
@@ -92,6 +94,8 @@ export function RelatorioSection({ ano, mes }: Props) {
   const dados = useMemo(
     () =>
       (relatorio?.meses ?? []).map((m) => ({
+        ano: m.ano,
+        mes: m.mes,
         rotulo: formatMesAno(m.ano, m.mes),
         receitas: Number(m.total_receitas),
         despesas: Number(m.total_despesas),
@@ -273,6 +277,11 @@ export function RelatorioSection({ ano, mes }: Props) {
 
           {/* Gráfico: receitas x despesas (barras) + saldo (linha) */}
           <div className="card p-5 mb-4">
+            {onVerMes && (
+              <p className="text-[11.5px] text-ink-mute m-0 mb-2 print:hidden">
+                Dica: clique num mês pra ver os lançamentos dele.
+              </p>
+            )}
             <div style={{ width: '100%', height: 300 }}>
               <ResponsiveContainer>
                 <ComposedChart
@@ -280,6 +289,14 @@ export function RelatorioSection({ ano, mes }: Props) {
                   margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
                   barGap={4}
                   barCategoryGap="22%"
+                  onClick={(state) => {
+                    if (!onVerMes) return;
+                    const ponto = (
+                      state as { activePayload?: { payload?: { ano: number; mes: number } }[] }
+                    )?.activePayload?.[0]?.payload;
+                    if (ponto) onVerMes(ponto.ano, ponto.mes);
+                  }}
+                  className={onVerMes ? 'cursor-pointer' : undefined}
                 >
                   <CartesianGrid
                     vertical={false}

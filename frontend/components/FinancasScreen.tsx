@@ -101,6 +101,15 @@ export default function FinancasScreen() {
   const [lancarAberto, setLancarAberto] = useState(false);
   const podeLancar = contas.length > 0;
 
+  // Clique num mês do gráfico do Relatório → seleciona o mês, foca a lista
+  // de Transações nele e rola até lá.
+  const [focarMesSinal, setFocarMesSinal] = useState(0);
+  const verMesNaLista = useCallback((a: number, m: number) => {
+    setMes([a, m]);
+    setFocarMesSinal((n) => n + 1);
+    setTimeout(() => irPara('sec-transacoes'), 50);
+  }, []);
+
   // Atalhos: "N" (fora de campos) ou Ctrl/Cmd+K abrem o lançamento.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -219,7 +228,7 @@ export default function FinancasScreen() {
       </section>
 
       {/* Relatório: série mês a mês + top categorias do período + CSV */}
-      <RelatorioSection ano={ano} mes={mes} />
+      <RelatorioSection ano={ano} mes={mes} onVerMes={verMesNaLista} />
 
       {/* Contas a pagar (previstas/atrasadas) + as já pagas */}
       <ContasAPagarSection contas={contas} onMutate={recarregarTudo} />
@@ -245,6 +254,7 @@ export default function FinancasScreen() {
           onMutate={recarregarTudo}
           novoAberto={lancarAberto}
           onNovoAbertoChange={setLancarAberto}
+          focarMesSinal={focarMesSinal}
         />
       </div>
 
