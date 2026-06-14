@@ -66,8 +66,8 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
   coluna `empresa_cnpj` irrelevante). Se quiser timeline rica por proposta,
   criar `pessoal_freela_evento` (com `proposta_id` + `payload` JSONB) como o
   `Workana.md` §2 imaginava.
-- [ ] 🟢 **Tempo médio até resposta** nas métricas — já dá pra calcular
-  (`data_resposta − enviada_em`); só não está exposto.
+- [x] ✅ **Tempo médio até resposta** nas métricas — FEITO 2026-06-14
+  (`tempo_medio_resposta_horas`, no rodapé do painel de forecast).
 - [ ] 🟢 **Histórico de precificações** — guardar o que o precificador sugeriu
   vs o que você cotou de fato, pra calibrar.
 
@@ -106,9 +106,8 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
 - [ ] 🟡 **Win-rate por categoria.** Taxa de resposta/fechamento **por stack/
   tipo de projeto** (React vs WordPress vs dados). Mostra onde você é forte de
   verdade → gaste proposta lá. Usa o `analise_json.stack` que já guardamos.
-- [ ] 🟡 **Radar de cliente recorrente.** Destacar na fila projetos de clientes
-  que já te pagaram (comissão 10%/5% = mais líquido no bolso). Prioridade alta
-  automática — "cliente recorrente vale ouro".
+- [x] ✅ **Radar de cliente recorrente.** FEITO 2026-06-14: badge "★ recorrente"
+  na fila + ordenação primeiro pra clientes com `ja_me_pagou_usd>0`.
 - [ ] 🟡 **Scam/red-flag radar dedicado.** O analisador já aponta red flags;
   promover as graves (pagamento não verificado + pede contato fora + "bom demais")
   a um selo visível de "cuidado" na fila, pra você nem perder tempo.
@@ -134,9 +133,9 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
   fechar pela 1ª vez (não duplica), soma o líquido convertido pra US$ (taxa
   `usd_brl`, default 5,20) ao acumulado do cliente → comissão cai de faixa
   sozinha. Ver FREELA_FEITO.
-- [ ] 🟡 **Calibrador de valor-hora.** Cruzar líquido ÷ horas das propostas
-  fechadas → seu valor-hora REAL por tipo de projeto. Mostra onde você está se
-  subcobrando e sugere piso na hora de precificar.
+- [x] ✅ **Calibrador de valor-hora.** FEITO 2026-06-14: `valor_hora_real` (avg
+  líquido/hora das fechadas) no rodapé do painel. Falta o "por tipo de projeto"
+  e sugerir piso no precificar.
 - [ ] 🟡 **Alerta de orçamento incompatível.** No precificar/criar proposta,
   avisar quando o valor a cotar estoura (ou fica muito abaixo) da faixa do
   projeto — some no campo que já guardamos (`faixa_orcamento_min/max`).
@@ -145,9 +144,10 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
 
 ## 10. Não deixar dinheiro na mesa (pós-envio e pós-venda)
 
-- [ ] 🔴 **Follow-up no tempo certo (sem forçar contato fora).** Lembrete quando
-  uma proposta fica "enviada" sem resposta por N dias → mensagem educada DENTRO
-  da plataforma. O `APScheduler` já roda no projeto; reusar.
+- [x] ✅ **Follow-up no tempo certo (sem forçar contato fora).** FEITO
+  2026-06-14: job `freela_followup.py` na rotina diária avisa no Telegram sobre
+  propostas "enviada" há ≥ N dias sem resposta. *(Refino futuro: dedup pra não
+  repetir o lembrete todo dia da mesma proposta.)*
 - [ ] 🟡 **Pedir avaliação 5★ ao entregar.** Ao marcar "fechada/entregue",
   lembrar (e rascunhar) o pedido natural de avaliação — a 1ª nota é a mais
   difícil e a que mais destrava projetos futuros.

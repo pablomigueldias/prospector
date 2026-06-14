@@ -92,6 +92,15 @@ duplica), a comissão cai de faixa sozinha; (3) **Variações de abertura A/B** 
 redator (2–3 aberturas, clicar troca no modal). Tudo com smoke real + typecheck/
 build verdes. Movidos pro FREELA_FEITO; ainda faltam §7–§10 restantes.
 
+**+ 3 alavancas (mesma sessão, ainda não deployadas):** (4) **Radar de cliente
+recorrente** — fila marca "★ recorrente" e ordena primeiro; (5) **Calibração** —
+métricas `tempo_medio_resposta_horas` e `valor_hora_real` no rodapé do painel;
+(6) **Follow-up no Telegram** — job `freela_followup.py` na rotina diária avisa
+propostas "enviada" há ≥ N dias sem resposta (`freela_followup_dias`=3). Smoke
+de cada um verde. **Total: 6 alavancas na `main` sem push/deploy.** Restam no
+backlog: win-rate por categoria, scam radar, templates vencedores, negociação,
+limite de propostas, pedir avaliação, multi-plataforma (§5).
+
 ---
 
 ## 0.1. Sessão 2026-06-14 (tarde) — diagnóstico do front + refatoração

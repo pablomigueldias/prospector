@@ -130,6 +130,16 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
   alternativas (ângulos diferentes: direta, com prova, com pergunta). No modal,
   painel "Aberturas alternativas (A/B)" — clicar troca a abertura preservando o
   corpo. A 1ª linha é o que decide se o cliente continua lendo.
+- ✅ **Radar de cliente recorrente (§7)** — a fila marca projetos de clientes
+  que já te pagaram (`ja_me_pagou_usd>0`) com badge "★ recorrente" e os ordena
+  **primeiro** (comissão menor = mais líquido). "Cliente recorrente vale ouro."
+- ✅ **Calibração: tempo de resposta + valor-hora real (§4/§9)** — métricas
+  `tempo_medio_resposta_horas` (velocidade do cliente) e `valor_hora_real`
+  (líquido/hora das fechadas → vê se está se subcobrando), num rodapé do painel.
+- ✅ **Follow-up de propostas sem resposta (§10)** — job `freela_followup.py` na
+  rotina diária (APScheduler): acha propostas "enviada" há ≥ N dias
+  (`freela_followup_dias`, default 3) sem resposta e manda lembrete no Telegram
+  pra dar follow-up **dentro da Workana** (não força contato fora).
 
 ---
 
