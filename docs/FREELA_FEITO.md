@@ -113,9 +113,29 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
 > **precificar** → criar proposta → **rascunhar com IA** → revisar/copiar →
 > mover no Kanban. Capability `rascunha_proposta` ligada.
 
+## 🚀 Alavancas de desempenho (sessão 2026-06-14 noite)
+
+- ✅ **Forecast de pipeline + meta mensal (§7)** — métricas ganham
+  `pipeline_aberto_liquido` (soma do líquido das propostas em aberto),
+  `forecast_liquido` (pipeline × taxa de fechamento) e `em_aberto`. Na tela, um
+  painel mostra pipeline, previsão ponderada e uma **meta** (localStorage) com
+  barra (fechado + previsto) e "faltam R$X". Dá visão de renda do que já está em
+  jogo.
+- ✅ **`ja_me_pagou_usd` sobe ao fechar (§9)** — ao fechar uma proposta pela 1ª
+  vez (gate em `data_fechamento is None`, não duplica), soma o líquido convertido
+  pra US$ (taxa `usd_brl` da plataforma, default 5,20) ao acumulado do cliente →
+  a comissão cai de faixa sozinha e o precificador fica correto sem você lembrar.
+  O evento registra `creditou_usd`.
+- ✅ **Variações de abertura A/B (§8)** — o redator gera 2–3 primeiras linhas
+  alternativas (ângulos diferentes: direta, com prova, com pergunta). No modal,
+  painel "Aberturas alternativas (A/B)" — clicar troca a abertura preservando o
+  corpo. A 1ª linha é o que decide se o cliente continua lendo.
+
 ---
 
 ## Ainda NÃO feito (resumo — detalhe e prioridade em MELHORIAS_FREELA.md)
 
-- Fase 7 (segunda plataforma) e refinos de CRM (atualizar `ja_me_pagou_usd` ao
-  fechar, limite de propostas, drag-and-drop no Kanban, CRUD de cliente na tela).
+- Fase 7 (segunda plataforma) e refinos de CRM (limite de propostas, drag-and-
+  drop no Kanban, CRUD de cliente na tela). Mais alavancas em §7–§10 do backlog
+  (win-rate por categoria, templates vencedores, follow-up, calibrador de
+  valor-hora, etc.).

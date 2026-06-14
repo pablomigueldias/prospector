@@ -83,6 +83,15 @@ pra preencher na tela). Verificado público: `/api/health` 200, rotas
 **Freela** está no ar em https://studio.reativesystems.com.br (grupo Pessoal).
 Backlog de melhorias de desempenho em `MELHORIAS_FREELA.md` §7–§10.
 
+**Sessão 2026-06-14 (noite, parte 2) — 3 alavancas de desempenho FEITAS** (na
+`main`, **ainda não deployadas**): (1) **Forecast de pipeline + meta mensal** —
+métricas `pipeline_aberto_liquido`/`forecast_liquido` + painel com meta
+(localStorage); (2) **`ja_me_pagou_usd` sobe ao fechar** — converte líquido→US$
+(taxa `usd_brl` da plataforma, default 5,20), gate `data_fechamento is None` (não
+duplica), a comissão cai de faixa sozinha; (3) **Variações de abertura A/B** no
+redator (2–3 aberturas, clicar troca no modal). Tudo com smoke real + typecheck/
+build verdes. Movidos pro FREELA_FEITO; ainda faltam §7–§10 restantes.
+
 ---
 
 ## 0.1. Sessão 2026-06-14 (tarde) — diagnóstico do front + refatoração

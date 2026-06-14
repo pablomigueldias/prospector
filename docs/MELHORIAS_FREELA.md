@@ -50,10 +50,8 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
 
 ## 3. CRM / regras de negócio (refino do que já existe)
 
-- [ ] 🟡 **Atualizar `ja_me_pagou_usd` ao fechar** — quando uma proposta vira
-  `fechada`, somar o líquido ao acumulado do cliente (hoje é manual). É o que
-  faz a comissão cair de faixa sozinha — fecha o ciclo "cliente recorrente vale
-  ouro".
+- [x] ✅ **Atualizar `ja_me_pagou_usd` ao fechar** — FEITO 2026-06-14 (ver §9 e
+  FREELA_FEITO).
 - [ ] 🟡 **Limite de propostas do plano grátis** — registrar quantas restam no
   período e avisar; é o recurso escasso que justifica o priorizador.
 - [ ] 🟢 **Motivo de perda estruturado** — enum (preço/escopo/sumiu/escolheu
@@ -102,10 +100,9 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
   propostas, o cliente lê as primeiras. Guardar a *data de publicação* do projeto
   (campo novo, você informa ao colar) e ordenar/marcar a fila por "quão novo +
   quão pouco concorrido". A IA já te diz SE vale; isto te diz QUANDO corre.
-- [ ] 🔴 **Forecast de pipeline (quanto vou receber).** Somar o líquido das
-  propostas em aberto **ponderado pela sua taxa de fechamento** = previsão de
-  renda. Responde "se eu não mandar mais nenhuma, quanto provavelmente entra?".
-  Cruza com uma **meta mensal** que você define → "faltam R$X / ~N propostas".
+- [x] ✅ **Forecast de pipeline + meta mensal.** FEITO 2026-06-14: métricas com
+  `pipeline_aberto_liquido` + `forecast_liquido` (× taxa de fechamento) e painel
+  na tela com meta (localStorage) e "faltam R$X". Ver FREELA_FEITO.
 - [ ] 🟡 **Win-rate por categoria.** Taxa de resposta/fechamento **por stack/
   tipo de projeto** (React vs WordPress vs dados). Mostra onde você é forte de
   verdade → gaste proposta lá. Usa o `analise_json.stack` que já guardamos.
@@ -118,9 +115,9 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
 
 ## 8. Escrever melhor (converter mais por proposta)
 
-- [ ] 🔴 **Variações de abertura (A/B).** Gerar 2–3 primeiras linhas
-  alternativas da proposta (o agente de candidatura já faz variantes). A abertura
-  é o que decide se o cliente continua lendo — testar e ver o que responde mais.
+- [x] ✅ **Variações de abertura (A/B).** FEITO 2026-06-14: o redator gera 2–3
+  aberturas alternativas (ângulos diferentes); no modal, clicar troca a abertura
+  preservando o corpo. Ver FREELA_FEITO.
 - [ ] 🟡 **Banco de propostas vencedoras (templates).** Quando uma proposta
   FECHA, marcar como "modelo": o redator passa a se inspirar nas suas que deram
   certo (estilo `blocos_curriculo` do perfil). Você melhora sozinho com o tempo.
@@ -133,10 +130,10 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
 
 ## 9. Precificar e cobrar melhor (proteger a margem)
 
-- [ ] 🔴 **`ja_me_pagou_usd` sobe ao fechar (automático).** Ao marcar "fechada",
-  somar o líquido ao acumulado do cliente → a comissão cai de faixa sozinha e o
-  precificador fica correto sem você lembrar. (Já estava no §3, mas é alavanca de
-  margem direta — fica aqui também.)
+- [x] ✅ **`ja_me_pagou_usd` sobe ao fechar (automático).** FEITO 2026-06-14: ao
+  fechar pela 1ª vez (não duplica), soma o líquido convertido pra US$ (taxa
+  `usd_brl`, default 5,20) ao acumulado do cliente → comissão cai de faixa
+  sozinha. Ver FREELA_FEITO.
 - [ ] 🟡 **Calibrador de valor-hora.** Cruzar líquido ÷ horas das propostas
   fechadas → seu valor-hora REAL por tipo de projeto. Mostra onde você está se
   subcobrando e sugere piso na hora de precificar.
