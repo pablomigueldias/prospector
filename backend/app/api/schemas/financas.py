@@ -23,12 +23,16 @@ class ContaCreate(BaseModel):
     saldo_atual: Decimal = Field(
         Decimal("0"), description="Saldo inicial (de abertura). Default 0."
     )
+    meta: Optional[Decimal] = Field(
+        None, description="Objetivo de valor (ex.: reserva 'viagem: 5000'). Null = sem meta."
+    )
 
 
 class ContaUpdate(BaseModel):
     nome: Optional[str] = None
     tipo: Optional[str] = None
     ativa: Optional[bool] = None
+    meta: Optional[Decimal] = None
 
 
 class ContaResponse(BaseModel):
@@ -37,6 +41,7 @@ class ContaResponse(BaseModel):
     nome: str
     tipo: str
     saldo_atual: Decimal
+    meta: Optional[Decimal] = None
     ativa: bool
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -106,8 +111,28 @@ class DespesaCreate(BaseModel):
     data_pagamento: Optional[date] = Field(
         None, description="Quando saiu de fato. Default: hoje se status=paga."
     )
+    data_vencimento: Optional[date] = Field(
+        None, description="Vencimento (pra prevista/agendada aparecer em 'A pagar')."
+    )
     status: str = Field("paga", description="prevista/paga/atrasada")
     notas: Optional[str] = None
+
+
+class TransferenciaCreate(BaseModel):
+    """Move dinheiro entre contas (ex.: guardar na reserva). Debita a origem e
+    credita o destino; não conta como receita/despesa no resumo do mês."""
+    usuario_id: str
+    origem_conta_id: str = Field(..., description="Conta de onde sai o dinheiro")
+    destino_conta_id: str = Field(..., description="Conta que recebe (ex.: reserva)")
+    valor: Decimal = Field(..., gt=0)
+    descricao: Optional[str] = None
+    data: Optional[date] = None
+
+
+class TransferenciaResponse(BaseModel):
+    origem_conta_id: str
+    destino_conta_id: str
+    valor: Decimal
 
 
 class PagamentoIn(BaseModel):
@@ -191,6 +216,9 @@ class PrevistaUpdate(BaseModel):
     multa_percentual: Optional[Decimal] = None
     juros_mensal_percentual: Optional[Decimal] = None
     itens: Optional[List[ItemPrevistaInput]] = None
+    # Conta fixa (recorrência) à qual esta despesa pertence. Só altera quando o
+    # campo é enviado (None envia = desvincular; ausente = mantém).
+    recorrencia_id: Optional[str] = None
 
 
 class PagarTransacaoRequest(BaseModel):
@@ -241,6 +269,7 @@ class TransacaoResponse(BaseModel):
     status: str
     origem: str
     categoria_id: Optional[str] = None
+    recorrencia_id: Optional[str] = None
     notas: Optional[str] = None
     itens: List[TransacaoItemResponse] = Field(default_factory=list)
     pagamentos: List[TransacaoPagamentoResponse] = Field(default_factory=list)
@@ -267,6 +296,7 @@ class TransacaoListItem(BaseModel):
     status: str
     categoria_id: Optional[str] = None
     categoria_nome: Optional[str] = None
+    recorrencia_id: Optional[str] = None
     contas: List[str] = Field(default_factory=list)
 
 
@@ -333,6 +363,51 @@ class FaturasCartaoResponse(BaseModel):
     total_juros: Decimal           # soma de valor_juros das parcelas do cartão
 
 
+class ProjecaoMesItem(BaseModel):
+    """Quanto está comprometido em faturas de cartão num mês (todos os cartões
+    somados)."""
+    mes_referencia: date           # 1º dia do mês
+    total: Decimal
+
+
+class ProjecaoFaturasResponse(BaseModel):
+    """Comprometido por mês nos próximos N meses, somando as faturas não pagas
+    de todos os cartões do usuário."""
+    meses: List[ProjecaoMesItem]
+    total: Decimal                 # soma do período
+
+
+class PagarFaturaRequest(BaseModel):
+    """Pagamento de uma fatura: debita de uma conta e baixa a fatura."""
+    conta_id: str
+    data_pagamento: Optional[date] = None
+    valor_pago: Optional[Decimal] = Field(
+        None, gt=0, description="Valor real que saiu (default = total da fatura)"
+    )
+    categoria_id: Optional[str] = None
+
+
+class FaturaExtratoItem(BaseModel):
+    """Uma parcela que compõe a fatura (com os dados da compra de origem)."""
+    parcela_id: str
+    compra_id: str
+    descricao: str
+    numero: int
+    total_parcelas: int
+    valor: Decimal
+    valor_juros: Decimal
+    vencimento: date
+    categoria_id: Optional[str] = None
+    categoria_nome: Optional[str] = None
+
+
+class FaturaExtratoResponse(BaseModel):
+    fatura: FaturaResponse
+    cartao_nome: str
+    itens: List[FaturaExtratoItem]
+    total_juros: Decimal
+
+
 class CompraParceladaCreate(BaseModel):
     """Compra no cartão parcelada em N vezes."""
     usuario_id: str
@@ -385,6 +460,26 @@ class CompraResponse(BaseModel):
     updated_at: Optional[str] = None
 
 
+class CompraCategoriaSugestao(BaseModel):
+    """Categoria da última compra com a mesma descrição (auto-categoria do
+    cartão). Vem nula quando não há histórico."""
+    categoria_id: Optional[str] = None
+    categoria_nome: Optional[str] = None
+
+
+class PixParseRequest(BaseModel):
+    """Código PIX copia-e-cola (BR Code) pra extrair valor/beneficiário."""
+    codigo: str
+
+
+class PixParseResponse(BaseModel):
+    """Dados extraídos do PIX copia-e-cola (campos podem vir nulos)."""
+    valor: Optional[Decimal] = None
+    beneficiario: Optional[str] = None
+    cidade: Optional[str] = None
+    chave: Optional[str] = None
+
+
 # ══════════════════════════════════════════════════════════════════
 # Recorrências (despesas/receitas fixas)
 # ══════════════════════════════════════════════════════════════════
@@ -397,6 +492,8 @@ class RecorrenciaCreate(BaseModel):
     dia_vencimento: int = Field(..., ge=1, le=31)
     categoria_id: Optional[str] = None
     conta_id: Optional[str] = None
+    forma_pagamento: str = Field("conta", description="conta/cartao/boleto")
+    cartao_id: Optional[str] = None
     frequencia: str = "mensal"
 
 
@@ -407,6 +504,8 @@ class RecorrenciaUpdate(BaseModel):
     dia_vencimento: Optional[int] = Field(None, ge=1, le=31)
     categoria_id: Optional[str] = None
     conta_id: Optional[str] = None
+    forma_pagamento: Optional[str] = None
+    cartao_id: Optional[str] = None
     ativa: Optional[bool] = None
 
 
@@ -420,6 +519,8 @@ class RecorrenciaResponse(BaseModel):
     frequencia: str
     categoria_id: Optional[str] = None
     conta_id: Optional[str] = None
+    forma_pagamento: str = "conta"
+    cartao_id: Optional[str] = None
     ativa: bool
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -433,6 +534,120 @@ class RecorrenciaListResponse(BaseModel):
 class ProcessarRecorrenciasResponse(BaseModel):
     previstas_criadas: int
     marcadas_atrasadas: int
+
+
+# ══════════════════════════════════════════════════════════════════
+# Orçamento por categoria (teto mensal)
+# ══════════════════════════════════════════════════════════════════
+
+class OrcamentoCreate(BaseModel):
+    usuario_id: str
+    categoria_id: str
+    valor_mensal: Decimal = Field(..., gt=0)
+
+
+class OrcamentoUpdate(BaseModel):
+    valor_mensal: Optional[Decimal] = Field(None, gt=0)
+    ativo: Optional[bool] = None
+
+
+class OrcamentoResponse(BaseModel):
+    id: str
+    usuario_id: str
+    categoria_id: str
+    categoria_nome: Optional[str] = None
+    valor_mensal: Decimal
+    ativo: bool
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class OrcamentoListResponse(BaseModel):
+    items: List[OrcamentoResponse]
+    total: int
+
+
+class OrcamentoStatusItem(BaseModel):
+    """Quanto de um orçamento já foi consumido no mês."""
+    orcamento_id: str
+    categoria_id: str
+    categoria_nome: Optional[str] = None
+    valor_mensal: Decimal
+    consumido: Decimal
+    restante: Decimal           # valor_mensal − consumido (pode ser negativo)
+    percentual: float           # 0..100+ (consumido/valor_mensal)
+
+
+class OrcamentoStatusResponse(BaseModel):
+    competencia: str            # "YYYY-MM"
+    items: List[OrcamentoStatusItem]
+    total_orcado: Decimal
+    total_consumido: Decimal
+
+
+# ══════════════════════════════════════════════════════════════════
+# Pagar o mês (fatura do cartão + boletos do mês de uma vez)
+# ══════════════════════════════════════════════════════════════════
+
+class PagamentoMesItem(BaseModel):
+    """Uma pendência do mês (boleto a pagar ou fatura de cartão)."""
+    tipo: str                       # "boleto" | "fatura"
+    id: str
+    descricao: str
+    valor: Decimal                  # já com encargos (boleto) até hoje
+    vencimento: Optional[date] = None
+    conta_sugerida_id: Optional[str] = None
+    conta_sugerida_nome: Optional[str] = None
+
+
+class PagamentoMesPreview(BaseModel):
+    competencia: str                # "YYYY-MM"
+    itens: List[PagamentoMesItem]
+    total: Decimal
+
+
+class PagamentoMesItemInput(BaseModel):
+    tipo: str                       # "boleto" | "fatura"
+    id: str
+    conta_id: str
+
+
+class PagamentoMesRequest(BaseModel):
+    data_pagamento: Optional[date] = None
+    itens: List[PagamentoMesItemInput] = Field(..., min_length=1)
+
+
+class PagamentoMesResultado(BaseModel):
+    pagos: int
+    total_pago: Decimal
+    falhas: List[str] = Field(default_factory=list)
+
+
+class RecorrenciaStatusItem(BaseModel):
+    """Situação de uma recorrência num mês específico."""
+    recorrencia_id: str
+    descricao: str
+    forma_pagamento: str
+    valor_estimado: Decimal
+    dia_vencimento: int
+    cartao_id: Optional[str] = None
+    # do mês: "paga" | "prevista" | "atrasada" | "lancada_cartao" | "nenhuma"
+    situacao: str
+    transacao_id: Optional[str] = None
+    compra_id: Optional[str] = None
+
+
+class RecorrenciaStatusResponse(BaseModel):
+    competencia: str  # "YYYY-MM"
+    items: List[RecorrenciaStatusItem]
+
+
+class PagarMesRequest(BaseModel):
+    """Marca/lança a recorrência num mês (default = mês atual)."""
+    competencia: Optional[str] = None  # "YYYY-MM"
+    conta_id: Optional[str] = None
+    data_pagamento: Optional[date] = None
+    valor_pago: Optional[Decimal] = Field(None, gt=0)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -588,6 +803,17 @@ class ResumoMesResponse(BaseModel):
     total_despesas: Decimal
     saldo: Decimal                 # receitas − despesas (sobra/déficit)
     por_categoria: List[CategoriaResumoItem]   # despesas, maior → menor
+
+
+class ProjecaoMesResponse(BaseModel):
+    """Projeção de fim de mês: parte do saldo atual e desconta o que ainda há a
+    pagar (previstas/atrasadas até o fim do mês), somando o a receber."""
+    ano: int
+    mes: int
+    saldo_atual: Decimal           # soma das contas ativas hoje
+    a_pagar: Decimal               # despesas não pagas com vencimento até o fim do mês
+    a_receber: Decimal             # receitas previstas até o fim do mês
+    estimativa_sobra: Decimal      # saldo_atual + a_receber − a_pagar
 
 
 class RelatorioMesItem(BaseModel):

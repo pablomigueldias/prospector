@@ -11,16 +11,18 @@ from datetime import date
 from decimal import ROUND_DOWN, Decimal
 from typing import List, Optional, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.schemas.financas import (
     BoletoParceladoCreate,
+    CompraCategoriaSugestao,
     CompraParceladaCreate,
     CompraResponse,
     ParcelaResponse,
 )
+from app.api.services.financas import eventos
 from app.db.models.financas.cartao import Cartao
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.compra import Compra
@@ -152,7 +154,53 @@ async def _fatura_do_mes(
     return fatura
 
 
-async def criar_compra_parcelada(payload: CompraParceladaCreate) -> CompraResponse:
+async def lancar_avista_na_sessao(
+    session: AsyncSession,
+    cartao: Cartao,
+    *,
+    usuario_id: uuid.UUID,
+    descricao: str,
+    valor: Decimal,
+    data_compra: date,
+    categoria_id: Optional[uuid.UUID] = None,
+    recorrencia_id: Optional[uuid.UUID] = None,
+) -> Compra:
+    """Lança uma compra à vista (1 parcela) na fatura do mês, dentro da sessão
+    dada (não commita). Usado pelo cron e pelo "marcar pago" das recorrências
+    de cartão — a despesa só pesa no saldo quando a fatura é paga."""
+    compra = Compra(
+        usuario_id=usuario_id,
+        descricao=descricao,
+        valor_total=valor,
+        total_parcelas=1,
+        data_compra=data_compra,
+        origem="cartao",
+        cartao_id=cartao.id,
+        categoria_id=categoria_id,
+        recorrencia_id=recorrencia_id,
+    )
+    session.add(compra)
+    await session.flush()
+
+    ano0, mes0 = competencia_inicial(data_compra, cartao.dia_fechamento)
+    fatura = await _fatura_do_mes(session, cartao, ano0, mes0, {})
+    session.add(Parcela(
+        compra_id=compra.id,
+        numero=1,
+        total_parcelas=1,
+        valor=valor,
+        tem_juros=False,
+        valor_juros=Decimal("0"),
+        vencimento=fatura.vencimento,
+        fatura_id=fatura.id,
+    ))
+    fatura.valor_total = Decimal(fatura.valor_total) + Decimal(valor)
+    return compra
+
+
+async def criar_compra_parcelada(
+    payload: CompraParceladaCreate, *, recorrencia_id: Optional[uuid.UUID] = None
+) -> CompraResponse:
     if not payload.descricao.strip():
         raise CompraError("A compra precisa de uma descrição.")
     if payload.valor_juros_total > payload.valor_total:
@@ -189,6 +237,7 @@ async def criar_compra_parcelada(payload: CompraParceladaCreate) -> CompraRespon
             origem="cartao",
             cartao_id=cartao_id,
             categoria_id=categoria_id,
+            recorrencia_id=recorrencia_id,
         )
         session.add(compra)
         await session.flush()
@@ -278,3 +327,80 @@ async def get_compra(compra_id: str) -> CompraResponse:
         if compra is None:
             raise CompraError("Compra não encontrada.")
         return _to_response(compra)
+
+
+async def sugerir_categoria(
+    usuario_id: str, descricao: str
+) -> CompraCategoriaSugestao:
+    """Categoria usada na última compra com a mesma descrição (reaproveita pra
+    auto-categorizar compras que se repetem). Nula quando não há histórico."""
+    vazia = CompraCategoriaSugestao(categoria_id=None, categoria_nome=None)
+    if not descricao or not descricao.strip():
+        return vazia
+    uid = _uuid(usuario_id, campo="usuario_id")
+    async with get_session() as session:
+        row = (await session.execute(
+            select(Compra.categoria_id, Categoria.nome)
+            .join(Categoria, Categoria.id == Compra.categoria_id)
+            .where(
+                Compra.usuario_id == uid,
+                func.lower(Compra.descricao) == descricao.strip().lower(),
+                Compra.categoria_id.is_not(None),
+            )
+            .order_by(Compra.created_at.desc())
+            .limit(1)
+        )).first()
+    if row is None:
+        return vazia
+    return CompraCategoriaSugestao(categoria_id=str(row[0]), categoria_nome=row[1])
+
+
+async def excluir_compra(compra_id: str, *, usuario_id: str) -> None:
+    """Estorna uma compra parcelada: remove as parcelas (cascade) e abate o
+    valor delas das faturas em que caíram. Bloqueia se alguma parcela já entrou
+    numa fatura paga (aí o certo é desfazer o pagamento da fatura primeiro).
+    Faturas que ficam sem parcela são removidas."""
+    cid = _uuid(compra_id)
+    uid = _uuid(usuario_id, campo="usuario_id")
+    async with get_session() as session:
+        compra = await _carregar_compra(session, cid)
+        if compra is None:
+            raise CompraError("Compra não encontrada.")
+        if compra.usuario_id != uid:
+            raise CompraError("A compra não pertence a esse usuário.")
+
+        # Faturas afetadas (parcelas de cartão); boleto parcelado não tem.
+        faturas: dict[uuid.UUID, Fatura] = {}
+        for p in compra.parcelas:
+            if p.fatura_id and p.fatura_id not in faturas:
+                f = await session.get(Fatura, p.fatura_id)
+                if f is not None:
+                    faturas[p.fatura_id] = f
+
+        for f in faturas.values():
+            if f.status == "paga":
+                raise CompraError(
+                    "Uma das parcelas já entrou numa fatura paga. "
+                    "Desfaça o pagamento da fatura antes de estornar a compra."
+                )
+
+        # Abate cada parcela da sua fatura antes de remover.
+        for p in compra.parcelas:
+            if p.fatura_id and p.fatura_id in faturas:
+                f = faturas[p.fatura_id]
+                novo = Decimal(f.valor_total) - Decimal(p.valor)
+                f.valor_total = novo if novo > 0 else Decimal("0")
+
+        await session.delete(compra)  # parcelas saem por cascade
+        await session.flush()
+
+        # Faturas que ficaram sem nenhuma parcela viram lixo — remove.
+        for fid, f in faturas.items():
+            restam = await session.scalar(
+                select(func.count()).select_from(Parcela).where(Parcela.fatura_id == fid)
+            )
+            if not restam:
+                await session.delete(f)
+
+        await eventos.notificar(session, uid, "compra_excluida")
+        await session.commit()

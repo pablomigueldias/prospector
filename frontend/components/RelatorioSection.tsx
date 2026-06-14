@@ -13,14 +13,17 @@ import {
 } from 'recharts';
 
 import { CategoriaDonut } from '@/components/CategoriaDonut';
-import { useRelatorio } from '@/hooks/useFinancas';
+import { useCategorias, useContas, useRelatorio } from '@/hooks/useFinancas';
+import { achatarCategorias } from '@/lib/categorias';
 import { formatBRL, formatMesAno } from '@/lib/format';
-import type { RelatorioMesItem } from '@/lib/types';
+import type { RelatorioMesItem, RelatorioResponse } from '@/lib/types';
 
 interface Props {
   /** Mês âncora (o selecionado no topo do dashboard). A série termina nele. */
   ano: number;
   mes: number;
+  /** Clique num mês do gráfico → abre a lista de transações daquele mês. */
+  onVerMes?: (ano: number, mes: number) => void;
 }
 
 // Cores do design system (oklch) reaproveitadas no gráfico.
@@ -62,13 +65,38 @@ function baixarCsv(meses: RelatorioMesItem[]) {
 
 const PERIODOS = [3, 6, 12] as const;
 
-export function RelatorioSection({ ano, mes }: Props) {
+/** Imprime só a seção Relatório (vira PDF pelo "Salvar como PDF" do navegador).
+ *  Marca o body, dispara a impressão e limpa a marca quando o diálogo fecha. */
+function exportarPdf() {
+  const limpar = () => {
+    document.body.classList.remove('print-relatorio');
+    window.removeEventListener('afterprint', limpar);
+  };
+  window.addEventListener('afterprint', limpar);
+  document.body.classList.add('print-relatorio');
+  window.print();
+}
+
+export function RelatorioSection({ ano, mes, onVerMes }: Props) {
   const [meses, setMeses] = useState<number>(6);
-  const { relatorio, loading } = useRelatorio(ano, mes, meses);
+  const [contaId, setContaId] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
+  const [comparar, setComparar] = useState(false);
+  const filtro = { contaId: contaId || undefined, categoriaId: categoriaId || undefined };
+  const { relatorio, loading } = useRelatorio(ano, mes, meses, filtro);
+  // Período anterior: mesma janela um ano antes (ex.: jun/26 vs jun/25).
+  const { relatorio: relAnterior } = useRelatorio(ano - 1, mes, meses, filtro, comparar);
+
+  const { contas } = useContas(true);
+  const { arvore } = useCategorias();
+  const categoriasPlanas = useMemo(() => achatarCategorias(arvore), [arvore]);
+  const recortado = !!contaId || !!categoriaId;
 
   const dados = useMemo(
     () =>
       (relatorio?.meses ?? []).map((m) => ({
+        ano: m.ano,
+        mes: m.mes,
         rotulo: formatMesAno(m.ano, m.mes),
         receitas: Number(m.total_receitas),
         despesas: Number(m.total_despesas),
@@ -118,6 +146,57 @@ export function RelatorioSection({ ano, mes }: Props) {
               </button>
             ))}
           </div>
+          {/* Recorte por conta / categoria */}
+          <select
+            className="input w-auto py-1 text-[12.5px]"
+            value={contaId}
+            onChange={(e) => setContaId(e.target.value)}
+            title="Recortar o relatório por conta"
+          >
+            <option value="">Conta: todas</option>
+            {contas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+          <select
+            className="input w-auto py-1 text-[12.5px]"
+            value={categoriaId}
+            onChange={(e) => setCategoriaId(e.target.value)}
+            title="Recortar o relatório por categoria"
+          >
+            <option value="">Categoria: todas</option>
+            {categoriasPlanas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {`${'  '.repeat(c.depth)}${c.nome}`}
+              </option>
+            ))}
+          </select>
+          {recortado && (
+            <button
+              type="button"
+              onClick={() => {
+                setContaId('');
+                setCategoriaId('');
+              }}
+              className="text-[12.5px] text-ink-mute hover:text-ink px-1"
+            >
+              limpar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setComparar((v) => !v)}
+            className={`px-3 py-1 text-[12.5px] rounded-pill border transition-colors ${
+              comparar
+                ? 'bg-brand text-white border-brand'
+                : 'border-line text-ink-soft hover:bg-line-soft'
+            }`}
+            title={`Comparar com o mesmo período de ${ano - 1}`}
+          >
+            vs {ano - 1}
+          </button>
           <button
             type="button"
             onClick={() => relatorio && baixarCsv(relatorio.meses)}
@@ -127,14 +206,43 @@ export function RelatorioSection({ ano, mes }: Props) {
           >
             Exportar CSV
           </button>
+          <button
+            type="button"
+            onClick={exportarPdf}
+            disabled={!relatorio || !temDados}
+            className="btn-ghost px-3 py-1 text-[12.5px] disabled:opacity-40"
+            title="Imprimir / salvar como PDF"
+          >
+            Exportar PDF
+          </button>
         </div>
+      </div>
+
+      {/* Cabeçalho só na impressão (dá contexto ao PDF) */}
+      <div className="hidden print:block mb-4">
+        <div className="font-display font-semibold text-lg text-ink">
+          Relatório de finanças — {formatMesAno(ano, mes)} · últimos {meses} meses
+        </div>
+        {recortado && (
+          <div className="text-sm text-ink-soft mt-0.5">
+            Recorte:{' '}
+            {[
+              contaId && contas.find((c) => c.id === contaId)?.nome,
+              categoriaId &&
+                categoriasPlanas.find((c) => c.id === categoriaId)?.nome,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </div>
+        )}
       </div>
 
       {loading ? (
         <div className="card p-6 h-[320px] animate-pulse" />
       ) : !temDados ? (
         <div className="card p-6 text-center text-ink-soft text-sm">
-          Sem lançamentos nos últimos {meses} meses.
+          Sem lançamentos nos últimos {meses} meses
+          {recortado ? ' com esse recorte' : ''}.
         </div>
       ) : (
         <>
@@ -182,6 +290,11 @@ export function RelatorioSection({ ano, mes }: Props) {
 
           {/* Gráfico: receitas x despesas (barras) + saldo (linha) */}
           <div className="card p-5 mb-4">
+            {onVerMes && (
+              <p className="text-[11.5px] text-ink-mute m-0 mb-2 print:hidden">
+                Dica: clique num mês pra ver os lançamentos dele.
+              </p>
+            )}
             <div style={{ width: '100%', height: 300 }}>
               <ResponsiveContainer>
                 <ComposedChart
@@ -189,6 +302,14 @@ export function RelatorioSection({ ano, mes }: Props) {
                   margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
                   barGap={4}
                   barCategoryGap="22%"
+                  onClick={(state) => {
+                    if (!onVerMes) return;
+                    const ponto = (
+                      state as { activePayload?: { payload?: { ano: number; mes: number } }[] }
+                    )?.activePayload?.[0]?.payload;
+                    if (ponto) onVerMes(ponto.ano, ponto.mes);
+                  }}
+                  className={onVerMes ? 'cursor-pointer' : undefined}
                 >
                   <CartesianGrid
                     vertical={false}
@@ -241,6 +362,16 @@ export function RelatorioSection({ ano, mes }: Props) {
             </div>
           </div>
 
+          {/* Comparativo com o mesmo período do ano anterior */}
+          {comparar && (
+            <ComparativoBlock
+              atual={relatorio!}
+              anterior={relAnterior}
+              meses={meses}
+              anoAtual={ano}
+            />
+          )}
+
           {/* Top categorias do período */}
           <h3 className="font-display font-semibold text-sm tracking-tight text-ink-soft m-0 mb-2">
             Top categorias no período
@@ -249,6 +380,83 @@ export function RelatorioSection({ ano, mes }: Props) {
         </>
       )}
     </section>
+  );
+}
+
+function ComparativoBlock({
+  atual,
+  anterior,
+  meses,
+  anoAtual,
+}: {
+  atual: RelatorioResponse;
+  anterior: RelatorioResponse | null;
+  meses: number;
+  anoAtual: number;
+}) {
+  if (!anterior) {
+    return (
+      <div className="card p-5 mb-4 h-[120px] animate-pulse" />
+    );
+  }
+  const linhas: { rotulo: string; a: number; b: number; despesa?: boolean }[] = [
+    { rotulo: 'Receitas', a: Number(atual.total_receitas), b: Number(anterior.total_receitas) },
+    { rotulo: 'Despesas', a: Number(atual.total_despesas), b: Number(anterior.total_despesas), despesa: true },
+    { rotulo: 'Saldo', a: Number(atual.saldo), b: Number(anterior.saldo) },
+    { rotulo: 'Despesa média/mês', a: Number(atual.media_despesas), b: Number(anterior.media_despesas), despesa: true },
+  ];
+  return (
+    <div className="card p-5 mb-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <h3 className="font-display font-semibold text-sm tracking-tight text-ink m-0">
+          Comparativo
+        </h3>
+        <span className="text-[11.5px] text-ink-mute">
+          últimos {meses}m · {anoAtual} vs {anoAtual - 1}
+        </span>
+      </div>
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="text-[11px] uppercase tracking-wide text-ink-mute">
+            <th className="text-left font-medium pb-2"> </th>
+            <th className="text-right font-medium pb-2">{anoAtual}</th>
+            <th className="text-right font-medium pb-2">{anoAtual - 1}</th>
+            <th className="text-right font-medium pb-2">variação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.map((l) => {
+            const diff = l.a - l.b;
+            const pct = l.b !== 0 ? (diff / Math.abs(l.b)) * 100 : null;
+            const subiu = diff > 0;
+            // Pra despesa, subir é ruim (vermelho); pra receita/saldo, subir é bom.
+            const ruim = l.despesa ? subiu : !subiu && diff !== 0;
+            const cor =
+              diff === 0
+                ? 'text-ink-mute'
+                : ruim
+                  ? 'text-red-600'
+                  : 'text-success-ink';
+            return (
+              <tr key={l.rotulo} className="border-t border-line-soft">
+                <td className="py-2 text-ink-soft">{l.rotulo}</td>
+                <td className="py-2 text-right tabular-nums text-ink">
+                  {formatBRL(l.a)}
+                </td>
+                <td className="py-2 text-right tabular-nums text-ink-mute">
+                  {formatBRL(l.b)}
+                </td>
+                <td className={`py-2 text-right tabular-nums ${cor}`}>
+                  {diff === 0
+                    ? '—'
+                    : `${subiu ? '↑' : '↓'} ${pct != null ? `${Math.abs(pct).toFixed(0)}%` : formatBRL(Math.abs(diff))}`}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { CopiarLinha } from '@/components/CopiarLinha';
 import { EditarPrevistaModal } from '@/components/EditarPrevistaModal';
 import { PagarModal, type PagamentoAlvo } from '@/components/PagarModal';
+import { PagarMesModal } from '@/components/PagarMesModal';
 import { useCategorias, useTransacoes } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
@@ -48,6 +49,7 @@ function vencLabel(venc?: string | null): { texto: string; vencido: boolean } {
 
 export function ContasAPagarSection({ contas, onMutate }: Props) {
   const [aba, setAba] = useState<Aba>('a_pagar');
+  const [pagarMes, setPagarMes] = useState(false);
 
   const filtro = useMemo(
     () =>
@@ -168,7 +170,16 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
           Contas a pagar
         </h2>
-        <div className="flex gap-1.5">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPagarMes(true)}
+            className="btn-ghost px-3 py-1.5 text-[12.5px]"
+            title="Pagar a fatura do cartão + os boletos do mês de uma vez"
+          >
+            Pagar o mês
+          </button>
+          <div className="flex gap-1.5">
           {([
             ['a_pagar', 'A pagar'],
             ['pagas', 'Pagas'],
@@ -185,6 +196,7 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
               {label}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
@@ -329,6 +341,17 @@ export function ContasAPagarSection({ contas, onMutate }: Props) {
           onClose={() => setEditando(null)}
           onSaved={() => {
             setEditando(null);
+            recarregar();
+          }}
+        />
+      )}
+
+      {pagarMes && (
+        <PagarMesModal
+          contas={contas}
+          onClose={() => setPagarMes(false)}
+          onPaid={() => {
+            setPagarMes(false);
             recarregar();
           }}
         />

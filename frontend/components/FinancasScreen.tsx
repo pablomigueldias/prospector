@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { IconPlus } from '@/components/Icon';
+import { BuscaGlobalModal } from '@/components/BuscaGlobalModal';
 import { CartoesSection } from '@/components/CartoesSection';
 import { CategoriaDonut } from '@/components/CategoriaDonut';
 import { CategoriasSection } from '@/components/CategoriasSection';
@@ -10,11 +11,13 @@ import { ConsumoSection } from '@/components/ConsumoSection';
 import { ContasSection } from '@/components/ContasSection';
 import { DevSyncButton } from '@/components/DevSyncButton';
 import { ImportarBoletoSection } from '@/components/ImportarBoletoSection';
+import { OrcamentosSection } from '@/components/OrcamentosSection';
 import { RecorrenciasSection } from '@/components/RecorrenciasSection';
 import { RelatorioSection } from '@/components/RelatorioSection';
 import { StatCard } from '@/components/StatCard';
+import { NluLancarSection } from '@/components/NluLancarSection';
 import { TransacoesSection } from '@/components/TransacoesSection';
-import { useContas, useResumoMes } from '@/hooks/useFinancas';
+import { useContas, useProjecaoMes, useResumoMes } from '@/hooks/useFinancas';
 import { useFinancasEventos } from '@/hooks/useFinancasEventos';
 import { FINANCAS_USUARIO_ID } from '@/lib/financas';
 import { formatBRL, formatMesAno } from '@/lib/format';
@@ -37,6 +40,7 @@ const SECOES: { id: string; label: string }[] = [
   { id: 'sec-consumo', label: 'Consumo' },
   { id: 'sec-cartoes', label: 'Cartões' },
   { id: 'sec-fixas', label: 'Contas fixas' },
+  { id: 'sec-orcamentos', label: 'Orçamentos' },
   { id: 'sec-categorias', label: 'Categorias' },
   { id: 'sec-comprovantes', label: 'Comprovantes' },
 ];
@@ -45,9 +49,9 @@ function irPara(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function SecaoNav() {
+function SecaoNav({ onBuscar }: { onBuscar: () => void }) {
   return (
-    <nav className="sticky top-0 z-30 -mx-8 px-8 py-2.5 mb-6 bg-bg/90 backdrop-blur border-b border-line-soft flex flex-wrap gap-1.5">
+    <nav className="sticky top-0 z-30 -mx-8 px-8 py-2.5 mb-6 bg-bg/90 backdrop-blur border-b border-line-soft flex flex-wrap items-center gap-1.5">
       {SECOES.map((s) => (
         <button
           key={s.id}
@@ -58,6 +62,17 @@ function SecaoNav() {
           {s.label}
         </button>
       ))}
+      <button
+        type="button"
+        onClick={onBuscar}
+        className="ml-auto inline-flex items-center gap-1.5 text-[12.5px] text-ink-soft hover:text-ink border border-line hover:bg-line-soft rounded-pill px-3 py-1 transition-colors"
+        title="Buscar lançamentos em todos os meses  ·  atalho: /"
+      >
+        🔍 Buscar
+        <kbd className="font-mono text-[10px] text-ink-mute border border-line rounded px-1">
+          /
+        </kbd>
+      </button>
     </nav>
   );
 }
@@ -71,6 +86,7 @@ export default function FinancasScreen() {
 
   const { resumo, loading: resumoLoading, refetch: refetchResumo } = useResumoMes(ano, mes);
   const { contas, loading: contasLoading, refetch: refetchContas } = useContas(true);
+  const { projecaoMes, refetch: refetchProjecao } = useProjecaoMes(ano, mes);
 
   // Atualiza sozinho quando algo muda (ex.: gasto lançado pelo Telegram).
   const aoVivo = useFinancasEventos(
@@ -78,7 +94,8 @@ export default function FinancasScreen() {
     useCallback(() => {
       void refetchResumo();
       void refetchContas();
-    }, [refetchResumo, refetchContas]),
+      void refetchProjecao();
+    }, [refetchResumo, refetchContas, refetchProjecao]),
   );
 
   const saldoTotal = useMemo(
@@ -89,7 +106,8 @@ export default function FinancasScreen() {
   const recarregarTudo = useCallback(() => {
     void refetchResumo();
     void refetchContas();
-  }, [refetchResumo, refetchContas]);
+    void refetchProjecao();
+  }, [refetchResumo, refetchContas, refetchProjecao]);
 
   const saldoMes = Number(resumo?.saldo ?? 0);
 
@@ -97,6 +115,18 @@ export default function FinancasScreen() {
   // (botão na seção Transações, FAB flutuante ou atalho de teclado).
   const [lancarAberto, setLancarAberto] = useState(false);
   const podeLancar = contas.length > 0;
+
+  // Clique num mês do gráfico do Relatório → seleciona o mês, foca a lista
+  // de Transações nele e rola até lá.
+  const [focarMesSinal, setFocarMesSinal] = useState(0);
+  const verMesNaLista = useCallback((a: number, m: number) => {
+    setMes([a, m]);
+    setFocarMesSinal((n) => n + 1);
+    setTimeout(() => irPara('sec-transacoes'), 50);
+  }, []);
+
+  // Busca global (atalho "/" ou botão na sub-nav).
+  const [buscaAberta, setBuscaAberta] = useState(false);
 
   // Atalhos: "N" (fora de campos) ou Ctrl/Cmd+K abrem o lançamento.
   useEffect(() => {
@@ -112,6 +142,11 @@ export default function FinancasScreen() {
       if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         if (podeLancar) setLancarAberto(true);
+        return;
+      }
+      if (!digitando && e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setBuscaAberta(true);
         return;
       }
       if (
@@ -144,7 +179,7 @@ export default function FinancasScreen() {
       </header>
 
       {/* Atalhos pra pular entre as seções (fica grudado no topo ao rolar) */}
-      <SecaoNav />
+      <SecaoNav onBuscar={() => setBuscaAberta(true)} />
 
       {/* Navegação de mês */}
       <div id="sec-visao" className="scroll-mt-16 flex items-center gap-3 mb-5">
@@ -204,6 +239,39 @@ export default function FinancasScreen() {
         />
       </div>
 
+      {/* Projeção de fim de mês: sobra estimada */}
+      {projecaoMes && (
+        <div className="card p-4 mb-7 flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-ink-mute mb-0.5">
+              Sobra estimada no fim do mês
+            </div>
+            <div
+              className={`font-display font-semibold tracking-tight text-xl ${
+                Number(projecaoMes.estimativa_sobra) >= 0
+                  ? 'text-success-ink'
+                  : 'text-red-600'
+              }`}
+            >
+              {formatBRL(projecaoMes.estimativa_sobra)}
+            </div>
+          </div>
+          <div className="text-[12.5px] text-ink-soft">
+            saldo hoje {formatBRL(projecaoMes.saldo_atual)}
+            {Number(projecaoMes.a_receber) > 0 && (
+              <> + a receber {formatBRL(projecaoMes.a_receber)}</>
+            )}
+            {' − '}a pagar {formatBRL(projecaoMes.a_pagar)}
+          </div>
+          {Number(projecaoMes.estimativa_sobra) < 0 && (
+            <div className="text-[12px] text-red-600 w-full">
+              ⚠️ As contas previstas do mês passam do que você tem. Reveja os
+              vencimentos ou segure gastos.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Despesas por categoria */}
       <section className="mb-8">
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0 mb-4">
@@ -216,7 +284,7 @@ export default function FinancasScreen() {
       </section>
 
       {/* Relatório: série mês a mês + top categorias do período + CSV */}
-      <RelatorioSection ano={ano} mes={mes} />
+      <RelatorioSection ano={ano} mes={mes} onVerMes={verMesNaLista} />
 
       {/* Contas a pagar (previstas/atrasadas) + as já pagas */}
       <ContasAPagarSection contas={contas} onMutate={recarregarTudo} />
@@ -232,6 +300,9 @@ export default function FinancasScreen() {
 
       {/* Transações: lista filtrável + lançar/excluir */}
       <div id="sec-transacoes" className="scroll-mt-16">
+        <div className="mb-4">
+          <NluLancarSection contas={contas} onMutate={recarregarTudo} />
+        </div>
         <TransacoesSection
           ano={ano}
           mes={mes}
@@ -239,6 +310,7 @@ export default function FinancasScreen() {
           onMutate={recarregarTudo}
           novoAberto={lancarAberto}
           onNovoAbertoChange={setLancarAberto}
+          focarMesSinal={focarMesSinal}
         />
       </div>
 
@@ -269,7 +341,12 @@ export default function FinancasScreen() {
 
       {/* Contas fixas (recorrências: criar/editar/excluir) */}
       <div id="sec-fixas" className="scroll-mt-16">
-        <RecorrenciasSection contas={contas} onMutate={recarregarTudo} />
+        <RecorrenciasSection contas={contas} ano={ano} mes={mes} onMutate={recarregarTudo} />
+      </div>
+
+      {/* Orçamentos por categoria (teto mensal × consumido) */}
+      <div id="sec-orcamentos" className="scroll-mt-16">
+        <OrcamentosSection ano={ano} mes={mes} onMutate={recarregarTudo} />
       </div>
 
       {/* Categorias (criar/editar/excluir) */}
@@ -284,6 +361,13 @@ export default function FinancasScreen() {
         </h2>
         <ComprovantesGaleria />
       </section>
+
+      {buscaAberta && (
+        <BuscaGlobalModal
+          onVerMes={verMesNaLista}
+          onClose={() => setBuscaAberta(false)}
+        />
+      )}
 
       {/* Ferramenta de dev (some em produção) */}
       <DevSyncButton />

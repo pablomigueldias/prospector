@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies.financas import (
     exige_editar,
@@ -10,7 +10,11 @@ from app.api.schemas.financas import (
     CartaoListResponse,
     CartaoResponse,
     CartaoUpdate,
+    FaturaExtratoResponse,
+    FaturaResponse,
     FaturasCartaoResponse,
+    PagarFaturaRequest,
+    ProjecaoFaturasResponse,
 )
 from app.api.services.financas import cartao_service
 from app.api.services.financas.cartao_service import CartaoError
@@ -21,7 +25,7 @@ router = APIRouter(prefix="/api/financas/cartoes", tags=["financas:cartoes"])
 def _handle(e: Exception) -> HTTPException:
     if isinstance(e, CartaoError):
         msg = str(e)
-        status = 404 if "não encontrado" in msg.lower() else 400
+        status = 404 if "não encontrad" in msg.lower() else 400
         return HTTPException(status_code=status, detail=msg)
     return HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
@@ -57,6 +61,46 @@ async def criar(
 async def faturas(cartao_id: str) -> FaturasCartaoResponse:
     try:
         return await cartao_service.faturas_do_cartao(cartao_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/{cartao_id}/faturas/{fatura_id}", response_model=FaturaExtratoResponse,
+            summary="Extrato da fatura: parcelas/compras que a compõem",
+            dependencies=[Depends(usuario_financas)])
+async def extrato_fatura(cartao_id: str, fatura_id: str) -> FaturaExtratoResponse:
+    try:
+        return await cartao_service.extrato_fatura(fatura_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/{cartao_id}/faturas/{fatura_id}/pagar", response_model=FaturaResponse,
+             summary="Paga a fatura: debita de uma conta e baixa a fatura",
+             dependencies=[Depends(exige_editar)])
+async def pagar_fatura(
+    cartao_id: str,
+    fatura_id: str,
+    body: PagarFaturaRequest,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> FaturaResponse:
+    try:
+        return await cartao_service.pagar_fatura(
+            fatura_id, body, usuario_id_sessao=usuario_id
+        )
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/projecao", response_model=ProjecaoFaturasResponse,
+            summary="Comprometido por mês nos próximos N meses (todos os cartões)",
+            dependencies=[Depends(usuario_financas)])
+async def projecao(
+    meses: int = Query(6, ge=1, le=24, description="Quantos meses à frente"),
+    usuario_id: str = Depends(financas_usuario_id),
+) -> ProjecaoFaturasResponse:
+    try:
+        return await cartao_service.projecao_faturas(usuario_id, meses)
     except Exception as e:
         raise _handle(e)
 

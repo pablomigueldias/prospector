@@ -5,10 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies.financas import exige_editar, financas_usuario_id
 from app.api.schemas.financas import (
+    PagarMesRequest,
     ProcessarRecorrenciasResponse,
     RecorrenciaCreate,
     RecorrenciaListResponse,
     RecorrenciaResponse,
+    RecorrenciaStatusItem,
+    RecorrenciaStatusResponse,
     RecorrenciaUpdate,
 )
 from app.api.services.financas import recorrencia_service
@@ -47,6 +50,34 @@ async def criar(
     body.usuario_id = usuario_id  # dono = sessão
     try:
         return await recorrencia_service.criar_recorrencia(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/status", response_model=RecorrenciaStatusResponse,
+            summary="Situação de cada recorrência no mês (paga/prevista/lançada)")
+async def status(
+    competencia: Optional[str] = None,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> RecorrenciaStatusResponse:
+    try:
+        return await recorrencia_service.status_do_mes(usuario_id, competencia)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/{recorrencia_id}/pagar-mes", response_model=RecorrenciaStatusItem,
+             summary="Marca/lança a recorrência no mês, ligada ao lançamento",
+             dependencies=[Depends(exige_editar)])
+async def pagar_mes(
+    recorrencia_id: str,
+    body: PagarMesRequest,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> RecorrenciaStatusItem:
+    try:
+        return await recorrencia_service.pagar_mes(
+            recorrencia_id, body, usuario_id_sessao=usuario_id
+        )
     except Exception as e:
         raise _handle(e)
 

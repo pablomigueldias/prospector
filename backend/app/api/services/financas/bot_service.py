@@ -12,7 +12,9 @@ from decimal import Decimal, InvalidOperation
 from datetime import date
 from typing import Optional
 
-from app.api.schemas.financas import DespesaCreate, ReceitaCreate
+from app.analyzers.boleto.extrator import BoletoSemChave
+from app.analyzers.gemini.client import GeminiSemChave
+from app.api.schemas.financas import ContaCreate, DespesaCreate, ReceitaCreate
 from app.api.services.financas import (
     conta_service,
     importador_service,
@@ -20,7 +22,10 @@ from app.api.services.financas import (
     resumo_service,
     transacao_service,
 )
+from app.api.services.financas.conta_service import ContaError
 from app.api.services.financas.nlu_service import NLUError
+from app.api.services.financas.transacao_service import TransacaoError
+from app.db.models.financas.conta import TIPOS_CONTA
 from app.config import settings
 from app.db.models.financas.bot_rascunho import BotRascunho
 from app.db.session import get_session
@@ -47,6 +52,14 @@ AJUDA = (
     "📊 <b>Consultar</b>\n"
     "• /saldo — saldo das suas contas\n"
     "• /resumo — receitas x despesas do mês\n"
+    "• <code>/resumo julho</code> — de um mês específico\n"
+    "\n"
+    "🏦 <b>Contas</b>\n"
+    "• /contas — listar suas contas\n"
+    "• <code>/conta Nubank corrente</code> — criar uma conta\n"
+    "\n"
+    "↩️ <b>Errou?</b>\n"
+    "• /desfazer — apaga o último lançamento\n"
     "\n"
     "ℹ️ Reveja isto quando quiser com /help."
 )
@@ -112,7 +125,16 @@ async def processar_update(update: dict) -> dict:
         return await _saldos(chat_id, usuario_id)
 
     if texto.startswith("/resumo"):
-        return await _resumo_mes(chat_id, usuario_id)
+        return await _resumo_mes(chat_id, usuario_id, texto)
+
+    if texto.startswith("/contas"):
+        return await _listar_contas(chat_id, usuario_id)
+
+    if texto.startswith("/conta"):
+        return await _cmd_conta(chat_id, usuario_id, texto)
+
+    if texto.startswith(("/desfazer", "/undo")):
+        return await _cmd_desfazer(chat_id, usuario_id)
 
     if texto and not texto.startswith("/"):
         intent = _consulta_intent(texto)
@@ -148,9 +170,53 @@ async def _saldos(chat_id: str, usuario_id: str) -> dict:
     return {"ok": True, "consulta": "saldo"}
 
 
-async def _resumo_mes(chat_id: str, usuario_id: str) -> dict:
+_MESES = {
+    "janeiro": 1, "fevereiro": 2, "marco": 3, "março": 3, "abril": 4,
+    "maio": 5, "junho": 6, "julho": 7, "agosto": 8, "setembro": 9,
+    "outubro": 10, "novembro": 11, "dezembro": 12,
+    "jan": 1, "fev": 2, "mar": 3, "abr": 4, "mai": 5, "jun": 6,
+    "jul": 7, "ago": 8, "set": 9, "out": 10, "nov": 11, "dez": 12,
+}
+
+
+def _parse_periodo(arg: str) -> tuple[int, int]:
+    """Texto após /resumo → (ano, mes). Aceita nome do mês (julho/jul), número
+    (7), MM/AAAA (07/2025) e AAAA-MM (2025-07). Vazio = mês atual. Nome de mês
+    futuro cai no ano anterior (a ocorrência mais recente daquele mês)."""
     hoje = date.today()
-    r = await resumo_service.resumo_mes(usuario_id, hoje.year, hoje.month)
+    a = arg.strip().lower()
+    if not a:
+        return hoje.year, hoje.month
+
+    # AAAA-MM ou MM/AAAA
+    for sep, ordem in (("-", "ay"), ("/", "ya")):
+        if sep in a:
+            p = a.split(sep)
+            if len(p) == 2 and p[0].isdigit() and p[1].isdigit():
+                x, y = int(p[0]), int(p[1])
+                ano, mes = (x, y) if ordem == "ay" else (y, x)
+                if 1 <= mes <= 12:
+                    return ano, mes
+
+    # Nome do mês
+    if a in _MESES:
+        mes = _MESES[a]
+        ano = hoje.year if mes <= hoje.month else hoje.year - 1
+        return ano, mes
+
+    # Número do mês
+    if a.isdigit() and 1 <= int(a) <= 12:
+        mes = int(a)
+        ano = hoje.year if mes <= hoje.month else hoje.year - 1
+        return ano, mes
+
+    return hoje.year, hoje.month
+
+
+async def _resumo_mes(chat_id: str, usuario_id: str, texto: str = "") -> dict:
+    arg = texto.split(maxsplit=1)[1] if len(texto.split(maxsplit=1)) > 1 else ""
+    ano, mes = _parse_periodo(arg)
+    r = await resumo_service.resumo_mes(usuario_id, ano, mes)
     sinal = "🟢" if r.saldo >= 0 else "🔴"
     linhas = [
         f"📊 <b>{r.mes:02d}/{r.ano}</b>",
@@ -164,6 +230,73 @@ async def _resumo_mes(chat_id: str, usuario_id: str) -> dict:
             linhas.append(f"• {c.categoria_nome}: R$ {c.total}")
     await _responder(chat_id, "\n".join(linhas))
     return {"ok": True, "consulta": "resumo"}
+
+
+async def _listar_contas(chat_id: str, usuario_id: str) -> dict:
+    contas = (await conta_service.listar_contas(usuario_id, apenas_ativas=True)).items
+    if not contas:
+        await _responder(
+            chat_id,
+            "Você ainda não tem contas.\n"
+            "Crie uma com <code>/conta Nubank corrente</code>.",
+        )
+        return {"ok": True, "comando": "contas", "total": 0}
+    linhas = [f"• <b>{c.nome}</b> ({c.tipo}): R$ {c.saldo_atual}" for c in contas]
+    await _responder(chat_id, "🏦 <b>Suas contas</b>\n" + "\n".join(linhas))
+    return {"ok": True, "comando": "contas", "total": len(contas)}
+
+
+async def _cmd_conta(chat_id: str, usuario_id: str, texto: str) -> dict:
+    """Cria uma conta: /conta <nome…> [tipo]. O último token vira o tipo se for
+    um tipo válido; senão tudo é o nome e o tipo cai pra 'corrente'."""
+    args = texto.split()[1:]
+    if not args:
+        await _responder(
+            chat_id,
+            "Uso: <code>/conta &lt;nome&gt; [tipo]</code>\n"
+            "Ex.: <code>/conta Nubank corrente</code>\n"
+            f"Tipos: {', '.join(TIPOS_CONTA)} (padrão: corrente).",
+        )
+        return {"ok": True, "comando": "conta", "erro": "uso"}
+
+    tipo = "corrente"
+    if len(args) > 1 and args[-1].lower() in TIPOS_CONTA:
+        tipo = args[-1].lower()
+        args = args[:-1]
+    nome = " ".join(args)
+
+    try:
+        conta = await conta_service.criar_conta(
+            ContaCreate(usuario_id=usuario_id, nome=nome, tipo=tipo)
+        )
+    except ContaError as e:
+        await _responder(chat_id, f"🤔 {e}")
+        return {"ok": True, "comando": "conta", "erro": "negocio"}
+
+    await _responder(
+        chat_id,
+        f"✅ Conta criada: <b>{conta.nome}</b> ({conta.tipo}).\n"
+        "Já dá pra lançar nela.",
+    )
+    return {"ok": True, "comando": "conta", "conta_id": conta.id}
+
+
+async def _cmd_desfazer(chat_id: str, usuario_id: str) -> dict:
+    """Apaga o último lançamento criado (revertendo o saldo, se estava pago)."""
+    ultima = await transacao_service.ultima_transacao(usuario_id)
+    if ultima is None:
+        await _responder(chat_id, "Não tem nada pra desfazer 🤷")
+        return {"ok": True, "comando": "desfazer", "nada": True}
+    try:
+        await transacao_service.excluir_transacao(ultima.id)
+    except TransacaoError as e:
+        await _responder(chat_id, f"🤔 {e}")
+        return {"ok": True, "comando": "desfazer", "erro": "negocio"}
+    await _responder(
+        chat_id,
+        f"↩️ Desfeito: <b>{ultima.descricao}</b> R$ {ultima.valor_total}.",
+    )
+    return {"ok": True, "comando": "desfazer", "transacao_id": ultima.id}
 
 
 async def _arquivo(chat_id: str, usuario_id: str, msg: dict) -> dict:
@@ -182,10 +315,18 @@ async def _arquivo(chat_id: str, usuario_id: str, msg: dict) -> dict:
     caminho = await asyncio.to_thread(tg.get_file_path, file_id)
     conteudo = await asyncio.to_thread(tg.download_file, caminho)
 
-    resp = await importador_service.importar_boleto(
-        usuario_id=usuario_id, conteudo=conteudo,
-        nome_original=nome, content_type=mime,
-    )
+    try:
+        resp = await importador_service.importar_boleto(
+            usuario_id=usuario_id, conteudo=conteudo,
+            nome_original=nome, content_type=mime,
+        )
+    except (BoletoSemChave, GeminiSemChave):
+        await _responder(
+            chat_id,
+            "🤖 A leitura por IA não está configurada agora (falta a chave do "
+            "Gemini). Lance pelo <code>/gasto</code> por enquanto.",
+        )
+        return {"ok": True, "tipo": "arquivo", "erro": "sem_chave"}
     prefixo = "✅" if resp.conferido else ("⚠️" if resp.success else "❌")
     await _responder(chat_id, f"{prefixo} {resp.mensagem}")
     return {"ok": True, "tipo": "arquivo", "conferido": resp.conferido,
@@ -200,6 +341,22 @@ def _card_keyboard(rid: str) -> dict:
     ]}
 
 
+_MARCADORES_FUTURO = (
+    "vou pagar", "vou gastar", "pagar dia", "agendar", "agenda ", "agendado",
+    "previst", "vence", "marcar pra", "marca pra", "tenho que pagar",
+    "preciso pagar", "pagar amanhã", "pagar amanha",
+)
+
+
+def _eh_prevista(texto: str, data_interp: date) -> bool:
+    """Heurística: frase sobre o futuro ('vou pagar', 'dia 10', 'agendar') ou
+    data interpretada à frente de hoje → lança como prevista (não move saldo)."""
+    if data_interp and data_interp > date.today():
+        return True
+    t = texto.lower()
+    return any(m in t for m in _MARCADORES_FUTURO)
+
+
 async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
     """Interpreta a frase (NLU) e manda um card de confirmação."""
     try:
@@ -208,6 +365,7 @@ async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
         await _responder(chat_id, f"🤔 {e}")
         return {"ok": True, "nlu": False}
 
+    prevista = interp.tipo == "despesa" and _eh_prevista(texto, interp.data)
     payload = {
         "tipo": interp.tipo,
         "valor": str(interp.valor),
@@ -217,6 +375,7 @@ async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
         "conta_nome": interp.conta_nome,
         "categoria_id": interp.categoria_id,
         "categoria_nome": interp.categoria_nome,
+        "prevista": prevista,
     }
     async with get_session() as session:
         rascunho = BotRascunho(
@@ -233,6 +392,8 @@ async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
         f"📝 {interp.descricao}",
         f"📅 {interp.data.isoformat()}",
     ]
+    if prevista:
+        linhas.append("🗓️ <b>prevista</b> (agendada — não mexe no saldo ainda)")
     if interp.conta_nome:
         linhas.append(f"🏦 {interp.conta_nome}")
     if interp.categoria_nome:
@@ -288,6 +449,7 @@ async def _confirmar(chat_id: str, usuario_id: str, payload: dict) -> dict:
     competencia = date.fromisoformat(payload["data"])
     conta_id = payload.get("conta_id")
     categoria_id = payload.get("categoria_id")
+    prevista = bool(payload.get("prevista"))
 
     if not conta_id:
         contas = (await conta_service.listar_contas(usuario_id, apenas_ativas=True)).items
@@ -301,13 +463,23 @@ async def _confirmar(chat_id: str, usuario_id: str, payload: dict) -> dict:
             usuario_id=usuario_id, descricao=descricao, valor_total=valor,
             conta_id=conta_id, categoria_id=categoria_id, data_competencia=competencia,
         ))
+        await _responder(chat_id, f"✅ Lançado: <b>{descricao}</b> R$ {valor}.")
     else:
         resp = await transacao_service.lancar_despesa(DespesaCreate(
             usuario_id=usuario_id, descricao=descricao, valor_total=valor,
             conta_id=conta_id, categoria_id=categoria_id, data_competencia=competencia,
+            data_vencimento=competencia if prevista else None,
+            status="prevista" if prevista else "paga",
         ))
-    await _responder(chat_id, f"✅ Lançado: <b>{descricao}</b> R$ {valor}.")
-    return {"ok": True, "acao": "confirmar", "transacao_id": resp.id}
+        if prevista:
+            await _responder(
+                chat_id,
+                f"🗓️ Agendado: <b>{descricao}</b> R$ {valor} "
+                f"(vence {competencia.isoformat()}). Aparece em 'A pagar'.",
+            )
+        else:
+            await _responder(chat_id, f"✅ Lançado: <b>{descricao}</b> R$ {valor}.")
+    return {"ok": True, "acao": "confirmar", "transacao_id": resp.id, "prevista": prevista}
 
 
 async def _cmd_lancar(chat_id: str, usuario_id: str, texto: str, *, tipo: str) -> dict:

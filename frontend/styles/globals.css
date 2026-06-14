@@ -120,3 +120,32 @@ svg {
     @apply w-full px-3 py-2 rounded border border-line bg-surface text-sm text-ink transition-all placeholder:text-ink-faint focus:outline-none focus:border-brand focus:shadow-focus;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   IMPRESSÃO / EXPORTAR PDF
+   Quando o body tem .print-relatorio, só a seção Relatório vai
+   pro papel (o resto fica oculto, mas mantém o layout). Usado
+   pelo botão "Exportar PDF" do RelatorioSection.
+   ════════════════════════════════════════════════════════════ */
+
+@media print {
+  body.print-relatorio * {
+    visibility: hidden;
+  }
+  body.print-relatorio #sec-relatorio,
+  body.print-relatorio #sec-relatorio * {
+    visibility: visible;
+  }
+  body.print-relatorio #sec-relatorio {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0 8px;
+  }
+  /* Cards do relatório imprimem sem sombra/animação. */
+  body.print-relatorio .card {
+    box-shadow: none;
+  }
+}

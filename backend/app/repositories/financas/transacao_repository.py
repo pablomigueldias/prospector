@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.models.financas.categoria import Categoria
+from app.db.models.financas.recorrencia import Recorrencia
 from app.db.models.financas.transacao import Transacao
 from app.db.models.financas.transacao_pagamento import TransacaoPagamento
 
@@ -107,6 +108,43 @@ class TransacaoRepository:
         )
         return await self.session.scalar(stmt)
 
+    async def recorrencia_para_descricao(
+        self, usuario_id: uuid.UUID, descricao: Optional[str]
+    ) -> Optional[uuid.UUID]:
+        """Qual recorrência (conta fixa) casa com esse beneficiário/descrição.
+
+        Aprende como as outras features 'por beneficiário': primeiro pela
+        recorrência que já foi usada na transação mais recente com a mesma
+        descrição; senão, por uma recorrência ativa de nome igual. Serve pra
+        ligar o boleto importado (ex.: aluguel) à conta fixa automaticamente."""
+        if not descricao or not descricao.strip():
+            return None
+        alvo = descricao.strip().lower()
+        # 1) histórico: recorrência da última transação com essa descrição
+        do_historico = await self.session.scalar(
+            select(Transacao.recorrencia_id)
+            .where(
+                Transacao.usuario_id == usuario_id,
+                func.lower(Transacao.descricao) == alvo,
+                Transacao.recorrencia_id.is_not(None),
+            )
+            .order_by(Transacao.created_at.desc())
+            .limit(1)
+        )
+        if do_historico is not None:
+            return do_historico
+        # 2) nome igual a uma recorrência ativa
+        return await self.session.scalar(
+            select(Recorrencia.id)
+            .where(
+                Recorrencia.usuario_id == usuario_id,
+                Recorrencia.ativa.is_(True),
+                func.lower(Recorrencia.descricao) == alvo,
+            )
+            .order_by(Recorrencia.created_at.desc())
+            .limit(1)
+        )
+
     # ── Listagem filtrável (para a tela de transações no dashboard) ───
     async def listar(
         self,
@@ -170,6 +208,28 @@ class TransacaoRepository:
         itens = list((await self.session.scalars(stmt)).all())
         return itens, int(total or 0)
 
+    async def previstas_por_tipo(
+        self, usuario_id: uuid.UUID, ate: date
+    ) -> Dict[str, Decimal]:
+        """Soma por tipo das transações NÃO pagas (prevista/atrasada) com data
+        efetiva (vencimento, ou competência se não tiver) anterior a ``ate``.
+        Usado na projeção de fim de mês — inclui as vencidas que ainda devem."""
+        efetiva = func.coalesce(Transacao.data_vencimento, Transacao.data_competencia)
+        stmt = (
+            select(
+                Transacao.tipo,
+                func.coalesce(func.sum(Transacao.valor_total), 0),
+            )
+            .where(
+                Transacao.usuario_id == usuario_id,
+                Transacao.status != "paga",
+                efetiva < ate,
+            )
+            .group_by(Transacao.tipo)
+        )
+        rows = await self.session.execute(stmt)
+        return {tipo: Decimal(total) for tipo, total in rows.all()}
+
     # ── Agregados do resumo do mês (filtro por data_competencia) ──────
     async def total_por_tipo(
         self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date
@@ -183,18 +243,48 @@ class TransacaoRepository:
                 Transacao.usuario_id == usuario_id,
                 Transacao.data_competencia >= inicio,
                 Transacao.data_competencia < proximo_mes,
+                Transacao.origem != "transferencia",
             )
             .group_by(Transacao.tipo)
         )
         rows = await self.session.execute(stmt)
         return {tipo: Decimal(total) for tipo, total in rows.all()}
 
+    def _filtros_relatorio(
+        self,
+        conta_id: Optional[uuid.UUID],
+        categoria_id: Optional[uuid.UUID],
+    ) -> list:
+        """Condições extras opcionais do relatório (recorte por conta/categoria).
+        Conta usa EXISTS sobre os pagamentos (sem fanout de linhas em splits);
+        previstas sem pagamento ficam de fora do recorte por conta — o que é
+        correto, já que ainda não moveram nenhuma conta."""
+        extra: list = []
+        if categoria_id is not None:
+            extra.append(Transacao.categoria_id == categoria_id)
+        if conta_id is not None:
+            extra.append(
+                select(TransacaoPagamento.id)
+                .where(
+                    TransacaoPagamento.transacao_id == Transacao.id,
+                    TransacaoPagamento.conta_id == conta_id,
+                )
+                .exists()
+            )
+        return extra
+
     async def totais_por_mes(
-        self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date
+        self,
+        usuario_id: uuid.UUID,
+        inicio: date,
+        proximo_mes: date,
+        *,
+        conta_id: Optional[uuid.UUID] = None,
+        categoria_id: Optional[uuid.UUID] = None,
     ) -> List[Tuple[int, int, str, Decimal]]:
         """(ano, mes, tipo, total) por mês de competência no intervalo, pra
         montar a série do relatório. Meses sem lançamento não aparecem (o
-        service preenche zero)."""
+        service preenche zero). Aceita recorte por conta/categoria."""
         ano = func.extract("year", Transacao.data_competencia)
         mes = func.extract("month", Transacao.data_competencia)
         stmt = (
@@ -208,6 +298,8 @@ class TransacaoRepository:
                 Transacao.usuario_id == usuario_id,
                 Transacao.data_competencia >= inicio,
                 Transacao.data_competencia < proximo_mes,
+                Transacao.origem != "transferencia",
+                *self._filtros_relatorio(conta_id, categoria_id),
             )
             .group_by("ano", "mes", Transacao.tipo)
         )
@@ -217,10 +309,17 @@ class TransacaoRepository:
         ]
 
     async def despesas_por_categoria(
-        self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date
+        self,
+        usuario_id: uuid.UUID,
+        inicio: date,
+        proximo_mes: date,
+        *,
+        conta_id: Optional[uuid.UUID] = None,
+        categoria_id: Optional[uuid.UUID] = None,
     ) -> List[Tuple[Optional[uuid.UUID], Optional[str], Decimal]]:
         """(categoria_id, categoria_nome, total) das despesas do mês,
-        maior total primeiro. categoria_id null = sem categoria."""
+        maior total primeiro. categoria_id null = sem categoria. Aceita
+        recorte por conta/categoria."""
         soma = func.coalesce(func.sum(Transacao.valor_total), 0)
         stmt = (
             select(Transacao.categoria_id, Categoria.nome, soma.label("total"))
@@ -231,6 +330,8 @@ class TransacaoRepository:
                 Transacao.tipo == "despesa",
                 Transacao.data_competencia >= inicio,
                 Transacao.data_competencia < proximo_mes,
+                Transacao.origem != "transferencia",
+                *self._filtros_relatorio(conta_id, categoria_id),
             )
             .group_by(Transacao.categoria_id, Categoria.nome)
             .order_by(soma.desc())

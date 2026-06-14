@@ -18,6 +18,7 @@ IMPORTAR = "/api/financas/importar/boleto"
 TX = "/api/financas/transacoes"
 LEITURAS = "/api/financas/leituras"
 CATS = "/api/financas/categorias"
+REC = "/api/financas/recorrencias"
 
 # Boleto do condomínio: 7 verbas que somam 1107.52 + 2 leituras.
 BOLETO_OK = {
@@ -56,6 +57,13 @@ BOLETO_MESMO_BENEF = {
     "valor_total": 500, "linha_digitavel": "75691.23456 78901.234567 89012.345678 1 88880000050000",
     "verbas": [{"descricao": "Taxa", "valor": 500}], "leituras": [],
 }
+# Beneficiário com nome igual a uma recorrência ("Imobiliária Sá") — pra testar
+# o auto-vínculo do boleto importado à conta fixa.
+BOLETO_ALUGUEL = {
+    "beneficiario": "Imobiliária Sá", "vencimento": "2026-06-05",
+    "valor_total": 1800, "linha_digitavel": "11111.22222 33333.444444 55555.666666 7 99990000180000",
+    "verbas": [{"descricao": "Aluguel", "valor": 1800}], "leituras": [],
+}
 
 
 async def _cleanup(usuario_id: str) -> None:
@@ -72,7 +80,7 @@ async def _cleanup(usuario_id: str) -> None:
             except Exception:
                 pass
         async with eng.begin() as conn:
-            for tbl in ("leituras_consumo", "transacoes", "comprovantes"):
+            for tbl in ("leituras_consumo", "transacoes", "comprovantes", "recorrencias"):
                 await conn.execute(
                     text(f"DELETE FROM financas.{tbl} WHERE usuario_id = :u"),
                     {"u": uuid.UUID(usuario_id)},
@@ -190,6 +198,29 @@ def smoke_test() -> None:
             assert tx5["categoria_id"] == condominio, tx5["categoria_id"]
             assert "reaproveitada" in b5["mensagem"].lower(), b5["mensagem"]
             print(f"   {b5['mensagem']}")
+
+            # ── 6. Boleto cujo beneficiário casa com uma conta fixa ───────
+            print("\n→ Test 6: auto-vínculo do boleto à recorrência (conta fixa)")
+            aluguel = client.post(REC, json={
+                "usuario_id": usuario_id, "descricao": "Imobiliária Sá",
+                "tipo": "despesa", "valor_estimado": 1800, "dia_vencimento": 5,
+                "forma_pagamento": "boleto",
+            }).json()["id"]
+            extrator.extrair_boleto_llm = lambda c, ct: json.dumps(BOLETO_ALUGUEL)
+            r6 = client.post(IMPORTAR, data={
+                "usuario_id": usuario_id,
+            }, files={"file": ("aluguel.pdf", b"%PDF alu", "application/pdf")})
+            assert r6.status_code == 200, r6.text
+            b6 = r6.json()
+            assert b6["transacao_id"] and not b6["duplicado"], b6
+            tx6 = client.get(f"{TX}/{b6['transacao_id']}").json()
+            assert tx6["recorrencia_id"] == aluguel, tx6["recorrencia_id"]
+            assert "conta fixa" in b6["mensagem"].lower(), b6["mensagem"]
+            # e o status do mês da recorrência reflete (aparece como prevista)
+            st = client.get(f"{REC}/status", params={"competencia": "2026-06"}).json()
+            sit = {i["recorrencia_id"]: i["situacao"] for i in st["items"]}
+            assert sit.get(aluguel) == "prevista", sit
+            print(f"   {b6['mensagem']}")
 
         finally:
             extrator.extrair_boleto_llm = original

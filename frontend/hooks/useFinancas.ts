@@ -8,6 +8,8 @@ import type {
   FaturasCartao,
   Conta,
   LeituraConsumo,
+  ProjecaoFaturas,
+  ProjecaoMes,
   Recorrencia,
   RelatorioResponse,
   ResumoMes,
@@ -23,10 +25,32 @@ export function useResumoMes(ano: number, mes: number) {
   return { ...result, resumo: result.data };
 }
 
-export function useRelatorio(ano: number, mes: number, meses = 6) {
-  const result = useFetch<RelatorioResponse>(
-    () => api.financasRelatorio(FINANCAS_USUARIO_ID, ano, mes, meses),
-    [ano, mes, meses],
+export function useProjecaoMes(ano: number, mes: number) {
+  const result = useFetch<ProjecaoMes>(
+    () => api.financasProjecaoMes(ano, mes),
+    [ano, mes],
+  );
+  return { ...result, projecaoMes: result.data };
+}
+
+export function useRelatorio(
+  ano: number,
+  mes: number,
+  meses = 6,
+  filtro?: { contaId?: string; categoriaId?: string },
+  enabled = true,
+) {
+  const contaId = filtro?.contaId ?? '';
+  const categoriaId = filtro?.categoriaId ?? '';
+  const result = useFetch<RelatorioResponse | null>(
+    () =>
+      enabled
+        ? api.financasRelatorio(FINANCAS_USUARIO_ID, ano, mes, meses, {
+            contaId: contaId || undefined,
+            categoriaId: categoriaId || undefined,
+          })
+        : Promise.resolve(null),
+    [ano, mes, meses, contaId, categoriaId, enabled],
   );
   return { ...result, relatorio: result.data };
 }
@@ -53,6 +77,14 @@ export function useCartaoFaturas(cartaoId: string) {
     [cartaoId],
   );
   return { ...result, dados: result.data };
+}
+
+export function useProjecaoCartoes(meses = 6, recarregar = 0) {
+  const result = useFetch<ProjecaoFaturas>(
+    () => api.financasProjecaoCartoes(meses),
+    [meses, recarregar],
+  );
+  return { ...result, projecao: result.data };
 }
 
 export function useLeituras(tipo?: string) {

@@ -1,11 +1,58 @@
 # Continuação — onde paramos e como retomar
 
 > Handoff geral do sistema. Última atualização: **2026-06-13**.
-> Branch de trabalho: **`feat/financas`** — agora **espelhado em `main`** (merge + push feitos; ver §2).
+> Branch de trabalho: **`feat/financas`**.
+> ⚠️ **A grande leva de 2026-06-13 (cartão usável, recorrência por forma de
+> pagamento, orçamento, pagar-o-mês, NLU, etc.) está SÓ em `feat/financas` —
+> NÃO foi pra `main` nem pro deploy** (o Pablo pediu pra segurar). Ver §0.
 
 ---
 
-## 1. Estado atual — está NO AR ✅
+## 0. Onde paramos (sessão 2026-06-13) — NÃO deployado ⏸️
+
+Tudo abaixo está **commitado em `feat/financas` com smoke verde**, mas **sem
+push/merge/deploy** (decisão do Pablo: "vamos continuar fazendo as pendências"
+antes de subir). ~19 commits.
+
+**Cartões (o campo da vez):**
+- **Trio usável:** lançar compra parcelada/à vista (botão **+ Compra** no card), **extrato da fatura** (clicar na fatura → item a item) e **pagar a fatura** (debita conta, move saldo, vira despesa do mês). Migration `d4f0a1b2c3e5` (`faturas.transacao_id`).
+- **Limite/disponível + projeção** no card (barra de uso colorida; lista das próximas faturas por mês).
+- **Pagar o mês** (botão no painel *Contas a pagar*): junta **fatura do cartão + boletos do mês** num modal só, cada um na sua conta, e quita tudo de uma vez (`/pagar-mes/preview` + `/pagar-mes`).
+
+**Recorrência ciente da forma de pagamento** (migration `e5a1b3c4d6f7`): conta/cartão/boleto; recorrência de cartão vira **compra na fatura** (cron forma-aware) e dá pra "marcar/lançar o mês"; boleto importado **se liga à conta fixa** (auto pelo beneficiário + manual). Resolve "Claude no cartão / aluguel no boleto".
+
+**Orçamento por categoria** (migration `f6b2c8d4e7a9`): teto mensal × consumido com barras (seção **Orçamentos**) + **alerta no digest** do Telegram (`ORCAMENTO_ALERTA_PCT`, default 80).
+
+**Paridade backend↔tela (§3b) fechada:** despesa dividida por N contas, **NLU no dashboard** (caixa "digite o gasto"), registrar leitura de consumo, botão "gerar previstas".
+
+**Docs reorganizados:** `FINANCAS_FEITO.md` (o que está pronto, por categoria) × `MELHORIAS_FINANCAS.md` (só pendente).
+
+**Hotfix de produção (esse SIM foi aplicado no VPS):** `GEMINI_API_KEY` estava vazia no `~/reative/deploy/.env` → importar boleto dava 500. Preenchida + `docker compose up -d api`. Funciona.
+
+**Quando for deployar:** rodar as migrations novas (já no `02-deploy.sh` no boot): `a1c7e9d2b4f0`/`b2d8f1a3c6e1`/`c3e9a4d7b8f2` (boleto, de antes) + `d4f0a1b2c3e5`/`e5a1b3c4d6f7`/`f6b2c8d4e7a9` (cartão/recorrência/orçamento) + **`a7c3e1f9d2b8`** (`contas.meta` — reservas com objetivo, Onda 3). Conferir `ORCAMENTO_ALERTA_PCT` no `.env` do VPS (tem default).
+
+**✅ Feito (2026-06-13, continuação):**
+- Botão **"Pagar fatura" direto no card do cartão** — atalho ao lado do "+ Compra" que abre o pagamento direto no form (conta/data/valor) apontando pra fatura mais antiga em aberto. Surfacing do `pagar_fatura`, sem backend novo (`CartoesSection.tsx`, prop `iniciarPagando`).
+- **Bot: cadastrar conta + desfazer** — `/contas` (lista), `/conta <nome> [tipo]` (cria) e `/desfazer` (apaga o último lançamento, reverte saldo). Tira o atrito de onboarding (não precisa mais do site pra criar a 1ª conta). Backend novo só `transacao_service.ultima_transacao`. Smoke `test_financas_bot_conta_desfazer_api.py`. *Nota:* se quiser no menu do BotFather, republicar `setMyCommands`.
+- **Dashboard & relatórios (§3 fechado)** — 5 itens: (1) **filtrar o relatório por conta/categoria** (backend `?conta_id&categoria_id`, smoke novo); (2) **exportar o relatório em PDF** (`window.print()` + `@media print` isolando a seção); (3) **clicar num mês do gráfico** → abre a lista de Transações daquele mês; (4) **comparar com o ano anterior** (toggle "vs {ano-1}", reusa o endpoint); (5) **busca global** (atalho `/` ou botão na sub-nav, procura em todos os meses). Build do front verde. Ref `RelatorioSection.tsx`, `BuscaGlobalModal.tsx`, `FinancasScreen.tsx`. **Decisões:** dark mode **descartado**; "patrimônio no tempo" **adiado pro §10** (precisa de snapshots).
+- **Cartões §3d (parte)** — 3 itens: (1) **projeção consolidada** das próximas faturas (todos os cartões, `GET /cartoes/projecao`, bloco no topo da seção Cartões); (2) **estornar compra** (✕ no extrato → `DELETE /compras/{id}`, abate das faturas, bloqueia se a fatura já foi paga) — fecha o buraco de apagar compra errada; (3) **auto-categoria por compra** (`GET /compras/sugestao-categoria`). 3 smokes novos, build verde. **Faltam no §3d:** boleto parcelado na tela (precisa surfaçar/pagar as parcelas — maior), antecipar parcelas (maior), ajustar valor de compra, anexar comprovante (depende MinIO/§6), importar fatura por IA (Pablo pediu pra pular).
+
+- **Onda 1 do "resolver tudo" (2026-06-13)** — 4 ganhos rápidos: (1) **erro amigável** (400, não 500) quando falta a `GEMINI_API_KEY`, na web e no bot (§6); (2) **auto-split VR/VA na tela** (modo "esgota o VR" no form, §3b); (3) **ver parcelas de uma compra** (ⓘ no extrato, §3b); (4) **PIX copia-e-cola** (cola o BR Code → preenche valor+beneficiário, parser EMV sem IA, §9). 4 smokes novos, build verde.
+
+**Backlog ainda grande** — o Pablo pediu pra "resolver todas as pendências do MELHORIAS". É um trabalho de várias ondas (~30 itens). **Bloqueados por coisa fora do código** (precisam de VPS/credenciais/decisão): MinIO atrás do Caddy 🔴 + monitoramento/restore (§6, precisam de deploy/VPS); Open Finance 🔴 (§9, precisa conta Pluggy/Belvo); importar fatura por IA (Pablo pediu pra pular); áudio no bot (§8, precisa Whisper/Groq). O resto é código auto-contido, sendo feito em ondas.
+
+- **Onda 2 do "resolver tudo" (2026-06-13) — Bot §1:** (1) **/resumo por período** (`/resumo julho`, `07`, `MM/AAAA`, `AAAA-MM`); (2) **lançar despesa prevista** pelo NLU ("vou pagar 200 de luz dia 10" → prevista, não move saldo, vai pra "A pagar"). 2 smokes novos. `DespesaCreate` ganhou `data_vencimento`. **Falta no §1:** confirmação rica (trocar categoria/conta por botões — atenção ao teto de 64 bytes do callback_data + falta `edit_message` na integração) e apelidos de conta (🟢).
+
+- **Onda 3 do "resolver tudo" (2026-06-13) — §4 Metas (fechado):** (1) **projeção de fim de mês** (card "sobra estimada" no dashboard, `GET /resumo/projecao`); (2) **alerta de saldo negativo** no digest; (3) **roll-up de orçamento** (categoria-mãe soma as filhas); (4) **reservas com objetivo** (meta + barra de progresso). 5 smokes novos, build verde. ⚠️ **Migration nova `a7c3e1f9d2b8`** (`contas.meta`) — roda no `02-deploy.sh` no deploy; já aplicada no dev.
+
+- **Correções + reserva (2026-06-14):** (1) **fix dos gráficos** que não apareciam (barras do Consumo e da projeção de cartões — `bg-brand/80` sobre oklch + cor clara); (2) **guardar na reserva** — transferência entre contas (`POST /transacoes/transferencia`), debita origem/credita destino e **não conta no resumo**; botão "+ Guardar aqui" no card da reserva. Smoke novo. Migration nenhuma.
+- **Doc novo `docs/ORGANIZACAO_REFATORACAO.md`** — diagnóstico de escalabilidade: arquivos-deus (>1000 linhas: `api.ts`, `CartoesSection.tsx`, `types.ts`, `TransacoesSection.tsx`; back: `schemas/financas.py`, `transacao_service.py`) + plano incremental de quebra por domínio (vertical slices). Pendência de refatoração separada das features.
+
+**Próximas ondas sugeridas:** §1 (confirmação rica do bot); §8 IA (perguntas em linguagem natural 🔴, categorização que aprende 🔴, detector de assinaturas, anomalias, coach de metas); §7 segurança (exportar dados, 2FA obrigatório, auditoria no front); §10 patrimônio líquido; §5 importar extrato (OFX/CSV).
+
+---
+
+## 1. Estado atual — está NO AR ✅ (o que JÁ estava deployado antes desta sessão)
 
 - **App em produção:** https://studio.reativesystems.com.br — login, sessão, RBAC, 2FA, headers de segurança, financeiro e dashboard ao vivo, todos funcionando pela internet.
 - **VPS:** 5 containers de pé (`api`, `web`, `caddy`, `db` healthy, `minio` healthy). Migrations rodaram do zero (public/financas/auth). Admin seedado (`pablo.miguel.dias@gmail.com`, id `00…001`).
@@ -24,14 +71,18 @@
 - **Juros/multa de boleto vencido (2026-06-13):** a IA do importador agora lê os encargos do boleto (multa única % + juros de mora % ao mês) e grava em `transacoes` (`multa_percentual`, `juros_mensal_percentual`). O painel **A pagar** mostra os boletos vencidos já com os juros acumulados **até hoje** (no valor e no resumo), e o modal de pagamento desdobra **valor + multa + juros (N dias) = total**, recalculando se você muda a data. Ao confirmar, o pagamento sai com o total atualizado e o saldo desce por esse valor; o quanto foi de encargos fica em `encargos_pagos`. Fórmula em `app/api/services/financas/encargos.py` (espelhada em `frontend/lib/encargos.ts`). Migration `a1c7e9d2b4f0`. **Multa/juros editáveis no modal de pagamento** (campos "Encargos por atraso") — pra **corrigir o que a IA leu** ou **preencher boletos antigos** (importados antes desta feature, que não têm os percentuais): o que você digita recalcula o total na hora e **fica salvo** na transação (`POST .../pagar` aceita `multa_percentual`/`juros_mensal_percentual`).
 - **Painel "Contas a pagar" + boleto nunca some (2026-06-13):** nova seção **A pagar** no dashboard (abas *A pagar* / *Pagas*), ordenada por vencimento, com os **vencidos em vermelho** e resumo (nº de contas, total, quantas vencidas) — botão **✓ Pagar** em cada uma. E o importador mudou: agora **todo boleto com valor vira uma despesa a pagar** (antes, se as verbas não batiam com o total, não criava nada e sumia); as verbas/itens só entram quando conferem, senão fica só o total pra detalhar depois. Filtro `status` (repetível) + `por_vencimento` no `GET /api/financas/transacoes`; `data_vencimento` agora vem na lista.
 - **Marcar prevista como paga (2026-06-13):** toda transação não-paga (boleto importado, recorrência ou prevista lançada no form) ganhou um botão **✓ Pagar** na lista de Transações. Abre um modal: se a transação ainda não tem conta (boleto/recorrência nascem sem), escolhe a conta; senão usa a existente. Confirma → status vira `paga`, registra a data e **move o saldo**. Backend novo: `POST /api/financas/transacoes/{id}/pagar` (`transacao_service.pagar_transacao`). Fecha o furo do importador (antes o boleto virava prevista e não dava pra quitar pela tela). Smoke: `tests/test_financas_transacoes_pagar_api.py`.
+- **Cartão usável de ponta a ponta (2026-06-13, em `feat/financas`, NÃO deployado):** **lançar compra** (parcelada ou à vista) em cada cartão (botão **+ Compra**), **ver o extrato da fatura** (clicar na fatura → compras/parcelas item a item) e **pagar a fatura** (debita uma conta, move o saldo e some do "em aberto"; a fatura paga vira uma despesa do mês ligada a ela). Migration `d4f0a1b2c3e5` (`faturas.transacao_id`).
+- **Conta fixa sabe como é paga (2026-06-13, em `feat/financas`, NÃO deployado):** ao cadastrar/editar uma recorrência você diz a **forma de pagamento** (conta / cartão / boleto). Recorrência **no cartão** (ex.: Claude) vira **compra na fatura** — o sistema lança sozinho todo mês e você não vê mais "Claude a pagar" fantasma; dá pra **marcar/lançar o mês** na hora (badge de situação + botão na seção Contas fixas). Recorrência **no boleto** (ex.: aluguel): o boleto importado **se liga à conta fixa** automaticamente (pelo beneficiário) e dá pra ligar/desligar na mão no editor da conta a pagar. Migration `e5a1b3c4d6f7`. ⚠️ **Migrations `d4f0a1b2c3e5` e `e5a1b3c4d6f7` ainda não rodaram em prod** (o `02-deploy.sh` roda no deploy).
+- **HOTFIX produção (2026-06-13):** importar boleto em prod dava erro porque a **`GEMINI_API_KEY` estava vazia** no `~/reative/deploy/.env` do VPS. Preenchida (mesma chave do dev), `docker compose up -d api`, health 200 — já funciona. Backup do `.env` antigo ficou em `~/reative/deploy/.env.bak.<timestamp>`.
 - **Botão de dev "Puxar da produção"** no rodapé de Finanças (só no build de dev): copia o banco de produção pro dev (one-way). Gated por `DEV_TOOLS_ENABLED` — em produção a rota é 404. **Desde 2026-06-11** o sync **restaura a senha local do admin** no fim (o dump trazia a senha de produção e quebrava o login do dev) — agora você loga sempre com a mesma senha do `backend/.env`.
 
 ---
 
 ## 2. Git / código
 
-- Trabalho todo commitado e **com push** em `origin/feat/financas` **e `origin/main`** (os dois sincronizados; `main` recebeu tudo via merges `--no-ff`). Padrão: 1 feature = 1 commit, sem co-author.
-- **Deploy é por `rsync`** pro VPS (`~/reative` não é repo git) + rebuild dos containers (`docker compose up -d --build api web` no `~/reative/deploy`). Ver §5.
+- Padrão: 1 feature = 1 commit, sem co-author.
+- ⚠️ **`feat/financas` está ADIANTE de `main`** desde a sessão 2026-06-13 (~19 commits locais, **sem push/merge** — ver §0). Até 2026-06-13 de manhã os dois estavam sincronizados; a leva de cartão/orçamento/pagar-o-mês ficou só local por decisão do Pablo. Quando for subir: push `feat/financas` → merge `--no-ff` na `main` → push → deploy.
+- **Deploy é por `rsync`** pro VPS (`~/reative` não é repo git) + rebuild dos containers (`docker compose up -d --build api web` no `~/reative/deploy`). Ver §5. As migrations novas rodam no boot via `02-deploy.sh`.
 - ⚠️ **2 arquivos `docs/AUTH_*.md`** seguem deletados no working tree de `feat/financas` (pré-existente, não commitado) — decidir se apaga de vez ou restaura.
 
 ---
@@ -48,14 +99,26 @@ Em ordem de "pega rápido":
 6. **Comprovantes no navegador:** o MinIO só escuta no localhost do VPS → URLs presignadas não abrem no browser. Expor o MinIO atrás do Caddy (ex.: `/s3/*`) + ajustar `S3_ENDPOINT` público e o `img-src` do CSP.
 7. ✅ **"Double /api" resolvido (2026-06-10):** Caddy passou a usar `handle /api/*` (sem strip) e `NEXT_PUBLIC_API_URL` sem `/api`. **Pegadinha:** ao trocar o Caddyfile via rsync, precisa `docker restart reative-caddy` (não só `reload`) — bind-mount de arquivo único fica preso ao inode velho.
 8. **Mais de 2 pessoas no bot:** hoje só há 2 slots (você + 1). Pra um terceiro chat, generalizar o mapa chat→usuário (lista no `.env` ou tabela).
-9. ✅ **Merge `feat/financas` → `main` feito.** Os dois branches seguem sincronizados a cada feature.
+9. ⏸️ **`feat/financas` ADIANTE de `main`** (sessão 2026-06-13, ~19 commits sem push/merge/deploy — ver §0). Estavam sincronizados até a manhã do dia 13; segurar foi decisão do Pablo.
 10. ✅ **Senha do dev após sync resolvido (2026-06-11):** o botão "Puxar da produção" agora reseta o `senha_hash` do admin pra `ADMIN_SENHA_INICIAL` do `backend/.env` no fim do sync, então o login do dev não quebra mais. Se ainda precisar resetar à mão (ex.: sync rodado pelo terminal, fora do botão), use o `app.api.services.auth.senha_service.hash_senha` + `UPDATE auth.usuarios`. Trocar a senha no app revoga sessões; anote a nova.
 
 ---
 
 ## 4. Próximos blocos de produto
 
-Ideias de evolução do financeiro estão em **`docs/MELHORIAS_FINANCAS.md`** (priorizadas). Destaques rápidos: cadastrar conta pelo bot, metas/orçamento por categoria, alertas de vencimento, relatório mensal automático no Telegram.
+O que **já foi feito** está catalogado em **`docs/FINANCAS_FEITO.md`** (por
+categoria); o **pendente** em **`docs/MELHORIAS_FINANCAS.md`** (priorizado).
+
+Destaques do que ainda falta (🔴):
+- **Importar a fatura do cartão por foto/PDF com IA** (igual ao boleto) — pedido do Pablo, §3d. Provável próximo passo no cartão.
+- **Cadastrar conta + `/desfazer` no bot** (§1).
+- **Perguntas em linguagem natural sobre os dados / categorização que aprende** (§8).
+- **Expor o MinIO atrás do Caddy** (§6) — destrava ver comprovante no navegador em prod.
+- **Open Finance / importar extrato** (§9).
+
+Já entregues nesta leva (antes era "próximo"): metas/**orçamento por categoria**
++ alertas no Telegram, **lembrete de vencimento** (boleto e fatura), relatório
+mensal — ver `FINANCAS_FEITO.md`.
 
 ---
 

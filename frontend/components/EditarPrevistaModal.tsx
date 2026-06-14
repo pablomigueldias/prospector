@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Modal } from '@/components/Modal';
+import { useRecorrencias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { type CategoriaPlana } from '@/lib/categorias';
 import { formatBRL } from '@/lib/format';
@@ -31,6 +32,8 @@ export function EditarPrevistaModal({
   const [valor, setValor] = useState(String(detalhe.valor_total));
   const [vencimento, setVencimento] = useState(detalhe.data_vencimento ?? '');
   const [categoriaId, setCategoriaId] = useState(detalhe.categoria_id ?? '');
+  const [recorrenciaId, setRecorrenciaId] = useState(detalhe.recorrencia_id ?? '');
+  const { recorrencias } = useRecorrencias();
   const [multaPct, setMultaPct] = useState(
     detalhe.multa_percentual != null ? String(detalhe.multa_percentual) : '',
   );
@@ -89,6 +92,7 @@ export function EditarPrevistaModal({
         multa_percentual: multaPct !== '' ? multaPct : null,
         juros_mensal_percentual: jurosPct !== '' ? jurosPct : null,
         itens, // substitui as verbas (mesmo vazio limpa)
+        recorrencia_id: recorrenciaId || null,
       });
       onSaved();
     } catch (err) {
@@ -177,6 +181,29 @@ export function EditarPrevistaModal({
               placeholder="1"
             />
           </div>
+        </div>
+
+        {/* Conta fixa (recorrência) à qual essa despesa pertence */}
+        <div>
+          <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
+            Conta fixa (opcional)
+          </label>
+          <select
+            className="input"
+            value={recorrenciaId}
+            onChange={(e) => setRecorrenciaId(e.target.value)}
+          >
+            <option value="">Não é conta fixa</option>
+            {recorrencias.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.descricao}
+              </option>
+            ))}
+          </select>
+          <p className="text-[12px] text-ink-mute mt-1 m-0">
+            Liga essa despesa a uma conta fixa (ex.: o boleto do aluguel) — conta
+            como a do mês.
+          </p>
         </div>
 
         {/* Editor de verbas (subitens do boleto) */}

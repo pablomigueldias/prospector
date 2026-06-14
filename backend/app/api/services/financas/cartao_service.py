@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from decimal import Decimal
 from typing import Optional
 
@@ -12,13 +13,23 @@ from app.api.schemas.financas import (
     CartaoListResponse,
     CartaoResponse,
     CartaoUpdate,
+    FaturaExtratoItem,
+    FaturaExtratoResponse,
     FaturaResponse,
     FaturasCartaoResponse,
+    PagarFaturaRequest,
+    ProjecaoFaturasResponse,
+    ProjecaoMesItem,
 )
+from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.cartao import Cartao
+from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.compra import Compra
+from app.db.models.financas.conta import Conta
 from app.db.models.financas.fatura import Fatura
 from app.db.models.financas.parcela import Parcela
+from app.db.models.financas.transacao import Transacao
+from app.db.models.financas.transacao_pagamento import TransacaoPagamento
 from app.db.session import get_session
 
 
@@ -161,3 +172,158 @@ async def faturas_do_cartao(cartao_id: str) -> FaturasCartaoResponse:
         total_em_aberto=Decimal(em_aberto),
         total_juros=Decimal(juros),
     )
+
+
+async def projecao_faturas(usuario_id: str, meses: int = 6) -> ProjecaoFaturasResponse:
+    """Comprometido por mês nos próximos ``meses``, somando as faturas não pagas
+    de TODOS os cartões do usuário (cada parcela futura já caiu na fatura do seu
+    mês). Só retorna os meses que têm algo a pagar."""
+    uid = _uuid(usuario_id, campo="usuario_id")
+    meses = max(1, min(int(meses), 24))
+    hoje = date.today()
+    inicio = date(hoje.year, hoje.month, 1)
+    idx = hoje.year * 12 + (hoje.month - 1) + meses
+    fim = date(idx // 12, idx % 12 + 1, 1)
+
+    async with get_session() as session:
+        rows = (await session.execute(
+            select(
+                Fatura.mes_referencia,
+                func.coalesce(func.sum(Fatura.valor_total), 0),
+            )
+            .join(Cartao, Cartao.id == Fatura.cartao_id)
+            .where(
+                Cartao.usuario_id == uid,
+                Fatura.status != "paga",
+                Fatura.mes_referencia >= inicio,
+                Fatura.mes_referencia < fim,
+            )
+            .group_by(Fatura.mes_referencia)
+            .order_by(Fatura.mes_referencia)
+        )).all()
+
+    itens = [
+        ProjecaoMesItem(mes_referencia=m, total=Decimal(t)) for m, t in rows
+    ]
+    total = sum((i.total for i in itens), Decimal("0"))
+    return ProjecaoFaturasResponse(meses=itens, total=total)
+
+
+async def extrato_fatura(fatura_id: str) -> FaturaExtratoResponse:
+    """Detalha uma fatura item a item: as parcelas que caem nela, com a
+    descrição/categoria da compra de origem."""
+    fid = _uuid(fatura_id)
+    async with get_session() as session:
+        fatura = await session.get(Fatura, fid)
+        if fatura is None:
+            raise CartaoError("Fatura não encontrada.")
+        cartao = await session.get(Cartao, fatura.cartao_id)
+
+        linhas = (await session.execute(
+            select(Parcela, Compra, Categoria)
+            .join(Compra, Compra.id == Parcela.compra_id)
+            .outerjoin(Categoria, Categoria.id == Compra.categoria_id)
+            .where(Parcela.fatura_id == fid)
+            .order_by(Parcela.vencimento, Compra.descricao)
+        )).all()
+
+        itens = [
+            FaturaExtratoItem(
+                parcela_id=str(p.id),
+                compra_id=str(c.id),
+                descricao=c.descricao,
+                numero=p.numero,
+                total_parcelas=p.total_parcelas,
+                valor=p.valor,
+                valor_juros=p.valor_juros,
+                vencimento=p.vencimento,
+                categoria_id=str(cat.id) if cat else None,
+                categoria_nome=cat.nome if cat else None,
+            )
+            for p, c, cat in linhas
+        ]
+        total_juros = sum((p.valor_juros for p, _, _ in linhas), Decimal("0"))
+
+    return FaturaExtratoResponse(
+        fatura=FaturaResponse(
+            id=str(fatura.id),
+            cartao_id=str(fatura.cartao_id),
+            mes_referencia=fatura.mes_referencia,
+            valor_total=fatura.valor_total,
+            vencimento=fatura.vencimento,
+            status=fatura.status,
+        ),
+        cartao_nome=cartao.nome if cartao else "",
+        itens=itens,
+        total_juros=Decimal(total_juros),
+    )
+
+
+def _fatura_response(f: Fatura) -> FaturaResponse:
+    return FaturaResponse(
+        id=str(f.id),
+        cartao_id=str(f.cartao_id),
+        mes_referencia=f.mes_referencia,
+        valor_total=f.valor_total,
+        vencimento=f.vencimento,
+        status=f.status,
+    )
+
+
+async def pagar_fatura(
+    fatura_id: str, payload: PagarFaturaRequest, *, usuario_id_sessao: str
+) -> FaturaResponse:
+    """Baixa a fatura: cria uma despesa paga (move o saldo da conta) e marca a
+    fatura como paga, ligando-a a esse lançamento (``transacao_id``). A despesa
+    aparece no resumo/lista do mês como a saída real de dinheiro."""
+    fid = _uuid(fatura_id)
+    uid = _uuid(usuario_id_sessao, campo="usuario_id")
+    quando = payload.data_pagamento or date.today()
+
+    async with get_session() as session:
+        fatura = await session.get(Fatura, fid)
+        if fatura is None:
+            raise CartaoError("Fatura não encontrada.")
+        cartao = await session.get(Cartao, fatura.cartao_id)
+        if cartao is None or cartao.usuario_id != uid:
+            raise CartaoError("A fatura não pertence a esse usuário.")
+        if fatura.status == "paga":
+            raise CartaoError("Essa fatura já está paga.")
+
+        conta = await session.get(Conta, _uuid(payload.conta_id, campo="conta_id"))
+        if conta is None or conta.usuario_id != uid:
+            raise CartaoError("Conta não encontrada.")
+
+        categoria_id = None
+        if payload.categoria_id:
+            categoria_id = _uuid(payload.categoria_id, campo="categoria_id")
+            if await session.get(Categoria, categoria_id) is None:
+                raise CartaoError("Categoria não encontrada.")
+
+        total = Decimal(payload.valor_pago) if payload.valor_pago else Decimal(fatura.valor_total)
+        competencia = fatura.mes_referencia
+        rotulo = competencia.strftime("%m/%Y")
+
+        despesa = Transacao(
+            usuario_id=uid,
+            tipo="despesa",
+            descricao=f"Fatura {cartao.nome} {rotulo}",
+            valor_total=total,
+            data_competencia=quando,
+            data_pagamento=quando,
+            status="paga",
+            origem="manual",
+            categoria_id=categoria_id,
+        )
+        despesa.pagamentos.append(TransacaoPagamento(conta_id=conta.id, valor=total))
+        session.add(despesa)
+        await session.flush()  # garante despesa.id pra ligar na fatura
+
+        saldo_service.aplicar_movimento(conta, "despesa", total)
+        fatura.status = "paga"
+        fatura.transacao_id = despesa.id
+
+        await eventos.notificar(session, uid, "fatura_paga")
+        await session.commit()
+        await session.refresh(fatura)
+        return _fatura_response(fatura)

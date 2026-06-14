@@ -14,16 +14,26 @@ from app.config import settings
 
 CARTOES = "/api/financas/cartoes"
 COMPRAS = "/api/financas/compras"
+CONTAS = "/api/financas/contas"
 
 
 async def _cleanup(usuario_id: str, cartao_ids: list[str], compra_ids: list[str]) -> None:
     eng = create_async_engine(settings.database_url)
     try:
         async with eng.begin() as conn:
+            # despesas geradas ao pagar fatura (e seus pagamentos via cascade)
+            await conn.execute(
+                text("DELETE FROM financas.transacoes WHERE usuario_id = :u"),
+                {"u": usuario_id},
+            )
             for cid in compra_ids:
                 await conn.execute(text("DELETE FROM financas.compras WHERE id = :id"), {"id": cid})
             for cid in cartao_ids:
                 await conn.execute(text("DELETE FROM financas.cartoes WHERE id = :id"), {"id": cid})
+            await conn.execute(
+                text("DELETE FROM financas.contas WHERE usuario_id = :u"),
+                {"u": usuario_id},
+            )
     finally:
         await eng.dispose()
 
@@ -77,6 +87,56 @@ def smoke_test() -> None:
             print("\n→ Test 3: faturas de cartão inexistente → 404")
             assert client.get(f"{CARTOES}/{uuid.uuid4()}/faturas").status_code == 404
             print("   404 ok")
+
+            # ── 4. Extrato de uma fatura ──────────────────────────────
+            print("\n→ Test 4: GET /cartoes/{id}/faturas/{fatura_id} (extrato)")
+            primeira = sorted(b["faturas"], key=lambda f: f["mes_referencia"])[0]
+            re = client.get(f"{CARTOES}/{cartao_id}/faturas/{primeira['id']}")
+            assert re.status_code == 200, re.text
+            ext = re.json()
+            assert ext["cartao_nome"] == "Nubank", ext["cartao_nome"]
+            assert len(ext["itens"]) == 1, ext["itens"]
+            it = ext["itens"][0]
+            assert it["descricao"] == "Geladeira", it
+            assert it["total_parcelas"] == 3, it
+            assert Decimal(it["valor"]) == Decimal("100.00"), it["valor"]
+            print(f"   extrato: {it['descricao']} {it['numero']}/{it['total_parcelas']} R${it['valor']}")
+            # fatura inexistente → 404
+            assert client.get(f"{CARTOES}/{cartao_id}/faturas/{uuid.uuid4()}").status_code == 404
+            print("   fatura inexistente → 404 ok")
+
+            # ── 5. Pagar a fatura ─────────────────────────────────────
+            print("\n→ Test 5: POST /cartoes/{id}/faturas/{fatura_id}/pagar")
+            conta_id = client.post(CONTAS, json={
+                "usuario_id": usuario_id, "nome": "Nubank conta",
+                "tipo": "corrente", "saldo_atual": 1000,
+            }).json()["id"]
+            rp = client.post(
+                f"{CARTOES}/{cartao_id}/faturas/{primeira['id']}/pagar",
+                json={"conta_id": conta_id},
+            )
+            assert rp.status_code == 200, rp.text
+            assert rp.json()["status"] == "paga", rp.json()
+            # a fatura sai do "em aberto"
+            rf2 = client.get(f"{CARTOES}/{cartao_id}/faturas").json()
+            assert Decimal(rf2["total_em_aberto"]) == Decimal("200.00"), rf2["total_em_aberto"]
+            # saldo da conta caiu pelo valor da fatura (100)
+            saldo = next(
+                c["saldo_atual"] for c in
+                client.get(CONTAS, params={"usuario_id": usuario_id}).json()["items"]
+                if c["id"] == conta_id
+            )
+            assert Decimal(saldo) == Decimal("900.00"), saldo
+            # virou despesa na lista de transações, ligada à fatura
+            lst = client.get("/api/financas/transacoes", params={"usuario_id": usuario_id}).json()
+            assert any("Fatura Nubank" in t["descricao"] for t in lst["items"]), lst
+            print(f"   fatura paga, em aberto {rf2['total_em_aberto']}, saldo {saldo}")
+            # pagar de novo → 400 (já paga)
+            assert client.post(
+                f"{CARTOES}/{cartao_id}/faturas/{primeira['id']}/pagar",
+                json={"conta_id": conta_id},
+            ).status_code == 400
+            print("   pagar de novo → 400 ok")
 
         finally:
             asyncio.run(_cleanup(usuario_id, cartao_ids, compra_ids))

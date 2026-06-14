@@ -24,10 +24,13 @@ from app.api.routers import resumo as resumo_router
 from app.api.routers import cartoes as cartoes_router
 from app.api.routers import compras as compras_router
 from app.api.routers import recorrencias as recorrencias_router
+from app.api.routers import orcamentos as orcamentos_router
+from app.api.routers import pagar_mes as pagar_mes_router
 from app.api.routers import leituras as leituras_router
 from app.api.routers import comprovantes as comprovantes_router
 from app.api.routers import importador as importador_router
 from app.api.routers import nlu as nlu_router
+from app.api.routers import pix as pix_router
 from app.api.routers import telegram as telegram_router
 from app.api.routers import eventos as eventos_router
 from app.config import settings
@@ -142,10 +145,13 @@ app.include_router(resumo_router.router)
 app.include_router(cartoes_router.router)
 app.include_router(compras_router.router)
 app.include_router(recorrencias_router.router)
+app.include_router(orcamentos_router.router)
+app.include_router(pagar_mes_router.router)
 app.include_router(leituras_router.router)
 app.include_router(comprovantes_router.router)
 app.include_router(importador_router.router)
 app.include_router(nlu_router.router)
+app.include_router(pix_router.router)
 app.include_router(telegram_router.router)
 app.include_router(eventos_router.router)
 

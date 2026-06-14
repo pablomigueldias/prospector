@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     lembretes_enabled: bool = True       # manda o digest de vencimento no Telegram
     lembretes_hora: int = 8              # hora local (America/Sao_Paulo) do envio
     lembretes_dias_antes: int = 3        # avisa boletos vencendo em até N dias
+    orcamento_alerta_pct: int = 80       # avisa categorias acima de X% do teto
     timezone: str = "America/Sao_Paulo"
 
     # Auth / sessão (portão de entrada). Cookie opaco httpOnly; o token vai

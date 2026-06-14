@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
+from typing import Optional
 
 from sqlalchemy import Date, ForeignKey, Index, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -32,6 +33,18 @@ class Fatura(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     vencimento: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="aberta", server_default="aberta"
+    )
+
+    # Despesa gerada ao pagar a fatura (move o saldo da conta). Liga a baixa da
+    # fatura ao lançamento, pra ser reversível e aparecer no resumo do mês.
+    transacao_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey(
+            "financas.transacoes.id",
+            ondelete="SET NULL",
+            name="fk_fin_faturas_transacao",
+        ),
+        nullable=True,
     )
 
     __table_args__ = (

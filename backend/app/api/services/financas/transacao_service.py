@@ -18,6 +18,8 @@ from app.api.schemas.financas import (
     DespesaCreate,
     DespesaDivididaCreate,
     ReceitaCreate,
+    TransferenciaCreate,
+    TransferenciaResponse,
     TransacaoItemResponse,
     TransacaoListItem,
     TransacaoListResponse,
@@ -28,6 +30,7 @@ from app.api.services.financas import encargos as encargos_service
 from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
+from app.db.models.financas.recorrencia import Recorrencia
 from app.db.models.financas.transacao import STATUS_TRANSACAO, Transacao
 from app.db.models.financas.transacao_item import TransacaoItem
 from app.db.models.financas.transacao_pagamento import TransacaoPagamento
@@ -69,6 +72,7 @@ def _to_response(t: Transacao) -> TransacaoResponse:
         status=t.status,
         origem=t.origem,
         categoria_id=str(t.categoria_id) if t.categoria_id else None,
+        recorrencia_id=str(t.recorrencia_id) if t.recorrencia_id else None,
         notas=t.notas,
         itens=[
             TransacaoItemResponse(
@@ -122,6 +126,7 @@ async def _finalizar_transacao(
     status: str,
     notas: Optional[str],
     pagamentos: List[Tuple[Conta, Decimal]],
+    vencimento: Optional[date] = None,
 ) -> TransacaoResponse:
     """Núcleo: cria a transação (despesa/receita) com N pagamentos e ajusta o
     saldo de cada conta (só quando paga). Assume contas/categoria já validadas."""
@@ -132,6 +137,7 @@ async def _finalizar_transacao(
         valor_total=valor_total,
         data_competencia=competencia,
         data_pagamento=pagamento_em,
+        data_vencimento=vencimento,
         status=status,
         origem="manual",
         categoria_id=categoria_id,
@@ -193,6 +199,7 @@ async def lancar_despesa(payload: DespesaCreate) -> TransacaoResponse:
             status=payload.status,
             notas=payload.notas,
             pagamentos=[(conta, payload.valor_total)],
+            vencimento=payload.data_vencimento,
         )
 
 
@@ -327,6 +334,52 @@ async def lancar_despesa_auto_split(
         )
 
 
+async def transferir(payload: TransferenciaCreate) -> TransferenciaResponse:
+    """Move dinheiro entre contas (ex.: guardar na reserva). Cria duas pernas
+    (saída na origem + entrada no destino) marcadas como ``origem=transferencia``
+    pra NÃO contarem como receita/despesa no resumo. Ambas pagas."""
+    usuario_id = _uuid(payload.usuario_id, campo="usuario_id")
+    origem_id = _uuid(payload.origem_conta_id, campo="origem_conta_id")
+    destino_id = _uuid(payload.destino_conta_id, campo="destino_conta_id")
+    if origem_id == destino_id:
+        raise TransacaoError("A origem e o destino precisam ser contas diferentes.")
+    if payload.valor <= 0:
+        raise TransacaoError("O valor precisa ser maior que zero.")
+
+    quando = payload.data or date.today()
+    valor = payload.valor
+
+    async with get_session() as session:
+        origem = await _buscar_conta(session, origem_id, usuario_id)
+        destino = await _buscar_conta(session, destino_id, usuario_id)
+        desc = (payload.descricao or "").strip() or f"Transferência p/ {destino.nome}"
+
+        saida = Transacao(
+            usuario_id=usuario_id, tipo="despesa", descricao=desc,
+            valor_total=valor, data_competencia=quando, data_pagamento=quando,
+            status="paga", origem="transferencia",
+            pagamentos=[TransacaoPagamento(conta_id=origem.id, valor=valor)],
+        )
+        entrada = Transacao(
+            usuario_id=usuario_id, tipo="receita", descricao=desc,
+            valor_total=valor, data_competencia=quando, data_pagamento=quando,
+            status="paga", origem="transferencia",
+            pagamentos=[TransacaoPagamento(conta_id=destino.id, valor=valor)],
+        )
+        session.add(saida)
+        session.add(entrada)
+        saldo_service.aplicar_movimento(origem, "despesa", valor)
+        saldo_service.aplicar_movimento(destino, "receita", valor)
+        await eventos.notificar(session, usuario_id, "transferencia")
+        await session.commit()
+
+    return TransferenciaResponse(
+        origem_conta_id=str(origem_id),
+        destino_conta_id=str(destino_id),
+        valor=valor,
+    )
+
+
 async def sugestao_conta_pagamento(
     transacao_id: str, usuario_id_sessao: str
 ) -> dict:
@@ -452,6 +505,7 @@ async def listar_transacoes(
                 status=t.status,
                 categoria_id=str(t.categoria_id) if t.categoria_id else None,
                 categoria_nome=cat_nome.get(t.categoria_id),
+                recorrencia_id=str(t.recorrencia_id) if t.recorrencia_id else None,
                 contas=[contas_nome.get(p.conta_id, "?") for p in t.pagamentos],
             )
             for t in itens
@@ -581,6 +635,19 @@ async def editar_prevista(
                 t.itens.append(
                     TransacaoItem(descricao=it.descricao, valor=it.valor)
                 )
+        # Vínculo com a conta fixa: só mexe se o campo foi enviado (None = solta).
+        if "recorrencia_id" in payload.model_fields_set:
+            rid = (
+                _uuid(payload.recorrencia_id, campo="recorrencia_id")
+                if payload.recorrencia_id else None
+            )
+            if rid is not None:
+                rec = await session.get(Recorrencia, rid)
+                if rec is None:
+                    raise TransacaoError("Recorrência não encontrada.")
+                if rec.usuario_id != uid:
+                    raise TransacaoError("A recorrência não pertence a esse usuário.")
+            t.recorrencia_id = rid
 
         await eventos.notificar(session, uid, "transacao_editada")
         await session.commit()
@@ -679,6 +746,27 @@ async def pagar_transacao(
         await eventos.notificar(session, uid, "transacao_paga")
         await session.commit()
         return _to_response(await repo.get(tid))
+
+
+async def ultima_transacao(usuario_id: str) -> Optional[TransacaoResponse]:
+    """A transação criada mais recentemente pelo usuário (pro /desfazer do bot).
+    Ordena por created_at — é o 'último lançamento', não a competência mais nova."""
+    uid = _uuid(usuario_id, campo="usuario_id")
+    async with get_session() as session:
+        from sqlalchemy.orm import selectinload
+
+        stmt = (
+            select(Transacao)
+            .options(
+                selectinload(Transacao.itens),
+                selectinload(Transacao.pagamentos),
+            )
+            .where(Transacao.usuario_id == uid)
+            .order_by(Transacao.created_at.desc())
+            .limit(1)
+        )
+        t = await session.scalar(stmt)
+        return _to_response(t) if t is not None else None
 
 
 async def excluir_transacao(transacao_id: str) -> None:

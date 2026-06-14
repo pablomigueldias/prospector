@@ -13,9 +13,23 @@ import type {
   CategoriaTreeResponse,
   CategoriaUpdateInput,
   LancamentoInput,
+  DespesaAutoSplitInput,
+  DespesaDivididaInput,
+  NluInterpretacao,
+  PagamentoMesPreview,
+  PagamentoMesItemInput,
+  PagamentoMesResultado,
+  Orcamento,
+  OrcamentoListResponse,
+  OrcamentoStatusResponse,
+  OrcamentoCreateInput,
+  OrcamentoUpdateInput,
   Recorrencia,
   RecorrenciaCreateInput,
   RecorrenciaListResponse,
+  RecorrenciaStatusItem,
+  RecorrenciaStatusResponse,
+  PagarMesInput,
   RecorrenciaUpdateInput,
   TransacaoEditInput,
   TransacaoFiltro,
@@ -40,11 +54,22 @@ import type {
   GerarCandidaturaResponse,
   CandidaturaEmailItem,
   ContaListResponse,
+  ProjecaoMes,
   ResumoMes,
   RelatorioResponse,
   CartaoListResponse,
   FaturasCartao,
+  FaturaExtrato,
+  Compra,
+  CompraCreateInput,
+  Fatura,
+  CompraCategoriaSugestao,
+  PagarFaturaInput,
+  PixParse,
+  ProjecaoFaturas,
   LeituraConsumoListResponse,
+  LeituraConsumo,
+  LeituraCreateInput,
   Comprovante,
   ComprovanteListResponse,
   ImportarBoletoResponse,
@@ -357,12 +382,26 @@ export const api = {
     return request<ResumoMes>(`/api/financas/resumo?${q}`, { timeoutMs: 10_000 });
   },
 
-  /** GET /api/financas/resumo/relatorio — série mês a mês + top categorias */
+  /** GET /api/financas/resumo/projecao — sobra estimada do fim do mês */
+  financasProjecaoMes(ano: number, mes: number): Promise<ProjecaoMes> {
+    const q = new URLSearchParams({
+      usuario_id: FINANCAS_USUARIO_ID,
+      ano: String(ano),
+      mes: String(mes),
+    });
+    return request<ProjecaoMes>(`/api/financas/resumo/projecao?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** GET /api/financas/resumo/relatorio — série mês a mês + top categorias.
+   *  Recorte opcional por conta e/ou categoria. */
   financasRelatorio(
     usuarioId: string,
     ano: number,
     mes: number,
     meses = 6,
+    filtro?: { contaId?: string; categoriaId?: string },
   ): Promise<RelatorioResponse> {
     const q = new URLSearchParams({
       usuario_id: usuarioId,
@@ -370,6 +409,8 @@ export const api = {
       mes: String(mes),
       meses: String(meses),
     });
+    if (filtro?.contaId) q.set('conta_id', filtro.contaId);
+    if (filtro?.categoriaId) q.set('categoria_id', filtro.categoriaId);
     return request<RelatorioResponse>(`/api/financas/resumo/relatorio?${q}`, {
       timeoutMs: 10_000,
     });
@@ -385,6 +426,13 @@ export const api = {
   financasCartaoFaturas(cartaoId: string): Promise<FaturasCartao> {
     return request<FaturasCartao>(
       `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  financasFaturaExtrato(cartaoId: string, faturaId: string): Promise<FaturaExtrato> {
+    return request<FaturaExtrato>(
+      `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas/${encodeURIComponent(faturaId)}`,
       { timeoutMs: 10_000 },
     );
   },
@@ -412,10 +460,78 @@ export const api = {
     });
   },
 
+  financasCriarCompra(body: CompraCreateInput): Promise<Compra> {
+    return request<Compra>('/api/financas/compras', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCompra(id: string): Promise<Compra> {
+    return request<Compra>(`/api/financas/compras/${encodeURIComponent(id)}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** DELETE /api/financas/compras/{id} — estorna a compra (remove parcelas e
+   *  abate das faturas). 400 se alguma parcela já entrou em fatura paga. */
+  financasExcluirCompra(id: string): Promise<void> {
+    return request<void>(`/api/financas/compras/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** GET /api/financas/compras/sugestao-categoria — categoria da última compra
+   *  com a mesma descrição (auto-categoria do cartão). */
+  financasSugestaoCategoriaCompra(
+    descricao: string,
+  ): Promise<CompraCategoriaSugestao> {
+    const q = new URLSearchParams({
+      usuario_id: FINANCAS_USUARIO_ID,
+      descricao,
+    });
+    return request<CompraCategoriaSugestao>(
+      `/api/financas/compras/sugestao-categoria?${q}`,
+      { timeoutMs: 8_000 },
+    );
+  },
+
+  /** GET /api/financas/cartoes/projecao — comprometido por mês (todos os cartões) */
+  financasProjecaoCartoes(meses = 6): Promise<ProjecaoFaturas> {
+    const q = new URLSearchParams({
+      usuario_id: FINANCAS_USUARIO_ID,
+      meses: String(meses),
+    });
+    return request<ProjecaoFaturas>(`/api/financas/cartoes/projecao?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasPagarFatura(
+    cartaoId: string,
+    faturaId: string,
+    body: PagarFaturaInput,
+  ): Promise<Fatura> {
+    return request<Fatura>(
+      `/api/financas/cartoes/${encodeURIComponent(cartaoId)}/faturas/${encodeURIComponent(faturaId)}/pagar`,
+      { method: 'POST', body, timeoutMs: 10_000 },
+    );
+  },
+
   financasLeituras(usuarioId: string, tipo?: string): Promise<LeituraConsumoListResponse> {
     const q = new URLSearchParams({ usuario_id: usuarioId });
     if (tipo) q.set('tipo', tipo);
     return request<LeituraConsumoListResponse>(`/api/financas/leituras?${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCriarLeitura(body: LeituraCreateInput): Promise<LeituraConsumo> {
+    return request<LeituraConsumo>('/api/financas/leituras', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
       timeoutMs: 10_000,
     });
   },
@@ -506,6 +622,62 @@ export const api = {
   /** POST /api/financas/transacoes/despesa — lança despesa simples */
   financasLancarDespesa(body: LancamentoInput): Promise<TransacaoResponse> {
     return request<TransacaoResponse>('/api/financas/transacoes/despesa', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/nlu/interpretar — texto livre → rascunho (não grava) */
+  financasNluInterpretar(texto: string): Promise<NluInterpretacao> {
+    return request<NluInterpretacao>('/api/financas/nlu/interpretar', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, texto },
+      timeoutMs: 30_000,
+    });
+  },
+
+  /** POST /api/financas/transacoes/despesa/dividida — despesa paga por N contas */
+  financasLancarDespesaDividida(
+    body: DespesaDivididaInput,
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>('/api/financas/transacoes/despesa/dividida', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/transacoes/despesa/auto-split — esgota o VR/VA e joga o
+   *  resto no dinheiro. Sempre paga. */
+  financasLancarDespesaAutoSplit(
+    body: DespesaAutoSplitInput,
+  ): Promise<TransacaoResponse> {
+    return request<TransacaoResponse>('/api/financas/transacoes/despesa/auto-split', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  /** POST /api/financas/pix/parse — lê um PIX copia-e-cola (valor/beneficiário) */
+  financasParsePix(codigo: string): Promise<PixParse> {
+    return request<PixParse>('/api/financas/pix/parse', {
+      method: 'POST',
+      body: { codigo },
+      timeoutMs: 8_000,
+    });
+  },
+
+  /** POST /api/financas/transacoes/transferencia — move entre contas (reserva) */
+  financasTransferir(body: {
+    origem_conta_id: string;
+    destino_conta_id: string;
+    valor: string;
+    descricao?: string | null;
+    data?: string | null;
+  }): Promise<{ origem_conta_id: string; destino_conta_id: string; valor: string }> {
+    return request('/api/financas/transacoes/transferencia', {
       method: 'POST',
       body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
       timeoutMs: 10_000,
@@ -674,6 +846,95 @@ export const api = {
     return request<void>(
       `/api/financas/recorrencias/${encodeURIComponent(id)}`,
       { method: 'DELETE', timeoutMs: 10_000 },
+    );
+  },
+
+  // ── Finanças · pagar o mês (boletos + faturas juntos) ───────────
+  financasPagarMesPreview(competencia?: string): Promise<PagamentoMesPreview> {
+    const q = competencia ? `?competencia=${encodeURIComponent(competencia)}` : '';
+    return request<PagamentoMesPreview>(`/api/financas/pagar-mes/preview${q}`, {
+      timeoutMs: 15_000,
+    });
+  },
+
+  financasPagarMes(
+    itens: PagamentoMesItemInput[],
+    dataPagamento?: string,
+  ): Promise<PagamentoMesResultado> {
+    return request<PagamentoMesResultado>('/api/financas/pagar-mes', {
+      method: 'POST',
+      body: { data_pagamento: dataPagamento ?? null, itens },
+      timeoutMs: 30_000,
+    });
+  },
+
+  // ── Finanças · orçamentos (teto mensal por categoria) ───────────
+  financasOrcamentos(): Promise<OrcamentoListResponse> {
+    return request<OrcamentoListResponse>('/api/financas/orcamentos', {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasOrcamentosStatus(competencia?: string): Promise<OrcamentoStatusResponse> {
+    const q = competencia ? `?competencia=${encodeURIComponent(competencia)}` : '';
+    return request<OrcamentoStatusResponse>(`/api/financas/orcamentos/status${q}`, {
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasCriarOrcamento(body: OrcamentoCreateInput): Promise<Orcamento> {
+    return request<Orcamento>('/api/financas/orcamentos', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasAtualizarOrcamento(
+    id: string,
+    body: OrcamentoUpdateInput,
+  ): Promise<Orcamento> {
+    return request<Orcamento>(`/api/financas/orcamentos/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body,
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasExcluirOrcamento(id: string): Promise<void> {
+    return request<void>(`/api/financas/orcamentos/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      timeoutMs: 10_000,
+    });
+  },
+
+  financasProcessarRecorrencias(): Promise<{
+    previstas_criadas: number;
+    marcadas_atrasadas: number;
+  }> {
+    return request('/api/financas/recorrencias/processar', {
+      method: 'POST',
+      timeoutMs: 15_000,
+    });
+  },
+
+  financasRecorrenciasStatus(
+    competencia?: string,
+  ): Promise<RecorrenciaStatusResponse> {
+    const q = competencia ? `?competencia=${encodeURIComponent(competencia)}` : '';
+    return request<RecorrenciaStatusResponse>(
+      `/api/financas/recorrencias/status${q}`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  financasPagarMesRecorrencia(
+    id: string,
+    body: PagarMesInput,
+  ): Promise<RecorrenciaStatusItem> {
+    return request<RecorrenciaStatusItem>(
+      `/api/financas/recorrencias/${encodeURIComponent(id)}/pagar-mes`,
+      { method: 'POST', body, timeoutMs: 10_000 },
     );
   },
 

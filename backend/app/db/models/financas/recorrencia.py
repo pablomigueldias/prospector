@@ -12,6 +12,9 @@ from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 FREQUENCIAS = ("mensal",)  # por ora só mensal
+# Como a recorrência é paga: numa conta (débito direto), no cartão (entra na
+# fatura) ou por boleto (avulso). String, seguindo a convenção do projeto.
+FORMAS_PAGAMENTO = ("conta", "cartao", "boleto")
 
 
 class Recorrencia(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -34,6 +37,10 @@ class Recorrencia(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         String(20), nullable=False, default="mensal", server_default="mensal"
     )
 
+    forma_pagamento: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="conta", server_default="conta"
+    )
+
     categoria_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.categorias.id", ondelete="SET NULL"),
@@ -42,6 +49,12 @@ class Recorrencia(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     conta_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.contas.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # Cartão onde a recorrência é cobrada (quando forma_pagamento == "cartao").
+    cartao_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("financas.cartoes.id", ondelete="SET NULL"),
         nullable=True,
     )
 

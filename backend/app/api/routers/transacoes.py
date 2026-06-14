@@ -19,6 +19,8 @@ from app.api.schemas.financas import (
     TransacaoListResponse,
     TransacaoResponse,
     TransacaoUpdate,
+    TransferenciaCreate,
+    TransferenciaResponse,
 )
 from app.api.services.financas import recorrencia_service, transacao_service
 from app.api.services.financas.recorrencia_service import RecorrenciaError
@@ -87,6 +89,20 @@ async def lancar_despesa_auto_split(
     body.usuario_id = usuario_id  # dono = sessão
     try:
         return await transacao_service.lancar_despesa_auto_split(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/transferencia", response_model=TransferenciaResponse, status_code=201,
+             summary="Transfere entre contas (ex.: guardar na reserva)",
+             dependencies=[Depends(exige_editar)])
+async def transferir(
+    body: TransferenciaCreate,
+    usuario_id: str = Depends(financas_usuario_id),
+) -> TransferenciaResponse:
+    body.usuario_id = usuario_id  # dono = sessão
+    try:
+        return await transacao_service.transferir(body)
     except Exception as e:
         raise _handle(e)
 
