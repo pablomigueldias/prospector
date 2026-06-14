@@ -196,10 +196,14 @@ class MetricasResponse(BaseModel):
     respondidas: int
     fechadas: int
     perdidas: int
+    em_aberto: int             # propostas aguardando decisão
     taxa_resposta: float       # respondidas / enviadas
     taxa_fechamento: float     # fechadas / enviadas
     liquido_total_fechado: float
     ticket_medio_fechado: float
+    # Forecast: o que provavelmente entra do pipeline atual
+    pipeline_aberto_liquido: float          # soma do líquido em aberto
+    forecast_liquido: float                 # pipeline × taxa de fechamento
 
 
 # ══════════════════════════════════════════════════════════════════

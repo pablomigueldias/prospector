@@ -527,6 +527,7 @@ async def metricas() -> MetricasResponse:
         repo = FreelaRepository(session)
         contagem = await repo.contar_por_status()
         liquido_total, qtd_fechadas = await repo.soma_liquido_fechado()
+        pipeline_aberto, qtd_aberto = await repo.soma_liquido_em_aberto()
 
     total = sum(contagem.values())
     # "enviadas" = tudo que saiu da gaveta (qualquer status menos rascunho).
@@ -543,16 +544,25 @@ async def metricas() -> MetricasResponse:
     taxa_fechamento = _r2(fechadas / enviadas) if enviadas else 0.0
     ticket_medio = _r2(liquido_total / qtd_fechadas) if qtd_fechadas else 0.0
 
+    # Forecast: o que provavelmente entra do pipeline em aberto. Ponderado pela
+    # sua taxa de fechamento histórica; sem histórico ainda, assume 50% (chute
+    # neutro) pra não mostrar R$0 e dar uma referência.
+    prob = taxa_fechamento if fechadas else 0.5
+    forecast = _r2(pipeline_aberto * prob)
+
     return MetricasResponse(
         total_propostas=total,
         enviadas=enviadas,
         respondidas=respondidas,
         fechadas=fechadas,
         perdidas=perdidas,
+        em_aberto=qtd_aberto,
         taxa_resposta=taxa_resposta,
         taxa_fechamento=taxa_fechamento,
         liquido_total_fechado=_r2(liquido_total),
         ticket_medio_fechado=ticket_medio,
+        pipeline_aberto_liquido=_r2(pipeline_aberto),
+        forecast_liquido=forecast,
     )
 
 

@@ -178,3 +178,17 @@ class FreelaRepository:
         ).where(Proposta.status == "fechada")
         soma, qtd = (await self.session.execute(stmt)).one()
         return float(soma), int(qtd)
+
+    async def soma_liquido_em_aberto(self) -> tuple[float, int]:
+        """(soma do líquido das propostas EM ABERTO, quantidade).
+
+        Em aberto = enviada mas ainda não decidida (nem fechada, nem perdida,
+        nem rascunho). É o que alimenta o forecast do pipeline.
+        """
+        abertos = ("enviada", "visualizada", "respondida", "negociando")
+        stmt = select(
+            func.coalesce(func.sum(Proposta.valor_liquido_estimado), 0),
+            func.count(Proposta.id),
+        ).where(Proposta.status.in_(abertos))
+        soma, qtd = (await self.session.execute(stmt)).one()
+        return float(soma), int(qtd)

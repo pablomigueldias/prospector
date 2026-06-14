@@ -141,10 +141,13 @@ export interface FreelaMetricas {
   respondidas: number;
   fechadas: number;
   perdidas: number;
+  em_aberto: number;
   taxa_resposta: number;
   taxa_fechamento: number;
   liquido_total_fechado: number;
   ticket_medio_fechado: number;
+  pipeline_aberto_liquido: number;
+  forecast_liquido: number;
 }
 
 export interface FreelaPrecificarRequest {
