@@ -1,0 +1,225 @@
+"""Schemas do Agente Freelancer (Workana) — área pessoal.
+
+CRM de propostas (Plataforma, Cliente, Projeto, Proposta) + precificador.
+Isolado dos demais schemas pessoais.
+"""
+from __future__ import annotations
+
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
+
+# ══════════════════════════════════════════════════════════════════
+# Plataforma (read-only; seedada)
+# ══════════════════════════════════════════════════════════════════
+
+class PlataformaResponse(BaseModel):
+    id: str
+    nome: str
+    url_base: Optional[str] = None
+    config_comissao: Optional[dict] = None
+    lance_minimo_padrao: Optional[float] = None
+
+
+# ══════════════════════════════════════════════════════════════════
+# Cliente
+# ══════════════════════════════════════════════════════════════════
+
+class ClienteBase(BaseModel):
+    nome: str
+    plataforma_id: Optional[str] = None
+    rating: Optional[float] = None
+    projetos_publicados: Optional[int] = None
+    projetos_pagos: Optional[int] = None
+    pagamento_verificado: bool = False
+    membro_desde: Optional[str] = None
+    ja_me_pagou_usd: float = 0
+    notas: Optional[str] = None
+
+
+class ClienteCreate(ClienteBase):
+    pass
+
+
+class ClienteUpdate(BaseModel):
+    nome: Optional[str] = None
+    plataforma_id: Optional[str] = None
+    rating: Optional[float] = None
+    projetos_publicados: Optional[int] = None
+    projetos_pagos: Optional[int] = None
+    pagamento_verificado: Optional[bool] = None
+    membro_desde: Optional[str] = None
+    ja_me_pagou_usd: Optional[float] = None
+    notas: Optional[str] = None
+
+
+class ClienteResponse(ClienteBase):
+    id: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+# ══════════════════════════════════════════════════════════════════
+# Projeto (você cola o texto)
+# ══════════════════════════════════════════════════════════════════
+
+class ProjetoBase(BaseModel):
+    titulo: str
+    descricao: str
+    plataforma_id: Optional[str] = None
+    cliente_id: Optional[str] = None
+    url: Optional[str] = None
+    faixa_orcamento_min: Optional[float] = None
+    faixa_orcamento_max: Optional[float] = None
+    habilidades: List[str] = Field(default_factory=list)
+    prazo_estimado: Optional[str] = None
+    status_no_site: Optional[str] = None
+    n_propostas_concorrentes: Optional[int] = None
+    n_interessados: Optional[int] = None
+
+
+class ProjetoCreate(ProjetoBase):
+    pass
+
+
+class ProjetoUpdate(BaseModel):
+    titulo: Optional[str] = None
+    descricao: Optional[str] = None
+    plataforma_id: Optional[str] = None
+    cliente_id: Optional[str] = None
+    url: Optional[str] = None
+    faixa_orcamento_min: Optional[float] = None
+    faixa_orcamento_max: Optional[float] = None
+    habilidades: Optional[List[str]] = None
+    prazo_estimado: Optional[str] = None
+    status_no_site: Optional[str] = None
+    n_propostas_concorrentes: Optional[int] = None
+    n_interessados: Optional[int] = None
+
+
+class ProjetoResponse(ProjetoBase):
+    id: str
+    analise_json: Optional[dict] = None
+    coletado_em: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class ProjetoListItem(BaseModel):
+    id: str
+    titulo: str
+    cliente_nome: Optional[str] = None
+    status_no_site: Optional[str] = None
+    faixa_orcamento_min: Optional[float] = None
+    faixa_orcamento_max: Optional[float] = None
+    n_propostas_concorrentes: Optional[int] = None
+    fit_score: Optional[int] = None       # vem do analise_json (Fase 3)
+    tem_analise: bool = False
+    qtd_propostas: int = 0
+    created_at: Optional[str] = None
+
+
+class ProjetoListResponse(BaseModel):
+    items: List[ProjetoListItem]
+    total: int
+
+
+# ══════════════════════════════════════════════════════════════════
+# Proposta
+# ══════════════════════════════════════════════════════════════════
+
+class PropostaBase(BaseModel):
+    valor_cotado: Optional[float] = None
+    horas_estimadas: Optional[float] = None
+    valor_liquido_estimado: Optional[float] = None
+    texto_enviado: Optional[str] = None
+    projetos_destacados: List[str] = Field(default_factory=list)
+    habilidades_destacadas: List[str] = Field(default_factory=list)
+    prazo_proposto: Optional[str] = None
+
+
+class PropostaCreate(PropostaBase):
+    projeto_id: str
+
+
+class PropostaUpdate(PropostaBase):
+    # status muda pelo endpoint dedicado /status (registra evento)
+    pass
+
+
+class PropostaResponse(PropostaBase):
+    id: str
+    projeto_id: str
+    status: str
+    enviada_em: Optional[str] = None
+    data_resposta: Optional[str] = None
+    data_fechamento: Optional[str] = None
+    motivo_perda: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class PropostaStatusUpdate(BaseModel):
+    status: str
+    motivo_perda: Optional[str] = None  # usado quando status="perdida"
+
+
+class PropostaKanbanItem(BaseModel):
+    id: str
+    projeto_id: str
+    projeto_titulo: str
+    cliente_nome: Optional[str] = None
+    valor_cotado: Optional[float] = None
+    valor_liquido_estimado: Optional[float] = None
+    status: str
+    dias_desde_envio: Optional[int] = None
+    created_at: Optional[str] = None
+
+
+class KanbanColuna(BaseModel):
+    status: str
+    items: List[PropostaKanbanItem]
+
+
+class KanbanResponse(BaseModel):
+    colunas: List[KanbanColuna]
+
+
+# ══════════════════════════════════════════════════════════════════
+# Métricas do painel
+# ══════════════════════════════════════════════════════════════════
+
+class MetricasResponse(BaseModel):
+    total_propostas: int
+    enviadas: int
+    respondidas: int
+    fechadas: int
+    perdidas: int
+    taxa_resposta: float       # respondidas / enviadas
+    taxa_fechamento: float     # fechadas / enviadas
+    liquido_total_fechado: float
+    ticket_medio_fechado: float
+
+
+# ══════════════════════════════════════════════════════════════════
+# Precificador (matemática da comissão — sem IA)
+# ══════════════════════════════════════════════════════════════════
+
+class PrecificarRequest(BaseModel):
+    liquido_desejado: float
+    cliente_id: Optional[str] = None          # puxa ja_me_pagou_usd do cliente
+    ja_me_pagou_usd: Optional[float] = None    # ou passe direto (cliente novo = 0)
+    plataforma_id: Optional[str] = None        # de onde vêm as faixas de comissão
+    horas_estimadas: Optional[float] = None
+    valor_hora_alvo: Optional[float] = None
+
+
+class PrecificarResponse(BaseModel):
+    pct_comissao: float          # 0.20 / 0.10 / 0.05
+    valor_a_cotar: float         # o que você poe no campo "valor total"
+    cliente_paga: float          # valor_a_cotar + custo de serviço do cliente
+    lance_minimo: Optional[float] = None
+    abaixo_do_lance_minimo: bool = False
+    liquido_por_hora: Optional[float] = None
+    alerta: Optional[str] = None  # ex: "abaixo do seu valor-hora alvo"

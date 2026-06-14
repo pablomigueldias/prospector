@@ -17,6 +17,7 @@ from app.api.routers import dev_tools as dev_tools_router
 from app.api.routers import outreach as outreach_router
 from app.api.routers import perfil as perfil_router
 from app.api.routers import vagas as vagas_router
+from app.api.routers import freela as freela_router
 from app.api.routers import contas as contas_router
 from app.api.routers import categorias as categorias_router
 from app.api.routers import transacoes as transacoes_router
@@ -133,6 +134,7 @@ app.include_router(outreach_router.router)
 # ── Área pessoal (separada da Reative) ────────────────────────────
 app.include_router(perfil_router.router)
 app.include_router(vagas_router.router)
+app.include_router(freela_router.router)
 
 # ── Organizador Financeiro (domínio pessoal) ──────────────────────
 app.include_router(contas_router.router)
