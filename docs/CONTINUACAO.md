@@ -1,18 +1,18 @@
 # Continuação — onde paramos e como retomar
 
-> Handoff geral do sistema. Última atualização: **2026-06-13**.
+> Handoff geral do sistema. Última atualização: **2026-06-14**.
 > Branch de trabalho: **`feat/financas`**.
-> ⚠️ **A grande leva de 2026-06-13 (cartão usável, recorrência por forma de
-> pagamento, orçamento, pagar-o-mês, NLU, etc.) está SÓ em `feat/financas` —
-> NÃO foi pra `main` nem pro deploy** (o Pablo pediu pra segurar). Ver §0.
+> ✅ **2026-06-14: a leva inteira foi MERGEADA na `main` e empurrada pro GitHub**
+> (`923330e`, merge `--no-ff`, sem conflitos). ⚠️ **Ainda NÃO deployado no VPS** —
+> deploy é por **rsync** (não é git push), então a `main` no GitHub ≠ servidor.
+> Quando for subir, rodar o deploy + as migrations (ver §0). Ver §0.
 
 ---
 
-## 0. Onde paramos (sessão 2026-06-13) — NÃO deployado ⏸️
+## 0. Onde paramos — na `main`, ainda NÃO deployado no VPS ⏸️
 
-Tudo abaixo está **commitado em `feat/financas` com smoke verde**, mas **sem
-push/merge/deploy** (decisão do Pablo: "vamos continuar fazendo as pendências"
-antes de subir). ~19 commits.
+Tudo abaixo está **commitado, com smoke/build verde, e já na `main` no GitHub**
+(mergeado em 2026-06-14). **Falta só o deploy no VPS** (rsync + migrations).
 
 **Cartões (o campo da vez):**
 - **Trio usável:** lançar compra parcelada/à vista (botão **+ Compra** no card), **extrato da fatura** (clicar na fatura → item a item) e **pagar a fatura** (debita conta, move saldo, vira despesa do mês). Migration `d4f0a1b2c3e5` (`faturas.transacao_id`).
