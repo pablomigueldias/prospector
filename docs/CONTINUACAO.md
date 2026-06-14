@@ -9,6 +9,31 @@
 
 ---
 
+## 0.1. Sessão 2026-06-14 (tarde) — diagnóstico do front + refatoração
+
+**"Front não funcionava" = não estava no ar (não era bug).** Só os containers
+`db` e `minio` estavam de pé; **API (:8000) e web (:3000) não rodavam**. Subidos
+em dev: typecheck limpo, build verde, rotas `/login` `/agents/prospector`
+`/conta` todas 200. Para rodar local: `cd backend && source venv/bin/activate &&
+python run.py serve --port 8000` + `cd frontend && npm run dev`.
+
+**Login no dev "não logava" — causa: porta + CORS.** Se o `next dev` sobe na
+**:3001** (acontece quando a :3000 já está ocupada), o login falha: o CORS do
+backend (`backend/app/api/main.py:82`) só libera `localhost:3000` /
+`127.0.0.1:3000`. Solução: rodar o front na **:3000**. A senha do admin no dev é
+a `ADMIN_SENHA_INICIAL` do `backend/.env` (2FA desativado). *Melhoria opcional:*
+adicionar `localhost:3001` ao CORS de dev pra um pulo de porta não quebrar login.
+
+**Refatoração (plano `docs/ORGANIZACAO_REFATORACAO.md` §5) — passo 1 ✅:**
+`frontend/lib/types.ts` (1007 linhas, 5 domínios misturados) quebrado em
+`lib/types/{core,prospector,auth,copywriter,pessoal,financas}.ts` + barrel
+`index.ts` (`export *`). Os 42 imports `@/lib/types` seguem iguais. Sem mudar
+comportamento; typecheck + build verdes. Falta sub-dividir o `financas.ts`
+(~620 linhas) e seguir os passos 2–7 (api.ts, componentes-deus, schemas/services
+do back, infra de teste).
+
+---
+
 ## 0. Onde paramos — na `main`, ainda NÃO deployado no VPS ⏸️
 
 Tudo abaixo está **commitado, com smoke/build verde, e já na `main` no GitHub**

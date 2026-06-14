@@ -4,7 +4,7 @@ Diagnóstico do que **atrapalha crescer e refatorar** hoje, com um plano
 incremental e de baixo risco. Não é reescrita — é quebrar "arquivos-deus" em
 fatias por domínio, mantendo o comportamento.
 
-Última revisão: **2026-06-14**.
+Última revisão: **2026-06-14** (passo 1 do plano §5 ✅ feito).
 
 > Regra de ouro pra aplicar: **um passo = um commit, smoke/build verde entre
 > cada**, sem mudar comportamento (só mover/dividir). Usar *barrel files*
@@ -105,9 +105,15 @@ app/api/services/financas/  transacao/  lancar.py  pagar.py  listar.py  transfer
 
 ## 5. Plano incremental (ordem sugerida, baixo risco)
 
-1. **`frontend/lib/types.ts` → `lib/types/<dominio>.ts` + barrel** — só mover
-   tipos, zero lógica. Destrava todo o resto. (Ou: **gerar do OpenAPI** e ir
-   substituindo.)
+1. ✅ **`frontend/lib/types.ts` → `lib/types/<dominio>.ts` + barrel** *(feito
+   2026-06-14)* — quebrado em `core.ts` (Agent + `ApiError`), `prospector.ts`,
+   `auth.ts`, `copywriter.ts`, `pessoal.ts` (perfil/vagas/candidatura) e
+   `financas.ts`, com `index.ts` re-exportando tudo (`export *`). Os 42 imports
+   `from '@/lib/types'` seguem válidos sem tocar em nada. Zero lógica movida;
+   typecheck + build verdes. **Pendência herdada:** `financas.ts` ficou com ~620
+   linhas (domínio único, mas acima do teto) — sub-dividir depois em
+   `types/financas/` (conta / transacao / cartao / recorrencia / orcamento /
+   resumo / boleto). (Alternativa de longo prazo: **gerar do OpenAPI**.)
 2. **`frontend/lib/api.ts` → `lib/api/<dominio>.ts`** com um `client.ts`
    (`request`) compartilhado + barrel `api`.
 3. **Quebrar os 3 componentes-deus** (`CartoesSection`, `TransacoesSection`,
