@@ -135,8 +135,15 @@ app/api/services/financas/  transacao/  lancar.py  pagar.py  listar.py  transfer
    interno pra não colidir com o `components/PagarMesModal.tsx` global). Único
    consumidor (`FinancasScreen.tsx`) repontado. Imports usam o alias `@/`, então
    a profundidade da pasta não muda nada. typecheck + build verdes.
-4. **`schemas/financas.py` → pacote `schemas/financas/`** com `__init__`
-   re-exportando (imports atuais seguem válidos).
+4. ✅ **`schemas/financas.py` → pacote `schemas/financas/`** *(feito 2026-06-14)*
+   — quebrado nos 12 subdomínios que o próprio arquivo já demarcava (conta,
+   categoria, transacao, cartao, recorrencia, orcamento, pagamento_mes, nlu,
+   boleto, comprovante, leitura, resumo), com `__init__.py` fazendo
+   `from .x import *`. Os 32 arquivos que faziam `from app.api.schemas.financas
+   import X` seguem válidos. **Paridade verificada:** 80 classes antes = 80
+   depois (forward-refs entre modelos do mesmo subdomínio, então resolvem no
+   import). Smokes `test_financas_auth_api` e `test_financas_transacoes_pagar_api`
+   verdes.
 5. **`transacao_service.py` → pacote** + extrair `_common.py` (helpers
    duplicados dos services de financas).
 6. **`bot_service.py`** — separar dispatch / comandos / NLU-card / arquivo.
