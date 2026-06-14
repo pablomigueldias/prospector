@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.services.financas import encargos as encargos_service
 from app.api.services.financas import orcamento_service
+from app.api.services.financas import resumo_service
 from app.api.services.financas.bot_service import mapa_chat_usuario
 from app.config import settings
 from app.db.models.financas.cartao import Cartao
@@ -143,6 +144,20 @@ async def _texto_orcamento(usuario_id: str, ref: date) -> Optional[str]:
     return "📊 <b>Orçamentos no limite</b>\n" + "\n".join(linhas)
 
 
+async def _texto_saldo_negativo(usuario_id: str, ref: date) -> Optional[str]:
+    """Avisa se a projeção de fim de mês ficar no vermelho (o previsto a pagar
+    passa do que há em caixa + a receber)."""
+    proj = await resumo_service.projecao_mes(usuario_id, ref.year, ref.month)
+    if proj.estimativa_sobra >= 0:
+        return None
+    return (
+        "🚨 <b>Saldo do mês no vermelho</b>\n"
+        f"Sobra estimada: {_brl(proj.estimativa_sobra)} "
+        f"(saldo {_brl(proj.saldo_atual)} + a receber {_brl(proj.a_receber)} "
+        f"− a pagar {_brl(proj.a_pagar)})"
+    )
+
+
 async def enviar_lembretes(ref: Optional[date] = None) -> dict:
     """Manda o digest de contas a pagar pra cada chat configurado no Telegram.
     Pablo e Monique compartilham o usuario_id → ambos recebem (carteira junta)."""
@@ -161,8 +176,10 @@ async def enviar_lembretes(ref: Optional[date] = None) -> dict:
             itens = await _contas_a_pagar(session, uid, limite)
             faturas = await _faturas_a_vencer(session, uid, limite)
             orcamento = await _texto_orcamento(usuario_id, hoje)
+            saldo_neg = await _texto_saldo_negativo(usuario_id, hoje)
             blocos = [
                 b for b in (
+                    saldo_neg,
                     _montar_texto(itens, hoje),
                     _montar_texto_faturas(faturas, hoje),
                     orcamento,

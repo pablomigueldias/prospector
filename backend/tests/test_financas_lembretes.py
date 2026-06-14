@@ -139,6 +139,8 @@ def smoke_test() -> None:
         assert "Faturas de cartão" in texto and "Nubank" in texto and "R$1.500,00" in texto, texto
         # seção de orçamento estourado (900 de 800 = 112%)
         assert "Orçamentos no limite" in texto and "112%" in texto, texto
+        # alerta de saldo negativo: sem contas (saldo 0) e com previstas a pagar
+        assert "Saldo do mês no vermelho" in texto, texto
         print("   " + texto.replace("\n", " | "))
 
         print("\n→ Test 2: desligado → não envia")
