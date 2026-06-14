@@ -26,12 +26,6 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 - 🟡 **Renomear o "slot 2"** — as vars `TELEGRAM_*_SANDRA` são legado; trocar por algo neutro (`_2`) ou, melhor, um **mapa chat→usuário em tabela** (suporta N pessoas sem mexer no `.env`).
 - 🟢 **Visão "individual vs casal"** — alternar no dashboard entre o consolidado e o de cada pessoa (depende da atribuição acima).
 
-## 3. Dashboard web & relatórios
-
-> Tudo o que estava aqui **saiu na leva de 2026-06-13** (export PDF, filtrar por
-> conta/categoria, clicar no mês → lista, comparar com o ano anterior, busca
-> global). Ver `FINANCAS_FEITO.md` §1. **Dark mode foi descartado** (decisão do
-> Pablo — não vamos fazer).
 
 - 🟢 **Evolução de saldo real (patrimônio no tempo)** — fica no **§10** (Patrimônio): o "saldo por mês" de hoje é o *resultado* (receitas − despesas); o patrimônio acumulado mês a mês precisa de snapshots (não guardamos histórico).
 
@@ -46,6 +40,12 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 
 - 🟡 **Detectar boleto recorrente e oferecer virar conta fixa** — hoje dá pra "tornar recorrente" na mão (botão ↻); falta o sistema **perceber** que um boleto se repete e sugerir. Cruza com o detector de assinaturas do §8.
 - 🟢 **Não feitos (de propósito):** passo de revisão antes de criar (conflita com o "nunca some / auto-cria"), sanity checks (valor 0 / data improvável — baixo valor), histórico dedicado (os dados já aparecem no editor + anexos).
+
+## 3d. Cartões profissionais
+
+> Já saíram (FEITO §3d): lançar compra, extrato, pagar a fatura, atalho "Pagar
+> fatura" no card, assinatura recorrente, "pagar o mês", projeção consolidada,
+> estorno de compra e auto-categoria por compra. Falta:
 
 - 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` já existe (boleto carnê → N parcelas, sem fatura); falta UI **e surfaçar/pagar as parcelas** (hoje a aba "A pagar" mostra `Transacao`, não `Parcela` de boleto — então o carnê some). É mais que um form.
 - 🟢 **Ajustar valor de compra** — o **estorno** (cancelar a compra inteira) já saiu; falta editar o valor/parcelas de uma compra existente sem excluir e relançar.
