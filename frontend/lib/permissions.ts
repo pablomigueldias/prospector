@@ -8,6 +8,7 @@
 export const AGENT_PERMISSAO: Record<string, string> = {
   'perfil-mestre': 'pessoal.ver',
   vagas: 'pessoal.ver',
+  freela: 'pessoal.ver',
   financas: 'financas.ver',
 };
 

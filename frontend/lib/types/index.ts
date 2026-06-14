@@ -8,4 +8,5 @@ export * from './prospector';
 export * from './auth';
 export * from './copywriter';
 export * from './pessoal';
+export * from './freela';
 export * from './financas';

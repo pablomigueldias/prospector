@@ -17,6 +17,7 @@ import OutreachScreen from '@/components/OutreachScreen';
 import PerfilMestreScreen from '@/components/PerfilMestreScreen';
 import VagasScreen from '@/components/VagasScreen';
 import FinancasScreen from '@/components/FinancasScreen';
+import FreelaScreen from '@/components/FreelaScreen';
 
 
 export default function AgentPage() {
@@ -81,6 +82,8 @@ export default function AgentPage() {
   <VagasScreen />
 ) : agent.slug === 'financas' ? (
   <FinancasScreen />
+) : agent.slug === 'freela' ? (
+  <FreelaScreen />
 ) : (
   <ComingSoonScreen agentName={agent.name} />
 )}

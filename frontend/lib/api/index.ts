@@ -7,6 +7,7 @@ import { coreApi } from './core';
 import { prospectorApi } from './prospector';
 import { outreachApi } from './outreach';
 import { pessoalApi } from './pessoal';
+import { freelaApi } from './freela';
 import { financasApi } from './financas';
 import { authApi } from './auth';
 
@@ -17,6 +18,7 @@ export const api = {
   ...prospectorApi,
   ...outreachApi,
   ...pessoalApi,
+  ...freelaApi,
   ...financasApi,
   ...authApi,
 };
