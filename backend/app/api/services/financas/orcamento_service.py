@@ -23,6 +23,7 @@ from app.api.schemas.financas import (
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.orcamento import Orcamento
 from app.db.session import get_session
+from app.repositories.financas.categoria_repository import CategoriaRepository
 from app.repositories.financas.transacao_repository import TransacaoRepository
 
 
@@ -155,11 +156,27 @@ async def status_do_mes(
         por_cat = await repo.despesas_por_categoria(uid, inicio, proximo)
         consumo = {cid: total for cid, _, total in por_cat if cid is not None}
 
+        # Roll-up: o teto da categoria-mãe soma os gastos das subcategorias.
+        todas = await CategoriaRepository(session).listar_todas()
+        filhos: dict = {}
+        for c in todas:
+            if c.categoria_pai_id:
+                filhos.setdefault(c.categoria_pai_id, []).append(c.id)
+
+        def _gasto_com_descendentes(raiz) -> Decimal:
+            total = Decimal(consumo.get(raiz, Decimal("0")))
+            pilha = list(filhos.get(raiz, []))
+            while pilha:
+                n = pilha.pop()
+                total += Decimal(consumo.get(n, Decimal("0")))
+                pilha.extend(filhos.get(n, []))
+            return total
+
         items = []
         total_orcado = Decimal("0")
         total_consumido = Decimal("0")
         for o, nome in orcs:
-            gasto = Decimal(consumo.get(o.categoria_id, Decimal("0")))
+            gasto = _gasto_com_descendentes(o.categoria_id)
             orcado = Decimal(o.valor_mensal)
             total_orcado += orcado
             total_consumido += gasto
