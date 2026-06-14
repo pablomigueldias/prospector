@@ -9,7 +9,9 @@ ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *p
 > O plano-mãe é o `docs/Workana.md`; o que já está pronto, o `FREELA_FEITO.md`.
 
 Última revisão: **2026-06-14** (Fases 1, 2, 3, 5 e 6 — o copiloto está completo).
-Sobra: refinos (§3/§4), Fase 7 (multi-plataforma) e fora-do-código (§6).
+Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso, as
+**🚀 Alavancas de desempenho (§7–§10)** — features que mexem no resultado
+(fechar mais, cobrar melhor, não perder dinheiro). Comece por elas.
 
 ---
 
@@ -85,3 +87,76 @@ Sobra: refinos (§3/§4), Fase 7 (multi-plataforma) e fora-do-código (§6).
 - [ ] 🟢 Subir os mesmos projetos do `Perfil-Freelancer.md` como portfólio na
   Workana (print/GIF + problema→solução→resultado).
 - [ ] 🟢 Estratégia das primeiras avaliações 5★ (aceitar 1–2 projetos menores).
+
+---
+
+# 🚀 ALAVANCAS DE DESEMPENHO (ganhar mais, fechar mais, perder menos)
+
+> Estas não são "refino": são features que mexem no **resultado** — taxa de
+> fechamento, ticket, tempo gasto por proposta e renda. Priorizadas pelo retorno
+> esperado. Escolha o que te ajuda AGORA; eu implemento e movo pro FEITO.
+
+## 7. Decidir melhor (proteger a proposta escassa)
+
+- [ ] 🔴 **Velocidade conta — "projeto fresco" em destaque.** Em projeto com 64
+  propostas, o cliente lê as primeiras. Guardar a *data de publicação* do projeto
+  (campo novo, você informa ao colar) e ordenar/marcar a fila por "quão novo +
+  quão pouco concorrido". A IA já te diz SE vale; isto te diz QUANDO corre.
+- [ ] 🔴 **Forecast de pipeline (quanto vou receber).** Somar o líquido das
+  propostas em aberto **ponderado pela sua taxa de fechamento** = previsão de
+  renda. Responde "se eu não mandar mais nenhuma, quanto provavelmente entra?".
+  Cruza com uma **meta mensal** que você define → "faltam R$X / ~N propostas".
+- [ ] 🟡 **Win-rate por categoria.** Taxa de resposta/fechamento **por stack/
+  tipo de projeto** (React vs WordPress vs dados). Mostra onde você é forte de
+  verdade → gaste proposta lá. Usa o `analise_json.stack` que já guardamos.
+- [ ] 🟡 **Radar de cliente recorrente.** Destacar na fila projetos de clientes
+  que já te pagaram (comissão 10%/5% = mais líquido no bolso). Prioridade alta
+  automática — "cliente recorrente vale ouro".
+- [ ] 🟡 **Scam/red-flag radar dedicado.** O analisador já aponta red flags;
+  promover as graves (pagamento não verificado + pede contato fora + "bom demais")
+  a um selo visível de "cuidado" na fila, pra você nem perder tempo.
+
+## 8. Escrever melhor (converter mais por proposta)
+
+- [ ] 🔴 **Variações de abertura (A/B).** Gerar 2–3 primeiras linhas
+  alternativas da proposta (o agente de candidatura já faz variantes). A abertura
+  é o que decide se o cliente continua lendo — testar e ver o que responde mais.
+- [ ] 🟡 **Banco de propostas vencedoras (templates).** Quando uma proposta
+  FECHA, marcar como "modelo": o redator passa a se inspirar nas suas que deram
+  certo (estilo `blocos_curriculo` do perfil). Você melhora sozinho com o tempo.
+- [ ] 🟡 **Assistente de negociação.** Quando o cliente pede desconto, gerar
+  respostas que **defendem o valor** (ou cortam escopo em vez de preço), no seu
+  tom. Negociar mal é onde mais se perde margem.
+- [ ] 🟢 **Checklist anti-genérico antes de enviar.** A IA confere se a proposta
+  cita um detalhe REAL do projeto, propõe um plano e tem prazo — e avisa se
+  soou copia-cola.
+
+## 9. Precificar e cobrar melhor (proteger a margem)
+
+- [ ] 🔴 **`ja_me_pagou_usd` sobe ao fechar (automático).** Ao marcar "fechada",
+  somar o líquido ao acumulado do cliente → a comissão cai de faixa sozinha e o
+  precificador fica correto sem você lembrar. (Já estava no §3, mas é alavanca de
+  margem direta — fica aqui também.)
+- [ ] 🟡 **Calibrador de valor-hora.** Cruzar líquido ÷ horas das propostas
+  fechadas → seu valor-hora REAL por tipo de projeto. Mostra onde você está se
+  subcobrando e sugere piso na hora de precificar.
+- [ ] 🟡 **Alerta de orçamento incompatível.** No precificar/criar proposta,
+  avisar quando o valor a cotar estoura (ou fica muito abaixo) da faixa do
+  projeto — some no campo que já guardamos (`faixa_orcamento_min/max`).
+- [ ] 🟢 **Multimoeda (USD↔BRL).** Projetos internacionais vêm em US$; mostrar a
+  conversão e precificar nos dois. Abre o mercado gringo (que paga mais).
+
+## 10. Não deixar dinheiro na mesa (pós-envio e pós-venda)
+
+- [ ] 🔴 **Follow-up no tempo certo (sem forçar contato fora).** Lembrete quando
+  uma proposta fica "enviada" sem resposta por N dias → mensagem educada DENTRO
+  da plataforma. O `APScheduler` já roda no projeto; reusar.
+- [ ] 🟡 **Pedir avaliação 5★ ao entregar.** Ao marcar "fechada/entregue",
+  lembrar (e rascunhar) o pedido natural de avaliação — a 1ª nota é a mais
+  difícil e a que mais destrava projetos futuros.
+- [ ] 🟢 **Acompanhar prazo de entrega.** Depois de fechar, guardar o prazo
+  prometido e avisar quando estiver perto — entregar no prazo = avaliação melhor
+  = mais trabalho.
+- [ ] 🟢 **Relatório mensal do freela.** Quanto cotou, quanto fechou, líquido,
+  win-rate e tempo médio de resposta no mês — igual ao Relatório do Finanças
+  (Recharts), pra ver a evolução.
