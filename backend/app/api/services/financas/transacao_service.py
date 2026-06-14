@@ -124,6 +124,7 @@ async def _finalizar_transacao(
     status: str,
     notas: Optional[str],
     pagamentos: List[Tuple[Conta, Decimal]],
+    vencimento: Optional[date] = None,
 ) -> TransacaoResponse:
     """Núcleo: cria a transação (despesa/receita) com N pagamentos e ajusta o
     saldo de cada conta (só quando paga). Assume contas/categoria já validadas."""
@@ -134,6 +135,7 @@ async def _finalizar_transacao(
         valor_total=valor_total,
         data_competencia=competencia,
         data_pagamento=pagamento_em,
+        data_vencimento=vencimento,
         status=status,
         origem="manual",
         categoria_id=categoria_id,
@@ -195,6 +197,7 @@ async def lancar_despesa(payload: DespesaCreate) -> TransacaoResponse:
             status=payload.status,
             notas=payload.notas,
             pagamentos=[(conta, payload.valor_total)],
+            vencimento=payload.data_vencimento,
         )
 
 

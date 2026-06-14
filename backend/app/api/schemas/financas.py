@@ -106,6 +106,9 @@ class DespesaCreate(BaseModel):
     data_pagamento: Optional[date] = Field(
         None, description="Quando saiu de fato. Default: hoje se status=paga."
     )
+    data_vencimento: Optional[date] = Field(
+        None, description="Vencimento (pra prevista/agendada aparecer em 'A pagar')."
+    )
     status: str = Field("paga", description="prevista/paga/atrasada")
     notas: Optional[str] = None
 

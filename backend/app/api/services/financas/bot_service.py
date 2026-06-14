@@ -341,6 +341,22 @@ def _card_keyboard(rid: str) -> dict:
     ]}
 
 
+_MARCADORES_FUTURO = (
+    "vou pagar", "vou gastar", "pagar dia", "agendar", "agenda ", "agendado",
+    "previst", "vence", "marcar pra", "marca pra", "tenho que pagar",
+    "preciso pagar", "pagar amanhã", "pagar amanha",
+)
+
+
+def _eh_prevista(texto: str, data_interp: date) -> bool:
+    """Heurística: frase sobre o futuro ('vou pagar', 'dia 10', 'agendar') ou
+    data interpretada à frente de hoje → lança como prevista (não move saldo)."""
+    if data_interp and data_interp > date.today():
+        return True
+    t = texto.lower()
+    return any(m in t for m in _MARCADORES_FUTURO)
+
+
 async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
     """Interpreta a frase (NLU) e manda um card de confirmação."""
     try:
@@ -349,6 +365,7 @@ async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
         await _responder(chat_id, f"🤔 {e}")
         return {"ok": True, "nlu": False}
 
+    prevista = interp.tipo == "despesa" and _eh_prevista(texto, interp.data)
     payload = {
         "tipo": interp.tipo,
         "valor": str(interp.valor),
@@ -358,6 +375,7 @@ async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
         "conta_nome": interp.conta_nome,
         "categoria_id": interp.categoria_id,
         "categoria_nome": interp.categoria_nome,
+        "prevista": prevista,
     }
     async with get_session() as session:
         rascunho = BotRascunho(
@@ -374,6 +392,8 @@ async def _texto_livre(chat_id: str, usuario_id: str, texto: str) -> dict:
         f"📝 {interp.descricao}",
         f"📅 {interp.data.isoformat()}",
     ]
+    if prevista:
+        linhas.append("🗓️ <b>prevista</b> (agendada — não mexe no saldo ainda)")
     if interp.conta_nome:
         linhas.append(f"🏦 {interp.conta_nome}")
     if interp.categoria_nome:
@@ -429,6 +449,7 @@ async def _confirmar(chat_id: str, usuario_id: str, payload: dict) -> dict:
     competencia = date.fromisoformat(payload["data"])
     conta_id = payload.get("conta_id")
     categoria_id = payload.get("categoria_id")
+    prevista = bool(payload.get("prevista"))
 
     if not conta_id:
         contas = (await conta_service.listar_contas(usuario_id, apenas_ativas=True)).items
@@ -442,13 +463,23 @@ async def _confirmar(chat_id: str, usuario_id: str, payload: dict) -> dict:
             usuario_id=usuario_id, descricao=descricao, valor_total=valor,
             conta_id=conta_id, categoria_id=categoria_id, data_competencia=competencia,
         ))
+        await _responder(chat_id, f"✅ Lançado: <b>{descricao}</b> R$ {valor}.")
     else:
         resp = await transacao_service.lancar_despesa(DespesaCreate(
             usuario_id=usuario_id, descricao=descricao, valor_total=valor,
             conta_id=conta_id, categoria_id=categoria_id, data_competencia=competencia,
+            data_vencimento=competencia if prevista else None,
+            status="prevista" if prevista else "paga",
         ))
-    await _responder(chat_id, f"✅ Lançado: <b>{descricao}</b> R$ {valor}.")
-    return {"ok": True, "acao": "confirmar", "transacao_id": resp.id}
+        if prevista:
+            await _responder(
+                chat_id,
+                f"🗓️ Agendado: <b>{descricao}</b> R$ {valor} "
+                f"(vence {competencia.isoformat()}). Aparece em 'A pagar'.",
+            )
+        else:
+            await _responder(chat_id, f"✅ Lançado: <b>{descricao}</b> R$ {valor}.")
+    return {"ok": True, "acao": "confirmar", "transacao_id": resp.id, "prevista": prevista}
 
 
 async def _cmd_lancar(chat_id: str, usuario_id: str, texto: str, *, tipo: str) -> dict:
