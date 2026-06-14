@@ -25,12 +25,12 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 
 ## 3. Dashboard web & relatórios
 
-- 🟡 **Export PDF do relatório** — o CSV já saiu; falta um PDF "bonito" (cabeçalho, gráfico, totais) pra mandar/arquivar. Dá pra renderizar no front (`window.print()` com folha de estilo de impressão) ou gerar no backend.
-- 🟡 **Filtrar o relatório por conta/categoria** — hoje a série é do consolidado; poder recortar "só Nubank" ou "só Mercado" ao longo dos meses ajuda a achar onde o gasto cresce.
-- 🟢 **Evolução de saldo real (patrimônio no tempo)** — hoje "saldo por mês" é o *resultado* (receitas − despesas) do mês; o saldo acumulado das contas exige snapshots (não guardamos histórico). Encaixa com o §10.
-- 🟢 **Clicar no mês do gráfico → abre a lista filtrada** daquele mês (cruza Relatório com Transações).
-- 🟢 **Comparar dois períodos** lado a lado (este mês vs. mesmo mês do ano passado).
-- 🟢 **Atalhos & produtividade (resto)** — busca global e dark mode.
+> Tudo o que estava aqui **saiu na leva de 2026-06-13** (export PDF, filtrar por
+> conta/categoria, clicar no mês → lista, comparar com o ano anterior, busca
+> global). Ver `FINANCAS_FEITO.md` §1. **Dark mode foi descartado** (decisão do
+> Pablo — não vamos fazer).
+
+- 🟢 **Evolução de saldo real (patrimônio no tempo)** — fica no **§10** (Patrimônio): o "saldo por mês" de hoje é o *resultado* (receitas − despesas); o patrimônio acumulado mês a mês precisa de snapshots (não guardamos histórico).
 
 ## 3b. Paridade backend ↔ tela (o backend já faz, a tela ainda não)
 
