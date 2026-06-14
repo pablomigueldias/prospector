@@ -38,6 +38,17 @@ viver na **área Pessoal** do Prospector (`category=Pessoal`, tabelas
 do `perfil-mestre`), não como repo separado. `docs/Perfil-Freelancer.md` tem o
 portfólio/qualidades extraídos dos repos.
 
+**Agente `freela` construído — Fases 1 e 2 FEITAS.** Slice vertical na área
+Pessoal: 4 models `pessoal_freela_*` (migration `20260614_1819`, aplicada),
+agente no `registry.py` (slug=`freela`, order=130), e API `/api/pessoal/freela`
+(CRUD cliente/projeto/proposta, **Kanban** por status, **métricas**,
+**precificador** sem IA que embute a comissão escalonada). Seed da plataforma
+Workana em `scripts/seed_freela.py`. Smoke test do service bate com a tabela do
+`Workana.md`. **Pendências e próximos passos** vivem agora em dois docs novos no
+fluxo "sugiro→você escolhe→eu movo pro feito": `docs/MELHORIAS_FREELA.md`
+(backlog priorizado) e `docs/FREELA_FEITO.md` (entregue). **Falta a tela** (Fase
+6) e as fases de IA (3/5) — hoje o agente só roda via Swagger.
+
 ---
 
 ## 0.1. Sessão 2026-06-14 (tarde) — diagnóstico do front + refatoração
