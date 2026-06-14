@@ -1,0 +1,89 @@
+# Melhorias pendentes — Agente Freelancer (Workana)
+
+Backlog **do que falta / dá pra melhorar** no agente `freela` — cardápio de
+ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *porquê*.
+
+> **Como usamos este arquivo:** sempre que eu termino algo, sugiro melhorias
+> aqui. **Você marca** o que achar interessante (`[x]` ou um ✅ na frente) e eu
+> implemento; o que entra pra valer sai daqui pro `docs/FREELA_FEITO.md`.
+> O plano-mãe é o `docs/Workana.md`; o que já está pronto, o `FREELA_FEITO.md`.
+
+Última revisão: **2026-06-14** (após Fase 1 + Fase 2).
+
+---
+
+## 1. Tela / Painel (Fase 6) — hoje o maior buraco
+
+> O backend já faz tudo; **não há interface**. Sem tela, o agente só roda via
+> Swagger. Isto é o que mais destrava uso no dia a dia.
+
+- [ ] 🔴 **Tela do agente** — `pages/agents/[slug].tsx` (case `freela`) +
+  `<FreelaScreen>`, reusando o design system (`StatCard`, `.card`, `.btn-*`).
+- [ ] 🔴 **Board Kanban** — colunas = status; cards com cliente, valor cotado,
+  líquido e dias desde o envio; **mover com 1 clique** (chama `/status`).
+- [ ] 🔴 **Fila de oportunidades** — lista de projetos ordenada por fit, com o
+  botão "colar projeto" (textarea → `POST /projetos`).
+- [ ] 🟡 **Métricas no topo** — `StatCard` pra taxa de resposta/fechamento,
+  líquido total e ticket médio (`GET /metricas`).
+- [ ] 🟡 **Widget de precificação** (Fase 4 no front) — campo "quero receber X"
+  → mostra valor a cotar / cliente paga / alerta de lance mínimo (`/precificar`).
+
+## 2. Inteligência / IA (Fases 3 e 5)
+
+> O esqueleto dos analyzers ainda não existe (`app/analyzers/freela/`). Cada um
+> = `prompt_builder.py` + `parser.py`, chamando `llm_provider.gerar_texto()`.
+
+- [ ] 🔴 **Analisador de projeto (Fase 3)** — texto colado → `analise_json`:
+  requisitos, **fit_score** (0–100) contra o perfil-mestre, **red flags**
+  (orçamento incompatível, cliente sem pagamento verificado, muito concorrido),
+  sinais do cliente e ganchos. Já tem `POST /projetos/{id}/analisar` previsto
+  (capability `analisa_projeto` no registry está `False`).
+- [ ] 🟡 **Redator de proposta (Fase 5)** — rascunho ancorado no `perfil-mestre`
+  (regra anti-mentira: reorganiza a verdade, nunca inventa), no tom do projeto,
+  estrutura Workana (apresentação → plano → disponibilidade → prazo). PARA no
+  rascunho.
+- [ ] 🟡 **Seletor (Fase 5)** — recomenda os 3 projetos + 5 habilidades do
+  perfil que maximizam relevância pro projeto.
+- [ ] 🟢 **Auto-preencher o Projeto ao colar** — o analisador já extrai
+  orçamento/habilidades/nº de propostas do texto; gravar direto nos campos
+  (hoje você digita à mão).
+
+## 3. CRM / regras de negócio (refino do que já existe)
+
+- [ ] 🟡 **Atualizar `ja_me_pagou_usd` ao fechar** — quando uma proposta vira
+  `fechada`, somar o líquido ao acumulado do cliente (hoje é manual). É o que
+  faz a comissão cair de faixa sozinha — fecha o ciclo "cliente recorrente vale
+  ouro".
+- [ ] 🟡 **Limite de propostas do plano grátis** — registrar quantas restam no
+  período e avisar; é o recurso escasso que justifica o priorizador.
+- [ ] 🟢 **Motivo de perda estruturado** — enum (preço/escopo/sumiu/escolheu
+  outro) além do texto livre, pra depois cruzar "por que perco".
+- [ ] 🟢 **Reabrir/desfazer status** — hoje dá pra voltar status (sem trava);
+  avaliar se quer impedir transições "para trás" ou manter livre.
+
+## 4. Observabilidade / dados
+
+- [ ] 🟡 **Evento de proposta com payload estruturado** — hoje reusa
+  `pipeline_events` (campo `detalhe` como JSON em texto, sem JSONB e com a
+  coluna `empresa_cnpj` irrelevante). Se quiser timeline rica por proposta,
+  criar `pessoal_freela_evento` (com `proposta_id` + `payload` JSONB) como o
+  `Workana.md` §2 imaginava.
+- [ ] 🟢 **Tempo médio até resposta** nas métricas — já dá pra calcular
+  (`data_resposta − enviada_em`); só não está exposto.
+- [ ] 🟢 **Histórico de precificações** — guardar o que o precificador sugeriu
+  vs o que você cotou de fato, pra calibrar.
+
+## 5. Multi-plataforma (Fase 7)
+
+- [ ] 🟢 **Adapter `99freelas` (ou outro)** — prova que a abstração aguenta. O
+  campo `plataforma` + `config_comissao` já existe; falta seed + (se o fluxo de
+  proposta diferir) ajustes no precificador.
+
+## 6. Fora do código (não é dev, mas potencializa)
+
+> Do `Workana.md` §7 — a ferramenta acelera, mas quem fecha é o perfil.
+
+- [ ] 🟢 Headline específica + foto + identidade verificada no perfil Workana.
+- [ ] 🟢 Subir os mesmos projetos do `Perfil-Freelancer.md` como portfólio na
+  Workana (print/GIF + problema→solução→resultado).
+- [ ] 🟢 Estratégia das primeiras avaliações 5★ (aceitar 1–2 projetos menores).
