@@ -124,8 +124,17 @@ app/api/services/financas/  transacao/  lancar.py  pagar.py  listar.py  transfer
    uma pasta de mesmo nome, reinicie o `next dev` com `.next` limpo **antes** de
    subir (não apague `.next` com o server rodando — corrompe o cache e o dev
    passa a procurar o arquivo velho).
-3. **Quebrar os 3 componentes-deus** (`CartoesSection`, `TransacoesSection`,
-   `RecorrenciasSection`) em subcomponentes na pasta do domínio.
+3. ✅ **Quebrar os 3 componentes-deus** *(feito 2026-06-14)* —
+   `CartoesSection` (1019) → `components/financas/cartoes/`
+   (CartoesSection + CartaoCard + CartaoForm + CompraForm + FaturaExtratoModal +
+   ProjecaoBlock); `TransacoesSection` (988) → `components/financas/transacoes/`
+   (TransacoesSection + TransacoesLista + LancamentoForm + `types.ts` com
+   `LancamentoInicial`); `RecorrenciasSection` (661) →
+   `components/financas/recorrencias/` (RecorrenciasSection + RecorrenciaRow +
+   RecorrenciaForm + **PagarRecorrenciaModal** — renomeado do `PagarMesModal`
+   interno pra não colidir com o `components/PagarMesModal.tsx` global). Único
+   consumidor (`FinancasScreen.tsx`) repontado. Imports usam o alias `@/`, então
+   a profundidade da pasta não muda nada. typecheck + build verdes.
 4. **`schemas/financas.py` → pacote `schemas/financas/`** com `__init__`
    re-exportando (imports atuais seguem válidos).
 5. **`transacao_service.py` → pacote** + extrair `_common.py` (helpers
