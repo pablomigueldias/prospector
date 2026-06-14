@@ -47,13 +47,6 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 - 🟡 **Detectar boleto recorrente e oferecer virar conta fixa** — hoje dá pra "tornar recorrente" na mão (botão ↻); falta o sistema **perceber** que um boleto se repete e sugerir. Cruza com o detector de assinaturas do §8.
 - 🟢 **Não feitos (de propósito):** passo de revisão antes de criar (conflita com o "nunca some / auto-cria"), sanity checks (valor 0 / data improvável — baixo valor), histórico dedicado (os dados já aparecem no editor + anexos).
 
-## 3d. Cartões profissionais
-
-> Já saíram (ver `FINANCAS_FEITO.md` §3d): o trio que torna o cartão usável
-> (lançar compra, extrato, pagar a fatura), a assinatura recorrente, o "pagar o
-> mês", o atalho "Pagar fatura" no card, a **projeção consolidada**, o **estorno
-> de compra** e a **auto-categoria por compra**. Falta:
-
 - 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` já existe (boleto carnê → N parcelas, sem fatura); falta UI **e surfaçar/pagar as parcelas** (hoje a aba "A pagar" mostra `Transacao`, não `Parcela` de boleto — então o carnê some). É mais que um form.
 - 🟢 **Ajustar valor de compra** — o **estorno** (cancelar a compra inteira) já saiu; falta editar o valor/parcelas de uma compra existente sem excluir e relançar.
 - 🟢 **Antecipar parcelas** — pagar parcelas futuras adiantado e recalcular as faturas (mover parcela entre meses). O mais complexo do bloco.
@@ -62,10 +55,9 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 
 ## 4. Metas, orçamento e alertas (o "loop de gestão")
 
-- 🟡 **Mais alertas no digest** — o alerta de **orçamento** acima de X% já saiu (FEITO §4) e os de **vencimento** (boleto/fatura) também; falta o "saldo previsto do mês ficaria negativo".
-- 🟢 **Orçar por categoria-pai (roll-up de subcategorias)** — hoje o orçamento casa por categoria exata; somar os gastos das subcategorias num teto da categoria-mãe.
-- 🟡 **Projeção de fim de mês** — com base nas recorrências previstas + média, dizer "sobra estimada: R$ Y".
-- 🟢 **Reservas com objetivo** — meta de valor numa conta tipo reserva (ex.: "viagem: R$ 5.000") com barra de progresso.
+> **Tudo saiu na Onda 3 (2026-06-13):** projeção de fim de mês, alerta de saldo
+> negativo no digest, roll-up de orçamento por categoria-mãe e reservas com
+> objetivo. Ver `FINANCAS_FEITO.md` §4. (Coach de metas com IA fica no §8.)
 
 ## 5. Importador / IA
 

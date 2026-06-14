@@ -29,7 +29,7 @@ antes de subir). ~19 commits.
 
 **Hotfix de produção (esse SIM foi aplicado no VPS):** `GEMINI_API_KEY` estava vazia no `~/reative/deploy/.env` → importar boleto dava 500. Preenchida + `docker compose up -d api`. Funciona.
 
-**Quando for deployar:** rodar as **4 migrations** novas (já no `02-deploy.sh` no boot): `a1c7e9d2b4f0`/`b2d8f1a3c6e1`/`c3e9a4d7b8f2` (boleto, de antes) + `d4f0a1b2c3e5`/`e5a1b3c4d6f7`/`f6b2c8d4e7a9` (cartão/recorrência/orçamento). Conferir `ORCAMENTO_ALERTA_PCT` no `.env` do VPS (tem default).
+**Quando for deployar:** rodar as migrations novas (já no `02-deploy.sh` no boot): `a1c7e9d2b4f0`/`b2d8f1a3c6e1`/`c3e9a4d7b8f2` (boleto, de antes) + `d4f0a1b2c3e5`/`e5a1b3c4d6f7`/`f6b2c8d4e7a9` (cartão/recorrência/orçamento) + **`a7c3e1f9d2b8`** (`contas.meta` — reservas com objetivo, Onda 3). Conferir `ORCAMENTO_ALERTA_PCT` no `.env` do VPS (tem default).
 
 **✅ Feito (2026-06-13, continuação):**
 - Botão **"Pagar fatura" direto no card do cartão** — atalho ao lado do "+ Compra" que abre o pagamento direto no form (conta/data/valor) apontando pra fatura mais antiga em aberto. Surfacing do `pagar_fatura`, sem backend novo (`CartoesSection.tsx`, prop `iniciarPagando`).
@@ -43,7 +43,9 @@ antes de subir). ~19 commits.
 
 - **Onda 2 do "resolver tudo" (2026-06-13) — Bot §1:** (1) **/resumo por período** (`/resumo julho`, `07`, `MM/AAAA`, `AAAA-MM`); (2) **lançar despesa prevista** pelo NLU ("vou pagar 200 de luz dia 10" → prevista, não move saldo, vai pra "A pagar"). 2 smokes novos. `DespesaCreate` ganhou `data_vencimento`. **Falta no §1:** confirmação rica (trocar categoria/conta por botões — atenção ao teto de 64 bytes do callback_data + falta `edit_message` na integração) e apelidos de conta (🟢).
 
-**Próximas ondas sugeridas:** §1 (confirmação rica); §4 metas (projeção de fim de mês, roll-up de orçamento, alerta de saldo negativo, reservas com objetivo); §8 IA (perguntas em linguagem natural 🔴, categorização que aprende 🔴, detector de assinaturas, anomalias); §7 segurança (exportar dados, 2FA obrigatório, auditoria no front); §10 patrimônio líquido.
+- **Onda 3 do "resolver tudo" (2026-06-13) — §4 Metas (fechado):** (1) **projeção de fim de mês** (card "sobra estimada" no dashboard, `GET /resumo/projecao`); (2) **alerta de saldo negativo** no digest; (3) **roll-up de orçamento** (categoria-mãe soma as filhas); (4) **reservas com objetivo** (meta + barra de progresso). 5 smokes novos, build verde. ⚠️ **Migration nova `a7c3e1f9d2b8`** (`contas.meta`) — roda no `02-deploy.sh` no deploy; já aplicada no dev.
+
+**Próximas ondas sugeridas:** §1 (confirmação rica do bot); §8 IA (perguntas em linguagem natural 🔴, categorização que aprende 🔴, detector de assinaturas, anomalias, coach de metas); §7 segurança (exportar dados, 2FA obrigatório, auditoria no front); §10 patrimônio líquido; §5 importar extrato (OFX/CSV).
 
 ---
 
