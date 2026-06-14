@@ -290,6 +290,10 @@ function PropostaModal({
               </label>
             </div>
 
+            {item.status === 'fechada' && (
+              <PedirAvaliacao projeto={item.projeto_titulo} />
+            )}
+
             {/* Destaques do seletor */}
             {(proposta?.projetos_destacados?.length || proposta?.habilidades_destacadas?.length) ? (
               <div className="mb-4 flex flex-wrap gap-1.5">
@@ -396,6 +400,34 @@ function PropostaModal({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function PedirAvaliacao({ projeto }: { projeto: string }) {
+  const [copiado, setCopiado] = useState(false);
+  const msg =
+    `Foi um prazer trabalhar no projeto "${projeto}"! 🙌 ` +
+    `Se você ficou satisfeito com a entrega, uma avaliação aqui na Workana me ` +
+    `ajudaria muito e leva só um minuto. Qualquer ajuste, é só me chamar.`;
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(msg);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1500);
+    } catch {
+      /* ignora */
+    }
+  }
+  return (
+    <div className="rounded border border-emerald-200 bg-emerald-50 p-3 mb-4">
+      <div className="text-[13px] font-medium text-emerald-800 mb-1">
+        ⭐ Fechou! Peça a avaliação 5★ (a 1ª é a mais valiosa)
+      </div>
+      <p className="text-[13px] text-ink-soft m-0 mb-2">{msg}</p>
+      <button type="button" className="btn-ghost text-[13px]" onClick={copiar}>
+        {copiado ? '✓ Copiado' : 'Copiar mensagem'}
+      </button>
     </div>
   );
 }
