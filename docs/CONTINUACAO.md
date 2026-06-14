@@ -41,7 +41,9 @@ antes de subir). ~19 commits.
 
 **Backlog ainda grande** — o Pablo pediu pra "resolver todas as pendências do MELHORIAS". É um trabalho de várias ondas (~30 itens). **Bloqueados por coisa fora do código** (precisam de VPS/credenciais/decisão): MinIO atrás do Caddy 🔴 + monitoramento/restore (§6, precisam de deploy/VPS); Open Finance 🔴 (§9, precisa conta Pluggy/Belvo); importar fatura por IA (Pablo pediu pra pular); áudio no bot (§8, precisa Whisper/Groq). O resto é código auto-contido, sendo feito em ondas.
 
-**Próximas ondas sugeridas:** §1 bot (resumo por período, lançar prevista, confirmação rica); §4 metas (projeção de fim de mês, roll-up de orçamento, alerta de saldo negativo, reservas com objetivo); §8 IA (perguntas em linguagem natural 🔴, categorização que aprende 🔴, detector de assinaturas, anomalias); §7 segurança (exportar dados, 2FA obrigatório, auditoria no front); §10 patrimônio líquido.
+- **Onda 2 do "resolver tudo" (2026-06-13) — Bot §1:** (1) **/resumo por período** (`/resumo julho`, `07`, `MM/AAAA`, `AAAA-MM`); (2) **lançar despesa prevista** pelo NLU ("vou pagar 200 de luz dia 10" → prevista, não move saldo, vai pra "A pagar"). 2 smokes novos. `DespesaCreate` ganhou `data_vencimento`. **Falta no §1:** confirmação rica (trocar categoria/conta por botões — atenção ao teto de 64 bytes do callback_data + falta `edit_message` na integração) e apelidos de conta (🟢).
+
+**Próximas ondas sugeridas:** §1 (confirmação rica); §4 metas (projeção de fim de mês, roll-up de orçamento, alerta de saldo negativo, reservas com objetivo); §8 IA (perguntas em linguagem natural 🔴, categorização que aprende 🔴, detector de assinaturas, anomalias); §7 segurança (exportar dados, 2FA obrigatório, auditoria no front); §10 patrimônio líquido.
 
 ---
 

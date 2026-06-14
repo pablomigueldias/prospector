@@ -12,9 +12,12 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 
 ## 1. Bot do Telegram (onde você mais usa)
 
-- 🟡 **Lançar despesa prevista / agendada** — *"vou pagar 200 de luz dia 10"* → cria como `prevista`. Hoje o bot só lança como `paga`.
-- 🟡 **Resumo por período** — `/resumo julho`, `/resumo semana`, e "quanto gastei em mercado esse mês?".
-- 🟡 **Confirmação mais rica** — no card, deixar trocar a **categoria** e a **conta** por botões (hoje só Confirmar/Cancelar/Editar).
+> Já saíram (FEITO §1b): cadastrar conta + desfazer, **/resumo por período**
+> (mês nominal/número/MM-AAAA) e **lançar despesa prevista** (NLU detecta "vou
+> pagar"/data futura). Falta:
+
+- 🟡 **Confirmação mais rica** — no card, deixar trocar a **categoria** e a **conta** por botões (hoje só Confirmar/Cancelar/Editar). *Atenção:* `callback_data` do Telegram tem teto de 64 bytes (não cabem 2 UUIDs) e não há `edit_message` na integração — implementar com índice→id guardado no rascunho + novo card.
+- 🟢 **`/resumo semana`** e perguntas livres ("quanto gastei em mercado?") — folded no §8 (perguntas em linguagem natural).
 - 🟢 **Atalhos de conta** — apelidos (`vr`, `nu`) configuráveis por usuário em vez de casar pelo nome/tipo.
 
 ## 2. Casal / multi-usuário
