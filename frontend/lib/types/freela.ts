@@ -150,6 +150,8 @@ export interface FreelaMetricas {
   ticket_medio_fechado: number;
   pipeline_aberto_liquido: number;
   forecast_liquido: number;
+  tempo_medio_resposta_horas?: number | null;
+  valor_hora_real?: number | null;
 }
 
 export interface FreelaPrecificarRequest {

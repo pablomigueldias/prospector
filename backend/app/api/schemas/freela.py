@@ -206,6 +206,9 @@ class MetricasResponse(BaseModel):
     # Forecast: o que provavelmente entra do pipeline atual
     pipeline_aberto_liquido: float          # soma do líquido em aberto
     forecast_liquido: float                 # pipeline × taxa de fechamento
+    # Calibração
+    tempo_medio_resposta_horas: Optional[float] = None  # velocidade do cliente
+    valor_hora_real: Optional[float] = None             # líquido/hora das fechadas
 
 
 # ══════════════════════════════════════════════════════════════════

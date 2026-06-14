@@ -565,6 +565,8 @@ async def metricas() -> MetricasResponse:
         contagem = await repo.contar_por_status()
         liquido_total, qtd_fechadas = await repo.soma_liquido_fechado()
         pipeline_aberto, qtd_aberto = await repo.soma_liquido_em_aberto()
+        tempo_resposta = await repo.tempo_medio_resposta_horas()
+        valor_hora_real = await repo.valor_hora_real_fechadas()
 
     total = sum(contagem.values())
     # "enviadas" = tudo que saiu da gaveta (qualquer status menos rascunho).
@@ -600,6 +602,8 @@ async def metricas() -> MetricasResponse:
         ticket_medio_fechado=ticket_medio,
         pipeline_aberto_liquido=_r2(pipeline_aberto),
         forecast_liquido=forecast,
+        tempo_medio_resposta_horas=tempo_resposta,
+        valor_hora_real=valor_hora_real,
     )
 
 

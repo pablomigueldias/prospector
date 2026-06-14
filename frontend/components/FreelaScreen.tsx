@@ -445,6 +445,17 @@ function MetaForecast({ m, loading }: { m: FreelaMetricas | null; loading: boole
           )}
         </div>
       </div>
+
+      {(m?.tempo_medio_resposta_horas != null || m?.valor_hora_real != null) && (
+        <div className="mt-3 pt-3 border-t border-line flex flex-wrap gap-x-6 gap-y-1 text-[12px] text-ink-soft">
+          {m?.tempo_medio_resposta_horas != null && (
+            <span>⏱ Resposta média do cliente: <strong>{m.tempo_medio_resposta_horas}h</strong></span>
+          )}
+          {m?.valor_hora_real != null && (
+            <span>💵 Seu valor-hora real (fechadas): <strong>{formatBRL(m.valor_hora_real)}/h</strong></span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

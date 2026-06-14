@@ -182,6 +182,32 @@ class FreelaRepository:
         soma, qtd = (await self.session.execute(stmt)).one()
         return float(soma), int(qtd)
 
+    async def tempo_medio_resposta_horas(self) -> Optional[float]:
+        """Média de horas entre enviar e o cliente responder (onde houver ambos)."""
+        stmt = select(
+            func.avg(
+                func.extract("epoch", Proposta.data_resposta - Proposta.enviada_em)
+            )
+        ).where(
+            Proposta.data_resposta.isnot(None),
+            Proposta.enviada_em.isnot(None),
+        )
+        v = (await self.session.execute(stmt)).scalar()
+        return round(float(v) / 3600, 1) if v is not None else None
+
+    async def valor_hora_real_fechadas(self) -> Optional[float]:
+        """Média do líquido/hora das propostas fechadas com horas estimadas."""
+        stmt = select(
+            func.avg(Proposta.valor_liquido_estimado / Proposta.horas_estimadas)
+        ).where(
+            Proposta.status == "fechada",
+            Proposta.horas_estimadas.isnot(None),
+            Proposta.horas_estimadas > 0,
+            Proposta.valor_liquido_estimado.isnot(None),
+        )
+        v = (await self.session.execute(stmt)).scalar()
+        return round(float(v), 2) if v is not None else None
+
     async def soma_liquido_em_aberto(self) -> tuple[float, int]:
         """(soma do líquido das propostas EM ABERTO, quantidade).
 
