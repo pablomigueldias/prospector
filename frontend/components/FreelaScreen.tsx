@@ -695,6 +695,14 @@ function ProjetoCard({
           <div className="font-medium text-ink text-[15px] truncate">{p.titulo}</div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-ink-mute">
             {p.cliente_nome && <span>{p.cliente_nome}</span>}
+            {p.cliente_recorrente && (
+              <span
+                className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800"
+                title={`Cliente recorrente — já te pagou US$ ${p.cliente_pago_usd.toFixed(0)} (comissão menor)`}
+              >
+                ★ recorrente
+              </span>
+            )}
             {orcamento && <span>· {orcamento}</span>}
             {p.n_propostas_concorrentes != null && (
               <span>· {p.n_propostas_concorrentes} propostas</span>

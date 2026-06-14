@@ -117,6 +117,8 @@ class ProjetoListItem(BaseModel):
     fit_score: Optional[int] = None       # vem do analise_json (Fase 3)
     tem_analise: bool = False
     qtd_propostas: int = 0
+    cliente_recorrente: bool = False      # cliente já me pagou (comissão menor)
+    cliente_pago_usd: float = 0
     created_at: Optional[str] = None
 
 

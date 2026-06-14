@@ -246,7 +246,7 @@ async def listar_projetos() -> ProjetoListResponse:
     async with get_session() as session:
         linhas = await FreelaRepository(session).listar_projetos()
     items = []
-    for projeto, cliente_nome, qtd in linhas:
+    for projeto, cliente_nome, qtd, pago_usd in linhas:
         analise = projeto.analise_json or {}
         items.append(
             ProjetoListItem(
@@ -260,11 +260,16 @@ async def listar_projetos() -> ProjetoListResponse:
                 fit_score=analise.get("fit_score"),
                 tem_analise=projeto.analise_json is not None,
                 qtd_propostas=qtd,
+                cliente_recorrente=pago_usd > 0,
+                cliente_pago_usd=round(pago_usd, 2),
                 created_at=_iso(projeto.created_at),
             )
         )
-    # Fila de oportunidades: maior fit primeiro (sem análise vai pro fim).
-    items.sort(key=lambda i: (i.fit_score is None, -(i.fit_score or 0)))
+    # Fila de oportunidades: cliente recorrente vale ouro (vem primeiro), depois
+    # maior fit (sem análise vai pro fim).
+    items.sort(
+        key=lambda i: (not i.cliente_recorrente, i.fit_score is None, -(i.fit_score or 0))
+    )
     return ProjetoListResponse(items=items, total=len(items))
 
 

@@ -78,6 +78,8 @@ export interface FreelaProjetoListItem {
   fit_score?: number | null;
   tem_analise: boolean;
   qtd_propostas: number;
+  cliente_recorrente: boolean;
+  cliente_pago_usd: number;
   created_at?: string | null;
 }
 
