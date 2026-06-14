@@ -14,6 +14,8 @@ from app.api.schemas.freela import (
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
+    RedigirRequest,
+    RedigirResponse,
     KanbanResponse,
     MetricasResponse,
     PlataformaResponse,
@@ -219,6 +221,15 @@ async def atualizar_proposta(proposta_id: str, body: PropostaUpdate) -> Proposta
 async def mudar_status(proposta_id: str, body: PropostaStatusUpdate) -> PropostaResponse:
     try:
         return await freela_service.mudar_status(proposta_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/propostas/{proposta_id}/redigir", response_model=RedigirResponse,
+             summary="Rascunha a proposta com IA (PARA no rascunho, não envia)")
+async def redigir_proposta(proposta_id: str, body: RedigirRequest) -> RedigirResponse:
+    try:
+        return await freela_service.redigir_proposta(proposta_id, body)
     except Exception as e:
         raise _handle(e)
 

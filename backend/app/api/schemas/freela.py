@@ -243,3 +243,25 @@ class AnaliseFreela(BaseModel):
 class AnalisarProjetoResponse(BaseModel):
     projeto_id: str
     analise: AnaliseFreela
+
+
+# ══════════════════════════════════════════════════════════════════
+# Redator + Seletor (Fase 5 — IA) → preenche a proposta
+# ══════════════════════════════════════════════════════════════════
+
+class RedacaoProposta(BaseModel):
+    texto: str = ""                 # rascunho completo (estrutura Workana)
+    prazo_sugerido: Optional[str] = None
+    tom: Optional[str] = None       # técnico | institucional
+    # Seletor: dos SEUS projetos/habilidades (max 3 / max 5)
+    projetos_destacados: List[str] = Field(default_factory=list)
+    habilidades_destacadas: List[str] = Field(default_factory=list)
+
+
+class RedigirRequest(BaseModel):
+    instrucoes_extra: Optional[str] = None  # "cita o teste no Safari iOS" etc.
+
+
+class RedigirResponse(BaseModel):
+    proposta_id: str
+    redacao: RedacaoProposta

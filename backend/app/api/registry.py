@@ -166,7 +166,7 @@ _AGENTS: List[Agent] = [
             "crm_propostas": True,
             "analisa_projeto": True,    # Fase 3 (IA)
             "precifica": True,          # Fase 4
-            "rascunha_proposta": False,  # Fase 5 (IA)
+            "rascunha_proposta": True,  # Fase 5 (IA)
         },
     ),
 ]

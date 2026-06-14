@@ -15,6 +15,10 @@ from app.analyzers.freela.analisador.parser import parse_resposta as parse_anali
 from app.analyzers.freela.analisador.prompt_builder import (
     construir_prompt as construir_prompt_analise,
 )
+from app.analyzers.freela.redator.parser import parse_resposta as parse_redacao
+from app.analyzers.freela.redator.prompt_builder import (
+    construir_prompt as construir_prompt_redacao,
+)
 from app.analyzers.llm_provider import gerar_texto
 from app.api.schemas.freela import (
     AnalisarProjetoResponse,
@@ -22,6 +26,8 @@ from app.api.schemas.freela import (
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
+    RedigirRequest,
+    RedigirResponse,
     KanbanColuna,
     KanbanResponse,
     MetricasResponse,
@@ -431,6 +437,53 @@ async def listar_propostas_do_projeto(projeto_id: str) -> List[PropostaResponse]
     async with get_session() as session:
         linhas = await FreelaRepository(session).listar_propostas_do_projeto(_uuid(projeto_id))
         return [_proposta_to_resp(p) for p in linhas]
+
+
+# ── IA: redator + seletor (Fase 5) ───────────────────────────────
+
+async def redigir_proposta(proposta_id: str, payload: RedigirRequest) -> RedigirResponse:
+    perfil = await get_perfil()
+    if perfil is None:
+        raise FreelaError(
+            "Cadastre seu Perfil Mestre antes de rascunhar — a proposta é "
+            "ancorada nos seus projetos e habilidades."
+        )
+
+    pid = _uuid(proposta_id)
+    async with get_session() as session:
+        repo = FreelaRepository(session)
+        proposta = await repo.get_proposta(pid)
+        if proposta is None:
+            raise FreelaError("Proposta não encontrada.")
+        projeto = await repo.get_projeto(proposta.projeto_id)
+        if projeto is None:
+            raise FreelaError("Projeto da proposta não encontrado.")
+
+        prompt = construir_prompt_redacao(
+            projeto.descricao,
+            perfil,
+            titulo=projeto.titulo,
+            analise=projeto.analise_json,
+            instrucoes_extra=payload.instrucoes_extra,
+        )
+        texto = _chamar_llm(prompt, operacao="redigir")
+
+        redacao = parse_redacao(texto)
+        if redacao is None:
+            raise FreelaError("A IA não retornou um rascunho válido. Tente de novo.")
+
+        # PARA no rascunho: preenche a proposta, nada é enviado.
+        await repo.update_proposta(
+            pid,
+            {
+                "texto_enviado": redacao.texto,
+                "projetos_destacados": redacao.projetos_destacados,
+                "habilidades_destacadas": redacao.habilidades_destacadas,
+                "prazo_proposto": redacao.prazo_sugerido or proposta.prazo_proposto,
+            },
+        )
+
+    return RedigirResponse(proposta_id=proposta_id, redacao=redacao)
 
 
 # ══════════════════════════════════════════════════════════════════
