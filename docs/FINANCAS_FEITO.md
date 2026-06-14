@@ -43,6 +43,8 @@ Serve de histórico e de referência de onde cada coisa mora no código.
 - ✅ **Linguagem natural no dashboard** (2026-06-13) — caixa "digite o gasto" acima das Transações: o mesmo NLU do bot (`POST /api/financas/nlu/interpretar`) interpreta o texto, mostra o rascunho (tipo/valor/descrição) com conta e categoria editáveis, e só lança ao confirmar. Ref `NluLancarSection.tsx`.
 - ✅ **Despesa dividida (split por N contas)** (2026-06-13) — no form de lançamento (despesa nova), checkbox **Dividir entre contas** abre um editor de pagamentos (conta + valor, add/remover) com checagem soma×total ao vivo; manda `POST /api/financas/transacoes/despesa/dividida`. Ex.: metade VR, metade dinheiro. Ref `TransacoesSection.tsx` (LancamentoForm).
 - ✅ **Registrar leitura de consumo pela web** (2026-06-13) — a `ConsumoSection` ganhou **+ Registrar leitura**: modal com tipo (água/gás/luz), mês, leitura atual/anterior e valor opcional (mostra a prévia do consumo). `POST /api/financas/leituras` (já existia, só faltava UI). Ref `ConsumoSection.tsx`.
+- ✅ **Despesa auto-split VR/VA na tela** (2026-06-13) — no form de lançamento, ao "Dividir entre contas" há o modo **Auto (esgota o VR)**: escolhe a conta que esgota primeiro e a que cobre o resto; o sistema gasta o saldo do VR/VA e joga o que faltar na 2ª (sempre paga). `POST /api/financas/transacoes/despesa/auto-split` (backend já existia). Ref `TransacoesSection.tsx`.
+- ✅ **Ver parcelas de uma compra (visão por compra)** (2026-06-13) — no extrato da fatura, item parcelado ganhou um **ⓘ** que expande **todas as parcelas daquela compra** (nº, vencimento, valor, juros), inclusive as de outros meses. `GET /api/financas/compras/{id}`. Ref `CartoesSection.tsx`.
 
 ## 3c. Boletos profissionais
 
@@ -84,6 +86,11 @@ Serve de histórico e de referência de onde cada coisa mora no código.
 ## 6. Confiabilidade & infraestrutura
 
 - ✅ **Cron das recorrências** (2026-06-13) — `rotina_diaria` no APScheduler gera previstas + marca atrasadas todo dia (antes só o endpoint manual). Ver §3c (lembrete de vencimento).
+- ✅ **Erro amigável quando falta a `GEMINI_API_KEY`** (2026-06-13) — importar boleto sem a chave agora devolve **400** com mensagem clara ("leitura por IA não configurada, lance manualmente") em vez de **500**, tanto na web quanto no bot (`/gasto` segue). `importador.py::_handle` mapeia `BoletoSemChave`/`GeminiSemChave`. Smoke `tests/test_financas_importar_sem_chave_api.py`.
+
+## 9. Integrações bancárias
+
+- ✅ **PIX copia-e-cola** (2026-06-13) — no form de lançamento, **📋 Colar código PIX** abre uma caixa: cola o BR Code e o sistema extrai **valor + beneficiário** (parser EMV-TLV, sem IA) e preenche descrição/valor. `POST /api/financas/pix/parse` → `pix_service.parse_copia_cola`. Smoke `tests/test_financas_pix_parse_api.py`. Ref `TransacoesSection.tsx`.
 
 ---
 

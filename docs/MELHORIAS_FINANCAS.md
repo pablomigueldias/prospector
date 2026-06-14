@@ -37,9 +37,7 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 > Objetivo: poder fazer TUDO pela tela de Finanças. Estas funções **já existem
 > no backend**, só falta a interface no front.
 
-- 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`): boleto que vira N parcelas mensais (sem fatura). Ausente no front. (Ver também §3d.)
-- 🟢 **Despesa auto-split VR/VA** — `POST /api/financas/transacoes/despesa/auto-split`: esgota o VR e joga o resto no dinheiro automaticamente. (A divisão **explícita** por N contas já saiu — ver FEITO §3b.)
-- 🟢 **Detalhe de compra parcelada** — `GET /api/financas/compras/{id}`: ver as parcelas de uma compra específica (o extrato da fatura já mostra item a item; isto é a visão por compra).
+- 🟡 **Boleto parcelado na tela** — `POST /api/financas/compras/boleto` (`BoletoParceladoCreate`): boleto que vira N parcelas mensais (sem fatura). Ausente no front. (Ver também §3d.) *(Auto-split VR/VA e detalhe de compra parcelada já saíram — ver FEITO §3b.)*
 
 ## 3c. Boletos profissionais
 
@@ -79,7 +77,6 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 - 🟡 **Testes E2E / verificação visual (Playwright)** — hoje a validação de tela é manual (a API/lógica têm smoke tests, o front não). Um Playwright que faz login e tira screenshot/roda smoke das telas dá pra conferir mudanças de UI sem subir e clicar à mão.
 - 🟢 **Testar o restore do backup** — restaurar um dump num banco de teste e confirmar que volta inteiro.
 - 🟢 **Observabilidade** — logs estruturados + métricas (lançamentos/dia, latência do importador).
-- 🟢 **Erro amigável quando falta a `GEMINI_API_KEY`** — hoje importar sem a chave devolve HTTP 500 (`BoletoSemChave`); virar um 400 com mensagem clara ("Gemini não configurado"). *(Surgiu no hotfix de 2026-06-13.)*
 
 ## 7. Segurança & dados
 
@@ -105,7 +102,6 @@ O módulo registra bem; o salto é ele **entender e antecipar**. Território de 
 - 🔴 **Open Finance (Pluggy/Belvo)** — conectar a conta/cartão e importar transações automaticamente, com conciliação contra o que já foi lançado. É o "santo graal".
 - 🟡 **Importar fatura de cartão (PDF/CSV)** — ler a fatura inteira e gerar as compras/parcelas de uma vez, conciliando.
 - 🟡 **Ler comprovante de PIX / nota fiscal** — estender o importador pra PIX e NF (QR/imagem).
-- 🟢 **Pix copia-e-cola** — colar o código PIX e o agente extrai valor/beneficiário e pré-preenche o lançamento.
 
 ## 10. Patrimônio e planejamento (além do fluxo de caixa)
 
