@@ -1,11 +1,15 @@
 # Continuação — onde paramos e como retomar
 
 > Handoff geral do sistema. Última atualização: **2026-06-14**.
-> Branch de trabalho: **`feat/financas`**.
-> ✅ **2026-06-14: a leva inteira foi MERGEADA na `main` e empurrada pro GitHub**
-> (`923330e`, merge `--no-ff`, sem conflitos). ⚠️ **Ainda NÃO deployado no VPS** —
-> deploy é por **rsync** (não é git push), então a `main` no GitHub ≠ servidor.
-> Quando for subir, rodar o deploy + as migrations (ver §0). Ver §0.
+> Branch de trabalho: **`feat/financas`** (mergeada na `main`).
+> ✅ **2026-06-14: refatoração (7 passos) + levas anteriores MERGEADAS na `main`,
+> no GitHub E DEPLOYADAS no VPS.** Site no ar: https://studio.reativesystems.com.br
+> (health 200). As 4 migrations pendentes (cartão/recorrência/orçamento/
+> reserva-meta) rodaram no startup. ⚠️ **Gotcha de deploy:** o refactor **deletou**
+> arquivos (api.ts/types.ts/3 componentes/schemas/financas.py/transacao_service.py/
+> bot_service.py); o rsync (sem `--delete`) **não remove órfãos**, então foi preciso
+> apagá-los à mão no servidor pra não sombrearem os novos pacotes. Lembrar em
+> deploys futuros que apaguem arquivos.
 
 ---
 
@@ -42,10 +46,11 @@ Pendência herdada (não bloqueante): sub-dividir o `lib/types/financas.ts`
 
 ---
 
-## 0. Onde paramos — na `main`, ainda NÃO deployado no VPS ⏸️
+## 0. Onde paramos — na `main` E DEPLOYADO no VPS ✅ (2026-06-14)
 
-Tudo abaixo está **commitado, com smoke/build verde, e já na `main` no GitHub**
-(mergeado em 2026-06-14). **Falta só o deploy no VPS** (rsync + migrations).
+Tudo abaixo está **commitado, na `main` no GitHub E DEPLOYADO no VPS**
+(2026-06-14): rsync + `02-deploy.sh` (rebuild api/web), as 4 migrations
+pendentes rodaram no startup, health público 200. **Não falta deploy.**
 
 **Cartões (o campo da vez):**
 - **Trio usável:** lançar compra parcelada/à vista (botão **+ Compra** no card), **extrato da fatura** (clicar na fatura → item a item) e **pagar a fatura** (debita conta, move saldo, vira despesa do mês). Migration `d4f0a1b2c3e5` (`faturas.transacao_id`).
