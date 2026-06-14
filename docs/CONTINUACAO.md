@@ -24,13 +24,19 @@ backend (`backend/app/api/main.py:82`) só libera `localhost:3000` /
 a `ADMIN_SENHA_INICIAL` do `backend/.env` (2FA desativado). *Melhoria opcional:*
 adicionar `localhost:3001` ao CORS de dev pra um pulo de porta não quebrar login.
 
-**Refatoração (plano `docs/ORGANIZACAO_REFATORACAO.md` §5) — passo 1 ✅:**
-`frontend/lib/types.ts` (1007 linhas, 5 domínios misturados) quebrado em
-`lib/types/{core,prospector,auth,copywriter,pessoal,financas}.ts` + barrel
-`index.ts` (`export *`). Os 42 imports `@/lib/types` seguem iguais. Sem mudar
-comportamento; typecheck + build verdes. Falta sub-dividir o `financas.ts`
-(~620 linhas) e seguir os passos 2–7 (api.ts, componentes-deus, schemas/services
-do back, infra de teste).
+**Refatoração (plano `docs/ORGANIZACAO_REFATORACAO.md` §5) — ✅ OS 7 PASSOS FEITOS**
+(um commit cada, typecheck/build/smokes verdes entre cada):
+1. `lib/types.ts` (1007) → `lib/types/<dominio>/` + barrel.
+2. `lib/api.ts` (1070) → `lib/api/<dominio>` + `client.ts` (paridade: 92 métodos).
+3. 3 componentes-deus → `components/financas/{cartoes,transacoes,recorrencias}/`.
+4. `schemas/financas.py` (836) → pacote (12 submódulos, 80 schemas).
+5. `transacao_service.py` (788) → pacote + `_common.py` (`iso()` dedup).
+6. `bot_service.py` (547) → pacote (_base/comandos/nlu/arquivo; dispatch no `__init__`).
+7. **pytest** como runner único dos 60 smokes (subprocesso) — **58 passed, 2 xfailed**
+   (falhas pré-existentes) — + scaffold **Playwright** (login+screenshot, `npm run e2e`).
+
+Pendência herdada (não bloqueante): sub-dividir o `lib/types/financas.ts`
+(~620 linhas) e rodar o E2E do Playwright (precisa `npx playwright install chromium`).
 
 ---
 

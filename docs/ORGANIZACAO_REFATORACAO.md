@@ -4,7 +4,11 @@ Diagnóstico do que **atrapalha crescer e refatorar** hoje, com um plano
 incremental e de baixo risco. Não é reescrita — é quebrar "arquivos-deus" em
 fatias por domínio, mantendo o comportamento.
 
-Última revisão: **2026-06-14** (passo 1 do plano §5 ✅ feito).
+Última revisão: **2026-06-14** — ✅ **os 7 passos do plano §5 foram feitos**
+(tipos, api.ts, componentes-deus, schemas, transacao_service, bot_service e
+infra de teste). Cada um num commit próprio, com typecheck/build/smokes verdes.
+A tabela de "arquivos grandes" abaixo é o **estado ANTES** (registro histórico);
+todos já foram quebrados — ver os ✅ no §5.
 
 > Regra de ouro pra aplicar: **um passo = um commit, smoke/build verde entre
 > cada**, sem mudar comportamento (só mover/dividir). Usar *barrel files*
