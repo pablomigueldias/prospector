@@ -144,8 +144,18 @@ app/api/services/financas/  transacao/  lancar.py  pagar.py  listar.py  transfer
    depois (forward-refs entre modelos do mesmo subdomínio, então resolvem no
    import). Smokes `test_financas_auth_api` e `test_financas_transacoes_pagar_api`
    verdes.
-5. **`transacao_service.py` → pacote** + extrair `_common.py` (helpers
-   duplicados dos services de financas).
+5. ✅ **`transacao_service.py` → pacote** + `_common.py` *(feito 2026-06-14)* —
+   `transacao_service/` com `_base.py` (imports + `TransacaoError` + 8 helpers
+   privados) e submódulos por responsabilidade: `lancar.py`, `transferir.py`,
+   `consultas.py`, `editar.py`, `pagar.py`, `excluir.py`. `__init__.py` re-exporta
+   a API pública (14 símbolos) — `transacao_service.X(...)` e
+   `from ...transacao_service import TransacaoError` seguem válidos.
+   **`_common.py`:** extraído só o `iso()` (era idêntico em ~9 services e foi
+   centralizado neles). ⚠️ **`_uuid` NÃO foi centralizado** de propósito: cada
+   service levanta a sua própria exceção (`ContaError`/`TransacaoError`/…) que o
+   router mapeia pra HTTP — unificá-lo mudaria o tipo do erro. `_intervalo_mes`
+   também ficou local (assinaturas diferentes entre transacao e resumo). Import
+   da app + bateria de 9 smokes financas verdes.
 6. **`bot_service.py`** — separar dispatch / comandos / NLU-card / arquivo.
 7. **Infra de teste:** adotar `pytest` (manter os smokes como casos), e um
    Playwright mínimo (login + screenshot) — cobre o §6 do MELHORIAS.

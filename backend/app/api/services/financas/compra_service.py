@@ -38,8 +38,7 @@ class CompraError(Exception):
 _CENTAVO = Decimal("0.01")
 
 
-def _iso(dt) -> Optional[str]:
-    return dt.isoformat(timespec="seconds") if dt else None
+from app.api.services.financas._common import iso as _iso
 
 
 def _uuid(valor: str, *, campo: str = "id") -> uuid.UUID:
