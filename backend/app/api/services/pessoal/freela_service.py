@@ -258,6 +258,7 @@ async def listar_projetos() -> ProjetoListResponse:
                 faixa_orcamento_max=float(projeto.faixa_orcamento_max) if projeto.faixa_orcamento_max is not None else None,
                 n_propostas_concorrentes=projeto.n_propostas_concorrentes,
                 fit_score=analise.get("fit_score"),
+                risco=analise.get("risco"),
                 tem_analise=projeto.analise_json is not None,
                 qtd_propostas=qtd,
                 cliente_recorrente=pago_usd > 0,

@@ -115,6 +115,7 @@ class ProjetoListItem(BaseModel):
     faixa_orcamento_max: Optional[float] = None
     n_propostas_concorrentes: Optional[int] = None
     fit_score: Optional[int] = None       # vem do analise_json (Fase 3)
+    risco: Optional[str] = None           # baixo / medio / alto (scam radar)
     tem_analise: bool = False
     qtd_propostas: int = 0
     cliente_recorrente: bool = False      # cliente já me pagou (comissão menor)
@@ -241,6 +242,7 @@ class PrecificarResponse(BaseModel):
 class AnaliseFreela(BaseModel):
     fit_score: int = 0                 # 0-100: é a sua praia?
     recomendacao: Optional[str] = None  # vale / talvez / evite
+    risco: Optional[str] = None         # baixo / medio / alto (scam radar)
     veredito: Optional[str] = None      # 1 frase: gasto proposta aqui?
     requisitos: List[str] = Field(default_factory=list)
     stack: List[str] = Field(default_factory=list)

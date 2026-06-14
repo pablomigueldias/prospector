@@ -16,6 +16,7 @@ OUTPUT_SCHEMA = """
 {
   "fit_score": <inteiro 0-100: quão "a sua praia" é este projeto>,
   "recomendacao": "<vale | talvez | evite>",
+  "risco": "<baixo | medio | alto — risco de golpe/dor de cabeça: alto se cliente sem pagamento verificado + pede contato fora + oferta boa demais + escopo vago>",
   "veredito": "<1 frase honesta: vale gastar uma proposta aqui? por quê?>",
   "requisitos": ["<o que o projeto realmente pede>", "..."],
   "stack": ["<tecnologia citada/implícita>", "..."],
@@ -38,6 +39,10 @@ PERFIL MESTRE do freelancer. Produza:
   atraente que pareça.
 - "recomendacao": "vale" (fit alto, sinais bons), "talvez" (vale só se o preço/
   cliente compensar) ou "evite" (fit baixo ou muitas red flags).
+- "risco": "alto" se houver sinais de golpe/perda de tempo (cliente sem
+  pagamento verificado, pedido de contato/pagamento fora da plataforma, oferta
+  "boa demais", escopo vago demais pra cotar); "medio" se um desses; "baixo" se
+  o cliente parece sólido.
 - "veredito": uma frase direta pra decidir.
 - "requisitos" e "stack": o que o projeto pede de fato.
 - "red_flags": seja CÉTICO. Sinalize orçamento incompatível com o escopo,

@@ -722,6 +722,18 @@ function ProjetoCard({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {p.risco && p.risco !== 'baixo' && (
+            <span
+              className={`text-[12px] font-medium px-2 py-0.5 rounded ${
+                p.risco === 'alto'
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-amber-100 text-amber-800'
+              }`}
+              title="Risco detectado pela análise (cliente/escopo)"
+            >
+              ⚠️ risco {p.risco}
+            </span>
+          )}
           {p.tem_analise && p.fit_score != null ? (
             <span className="text-[12px] font-medium px-2 py-0.5 rounded bg-brand-soft text-brand-ink">
               fit {p.fit_score}
@@ -763,6 +775,15 @@ function ProjetoCard({
                 }`}
               >
                 {analise.recomendacao} · fit {analise.fit_score}
+              </span>
+            )}
+            {analise.risco && analise.risco !== 'baixo' && (
+              <span
+                className={`text-[12px] font-medium px-2 py-0.5 rounded ${
+                  analise.risco === 'alto' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
+                }`}
+              >
+                ⚠️ risco {analise.risco}
               </span>
             )}
           </div>

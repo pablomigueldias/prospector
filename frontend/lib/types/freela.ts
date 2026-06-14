@@ -76,6 +76,7 @@ export interface FreelaProjetoListItem {
   faixa_orcamento_max?: number | null;
   n_propostas_concorrentes?: number | null;
   fit_score?: number | null;
+  risco?: string | null;
   tem_analise: boolean;
   qtd_propostas: number;
   cliente_recorrente: boolean;
@@ -176,6 +177,7 @@ export interface FreelaPrecificarResponse {
 export interface FreelaAnalise {
   fit_score: number;
   recomendacao?: string | null; // vale | talvez | evite
+  risco?: string | null; // baixo | medio | alto
   veredito?: string | null;
   requisitos: string[];
   stack: string[];
