@@ -16,7 +16,7 @@ import { CategoriaDonut } from '@/components/CategoriaDonut';
 import { useCategorias, useContas, useRelatorio } from '@/hooks/useFinancas';
 import { achatarCategorias } from '@/lib/categorias';
 import { formatBRL, formatMesAno } from '@/lib/format';
-import type { RelatorioMesItem } from '@/lib/types';
+import type { RelatorioMesItem, RelatorioResponse } from '@/lib/types';
 
 interface Props {
   /** Mês âncora (o selecionado no topo do dashboard). A série termina nele. */
@@ -81,10 +81,11 @@ export function RelatorioSection({ ano, mes, onVerMes }: Props) {
   const [meses, setMeses] = useState<number>(6);
   const [contaId, setContaId] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
-  const { relatorio, loading } = useRelatorio(ano, mes, meses, {
-    contaId: contaId || undefined,
-    categoriaId: categoriaId || undefined,
-  });
+  const [comparar, setComparar] = useState(false);
+  const filtro = { contaId: contaId || undefined, categoriaId: categoriaId || undefined };
+  const { relatorio, loading } = useRelatorio(ano, mes, meses, filtro);
+  // Período anterior: mesma janela um ano antes (ex.: jun/26 vs jun/25).
+  const { relatorio: relAnterior } = useRelatorio(ano - 1, mes, meses, filtro, comparar);
 
   const { contas } = useContas(true);
   const { arvore } = useCategorias();
@@ -184,6 +185,18 @@ export function RelatorioSection({ ano, mes, onVerMes }: Props) {
               limpar
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setComparar((v) => !v)}
+            className={`px-3 py-1 text-[12.5px] rounded-pill border transition-colors ${
+              comparar
+                ? 'bg-brand text-white border-brand'
+                : 'border-line text-ink-soft hover:bg-line-soft'
+            }`}
+            title={`Comparar com o mesmo período de ${ano - 1}`}
+          >
+            vs {ano - 1}
+          </button>
           <button
             type="button"
             onClick={() => relatorio && baixarCsv(relatorio.meses)}
@@ -349,6 +362,16 @@ export function RelatorioSection({ ano, mes, onVerMes }: Props) {
             </div>
           </div>
 
+          {/* Comparativo com o mesmo período do ano anterior */}
+          {comparar && (
+            <ComparativoBlock
+              atual={relatorio!}
+              anterior={relAnterior}
+              meses={meses}
+              anoAtual={ano}
+            />
+          )}
+
           {/* Top categorias do período */}
           <h3 className="font-display font-semibold text-sm tracking-tight text-ink-soft m-0 mb-2">
             Top categorias no período
@@ -357,6 +380,83 @@ export function RelatorioSection({ ano, mes, onVerMes }: Props) {
         </>
       )}
     </section>
+  );
+}
+
+function ComparativoBlock({
+  atual,
+  anterior,
+  meses,
+  anoAtual,
+}: {
+  atual: RelatorioResponse;
+  anterior: RelatorioResponse | null;
+  meses: number;
+  anoAtual: number;
+}) {
+  if (!anterior) {
+    return (
+      <div className="card p-5 mb-4 h-[120px] animate-pulse" />
+    );
+  }
+  const linhas: { rotulo: string; a: number; b: number; despesa?: boolean }[] = [
+    { rotulo: 'Receitas', a: Number(atual.total_receitas), b: Number(anterior.total_receitas) },
+    { rotulo: 'Despesas', a: Number(atual.total_despesas), b: Number(anterior.total_despesas), despesa: true },
+    { rotulo: 'Saldo', a: Number(atual.saldo), b: Number(anterior.saldo) },
+    { rotulo: 'Despesa média/mês', a: Number(atual.media_despesas), b: Number(anterior.media_despesas), despesa: true },
+  ];
+  return (
+    <div className="card p-5 mb-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <h3 className="font-display font-semibold text-sm tracking-tight text-ink m-0">
+          Comparativo
+        </h3>
+        <span className="text-[11.5px] text-ink-mute">
+          últimos {meses}m · {anoAtual} vs {anoAtual - 1}
+        </span>
+      </div>
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="text-[11px] uppercase tracking-wide text-ink-mute">
+            <th className="text-left font-medium pb-2"> </th>
+            <th className="text-right font-medium pb-2">{anoAtual}</th>
+            <th className="text-right font-medium pb-2">{anoAtual - 1}</th>
+            <th className="text-right font-medium pb-2">variação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.map((l) => {
+            const diff = l.a - l.b;
+            const pct = l.b !== 0 ? (diff / Math.abs(l.b)) * 100 : null;
+            const subiu = diff > 0;
+            // Pra despesa, subir é ruim (vermelho); pra receita/saldo, subir é bom.
+            const ruim = l.despesa ? subiu : !subiu && diff !== 0;
+            const cor =
+              diff === 0
+                ? 'text-ink-mute'
+                : ruim
+                  ? 'text-red-600'
+                  : 'text-success-ink';
+            return (
+              <tr key={l.rotulo} className="border-t border-line-soft">
+                <td className="py-2 text-ink-soft">{l.rotulo}</td>
+                <td className="py-2 text-right tabular-nums text-ink">
+                  {formatBRL(l.a)}
+                </td>
+                <td className="py-2 text-right tabular-nums text-ink-mute">
+                  {formatBRL(l.b)}
+                </td>
+                <td className={`py-2 text-right tabular-nums ${cor}`}>
+                  {diff === 0
+                    ? '—'
+                    : `${subiu ? '↑' : '↓'} ${pct != null ? `${Math.abs(pct).toFixed(0)}%` : formatBRL(Math.abs(diff))}`}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

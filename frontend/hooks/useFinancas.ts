@@ -28,16 +28,19 @@ export function useRelatorio(
   mes: number,
   meses = 6,
   filtro?: { contaId?: string; categoriaId?: string },
+  enabled = true,
 ) {
   const contaId = filtro?.contaId ?? '';
   const categoriaId = filtro?.categoriaId ?? '';
-  const result = useFetch<RelatorioResponse>(
+  const result = useFetch<RelatorioResponse | null>(
     () =>
-      api.financasRelatorio(FINANCAS_USUARIO_ID, ano, mes, meses, {
-        contaId: contaId || undefined,
-        categoriaId: categoriaId || undefined,
-      }),
-    [ano, mes, meses, contaId, categoriaId],
+      enabled
+        ? api.financasRelatorio(FINANCAS_USUARIO_ID, ano, mes, meses, {
+            contaId: contaId || undefined,
+            categoriaId: categoriaId || undefined,
+          })
+        : Promise.resolve(null),
+    [ano, mes, meses, contaId, categoriaId, enabled],
   );
   return { ...result, relatorio: result.data };
 }
