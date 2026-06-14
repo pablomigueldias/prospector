@@ -118,6 +118,23 @@ class DespesaCreate(BaseModel):
     notas: Optional[str] = None
 
 
+class TransferenciaCreate(BaseModel):
+    """Move dinheiro entre contas (ex.: guardar na reserva). Debita a origem e
+    credita o destino; não conta como receita/despesa no resumo do mês."""
+    usuario_id: str
+    origem_conta_id: str = Field(..., description="Conta de onde sai o dinheiro")
+    destino_conta_id: str = Field(..., description="Conta que recebe (ex.: reserva)")
+    valor: Decimal = Field(..., gt=0)
+    descricao: Optional[str] = None
+    data: Optional[date] = None
+
+
+class TransferenciaResponse(BaseModel):
+    origem_conta_id: str
+    destino_conta_id: str
+    valor: Decimal
+
+
 class PagamentoIn(BaseModel):
     conta_id: str
     valor: Decimal = Field(..., gt=0)

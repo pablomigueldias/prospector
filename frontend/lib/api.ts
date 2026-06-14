@@ -669,6 +669,21 @@ export const api = {
     });
   },
 
+  /** POST /api/financas/transacoes/transferencia — move entre contas (reserva) */
+  financasTransferir(body: {
+    origem_conta_id: string;
+    destino_conta_id: string;
+    valor: string;
+    descricao?: string | null;
+    data?: string | null;
+  }): Promise<{ origem_conta_id: string; destino_conta_id: string; valor: string }> {
+    return request('/api/financas/transacoes/transferencia', {
+      method: 'POST',
+      body: { usuario_id: FINANCAS_USUARIO_ID, ...body },
+      timeoutMs: 10_000,
+    });
+  },
+
   /** POST /api/financas/transacoes/receita — lança receita simples */
   financasLancarReceita(body: LancamentoInput): Promise<TransacaoResponse> {
     return request<TransacaoResponse>('/api/financas/transacoes/receita', {

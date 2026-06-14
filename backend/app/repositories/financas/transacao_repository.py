@@ -243,6 +243,7 @@ class TransacaoRepository:
                 Transacao.usuario_id == usuario_id,
                 Transacao.data_competencia >= inicio,
                 Transacao.data_competencia < proximo_mes,
+                Transacao.origem != "transferencia",
             )
             .group_by(Transacao.tipo)
         )
@@ -297,6 +298,7 @@ class TransacaoRepository:
                 Transacao.usuario_id == usuario_id,
                 Transacao.data_competencia >= inicio,
                 Transacao.data_competencia < proximo_mes,
+                Transacao.origem != "transferencia",
                 *self._filtros_relatorio(conta_id, categoria_id),
             )
             .group_by("ano", "mes", Transacao.tipo)
@@ -328,6 +330,7 @@ class TransacaoRepository:
                 Transacao.tipo == "despesa",
                 Transacao.data_competencia >= inicio,
                 Transacao.data_competencia < proximo_mes,
+                Transacao.origem != "transferencia",
                 *self._filtros_relatorio(conta_id, categoria_id),
             )
             .group_by(Transacao.categoria_id, Categoria.nome)
