@@ -45,6 +45,9 @@ antes de subir). ~19 commits.
 
 - **Onda 3 do "resolver tudo" (2026-06-13) — §4 Metas (fechado):** (1) **projeção de fim de mês** (card "sobra estimada" no dashboard, `GET /resumo/projecao`); (2) **alerta de saldo negativo** no digest; (3) **roll-up de orçamento** (categoria-mãe soma as filhas); (4) **reservas com objetivo** (meta + barra de progresso). 5 smokes novos, build verde. ⚠️ **Migration nova `a7c3e1f9d2b8`** (`contas.meta`) — roda no `02-deploy.sh` no deploy; já aplicada no dev.
 
+- **Correções + reserva (2026-06-14):** (1) **fix dos gráficos** que não apareciam (barras do Consumo e da projeção de cartões — `bg-brand/80` sobre oklch + cor clara); (2) **guardar na reserva** — transferência entre contas (`POST /transacoes/transferencia`), debita origem/credita destino e **não conta no resumo**; botão "+ Guardar aqui" no card da reserva. Smoke novo. Migration nenhuma.
+- **Doc novo `docs/ORGANIZACAO_REFATORACAO.md`** — diagnóstico de escalabilidade: arquivos-deus (>1000 linhas: `api.ts`, `CartoesSection.tsx`, `types.ts`, `TransacoesSection.tsx`; back: `schemas/financas.py`, `transacao_service.py`) + plano incremental de quebra por domínio (vertical slices). Pendência de refatoração separada das features.
+
 **Próximas ondas sugeridas:** §1 (confirmação rica do bot); §8 IA (perguntas em linguagem natural 🔴, categorização que aprende 🔴, detector de assinaturas, anomalias, coach de metas); §7 segurança (exportar dados, 2FA obrigatório, auditoria no front); §10 patrimônio líquido; §5 importar extrato (OFX/CSV).
 
 ---
