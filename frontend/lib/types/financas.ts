@@ -1,7 +1,7 @@
 // Finanças (Organizador Financeiro pessoal).
 //
 // Domínio grande — candidato a sub-divisão futura (conta / transacao / cartao /
-// recorrencia / orcamento / resumo / boleto). Ver docs/ORGANIZACAO_REFATORACAO.md.
+// recorrencia / orcamento / resumo / boleto).
 
 // ── Contas ──────────────────────────────────────────────────────────
 export interface Conta {

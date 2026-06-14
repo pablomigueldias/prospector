@@ -4,9 +4,9 @@ Backlog **do que falta** no Organizador Financeiro — cardápio de ideias com
 **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *porquê*.
 
 > O que **já está pronto** saiu daqui pra `docs/FINANCAS_FEITO.md` (por
-> categoria). Operação/handoff em `docs/CONTINUACAO.md`. **Refatoração /
-> escalabilidade** (quebrar arquivos-deus) tem doc próprio:
-> `docs/ORGANIZACAO_REFATORACAO.md` — em andamento (passo 1, tipos do front, ✅).
+> categoria). Operação/handoff em `docs/CONTINUACAO.md`. A **refatoração de
+> escalabilidade** (quebrar os arquivos-deus por domínio) foi concluída em
+> 2026-06-14 — resumo dos 7 passos no §0.1 do CONTINUACAO.
 
 Última revisão: **2026-06-14**.
 

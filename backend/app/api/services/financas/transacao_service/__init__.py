@@ -1,7 +1,7 @@
 """Service de Transações — lançar/transferir/consultar/editar/pagar/excluir.
 
-Era um arquivo-deus de ~788 linhas; foi quebrado por responsabilidade (ver
-docs/ORGANIZACAO_REFATORACAO.md). Este `__init__` re-exporta a API pública, então
+Era um arquivo-deus de ~788 linhas; foi quebrado por responsabilidade. Este
+`__init__` re-exporta a API pública, então
 `from ...transacao_service import X` e `transacao_service.X(...)` seguem válidos.
 Os helpers privados e os imports compartilhados moram em `_base.py`.
 """

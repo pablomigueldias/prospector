@@ -1,6 +1,6 @@
 """Base do bot: config (mapa chat→usuário), envio ao Telegram, textos de
 ajuda e helpers puros (parse de período, heurística de prevista, teclado do
-card). Sem dependência dos outros submódulos. Ver docs/ORGANIZACAO_REFATORACAO.md."""
+card). Sem dependência dos outros submódulos."""
 from __future__ import annotations
 
 import asyncio

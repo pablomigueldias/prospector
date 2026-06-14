@@ -7,7 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Rodar: API em :8000 + front em :3000 no ar, então `npm run e2e`.
  * Credenciais via env (E2E_EMAIL / E2E_SENHA) ou os defaults do backend/.env de dev.
  *
- * Cobre o §6 do MELHORIAS (verificação visual). Ver docs/ORGANIZACAO_REFATORACAO.md.
+ * Cobre o §6 do MELHORIAS (verificação visual).
  */
 export default defineConfig({
   testDir: './e2e',

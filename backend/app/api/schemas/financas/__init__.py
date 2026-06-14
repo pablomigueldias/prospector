@@ -3,8 +3,8 @@
 Isolado dos schemas da Reative (prospector/copywriter/outreach) e dos
 pessoais (perfil/vagas).
 
-Era um arquivo-deus de ~836 linhas; foi quebrado por subdomínio (ver
-docs/ORGANIZACAO_REFATORACAO.md). Este `__init__` re-exporta tudo, então
+Era um arquivo-deus de ~836 linhas; foi quebrado por subdomínio. Este
+`__init__` re-exporta tudo, então
 `from app.api.schemas.financas import X` continua válido. Para mexer num
 schema, vá direto no submódulo do domínio.
 """

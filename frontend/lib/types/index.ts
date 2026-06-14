@@ -2,7 +2,6 @@
 //
 // Mantém o import público estável: `import { X } from '@/lib/types'` continua
 // funcionando. Para mexer num domínio, vá direto no arquivo dele.
-// Ver docs/ORGANIZACAO_REFATORACAO.md.
 
 export * from './core';
 export * from './prospector';

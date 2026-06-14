@@ -1,7 +1,7 @@
 // Cliente da API, organizado por domínio (vertical slices) sobre um `request`
 // compartilhado (client.ts). O objeto `api` é plano — composto pela união dos
 // módulos — então `import { api } from '@/lib/api'` e `api.financasContas(...)`
-// seguem funcionando igual. Ver docs/ORGANIZACAO_REFATORACAO.md.
+// seguem funcionando igual.
 
 import { coreApi } from './core';
 import { prospectorApi } from './prospector';

@@ -10,7 +10,7 @@ isolamento total e mantém os smokes como fonte da verdade.
 
 Pula a suíte se a API local (:8000) não estiver no ar (a maioria bate em
 http://localhost:8000 e/ou precisa do Postgres de dev). Suba com
-`python run.py serve` + os containers `db`/`minio`. Ver docs/ORGANIZACAO_REFATORACAO.md.
+`python run.py serve` + os containers `db`/`minio`.
 """
 from __future__ import annotations
 

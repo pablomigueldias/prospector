@@ -3,8 +3,8 @@
 Handler manual: o webhook entrega o Update (dict), aqui a gente decide o que
 fazer e responde via app.integrations.telegram. Auth por chat_id.
 
-Era um arquivo-deus de ~547 linhas; foi quebrado por responsabilidade (ver
-docs/ORGANIZACAO_REFATORACAO.md): `_base` (config/envio/helpers), `comandos`
+Era um arquivo-deus de ~547 linhas; foi quebrado por responsabilidade:
+`_base` (config/envio/helpers), `comandos`
 (/gasto, /saldo, …), `nlu` (texto livre → card → confirmar) e `arquivo`
 (boleto por foto/PDF). O **roteamento** (`processar_update`/`_callback`) mora
 aqui no `__init__` de propósito: os testes fazem monkeypatch de

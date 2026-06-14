@@ -1,6 +1,6 @@
 """Base do service de Transações: imports compartilhados, TransacaoError e
 helpers privados usados pelos submódulos (lancar/transferir/consultas/editar/
-pagar/excluir). Ver docs/ORGANIZACAO_REFATORACAO.md."""
+pagar/excluir)."""
 from __future__ import annotations
 
 import uuid

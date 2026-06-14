@@ -24,8 +24,10 @@ backend (`backend/app/api/main.py:82`) só libera `localhost:3000` /
 a `ADMIN_SENHA_INICIAL` do `backend/.env` (2FA desativado). *Melhoria opcional:*
 adicionar `localhost:3001` ao CORS de dev pra um pulo de porta não quebrar login.
 
-**Refatoração (plano `docs/ORGANIZACAO_REFATORACAO.md` §5) — ✅ OS 7 PASSOS FEITOS**
-(um commit cada, typecheck/build/smokes verdes entre cada):
+**Refatoração de escalabilidade — ✅ OS 7 PASSOS FEITOS** (um commit cada,
+typecheck/build/smokes verdes entre cada). *(O doc de planejamento
+`ORGANIZACAO_REFATORACAO.md` foi removido depois de concluído — o registro do
+que foi feito ficou aqui.)*
 1. `lib/types.ts` (1007) → `lib/types/<dominio>/` + barrel.
 2. `lib/api.ts` (1070) → `lib/api/<dominio>` + `client.ts` (paridade: 92 métodos).
 3. 3 componentes-deus → `components/financas/{cartoes,transacoes,recorrencias}/`.
@@ -77,7 +79,7 @@ Tudo abaixo está **commitado, com smoke/build verde, e já na `main` no GitHub*
 - **Onda 3 do "resolver tudo" (2026-06-13) — §4 Metas (fechado):** (1) **projeção de fim de mês** (card "sobra estimada" no dashboard, `GET /resumo/projecao`); (2) **alerta de saldo negativo** no digest; (3) **roll-up de orçamento** (categoria-mãe soma as filhas); (4) **reservas com objetivo** (meta + barra de progresso). 5 smokes novos, build verde. ⚠️ **Migration nova `a7c3e1f9d2b8`** (`contas.meta`) — roda no `02-deploy.sh` no deploy; já aplicada no dev.
 
 - **Correções + reserva (2026-06-14):** (1) **fix dos gráficos** que não apareciam (barras do Consumo e da projeção de cartões — `bg-brand/80` sobre oklch + cor clara); (2) **guardar na reserva** — transferência entre contas (`POST /transacoes/transferencia`), debita origem/credita destino e **não conta no resumo**; botão "+ Guardar aqui" no card da reserva. Smoke novo. Migration nenhuma.
-- **Doc novo `docs/ORGANIZACAO_REFATORACAO.md`** — diagnóstico de escalabilidade: arquivos-deus (>1000 linhas: `api.ts`, `CartoesSection.tsx`, `types.ts`, `TransacoesSection.tsx`; back: `schemas/financas.py`, `transacao_service.py`) + plano incremental de quebra por domínio (vertical slices). Pendência de refatoração separada das features.
+- **Refatoração de escalabilidade (planejada e EXECUTADA em 2026-06-14)** — os arquivos-deus (`api.ts`, `types.ts`, `CartoesSection/TransacoesSection/RecorrenciasSection.tsx`; back: `schemas/financas.py`, `transacao_service.py`, `bot_service.py`) foram quebrados por domínio (vertical slices) + pytest como runner único dos smokes + scaffold Playwright. Ver o resumo dos 7 passos no §0.1. O doc de planejamento foi removido após a conclusão.
 
 **Próximas ondas sugeridas:** §1 (confirmação rica do bot); §8 IA (perguntas em linguagem natural 🔴, categorização que aprende 🔴, detector de assinaturas, anomalias, coach de metas); §7 segurança (exportar dados, 2FA obrigatório, auditoria no front); §10 patrimônio líquido; §5 importar extrato (OFX/CSV).
 
