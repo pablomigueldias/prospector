@@ -140,6 +140,10 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
   rotina diária (APScheduler): acha propostas "enviada" há ≥ N dias
   (`freela_followup_dias`, default 3) sem resposta e manda lembrete no Telegram
   pra dar follow-up **dentro da Workana** (não força contato fora).
+- ✅ **Scam/risco radar (§7)** — o analisador classifica `risco`
+  (baixo/medio/alto): alto quando há sinais de golpe (cliente não verificado,
+  pede contato/pagamento fora, oferta boa demais, escopo vago). Badge "⚠️ risco"
+  na fila e no painel de análise.
 
 ---
 

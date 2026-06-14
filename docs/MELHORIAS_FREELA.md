@@ -108,9 +108,9 @@ Sobra: refinos (§3/§4), Fase 7 (§5), fora-do-código (§6) e, o mais valioso,
   verdade → gaste proposta lá. Usa o `analise_json.stack` que já guardamos.
 - [x] ✅ **Radar de cliente recorrente.** FEITO 2026-06-14: badge "★ recorrente"
   na fila + ordenação primeiro pra clientes com `ja_me_pagou_usd>0`.
-- [ ] 🟡 **Scam/red-flag radar dedicado.** O analisador já aponta red flags;
-  promover as graves (pagamento não verificado + pede contato fora + "bom demais")
-  a um selo visível de "cuidado" na fila, pra você nem perder tempo.
+- [x] ✅ **Scam/red-flag radar dedicado.** FEITO 2026-06-14: o analisador
+  classifica `risco` (baixo/medio/alto) e a fila + painel mostram badge
+  "⚠️ risco" quando médio/alto.
 
 ## 8. Escrever melhor (converter mais por proposta)
 
