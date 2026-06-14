@@ -52,6 +52,7 @@ AJUDA = (
     "📊 <b>Consultar</b>\n"
     "• /saldo — saldo das suas contas\n"
     "• /resumo — receitas x despesas do mês\n"
+    "• <code>/resumo julho</code> — de um mês específico\n"
     "\n"
     "🏦 <b>Contas</b>\n"
     "• /contas — listar suas contas\n"
@@ -124,7 +125,7 @@ async def processar_update(update: dict) -> dict:
         return await _saldos(chat_id, usuario_id)
 
     if texto.startswith("/resumo"):
-        return await _resumo_mes(chat_id, usuario_id)
+        return await _resumo_mes(chat_id, usuario_id, texto)
 
     if texto.startswith("/contas"):
         return await _listar_contas(chat_id, usuario_id)
@@ -169,9 +170,53 @@ async def _saldos(chat_id: str, usuario_id: str) -> dict:
     return {"ok": True, "consulta": "saldo"}
 
 
-async def _resumo_mes(chat_id: str, usuario_id: str) -> dict:
+_MESES = {
+    "janeiro": 1, "fevereiro": 2, "marco": 3, "março": 3, "abril": 4,
+    "maio": 5, "junho": 6, "julho": 7, "agosto": 8, "setembro": 9,
+    "outubro": 10, "novembro": 11, "dezembro": 12,
+    "jan": 1, "fev": 2, "mar": 3, "abr": 4, "mai": 5, "jun": 6,
+    "jul": 7, "ago": 8, "set": 9, "out": 10, "nov": 11, "dez": 12,
+}
+
+
+def _parse_periodo(arg: str) -> tuple[int, int]:
+    """Texto após /resumo → (ano, mes). Aceita nome do mês (julho/jul), número
+    (7), MM/AAAA (07/2025) e AAAA-MM (2025-07). Vazio = mês atual. Nome de mês
+    futuro cai no ano anterior (a ocorrência mais recente daquele mês)."""
     hoje = date.today()
-    r = await resumo_service.resumo_mes(usuario_id, hoje.year, hoje.month)
+    a = arg.strip().lower()
+    if not a:
+        return hoje.year, hoje.month
+
+    # AAAA-MM ou MM/AAAA
+    for sep, ordem in (("-", "ay"), ("/", "ya")):
+        if sep in a:
+            p = a.split(sep)
+            if len(p) == 2 and p[0].isdigit() and p[1].isdigit():
+                x, y = int(p[0]), int(p[1])
+                ano, mes = (x, y) if ordem == "ay" else (y, x)
+                if 1 <= mes <= 12:
+                    return ano, mes
+
+    # Nome do mês
+    if a in _MESES:
+        mes = _MESES[a]
+        ano = hoje.year if mes <= hoje.month else hoje.year - 1
+        return ano, mes
+
+    # Número do mês
+    if a.isdigit() and 1 <= int(a) <= 12:
+        mes = int(a)
+        ano = hoje.year if mes <= hoje.month else hoje.year - 1
+        return ano, mes
+
+    return hoje.year, hoje.month
+
+
+async def _resumo_mes(chat_id: str, usuario_id: str, texto: str = "") -> dict:
+    arg = texto.split(maxsplit=1)[1] if len(texto.split(maxsplit=1)) > 1 else ""
+    ano, mes = _parse_periodo(arg)
+    r = await resumo_service.resumo_mes(usuario_id, ano, mes)
     sinal = "🟢" if r.saldo >= 0 else "🔴"
     linhas = [
         f"📊 <b>{r.mes:02d}/{r.ano}</b>",
