@@ -71,7 +71,17 @@ instruções extra, copiar, salvar). **Verificado com LLM real:** projeto FastAP
 React/LLM selecionou os 3 projetos e 5 skills certos do perfil. **Ciclo completo
 na tela:** colar → analisar → precificar → criar proposta → rascunhar com IA →
 revisar/copiar → mover no Kanban. Sobra só refino e Fase 7 (multi-plataforma) —
-ver `MELHORIAS_FREELA.md`. **9+ commits do freela na `main`, ainda sem push.**
+ver `MELHORIAS_FREELA.md`.
+
+**✅ DEPLOYADO no VPS (2026-06-14).** `rsync` + `02-deploy.sh` (rebuild api+web).
+A migration `a09c2bcb4148` (freela) rodou no start da API — `alembic current` =
+head. Seeds rodados em prod: **plataforma Workana** criada e **perfil-mestre
+enriquecido** (merge não-destrutivo: preservou nome "Pablo Miguel Dias Ortiz" e
+campos humanos; habilidades 1→22, projetos 0→6 — experiências/tom seguem vazios
+pra preencher na tela). Verificado público: `/api/health` 200, rotas
+`/api/pessoal/freela/*` 401 (deployadas+protegidas), `/login` 200. O agente
+**Freela** está no ar em https://studio.reativesystems.com.br (grupo Pessoal).
+Backlog de melhorias de desempenho em `MELHORIAS_FREELA.md` §7–§10.
 
 ---
 
