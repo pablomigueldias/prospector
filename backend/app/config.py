@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     telegram_chat_id_sandra: str = ""
     telegram_usuario_id_sandra: str = ""
 
+    # Agente Freela — follow-up de propostas sem resposta (lembrete no Telegram
+    # pro telegram_chat_id, dentro da rotina diária).
+    freela_followup_enabled: bool = True
+    freela_followup_dias: int = 3        # avisa propostas "enviada" há ≥ N dias
+
     # Agendador in-process (APScheduler no container da API). Roda 1x/dia:
     # processa recorrências (gera previstas + marca atrasadas) e manda o
     # lembrete de vencimento dos boletos/contas a pagar no Telegram.

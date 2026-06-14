@@ -197,8 +197,14 @@ async def enviar_lembretes(ref: Optional[date] = None) -> dict:
 
 
 async def rotina_diaria() -> dict:
-    """O que o agendador chama 1x/dia: recorrências + lembretes."""
+    """O que o agendador chama 1x/dia: recorrências + lembretes + follow-up freela."""
+    from app.jobs.freela_followup import lembrete_followup
+
     rec = await processar_recorrencias()
     lemb = await enviar_lembretes()
-    logger.info("Rotina diária — recorrências=%s lembretes=%s", rec, lemb)
-    return {"recorrencias": rec, "lembretes": lemb}
+    fup = await lembrete_followup()
+    logger.info(
+        "Rotina diária — recorrências=%s lembretes=%s followup_freela=%s",
+        rec, lemb, fup,
+    )
+    return {"recorrencias": rec, "lembretes": lemb, "followup_freela": fup}
