@@ -53,7 +53,15 @@ def _request_gemini(prompt: str, response_json: bool) -> tuple[str, dict]:
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 4096},
+        "generationConfig": {
+            "temperature": 0.3,
+            # gemini-2.5-flash é "thinking": gasta tokens raciocinando ANTES de
+            # escrever, e o maxOutputTokens cobre o TOTAL. Com 4096 o JSON longo
+            # (ex.: análise+match da vaga) era truncado no meio. 8192 dá folga.
+            "maxOutputTokens": 8192,
+            # Limita o "pensamento" pra sobrar budget pra saída (evita truncar).
+            "thinkingConfig": {"thinkingBudget": 2048},
+        },
     }
     if response_json:
         payload["generationConfig"]["responseMimeType"] = "application/json"
