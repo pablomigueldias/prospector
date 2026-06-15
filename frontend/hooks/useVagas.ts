@@ -6,6 +6,7 @@ import { ApiError } from '@/lib/types';
 import type {
   AnalisarVagaResponse,
   GerarCandidaturaResponse,
+  GerarCurriculoResponse,
   Vaga,
   VagaCreate,
   VagaListItem,
@@ -81,6 +82,11 @@ export function useVagaActions() {
       )(),
     [],
   );
+  const gerarCurriculo = useCallback(
+    (id: string) =>
+      wrap<GerarCurriculoResponse>(() => api.vagaGerarCurriculo(id))(),
+    [],
+  );
 
   return {
     loading,
@@ -90,5 +96,6 @@ export function useVagaActions() {
     remover,
     analisar,
     gerarCandidatura,
+    gerarCurriculo,
   };
 }

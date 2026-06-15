@@ -223,3 +223,42 @@ class CandidaturaEmailItem(BaseModel):
     tom: Optional[str] = None
     status: str
     created_at: Optional[str] = None
+
+
+# ══════════════════════════════════════════════════════════════════
+# Currículo sob medida pra vaga (gera PDF no front)
+# ══════════════════════════════════════════════════════════════════
+
+class CurriculoExperiencia(BaseModel):
+    cargo: Optional[str] = None
+    empresa: Optional[str] = None
+    periodo: Optional[str] = None
+    bullets: List[str] = Field(default_factory=list)  # realizações adaptadas
+
+
+class CompetenciaGrupo(BaseModel):
+    categoria: str                       # ex: "Linguagens", "Frameworks", "Backend"
+    itens: List[str] = Field(default_factory=list)
+
+
+class CurriculoProjeto(BaseModel):
+    nome: str                            # nome EXATO do projeto no perfil
+    descricao: Optional[str] = None      # adaptada à vaga
+    stack: List[str] = Field(default_factory=list)
+    link: Optional[str] = None
+
+
+class CurriculoVaga(BaseModel):
+    nome: str                             # factual (injetado do perfil)
+    titulo: Optional[str] = None          # headline adaptada à vaga
+    contato: Optional[ContatoPessoal] = None  # factual (injetado do perfil)
+    resumo: Optional[str] = None          # SOBRE: 2-4 frases adaptadas à vaga
+    competencias: List[CompetenciaGrupo] = Field(default_factory=list)  # agrupadas
+    experiencias: List[CurriculoExperiencia] = Field(default_factory=list)
+    projetos: List[CurriculoProjeto] = Field(default_factory=list)
+    formacao: List[Formacao] = Field(default_factory=list)  # factual (injetado)
+
+
+class GerarCurriculoResponse(BaseModel):
+    vaga_id: str
+    curriculo: CurriculoVaga

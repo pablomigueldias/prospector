@@ -131,6 +131,7 @@ _AGENTS: List[Agent] = [
             "cadastra_vaga": True,
             "analisa_vaga": True,
             "gera_rascunho": True,
+            "gera_curriculo": True,
         },
     ),
     Agent(

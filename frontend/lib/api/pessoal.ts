@@ -8,6 +8,7 @@ import type {
   VagaListResponse,
   AnalisarVagaResponse,
   GerarCandidaturaResponse,
+  GerarCurriculoResponse,
   CandidaturaEmailItem,
 } from '../types';
 
@@ -80,6 +81,13 @@ export const pessoalApi = {
     return request<GerarCandidaturaResponse>(
       `/api/pessoal/vagas/${encodeURIComponent(id)}/candidatura`,
       { method: 'POST', body, timeoutMs: 120_000 },
+    );
+  },
+
+  vagaGerarCurriculo(id: string): Promise<GerarCurriculoResponse> {
+    return request<GerarCurriculoResponse>(
+      `/api/pessoal/vagas/${encodeURIComponent(id)}/curriculo`,
+      { method: 'POST', timeoutMs: 120_000 },
     );
   },
 

@@ -10,6 +10,10 @@ from app.analyzers.candidatura.parser import parse_resposta as parse_candidatura
 from app.analyzers.candidatura.prompt_builder import (
     construir_prompt as construir_prompt_candidatura,
 )
+from app.analyzers.curriculo.parser import parse_resposta as parse_curriculo
+from app.analyzers.curriculo.prompt_builder import (
+    construir_prompt as construir_prompt_curriculo,
+)
 from app.analyzers.llm_provider import gerar_texto
 from app.analyzers.vaga.parser import parse_resposta as parse_vaga
 from app.analyzers.vaga.prompt_builder import (
@@ -19,8 +23,10 @@ from app.api.schemas.pessoal import (
     AnaliseVaga,
     AnalisarVagaResponse,
     CandidaturaEmailItem,
+    CurriculoVaga,
     GerarCandidaturaRequest,
     GerarCandidaturaResponse,
+    GerarCurriculoResponse,
     MatchVaga,
     VagaCreate,
     VagaListItem,
@@ -240,6 +246,60 @@ async def gerar_candidatura(
 
     logger.info("Candidatura: rascunho gerado pra vaga %s", vaga_id)
     return resultado
+
+
+# ── IA: currículo sob medida pra vaga (gera PDF no front) ─────────
+
+async def gerar_curriculo(vaga_id: str) -> GerarCurriculoResponse:
+    perfil = await get_perfil()
+    if perfil is None:
+        raise VagaError(
+            "Cadastre seu Perfil Mestre antes — o currículo é montado a partir dele."
+        )
+
+    async with get_session() as session:
+        repo = VagaRepository(session)
+        vaga = await repo.get(_uuid(vaga_id))
+        if vaga is None:
+            raise VagaError("Vaga não encontrada.")
+
+        prompt = construir_prompt_curriculo(
+            perfil,
+            vaga.descricao,
+            titulo_vaga=vaga.titulo,
+            empresa=vaga.empresa,
+            analise_json=vaga.analise_json,
+            match_json=vaga.match_json,
+        )
+        texto = _chamar_llm(prompt, agente="curriculo", operacao="gerar")
+
+    llm = parse_curriculo(texto)
+    if llm is None:
+        raise VagaError("A IA não retornou um currículo válido. Tente de novo.")
+
+    # Links de projeto são factuais: vêm do perfil, não do que o LLM escreveu.
+    links_perfil = {
+        (p.nome or "").strip().lower(): p.link
+        for p in perfil.projetos
+        if p.link
+    }
+    for proj in llm.projetos:
+        proj.link = links_perfil.get((proj.nome or "").strip().lower())
+
+    # Dados factuais saem do perfil, NUNCA do LLM (anti-mentira).
+    curriculo = CurriculoVaga(
+        nome=perfil.nome,
+        titulo=llm.titulo or perfil.titulo,
+        contato=perfil.contato,
+        resumo=llm.resumo or perfil.resumo,
+        competencias=llm.competencias,
+        experiencias=llm.experiencias,
+        projetos=llm.projetos,
+        formacao=perfil.formacao,
+    )
+
+    logger.info("Currículo: gerado pra vaga %s", vaga_id)
+    return GerarCurriculoResponse(vaga_id=vaga_id, curriculo=curriculo)
 
 
 async def listar_rascunhos(vaga_id: str) -> List[CandidaturaEmailItem]:

@@ -8,6 +8,7 @@ from app.api.schemas.pessoal import (
     CandidaturaEmailItem,
     GerarCandidaturaRequest,
     GerarCandidaturaResponse,
+    GerarCurriculoResponse,
     VagaCreate,
     VagaListResponse,
     VagaResponse,
@@ -90,6 +91,15 @@ async def gerar_candidatura(
 ) -> GerarCandidaturaResponse:
     try:
         return await vaga_service.gerar_candidatura(vaga_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/{vaga_id}/curriculo", response_model=GerarCurriculoResponse,
+             summary="Gera currículo ATS sob medida pra vaga (PDF sai no front)")
+async def gerar_curriculo(vaga_id: str) -> GerarCurriculoResponse:
+    try:
+        return await vaga_service.gerar_curriculo(vaga_id)
     except Exception as e:
         raise _handle(e)
 

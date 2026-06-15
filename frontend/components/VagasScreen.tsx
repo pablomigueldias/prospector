@@ -1,9 +1,11 @@
 import { useState } from 'react';
 
+import { CurriculoPdf } from './CurriculoPdf';
 import { StatCard } from './StatCard';
 import { usePerfil } from '@/hooks/usePerfil';
 import { useVaga, useVagaActions, useVagas } from '@/hooks/useVagas';
 import type {
+  CurriculoVaga,
   GerarCandidaturaResponse,
   VagaCreate,
   VagaListItem,
@@ -207,6 +209,7 @@ function VagaDetalhe({
   const [candidatura, setCandidatura] = useState<GerarCandidaturaResponse | null>(
     null,
   );
+  const [curriculo, setCurriculo] = useState<CurriculoVaga | null>(null);
   const [gerarCarta, setGerarCarta] = useState(true);
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -225,6 +228,15 @@ function VagaDetalhe({
     if (r) {
       setCandidatura(r);
       setAviso('Rascunho gerado. Revise antes de enviar — a ferramenta não envia.');
+      onMudou();
+    }
+  }
+
+  async function handleCurriculo() {
+    setAviso(null);
+    const r = await acoes.gerarCurriculo(vagaId);
+    if (r) {
+      setCurriculo(r.curriculo);
       onMudou();
     }
   }
@@ -321,6 +333,14 @@ function VagaDetalhe({
             >
               {acoes.loading ? 'Gerando…' : 'Gerar candidatura'}
             </button>
+            <button
+              type="button"
+              className="btn-ghost disabled:opacity-40"
+              onClick={handleCurriculo}
+              disabled={acoes.loading || semPerfil}
+            >
+              {acoes.loading ? 'Gerando…' : 'Gerar currículo'}
+            </button>
           </div>
         </div>
 
@@ -376,6 +396,9 @@ function VagaDetalhe({
           )}
         </div>
       )}
+
+      {/* Currículo ATS gerado */}
+      {curriculo && <CurriculoPdf curriculo={curriculo} />}
 
       {/* Rascunho gerado */}
       {candidatura && <RascunhoCandidatura dados={candidatura} />}

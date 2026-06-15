@@ -181,3 +181,40 @@ export interface CandidaturaEmailItem {
   status: string;
   created_at?: string | null;
 }
+
+// ── Currículo ATS sob medida pra vaga (PDF gerado no front) ───────
+
+export interface CompetenciaGrupo {
+  categoria: string;
+  itens: string[];
+}
+
+export interface CurriculoExperiencia {
+  cargo?: string | null;
+  empresa?: string | null;
+  periodo?: string | null;
+  bullets: string[];
+}
+
+export interface CurriculoProjeto {
+  nome: string;
+  descricao?: string | null;
+  stack: string[];
+  link?: string | null;
+}
+
+export interface CurriculoVaga {
+  nome: string;
+  titulo?: string | null;
+  contato?: ContatoPessoal | null;
+  resumo?: string | null;
+  competencias: CompetenciaGrupo[];
+  experiencias: CurriculoExperiencia[];
+  projetos: CurriculoProjeto[];
+  formacao: FormacaoPerfil[];
+}
+
+export interface GerarCurriculoResponse {
+  vaga_id: string;
+  curriculo: CurriculoVaga;
+}
