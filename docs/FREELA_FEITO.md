@@ -184,6 +184,22 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
   `alerta_conformidade` e limita o selo (a Workana penaliza contato/link). No
   modal, botão "Conferir proposta" salva o texto atual e mostra selo + itens +
   sugestões + alerta.
+- ✅ **Estimativa no "+ Proposta" (orçamento de mercado + horas + dias)** — a
+  análise agora devolve um bloco `estimativa` (horas_estimadas, prazo_dias,
+  valor_mercado_min/max e valor_sugerido, honestos pro mercado BR). Ao clicar
+  "+ Proposta", o card analisa o projeto (se preciso) e **pré-preenche** Cotar
+  (valor sugerido), Horas e Prazo, com uma dica "mercado R$X–Y · ~Nh · D dias".
+  Você revisa e cria. Exposto também no list item pra não reanalisar à toa.
+- ✅ **"Corrigir proposta com IA"** — depois de Conferir, se o selo não for
+  "pronta", um botão reescreve a proposta corrigindo EXATAMENTE os pontos que o
+  checklist apontou (critérios falhos + sugestões + remover contato/link),
+  preservando o que estava bom (`POST /propostas/{id}/corrigir`, modo revisão no
+  redator). Depois limpa o checklist pra você reconferir.
+- ✅ **Anti-repetição de erro + fix de falso-positivo** — o redator agora exige
+  SEMPRE ≥1 prova concreta (problema→solução→impacto; adjetivo não é prova) e
+  prazo explícito. E o scan de conformidade parou de flagar menção ao TEMA
+  ("sistema para WhatsApp") como contato — só pega e-mail, telefone real e link
+  (wa.me/t.me/URL).
 - ⛔ **Limite/contador de propostas DISPENSADO** — Pablo assinou o **Workana
   Prime**; sem limite de propostas, esses itens do backlog saíram.
 
