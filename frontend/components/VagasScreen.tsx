@@ -389,6 +389,11 @@ function ListaVagas({
                   {v.qtd_rascunhos} rascunho(s)
                 </span>
               )}
+              {v.tem_curriculo && (
+                <span className="font-mono text-[10px] text-ink-mute">
+                  📄 currículo
+                </span>
+              )}
             </div>
           </button>
         );
@@ -417,6 +422,9 @@ function VagaDetalhe({
   const [gerarCarta, setGerarCarta] = useState(true);
   const [aviso, setAviso] = useState<string | null>(null);
 
+  // Currículo salvo na vaga (carrega ao reabrir); o recém-gerado tem prioridade.
+  const curriculoMostrar = curriculo ?? vaga?.curriculo ?? null;
+
   async function handleAnalisar() {
     setAviso(null);
     const r = await acoes.analisar(vagaId);
@@ -441,6 +449,7 @@ function VagaDetalhe({
     const r = await acoes.gerarCurriculo(vagaId);
     if (r) {
       setCurriculo(r.curriculo);
+      refetch();
       onMudou();
     }
   }
@@ -543,7 +552,11 @@ function VagaDetalhe({
               onClick={handleCurriculo}
               disabled={acoes.loading || semPerfil}
             >
-              {acoes.loading ? 'Gerando…' : 'Gerar currículo'}
+              {acoes.loading
+                ? 'Gerando…'
+                : curriculoMostrar
+                  ? 'Regerar currículo'
+                  : 'Gerar currículo'}
             </button>
           </div>
         </div>
@@ -605,8 +618,19 @@ function VagaDetalhe({
         </div>
       )}
 
-      {/* Currículo ATS gerado */}
-      {curriculo && <CurriculoPdf curriculo={curriculo} />}
+      {/* Currículo ATS gerado (salvo na vaga; não regera ao reabrir) */}
+      {curriculoMostrar && (
+        <div>
+          {vaga.curriculo_gerado_em && !curriculo && (
+            <p className="text-[12px] text-ink-mute mb-2">
+              Currículo salvo · gerado em{' '}
+              {new Date(vaga.curriculo_gerado_em).toLocaleString('pt-BR')}. Use
+              “Regerar” pra atualizar.
+            </p>
+          )}
+          <CurriculoPdf curriculo={curriculoMostrar} vagaTitulo={vaga.titulo} />
+        </div>
+      )}
 
       {/* Rascunho gerado */}
       {candidatura && <RascunhoCandidatura dados={candidatura} />}

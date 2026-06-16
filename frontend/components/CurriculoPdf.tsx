@@ -18,6 +18,25 @@ const esc = (s?: string | null): string =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
+/** Vira "Pablo Dias" → "pablo-dias" (sem acento, minúsculo, hífen). */
+const slug = (s?: string | null): string =>
+  String(s ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+
+/**
+ * Nome do arquivo que o navegador sugere no "Salvar como PDF" — ele usa o
+ * <title> do documento. Vira `curriculo-{nome}-{vaga}` (sem `.pdf`; o
+ * navegador anexa a extensão).
+ */
+function nomeArquivoPdf(nome: string, vaga?: string | null): string {
+  return ['curriculo', slug(nome), slug(vaga)].filter(Boolean).join('-');
+}
+
 const linhaContato = (c: CurriculoVaga['contato']): string => {
   if (!c) return '';
   const partes = [c.email, c.telefone, c.linkedin, c.github, c.portfolio]
@@ -26,8 +45,9 @@ const linhaContato = (c: CurriculoVaga['contato']): string => {
   return partes.join('  ·  ');
 };
 
-/** Monta o documento HTML completo do currículo (isolado do CSS do app). */
-export function curriculoHtml(c: CurriculoVaga): string {
+/** Monta o documento HTML completo do currículo (isolado do CSS do app).
+ *  `vagaTitulo` entra só no <title> → nome sugerido do PDF. */
+export function curriculoHtml(c: CurriculoVaga, vagaTitulo?: string | null): string {
   const competencias = c.competencias
     .filter((g) => g.itens.length)
     .map(
@@ -88,7 +108,7 @@ export function curriculoHtml(c: CurriculoVaga): string {
 
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8" />
-<title>Currículo — ${esc(c.nome)}</title>
+<title>${esc(nomeArquivoPdf(c.nome, vagaTitulo))}</title>
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -173,7 +193,7 @@ function ajustarParaUmaPagina(doc: Document) {
  * Imprime o currículo via iframe oculto (sem popup, sem travar a página).
  * Dispara o diálogo UMA vez só e remove o iframe depois.
  */
-function imprimir(c: CurriculoVaga) {
+function imprimir(c: CurriculoVaga, vagaTitulo?: string | null) {
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
   // precisa de largura A4 real (offscreen) pra medir a altura como no print
@@ -188,7 +208,7 @@ function imprimir(c: CurriculoVaga) {
     return;
   }
   doc.open();
-  doc.write(curriculoHtml(c));
+  doc.write(curriculoHtml(c, vagaTitulo));
   doc.close();
 
   let feito = false;
@@ -210,7 +230,13 @@ function imprimir(c: CurriculoVaga) {
   setTimeout(imprimirUmaVez, 600);
 }
 
-export function CurriculoPdf({ curriculo }: { curriculo: CurriculoVaga }) {
+export function CurriculoPdf({
+  curriculo,
+  vagaTitulo,
+}: {
+  curriculo: CurriculoVaga;
+  vagaTitulo?: string | null;
+}) {
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
@@ -220,7 +246,7 @@ export function CurriculoPdf({ curriculo }: { curriculo: CurriculoVaga }) {
         <button
           type="button"
           className="btn-primary"
-          onClick={() => imprimir(curriculo)}
+          onClick={() => imprimir(curriculo, vagaTitulo)}
         >
           Baixar PDF (imprimir)
         </button>
