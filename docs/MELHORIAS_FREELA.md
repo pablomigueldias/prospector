@@ -37,12 +37,13 @@ abaixo ataca isso — ou ajudando a *escolher onde gastar a proposta escassa*, o
   — **sem colar link externo** (a Workana penaliza links na proposta); (2)
   oferece redução de risco (entrega em etapas, "aprova e paga ao ver
   funcionando"); (3) tom confiante, nunca diz "iniciante". Ver FREELA_FEITO.
-- [ ] 🔴 **Checklist anti-genérico antes de enviar (gate de qualidade).** Um
-  passo de IA que, no rascunho pronto, confere e pontua: cita um **detalhe real**
-  do projeto? propõe um **plano em passos**? tem **prazo**? tem **prova/link**?
-  evita clichê ("sou apaixonado por...")? Mostra um selo "pronta / fraca" + o que
-  faltou. Como proposta é escassa, **nenhuma sai genérica**. *(Era §8 🟢; sobe
-  pra 🔴 nesta fase.)*
+- [x] ✅ 🔴 **Checklist anti-genérico antes de enviar (gate de qualidade)** —
+  FEITO 2026-06-15: `POST /propostas/{id}/checklist` pontua o rascunho (0-100,
+  selo pronta/ajustar/fraca) em 5 critérios (detalhe real, plano em passos,
+  prazo, prova concreta, anti-clichê) e sugere melhorias. **Bônus de
+  conformidade:** varredura determinística (regex) de e-mail/telefone/WhatsApp/
+  link no texto → alerta e limita o selo (a Workana penaliza). Botão "Conferir
+  proposta" no modal. Ver FREELA_FEITO.
 - [ ] 🟡 **Completude do perfil puxa a qualidade.** O redator fica MUITO melhor
   com `tom_escrita`, `experiencias` e `o_que_procuro` preenchidos — hoje vazios.
   Um aviso na tela ("seu perfil está 60% — preencher tom e experiências melhora
@@ -86,10 +87,10 @@ abaixo ataca isso — ou ajudando a *escolher onde gastar a proposta escassa*, o
   pinados; tudo coerente com o LinkedIn. Sem isso, a melhor proposta ainda
   esbarra na desconfiança.
 
-> **Recomendação de ordem:** comece por **A** (modo cold start + checklist
-> anti-genérico) e pelo **C** (painel focado em resposta) — juntos, fazem cada
-> proposta valer mais e te mostram se está melhorando. Depois **B** (velocidade
-> + bom 1º projeto) pra escolher melhor onde gastar. **D** é fora do código, mas
+> **Progresso:** ✅ **A** (cold start no redator + checklist anti-genérico) e
+> ✅ **C** (painel focado em resposta) FEITOS em 2026-06-15. Falta a completude
+> do perfil (A 🟡). Próximo: **B** (velocidade "projeto fresco" + detector de bom
+> 1º projeto) pra escolher melhor onde gastar. **D** é fora do código, mas
 > destrava muito o 1º sim.
 
 ---
@@ -203,9 +204,9 @@ abaixo ataca isso — ou ajudando a *escolher onde gastar a proposta escassa*, o
 - [x] ✅ **Assistente de negociação.** FEITO 2026-06-14: `POST /negociar` gera
   2–3 respostas (defende valor / troca escopo / concessão condicionada); painel
   no modal. Ver FREELA_FEITO.
-- [ ] 🟢 **Checklist anti-genérico antes de enviar.** A IA confere se a proposta
-  cita um detalhe REAL do projeto, propõe um plano e tem prazo — e avisa se
-  soou copia-cola.
+- [x] ✅ **Checklist anti-genérico antes de enviar** — FEITO 2026-06-15 (ver §0 A
+  e FREELA_FEITO): gate que pontua detalhe real, plano, prazo, prova e clichê +
+  alerta de contato/link (conformidade Workana).
 
 ## 9. Precificar e cobrar melhor (proteger a margem)
 

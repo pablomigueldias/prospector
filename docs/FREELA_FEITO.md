@@ -175,6 +175,15 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
   de "taxa de fechamento / líquido fechado" dão lugar a **Em conversa** e
   **Tempo até resposta**, e o forecast de fechado some (irrelevante sem cliente).
   Ao fechar a 1ª, os cards financeiros voltam sozinhos.
+- ✅ **Checklist anti-genérico / gate de qualidade (§0 A 🔴)** —
+  `POST /propostas/{id}/checklist`: o LLM pontua o rascunho (0-100) em 5
+  critérios (detalhe real do projeto, plano em passos, prazo, prova concreta,
+  anti-clichê), devolve selo (pronta / ajustar / fraca) e sugestões. Analyzer em
+  `analyzers/freela/checklist/`. **Conformidade junto:** o service faz varredura
+  determinística (regex) de e-mail/telefone/WhatsApp/link no texto → seta
+  `alerta_conformidade` e limita o selo (a Workana penaliza contato/link). No
+  modal, botão "Conferir proposta" salva o texto atual e mostra selo + itens +
+  sugestões + alerta.
 - ⛔ **Limite/contador de propostas DISPENSADO** — Pablo assinou o **Workana
   Prime**; sem limite de propostas, esses itens do backlog saíram.
 
