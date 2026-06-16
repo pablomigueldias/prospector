@@ -38,7 +38,6 @@
 |---|---|---|---|---|
 | 1 | Importar vaga por **URL** (auto-preencher) | 🔥🔥🔥 | Médio | não |
 | 2 | **Follow-up / lembretes** (não perder timing) | 🔥🔥🔥 | Médio | sim |
-| 3 | **Persistir o currículo** gerado por vaga | 🔥🔥 | Baixo | sim |
 | 6 | **Prep de entrevista** (status = entrevista) | 🔥🔥 | Médio | não |
 | 7 | **Plano de ação pros gaps** do match | 🔥 | Baixo | não |
 | 8 | **Deduplicação** ao cadastrar | 🔥 | Baixo | talvez |
@@ -96,28 +95,6 @@ jogo — um "ainda tenho interesse" no dia certo destrava resposta.
 - Job no agendador (procure onde a rotina diária é registrada no backend).
 - Telegram: reusar o pipeline do bot já existente.
 - `candidatura/prompt_builder.py`: variante `followup`.
-
----
-
-## 3. Persistir o currículo gerado 🔥🔥
-
-**Dor:** o currículo ATS **não é salvo** — toda vez regera (gasta LLM, muda o
-texto, você não consegue reusar/comparar).
-
-**O que fazer:** salvar o último `curriculo_json` por vaga; ao reabrir, carregar
-o salvo (com botão "Regerar" explícito). Opcional: histórico de versões.
-
-**Onde mexer:**
-- Migration: coluna `curriculo_json JSONB` (e talvez `curriculo_gerado_em`) em
-  `pessoal_vagas`. *(Ou tabela própria se quiser versionar.)*
-- `vaga_service.gerar_curriculo`: persistir o resultado; novo
-  `get_curriculo(vaga_id)` que devolve o salvo.
-- `routers/vagas.py`: `GET /{id}/curriculo` (busca o salvo) além do `POST` (gera).
-- `VagasScreen.tsx`: carregar currículo salvo ao selecionar a vaga; "Regerar"
-  separado de "Gerar".
-
-> Mesma lógica vale pra deixar o rascunho de candidatura sempre visível ao
-> reabrir a vaga (hoje só aparece logo após gerar).
 
 ---
 
@@ -213,13 +190,13 @@ detalhe da vaga.
 
 ## Ordem sugerida pra atacar
 
-> ✅ Quick wins #4 (busca/filtros) e #5 (métricas) já foram — ver `VAGAS_FEITO.md`.
+> ✅ #4 (busca/filtros), #5 (métricas) e #3 (persistir currículo) já foram —
+> ver `VAGAS_FEITO.md`.
 
 1. **#1 (importar por URL)** — mata o maior atrito de entrada.
 2. **#2 (follow-up + Telegram)** — onde mais se ganha resposta.
-3. **#3 (persistir currículo)** — para de desperdiçar LLM.
-4. **#6 (prep entrevista)** — valor alto quando chega lá.
-5. O resto conforme a necessidade aparecer.
+3. **#6 (prep entrevista)** — valor alto quando chega lá.
+4. O resto conforme a necessidade aparecer.
 
 > Cada item é um **slice vertical** (model → repo → service → schema → router →
 > front), no padrão do projeto (ver `stack-prospector`). Faça um por commit.

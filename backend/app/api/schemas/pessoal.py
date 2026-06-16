@@ -183,6 +183,8 @@ class VagaResponse(BaseModel):
     analise_json: Optional[AnaliseVaga] = None
     match_json: Optional[MatchVaga] = None
     match_score: Optional[int] = None
+    curriculo: Optional["CurriculoVaga"] = None      # currículo ATS salvo
+    curriculo_gerado_em: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
@@ -196,6 +198,7 @@ class VagaListItem(BaseModel):
     senioridade: Optional[str] = None
     match_score: Optional[int] = None
     tem_analise: bool = False
+    tem_curriculo: bool = False
     qtd_rascunhos: int = 0
     created_at: Optional[str] = None
 
@@ -308,3 +311,8 @@ class CurriculoVaga(BaseModel):
 class GerarCurriculoResponse(BaseModel):
     vaga_id: str
     curriculo: CurriculoVaga
+    gerado_em: Optional[str] = None
+
+
+# VagaResponse referencia CurriculoVaga (definido acima); resolve o forward ref.
+VagaResponse.model_rebuild()

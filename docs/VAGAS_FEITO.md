@@ -3,7 +3,7 @@
 Registro do que **já foi entregue** no agente `vagas` (caçador de vagas). O que
 **falta** está em `docs/MELHORIAS_VAGAS.md`.
 
-Última atualização: **2026-06-15**.
+Última atualização: **2026-06-15** (currículo persistido).
 
 > **Princípios que NÃO mudam:** (1) *para no rascunho* — a ferramenta nunca envia
 > nada sem você mandar; (2) *anti-mentira* — a IA reorganiza a verdade do Perfil
@@ -58,10 +58,28 @@ Registro do que **já foi entregue** no agente `vagas` (caçador de vagas). O qu
 > (`/metricas` antes de `/{vaga_id}`); `tsc --noEmit` limpo; coerção de
 > `FaixaSalarial` testada (`"R$ 9.000"` → `9000`, `null` preservado).
 
+## Persistir o currículo gerado (#3, 2026-06-15)
+
+- ✅ **Migration `d1f4a7c9e2b6`** — colunas `curriculo_json JSONB` e
+  `curriculo_gerado_em` em `pessoal_vagas` (encadeada no head `a09c2bcb4148`).
+- ✅ **Salva ao gerar** — `vaga_service.gerar_curriculo` persiste o resultado
+  (`repo.salvar_curriculo`, carimba `curriculo_gerado_em`) e devolve `gerado_em`.
+  Dados factuais continuam saindo do perfil (anti-mentira), só o adaptado é salvo.
+- ✅ **Carrega ao reabrir** — o currículo salvo viaja embutido no `VagaResponse`
+  (`curriculo` + `curriculo_gerado_em`, igual `analise_json`/`match_json`), sem
+  endpoint extra. A lista ganhou `tem_curriculo` (badge "📄 currículo" no card).
+- ✅ **Na tela** — `VagaDetalhe` mostra o currículo salvo ao selecionar a vaga
+  (não regera); o recém-gerado tem prioridade. Botão vira **"Regerar currículo"**
+  quando já existe, com a data de geração e dica de atualizar.
+
+> **Verificado:** roundtrip no banco (salvar → ler `curriculo_json`/
+> `curriculo_gerado_em` → `tem_curriculo` na lista) verde; migration aplica e
+> reverte; `tsc --noEmit` limpo.
+
 ---
 
 ## Ainda NÃO feito (resumo — detalhe e prioridade em MELHORIAS_VAGAS.md)
 
-- #1 importar vaga por URL, #2 follow-up + Telegram, #3 persistir currículo,
-  #6 prep de entrevista, #7 plano de ação pros gaps, #8 deduplicação, #9 kanban,
-  #10 enviar com 1 clique, #11 timeline de eventos.
+- #1 importar vaga por URL, #2 follow-up + Telegram, #6 prep de entrevista,
+  #7 plano de ação pros gaps, #8 deduplicação, #9 kanban, #10 enviar com
+  1 clique, #11 timeline de eventos.

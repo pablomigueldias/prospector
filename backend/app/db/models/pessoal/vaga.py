@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Index, Integer, String, Text
+from sqlalchemy import DateTime, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -65,6 +66,12 @@ class Vaga(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     match_json: Mapped[Optional[dict]] = mapped_column(JSONB)
     # Match resumido como inteiro 0-100 (espelha 'score' da Empresa)
     match_score: Mapped[Optional[int]] = mapped_column(Integer)
+
+    # ── Currículo ATS gerado (persistido pra não regerar toda vez) ───
+    # curriculo_json: CurriculoVaga adaptado a ESTA vaga (resumo/competências/
+    #   experiências/projetos). Dados factuais ainda saem do perfil ao gerar.
+    curriculo_json: Mapped[Optional[dict]] = mapped_column(JSONB)
+    curriculo_gerado_em: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     emails: Mapped[List["CandidaturaEmail"]] = relationship(
         back_populates="vaga",

@@ -120,6 +120,8 @@ export interface Vaga {
   analise_json?: AnaliseVaga | null;
   match_json?: MatchVaga | null;
   match_score?: number | null;
+  curriculo?: CurriculoVaga | null;
+  curriculo_gerado_em?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -147,6 +149,7 @@ export interface VagaListItem {
   senioridade?: string | null;
   match_score?: number | null;
   tem_analise: boolean;
+  tem_curriculo: boolean;
   qtd_rascunhos: number;
   created_at?: string | null;
 }
@@ -252,4 +255,5 @@ export interface CurriculoVaga {
 export interface GerarCurriculoResponse {
   vaga_id: string;
   curriculo: CurriculoVaga;
+  gerado_em?: string | null;
 }

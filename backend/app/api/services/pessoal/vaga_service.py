@@ -78,6 +78,8 @@ def _to_response(v: Vaga) -> VagaResponse:
         analise_json=v.analise_json,        # pydantic coage dict→AnaliseVaga
         match_json=v.match_json,
         match_score=v.match_score,
+        curriculo=v.curriculo_json,         # pydantic coage dict→CurriculoVaga
+        curriculo_gerado_em=_iso(v.curriculo_gerado_em),
         created_at=_iso(v.created_at),
         updated_at=_iso(v.updated_at),
     )
@@ -126,6 +128,7 @@ async def listar_vagas(
                 senioridade=v.senioridade,
                 match_score=v.match_score,
                 tem_analise=v.analise_json is not None,
+                tem_curriculo=v.curriculo_json is not None,
                 qtd_rascunhos=qtd,
                 created_at=_iso(v.created_at),
             )
@@ -347,8 +350,17 @@ async def gerar_curriculo(vaga_id: str) -> GerarCurriculoResponse:
         formacao=perfil.formacao,
     )
 
-    logger.info("Currículo: gerado pra vaga %s", vaga_id)
-    return GerarCurriculoResponse(vaga_id=vaga_id, curriculo=curriculo)
+    # Persiste pra não regerar (gasta LLM) toda vez que reabrir a vaga.
+    async with get_session() as session:
+        vaga = await VagaRepository(session).salvar_curriculo(
+            _uuid(vaga_id), curriculo.model_dump(mode="json")
+        )
+        gerado_em = _iso(vaga.curriculo_gerado_em) if vaga else None
+
+    logger.info("Currículo: gerado e salvo pra vaga %s", vaga_id)
+    return GerarCurriculoResponse(
+        vaga_id=vaga_id, curriculo=curriculo, gerado_em=gerado_em
+    )
 
 
 async def listar_rascunhos(vaga_id: str) -> List[CandidaturaEmailItem]:

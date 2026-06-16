@@ -141,6 +141,20 @@ class VagaRepository:
         await self.session.refresh(vaga)
         return vaga
 
+    async def salvar_curriculo(
+        self, vaga_id: uuid.UUID, curriculo: dict
+    ) -> Optional[Vaga]:
+        from datetime import datetime, timezone
+
+        vaga = await self.get(vaga_id)
+        if vaga is None:
+            return None
+        vaga.curriculo_json = curriculo
+        vaga.curriculo_gerado_em = datetime.now(timezone.utc).replace(tzinfo=None)
+        await self.session.commit()
+        await self.session.refresh(vaga)
+        return vaga
+
     async def delete(self, vaga_id: uuid.UUID) -> bool:
         result = await self.session.execute(
             delete(Vaga).where(Vaga.id == vaga_id)
