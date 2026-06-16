@@ -238,6 +238,9 @@ function PropostaModal({
 
   const [texto, setTexto] = useState<string | null>(null);
   const [prazo, setPrazo] = useState<string | null>(null);
+  const [valor, setValor] = useState<string | null>(null);
+  const [liquido, setLiquido] = useState<string | null>(null);
+  const [horas, setHoras] = useState<string | null>(null);
   const [instrucoes, setInstrucoes] = useState('');
   const [copiado, setCopiado] = useState(false);
   const [variacoes, setVariacoes] = useState<string[]>([]);
@@ -248,6 +251,9 @@ function PropostaModal({
   // valores efetivos: o que foi editado, senão o que veio do servidor
   const textoEf = texto ?? proposta?.texto_enviado ?? '';
   const prazoEf = prazo ?? proposta?.prazo_proposto ?? '';
+  const valorEf = valor ?? (proposta?.valor_cotado != null ? String(proposta.valor_cotado) : '');
+  const liquidoEf = liquido ?? (proposta?.valor_liquido_estimado != null ? String(proposta.valor_liquido_estimado) : '');
+  const horasEf = horas ?? (proposta?.horas_estimadas != null ? String(proposta.horas_estimadas) : '');
 
   async function redigir() {
     const r = await acoes.redigirProposta(item.id, instrucoes || null);
@@ -308,6 +314,9 @@ function PropostaModal({
     await acoes.atualizarProposta(item.id, {
       texto_enviado: textoEf,
       prazo_proposto: prazoEf || null,
+      valor_cotado: valorEf ? Number(valorEf) : null,
+      valor_liquido_estimado: liquidoEf ? Number(liquidoEf) : null,
+      horas_estimadas: horasEf ? Number(horasEf) : null,
     });
     onMudou();
     onClose();
@@ -351,9 +360,19 @@ function PropostaModal({
           <div className="text-sm text-ink-mute">Carregando…</div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-3 mb-4 text-[13px]">
-              <Info titulo="Cotado" valor={proposta?.valor_cotado != null ? formatBRL(proposta.valor_cotado) : '—'} />
-              <Info titulo="Líquido" valor={proposta?.valor_liquido_estimado != null ? formatBRL(proposta.valor_liquido_estimado) : '—'} />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-[13px]">
+              <label className="text-ink-soft">
+                Cotar (R$)
+                <input className="input mt-1" type="number" value={valorEf} onChange={(e) => setValor(e.target.value)} />
+              </label>
+              <label className="text-ink-soft">
+                Líquido (R$)
+                <input className="input mt-1" type="number" value={liquidoEf} onChange={(e) => setLiquido(e.target.value)} />
+              </label>
+              <label className="text-ink-soft">
+                Horas
+                <input className="input mt-1" type="number" value={horasEf} onChange={(e) => setHoras(e.target.value)} />
+              </label>
               <label className="text-ink-soft">
                 Prazo
                 <input className="input mt-1" value={prazoEf} onChange={(e) => setPrazo(e.target.value)} />
@@ -579,15 +598,6 @@ function PedirAvaliacao({ projeto }: { projeto: string }) {
       <button type="button" className="btn-ghost text-[13px]" onClick={copiar}>
         {copiado ? '✓ Copiado' : 'Copiar mensagem'}
       </button>
-    </div>
-  );
-}
-
-function Info({ titulo, valor }: { titulo: string; valor: string }) {
-  return (
-    <div>
-      <div className="text-[11px] uppercase tracking-wide text-ink-mute">{titulo}</div>
-      <div className="text-ink text-[14px] mt-1">{valor}</div>
     </div>
   );
 }
@@ -845,7 +855,7 @@ function FilaProjetos({
     liquido: number | null,
     horas: number | null,
     prazo: string | null,
-  ) => void;
+  ) => Promise<void> | void;
   onAnalisar: (id: string) => Promise<FreelaAnalise | null>;
   onRemover: (id: string) => void;
 }) {
@@ -899,17 +909,14 @@ function ProjetoCard({
     liquido: number | null,
     horas: number | null,
     prazo: string | null,
-  ) => void;
+  ) => Promise<void> | void;
   onAnalisar: (id: string) => Promise<FreelaAnalise | null>;
   onRemover: (id: string) => void;
 }) {
-  const [abrir, setAbrir] = useState(false);
-  const [valor, setValor] = useState('');
-  const [liquido, setLiquido] = useState('');
-  const [horas, setHoras] = useState('');
-  const [prazo, setPrazo] = useState('');
   const [analise, setAnalise] = useState<FreelaAnalise | null>(null);
   const [analisando, setAnalisando] = useState(false);
+  const [criando, setCriando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const orcamento =
     p.faixa_orcamento_min != null || p.faixa_orcamento_max != null
@@ -924,27 +931,30 @@ function ProjetoCard({
     return a;
   }
 
-  // "+ Proposta": garante a estimativa (analisa se faltar) e pré-preenche o card
-  // com valor de mercado sugerido, horas e dias — você revisa e cria.
-  async function abrirProposta() {
-    if (abrir) {
-      setAbrir(false);
-      return;
-    }
+  // "+ Proposta": um clique já CRIA o card. Analisa se preciso e usa a
+  // estimativa de mercado (valor sugerido, horas, dias). Você ajusta no card.
+  async function criarProposta() {
+    setAviso(null);
+    setCriando(true);
     let est = analise?.estimativa ?? p.estimativa ?? null;
     if (!est) {
       const a = await analisar();
       est = a?.estimativa ?? null;
     }
-    if (est) {
-      if (est.valor_sugerido != null && !valor) setValor(String(est.valor_sugerido));
-      if (est.horas_estimadas != null && !horas) setHoras(String(est.horas_estimadas));
-      if (est.prazo_dias != null && !prazo) setPrazo(`${est.prazo_dias} dias`);
-    }
-    setAbrir(true);
+    await onCriarProposta(
+      p.id,
+      est?.valor_sugerido ?? null,
+      null,
+      est?.horas_estimadas ?? null,
+      est?.prazo_dias != null ? `${est.prazo_dias} dias` : null,
+    );
+    setCriando(false);
+    setAviso(
+      est
+        ? 'Proposta criada no Kanban com o orçamento de mercado — abra o card pra ajustar e rascunhar.'
+        : 'Proposta criada no Kanban — abra o card pra ajustar e rascunhar.',
+    );
   }
-
-  const estimativa = analise?.estimativa ?? p.estimativa ?? null;
 
   return (
     <div className="card p-4">
@@ -996,12 +1006,12 @@ function ProjetoCard({
           </button>
           <button
             type="button"
-            className="btn-ghost text-[13px] disabled:opacity-40"
-            onClick={abrirProposta}
-            disabled={analisando}
-            title="Analisa o projeto e já preenche orçamento de mercado, horas e dias"
+            className="btn-primary text-[13px] disabled:opacity-40"
+            onClick={criarProposta}
+            disabled={analisando || criando}
+            title="Analisa o projeto e cria a proposta no Kanban com orçamento de mercado, horas e dias"
           >
-            {abrir ? 'Fechar' : analisando ? 'Analisando…' : '+ Proposta'}
+            {analisando ? 'Analisando…' : criando ? 'Criando…' : '+ Proposta'}
           </button>
           <button
             type="button"
@@ -1060,57 +1070,9 @@ function ProjetoCard({
         </div>
       )}
 
-      {abrir && (
-        <div className="mt-3 border-t border-line pt-3">
-        {estimativa && (
-          <p className="text-[12px] text-ink-mute mb-2">
-            💡 Estimativa da IA
-            {estimativa.valor_mercado_min != null && estimativa.valor_mercado_max != null && (
-              <> · mercado {formatBRL(estimativa.valor_mercado_min)}–{formatBRL(estimativa.valor_mercado_max)}</>
-            )}
-            {estimativa.horas_estimadas != null && <> · ~{estimativa.horas_estimadas}h</>}
-            {estimativa.prazo_dias != null && <> · {estimativa.prazo_dias} dias</>}
-            <> — revise antes de criar.</>
-          </p>
-        )}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
-          <label className="text-[12px] text-ink-soft">
-            Cotar (R$)
-            <input className="input mt-1" type="number" value={valor} onChange={(e) => setValor(e.target.value)} />
-          </label>
-          <label className="text-[12px] text-ink-soft">
-            Líquido (R$)
-            <input className="input mt-1" type="number" value={liquido} onChange={(e) => setLiquido(e.target.value)} />
-          </label>
-          <label className="text-[12px] text-ink-soft">
-            Horas
-            <input className="input mt-1" type="number" value={horas} onChange={(e) => setHoras(e.target.value)} />
-          </label>
-          <label className="text-[12px] text-ink-soft">
-            Prazo
-            <input className="input mt-1" value={prazo} onChange={(e) => setPrazo(e.target.value)} placeholder="ex: 7 dias" />
-          </label>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => {
-              onCriarProposta(
-                p.id,
-                valor ? Number(valor) : null,
-                liquido ? Number(liquido) : null,
-                horas ? Number(horas) : null,
-                prazo || null,
-              );
-              setAbrir(false);
-              setValor('');
-              setLiquido('');
-              setHoras('');
-              setPrazo('');
-            }}
-          >
-            Criar
-          </button>
-        </div>
+      {aviso && (
+        <div className="mt-3 border-t border-line pt-3 text-[12px] text-emerald-700">
+          ✓ {aviso}
         </div>
       )}
     </div>
