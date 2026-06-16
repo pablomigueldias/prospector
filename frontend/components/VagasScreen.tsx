@@ -13,6 +13,7 @@ import type {
   CurriculoVaga,
   FaixaSalarial,
   GerarCandidaturaResponse,
+  Vaga,
   VagaCreate,
   VagaListItem,
   VagasFiltro,
@@ -129,6 +130,10 @@ export default function VagasScreen() {
               vagaId={selecionada}
               semPerfil={semPerfil}
               onMudou={recarregar}
+              onExcluida={() => {
+                setSelecionada(null);
+                recarregar();
+              }}
             />
           ) : (
             <div className="card p-8 text-center text-sm text-ink-mute">
@@ -418,10 +423,12 @@ function VagaDetalhe({
   vagaId,
   semPerfil,
   onMudou,
+  onExcluida,
 }: {
   vagaId: string;
   semPerfil: boolean;
   onMudou: () => void;
+  onExcluida: () => void;
 }) {
   const { vaga, loading, refetch } = useVaga(vagaId);
   const acoes = useVagaActions();
@@ -431,6 +438,7 @@ function VagaDetalhe({
   const [curriculo, setCurriculo] = useState<CurriculoVaga | null>(null);
   const [gerarCarta, setGerarCarta] = useState(true);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [editando, setEditando] = useState(false);
 
   // Currículo salvo na vaga (carrega ao reabrir); o recém-gerado tem prioridade.
   const curriculoMostrar = curriculo ?? vaga?.curriculo ?? null;
@@ -470,6 +478,26 @@ function VagaDetalhe({
     onMudou();
   }
 
+  async function handleSalvarEdicao(body: Partial<Vaga>) {
+    const r = await acoes.atualizar(vagaId, body);
+    if (r) {
+      setEditando(false);
+      refetch();
+      onMudou();
+    }
+  }
+
+  async function handleExcluir() {
+    if (!vaga) return;
+    const ok = window.confirm(
+      `Excluir a vaga "${vaga.titulo}"? Isso apaga análise, match, rascunhos e ` +
+        'currículo salvo. Não dá pra desfazer.',
+    );
+    if (!ok) return;
+    const r = await acoes.remover(vagaId);
+    if (r !== null) onExcluida();
+  }
+
   if (loading || !vaga) {
     return <div className="card p-8 h-64 animate-pulse" />;
   }
@@ -477,53 +505,87 @@ function VagaDetalhe({
   return (
     <div className="flex flex-col gap-5">
       {/* Cabeçalho da vaga */}
-      <div className="card p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="font-display font-semibold text-xl text-ink m-0">
-              {vaga.titulo}
-            </h3>
-            <div className="text-[13px] text-ink-mute mt-1">
-              {[vaga.empresa, vaga.modelo, vaga.localizacao]
-                .filter(Boolean)
-                .join(' · ') || '—'}
+      {editando ? (
+        <EditarVagaForm
+          vaga={vaga}
+          onSubmit={handleSalvarEdicao}
+          onCancelar={() => setEditando(false)}
+          loading={acoes.loading}
+          erro={acoes.error?.message ?? null}
+        />
+      ) : (
+        <div className="card p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-display font-semibold text-xl text-ink m-0">
+                {vaga.titulo}
+              </h3>
+              <div className="text-[13px] text-ink-mute mt-1">
+                {[vaga.empresa, vaga.modelo, vaga.localizacao]
+                  .filter(Boolean)
+                  .join(' · ') || '—'}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {typeof vaga.match_score === 'number' && (
+                <MatchPill score={vaga.match_score} grande />
+              )}
+              <button
+                type="button"
+                className="btn-ghost text-[12px] px-2 py-1"
+                onClick={() => setEditando(true)}
+                title="Editar os dados da vaga"
+              >
+                ✏️ Editar
+              </button>
+              <button
+                type="button"
+                className="text-[12px] px-2 py-1 text-red-600 hover:underline disabled:opacity-40"
+                onClick={handleExcluir}
+                disabled={acoes.loading}
+                title="Excluir esta vaga"
+              >
+                🗑 Excluir
+              </button>
             </div>
           </div>
-          {typeof vaga.match_score === 'number' && (
-            <MatchPill score={vaga.match_score} grande />
-          )}
-        </div>
 
-        {vaga.link && (
-          <a
-            href={vaga.link}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block mt-2 text-[12px] text-brand hover:underline truncate max-w-full"
-          >
-            {vaga.link}
-          </a>
-        )}
-
-        {/* Status pipeline */}
-        <div className="flex flex-wrap gap-1.5 mt-4">
-          {STATUS_ORDEM.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => handleStatus(s)}
-              className={[
-                'font-mono text-[10px] uppercase tracking-[0.06em] px-2 py-1 rounded-sm transition-colors',
-                vaga.status === s
-                  ? 'bg-brand text-white'
-                  : 'bg-bg-alt text-ink-mute hover:text-ink',
-              ].join(' ')}
+          {vaga.link && (
+            <a
+              href={vaga.link}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block mt-2 text-[12px] text-brand hover:underline truncate max-w-full"
             >
-              {STATUS_LABEL[s]}
-            </button>
-          ))}
+              {vaga.link}
+            </a>
+          )}
+
+          {/* Status pipeline */}
+          <div className="mt-4">
+            <div className="text-[11px] font-medium text-ink-mute mb-1.5">
+              Etapa — clique pra mover
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS_ORDEM.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleStatus(s)}
+                  className={[
+                    'font-mono text-[10px] uppercase tracking-[0.06em] px-2 py-1 rounded-sm transition-colors',
+                    vaga.status === s
+                      ? 'bg-brand text-white'
+                      : 'bg-bg-alt text-ink-mute hover:text-ink',
+                  ].join(' ')}
+                >
+                  {STATUS_LABEL[s]}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Ações de IA */}
       <div className="card p-5">
@@ -803,6 +865,132 @@ function NovaVagaForm({
           disabled={loading}
         >
           {loading ? 'Salvando…' : 'Registrar vaga'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Form de edição da vaga ────────────────────────────────────────
+
+type CamposEditaveis = Pick<
+  Vaga,
+  | 'titulo'
+  | 'empresa'
+  | 'link'
+  | 'fonte'
+  | 'contato_nome'
+  | 'contato_email'
+  | 'localizacao'
+  | 'modelo'
+  | 'senioridade'
+  | 'descricao'
+  | 'notas'
+>;
+
+function EditarVagaForm({
+  vaga,
+  onSubmit,
+  onCancelar,
+  loading,
+  erro,
+}: {
+  vaga: Vaga;
+  onSubmit: (body: Partial<Vaga>) => void;
+  onCancelar: () => void;
+  loading: boolean;
+  erro: string | null;
+}) {
+  const [f, setF] = useState<CamposEditaveis>({
+    titulo: vaga.titulo,
+    empresa: vaga.empresa ?? '',
+    link: vaga.link ?? '',
+    fonte: vaga.fonte ?? '',
+    contato_nome: vaga.contato_nome ?? '',
+    contato_email: vaga.contato_email ?? '',
+    localizacao: vaga.localizacao ?? '',
+    modelo: vaga.modelo ?? '',
+    senioridade: vaga.senioridade ?? '',
+    descricao: vaga.descricao,
+    notas: vaga.notas ?? '',
+  });
+
+  function set<K extends keyof CamposEditaveis>(k: K, v: string) {
+    setF((prev) => ({ ...prev, [k]: v }));
+  }
+
+  return (
+    <div className="card p-6">
+      <h4 className="font-display font-semibold text-sm text-ink mb-4">
+        Editar vaga
+      </h4>
+      {erro && (
+        <div className="text-[13px] text-brand-ink bg-brand-soft/60 border border-brand/30 rounded p-3 mb-4">
+          {erro}
+        </div>
+      )}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Campo label="Título da vaga" obrigatorio>
+          <input className="input" value={f.titulo}
+            onChange={(e) => set('titulo', e.target.value)} />
+        </Campo>
+        <Campo label="Empresa">
+          <input className="input" value={f.empresa ?? ''}
+            onChange={(e) => set('empresa', e.target.value)} />
+        </Campo>
+        <Campo label="Link da vaga">
+          <input className="input" value={f.link ?? ''}
+            onChange={(e) => set('link', e.target.value)} />
+        </Campo>
+        <Campo label="Fonte (LinkedIn, Gupy…)">
+          <input className="input" value={f.fonte ?? ''}
+            onChange={(e) => set('fonte', e.target.value)} />
+        </Campo>
+        <Campo label="Nome do contato">
+          <input className="input" value={f.contato_nome ?? ''}
+            onChange={(e) => set('contato_nome', e.target.value)} />
+        </Campo>
+        <Campo label="E-mail de contato">
+          <input className="input" value={f.contato_email ?? ''}
+            onChange={(e) => set('contato_email', e.target.value)} />
+        </Campo>
+        <Campo label="Localização">
+          <input className="input" value={f.localizacao ?? ''}
+            onChange={(e) => set('localizacao', e.target.value)} />
+        </Campo>
+        <Campo label="Modelo (remoto/híbrido/presencial)">
+          <input className="input" value={f.modelo ?? ''}
+            onChange={(e) => set('modelo', e.target.value)} />
+        </Campo>
+        <Campo label="Senioridade">
+          <input className="input" value={f.senioridade ?? ''}
+            onChange={(e) => set('senioridade', e.target.value)} />
+        </Campo>
+      </div>
+      <div className="mt-4">
+        <Campo label="Descrição da vaga" obrigatorio>
+          <textarea className="input resize-y min-h-[140px]" value={f.descricao}
+            onChange={(e) => set('descricao', e.target.value)} />
+        </Campo>
+      </div>
+      <div className="mt-4">
+        <Campo label="Notas (suas anotações)">
+          <textarea className="input resize-y min-h-[70px]" value={f.notas ?? ''}
+            onChange={(e) => set('notas', e.target.value)} />
+        </Campo>
+      </div>
+      <div className="flex justify-end gap-2 mt-4">
+        <button type="button" className="btn-ghost" onClick={onCancelar}
+          disabled={loading}>
+          Cancelar
+        </button>
+        <button
+          type="button"
+          className="btn-primary disabled:opacity-40"
+          onClick={() => onSubmit(f)}
+          disabled={loading || !f.titulo.trim() || !f.descricao.trim()}
+        >
+          {loading ? 'Salvando…' : 'Salvar alterações'}
         </button>
       </div>
     </div>
