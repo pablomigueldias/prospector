@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { ApiError } from '@/lib/types';
 import type {
   FreelaAnalisarResponse,
+  FreelaChecklist,
   FreelaCliente,
   FreelaClienteCreate,
   FreelaExtrairProjeto,
@@ -117,6 +118,10 @@ export function useFreelaActions() {
       run<FreelaNegociarResponse>(() => api.freelaPropostaNegociar(id, objecao)),
     [],
   );
+  const avaliarProposta = useCallback(
+    (id: string) => run<FreelaChecklist>(() => api.freelaPropostaChecklist(id)),
+    [],
+  );
   const criarCliente = useCallback(
     (body: FreelaClienteCreate) => run<FreelaCliente>(() => api.freelaClienteCriar(body)),
     [],
@@ -140,6 +145,7 @@ export function useFreelaActions() {
     atualizarProposta,
     redigirProposta,
     negociarProposta,
+    avaliarProposta,
     criarCliente,
     precificar,
   };

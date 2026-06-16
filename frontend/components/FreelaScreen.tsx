@@ -14,6 +14,7 @@ import {
 import {
   FREELA_STATUS,
   type FreelaAnalise,
+  type FreelaChecklist,
   type FreelaExtrairProjeto,
   type FreelaKanbanColuna,
   type FreelaKanbanItem,
@@ -242,6 +243,7 @@ function PropostaModal({
   const [variacoes, setVariacoes] = useState<string[]>([]);
   const [objecao, setObjecao] = useState('');
   const [negOpcoes, setNegOpcoes] = useState<string[]>([]);
+  const [checklist, setChecklist] = useState<FreelaChecklist | null>(null);
 
   // valores efetivos: o que foi editado, senão o que veio do servidor
   const textoEf = texto ?? proposta?.texto_enviado ?? '';
@@ -268,6 +270,17 @@ function PropostaModal({
     if (!objecao.trim()) return;
     const r = await acoes.negociarProposta(item.id, objecao.trim());
     if (r) setNegOpcoes(r.opcoes);
+  }
+
+  async function conferir() {
+    if (!textoEf.trim()) return;
+    // salva o texto atual antes (a avaliação lê o que está persistido)
+    await acoes.atualizarProposta(item.id, {
+      texto_enviado: textoEf,
+      prazo_proposto: prazoEf || null,
+    });
+    const r = await acoes.avaliarProposta(item.id);
+    if (r) setChecklist(r);
   }
 
   async function salvar() {
@@ -387,6 +400,24 @@ function PropostaModal({
               />
             </label>
 
+            {/* Gate anti-genérico */}
+            <div className="rounded border border-line bg-bg-alt/50 p-3 mt-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[13px] font-medium text-ink">
+                  ✅ Conferir antes de enviar (anti-genérico)
+                </div>
+                <button
+                  type="button"
+                  className="btn-ghost text-[12px] px-2 py-1"
+                  onClick={conferir}
+                  disabled={acoes.loading || !textoEf.trim()}
+                >
+                  {acoes.loading ? 'Conferindo…' : 'Conferir proposta'}
+                </button>
+              </div>
+              {checklist && <ChecklistView c={checklist} />}
+            </div>
+
             {/* Assistente de negociação */}
             <div className="rounded border border-line bg-bg-alt/50 p-3 mt-3">
               <div className="text-[13px] font-medium text-ink mb-1.5">
@@ -436,6 +467,59 @@ function PropostaModal({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function ChecklistView({ c }: { c: FreelaChecklist }) {
+  const cor =
+    c.selo === 'pronta'
+      ? 'bg-success-soft text-success-ink'
+      : c.selo === 'ajustar'
+        ? 'bg-brand-soft text-brand-ink'
+        : 'bg-red-100 text-red-700';
+  const rotulo =
+    c.selo === 'pronta' ? 'Pronta' : c.selo === 'ajustar' ? 'Dá pra melhorar' : 'Fraca';
+
+  return (
+    <div className="mt-2.5">
+      <div className="flex items-center gap-2 mb-2">
+        <span className={`text-[12px] font-medium px-2 py-0.5 rounded ${cor}`}>
+          {rotulo}
+        </span>
+        <span className="font-mono text-[12px] text-ink-mute">{c.score}/100</span>
+      </div>
+
+      {c.alerta_conformidade && (
+        <div className="text-[12px] text-red-700 bg-red-50 border border-red-200 rounded p-2 mb-2">
+          ⚠️ {c.alerta_conformidade}
+        </div>
+      )}
+
+      <ul className="flex flex-col gap-1 mb-2">
+        {c.itens.map((it, i) => (
+          <li key={i} className="text-[12px] flex gap-1.5">
+            <span className={it.ok ? 'text-success' : 'text-red-600'}>
+              {it.ok ? '✓' : '✗'}
+            </span>
+            <span className="text-ink-soft">
+              <span className="text-ink">{it.criterio}.</span>
+              {it.nota ? ` ${it.nota}` : ''}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {c.sugestoes.length > 0 && (
+        <div className="text-[12px] text-ink-soft">
+          <div className="font-medium text-ink-mute mb-0.5">Pra melhorar:</div>
+          <ul className="list-disc pl-4 flex flex-col gap-0.5">
+            {c.sugestoes.map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

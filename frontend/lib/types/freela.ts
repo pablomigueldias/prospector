@@ -59,6 +59,21 @@ export interface FreelaProjetoCreate {
   n_interessados?: number | null;
 }
 
+export interface FreelaChecklistItem {
+  criterio: string;
+  ok: boolean;
+  nota?: string | null;
+}
+
+export interface FreelaChecklist {
+  proposta_id: string;
+  score: number;
+  selo?: string | null; // "pronta" | "ajustar" | "fraca"
+  itens: FreelaChecklistItem[];
+  sugestoes: string[];
+  alerta_conformidade?: string | null;
+}
+
 export interface FreelaExtrairProjeto {
   titulo?: string | null;
   faixa_orcamento_min?: number | null;

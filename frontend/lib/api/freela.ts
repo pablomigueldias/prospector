@@ -4,6 +4,7 @@ import { request } from './client';
 import type {
   FreelaAnalisarResponse,
   FreelaCliente,
+  FreelaChecklist,
   FreelaClienteCreate,
   FreelaExtrairProjeto,
   FreelaKanbanResponse,
@@ -97,6 +98,12 @@ export const freelaApi = {
   freelaProjetoPropostas(id: string): Promise<FreelaProposta[]> {
     return request<FreelaProposta[]>(`${BASE}/projetos/${encodeURIComponent(id)}/propostas`, {
       timeoutMs: T,
+    });
+  },
+  freelaPropostaChecklist(id: string): Promise<FreelaChecklist> {
+    return request<FreelaChecklist>(`${BASE}/propostas/${encodeURIComponent(id)}/checklist`, {
+      method: 'POST',
+      timeoutMs: 60_000,
     });
   },
   freelaPropostaNegociar(id: string, objecao: string): Promise<FreelaNegociarResponse> {
