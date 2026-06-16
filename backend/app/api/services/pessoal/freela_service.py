@@ -19,6 +19,10 @@ from app.analyzers.freela.negociador.parser import parse_resposta as parse_negoc
 from app.analyzers.freela.negociador.prompt_builder import (
     construir_prompt as construir_prompt_negociacao,
 )
+from app.analyzers.freela.extrator.parser import parse_resposta as parse_extracao
+from app.analyzers.freela.extrator.prompt_builder import (
+    construir_prompt as construir_prompt_extracao,
+)
 from app.analyzers.freela.redator.parser import parse_resposta as parse_redacao
 from app.analyzers.freela.redator.prompt_builder import (
     construir_prompt as construir_prompt_redacao,
@@ -30,6 +34,7 @@ from app.api.schemas.freela import (
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
+    ExtrairProjetoResponse,
     NegociarRequest,
     NegociarResponse,
     RedigirRequest,
@@ -375,6 +380,19 @@ async def analisar_projeto(projeto_id: str) -> AnalisarProjetoResponse:
     return AnalisarProjetoResponse(projeto_id=projeto_id, analise=analise)
 
 
+async def extrair_projeto(texto: str) -> ExtrairProjetoResponse:
+    """Lê o texto colado da Workana e devolve campos pré-preenchidos (não salva)."""
+    if not texto.strip():
+        raise FreelaError("Cole o texto do projeto pra extrair.")
+
+    prompt = construir_prompt_extracao(texto)
+    resposta = _chamar_llm(prompt, operacao="extrair")
+    dados = parse_extracao(resposta)
+    if dados is None:
+        raise FreelaError("A IA não conseguiu extrair os campos. Preencha na mão.")
+    return dados
+
+
 # ══════════════════════════════════════════════════════════════════
 # Proposta
 # ══════════════════════════════════════════════════════════════════
@@ -503,12 +521,17 @@ async def redigir_proposta(proposta_id: str, payload: RedigirRequest) -> Redigir
         if projeto is None:
             raise FreelaError("Projeto da proposta não encontrado.")
 
+        # Cold start: sem nenhuma proposta fechada, ainda não há reputação na
+        # plataforma — o redator compensa isso (prova descrita + redução de risco).
+        _, qtd_fechadas = await repo.soma_liquido_fechado()
+
         prompt = construir_prompt_redacao(
             projeto.descricao,
             perfil,
             titulo=projeto.titulo,
             analise=projeto.analise_json,
             instrucoes_extra=payload.instrucoes_extra,
+            cold_start=qtd_fechadas == 0,
         )
         texto = _chamar_llm(prompt, operacao="redigir")
 

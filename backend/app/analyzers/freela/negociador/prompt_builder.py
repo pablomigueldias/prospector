@@ -36,6 +36,8 @@ PRINCÍPIOS:
   (prazo, antecipação, depoimento).
 - Tom firme e cordial, sem desespero, sem submissão. Primeira pessoa.
 - Não force contato/pagamento fora da plataforma.
+- NUNCA inclua e-mail, telefone, WhatsApp ou links externos nas respostas — a
+  Workana filtra/penaliza contato e links no chat antes do contrato.
 - Cada opção é uma ESTRATÉGIA diferente (não três jeitos de dizer o mesmo).
 - Português brasileiro. Responda APENAS com JSON. Sem markdown.
 """

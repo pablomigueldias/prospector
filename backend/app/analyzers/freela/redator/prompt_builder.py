@@ -23,6 +23,20 @@ OUTPUT_SCHEMA = """
 }
 """
 
+COLD_START = """
+MODO COLD START (o freelancer ainda NÃO tem avaliações nesta plataforma):
+Sem nota, o cliente desconfia — a proposta tem que COMPENSAR isso. Faça:
+1) PROVA por descrição: em vez de só citar projetos, descreva 1 resultado real
+   do perfil no formato problema → o que fez → impacto. Pode remeter a "meus
+   projetos no meu perfil/portfólio aqui na Workana" — NUNCA cole link externo.
+2) REDUÇÃO DE RISCO pro cliente (escolha o que couber): entrega em etapas/marcos
+   com aprovação a cada uma; "você só aprova e paga ao ver funcionando"; ou um
+   primeiro marco pequeno como teste. Tirar o risco do cliente vale mais que nota.
+3) TOM confiante e específico. NUNCA diga que é iniciante, novo na plataforma ou
+   que "está começando". Demonstre competência pelo plano e pela prova, não peça
+   chance.
+"""
+
 INSTRUCOES = """
 Você é um freelancer experiente escrevendo uma PROPOSTA pra um projeto numa
 plataforma como a Workana. O cliente recebe dezenas de propostas copia-cola —
@@ -48,6 +62,11 @@ REGRAS (inegociáveis):
   Reorganize a verdade, nunca invente. Se o perfil não cobre algo que o projeto
   pede, não finja que cobre.
 - Não force contato fora da plataforma (a Workana penaliza).
+- NUNCA inclua no texto da proposta: e-mail, telefone, WhatsApp, ou links
+  externos (GitHub, site, portfólio, LinkedIn). A Workana filtra/penaliza
+  contato e links nas propostas e no chat antes do contrato. Para citar prova,
+  DESCREVA o resultado (problema→solução→impacto) ou remeta ao "meu perfil/
+  portfólio aqui na Workana" — sem colar URL.
 - Não invente preço/valor — quem precifica é outro módulo.
 - Português brasileiro, primeira pessoa, sem clichê de "sou apaixonado por...".
 - Responda APENAS com JSON. Sem markdown, sem texto antes ou depois.
@@ -61,6 +80,7 @@ def construir_prompt(
     titulo: Optional[str] = None,
     analise: Optional[dict] = None,
     instrucoes_extra: Optional[str] = None,
+    cold_start: bool = False,
 ) -> str:
     cab = []
     if titulo:
@@ -86,7 +106,10 @@ def construir_prompt(
         cab + ["", "DESCRIÇÃO DO PROJETO (texto colado):", descricao_projeto]
     )
 
-    secoes = [INSTRUCOES.strip(), perfil_para_texto(perfil), bloco_projeto]
+    secoes = [INSTRUCOES.strip()]
+    if cold_start:
+        secoes.append(COLD_START.strip())
+    secoes += [perfil_para_texto(perfil), bloco_projeto]
     if bloco_analise:
         secoes.append(bloco_analise)
     if bloco_extra:

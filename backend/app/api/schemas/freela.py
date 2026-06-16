@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -81,6 +81,31 @@ class ProjetoBase(BaseModel):
 
 class ProjetoCreate(ProjetoBase):
     pass
+
+
+class ExtrairProjetoRequest(BaseModel):
+    texto: str = Field(..., description="Texto do projeto colado da Workana")
+
+
+class ExtrairProjetoResponse(BaseModel):
+    """Campos pré-preenchidos a partir do texto colado (revisar antes de salvar)."""
+
+    titulo: Optional[str] = None
+    faixa_orcamento_min: Optional[float] = None
+    faixa_orcamento_max: Optional[float] = None
+    n_propostas_concorrentes: Optional[int] = None
+
+    @field_validator(
+        "faixa_orcamento_min", "faixa_orcamento_max", "n_propostas_concorrentes",
+        mode="before",
+    )
+    @classmethod
+    def _so_numero(cls, v):
+        """Aceita 'R$ 1.500', '64 propostas' etc. → número; vazio → None."""
+        if v is None or isinstance(v, (int, float)):
+            return v
+        digitos = "".join(c for c in str(v) if c.isdigit())
+        return int(digitos) if digitos else None
 
 
 class ProjetoUpdate(BaseModel):
