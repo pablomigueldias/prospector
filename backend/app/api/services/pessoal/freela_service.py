@@ -383,6 +383,12 @@ async def analisar_projeto(projeto_id: str) -> AnalisarProjetoResponse:
         if analise is None:
             raise FreelaError("A IA não retornou uma análise válida. Tente de novo.")
 
+        # Garante a cotação: se o modelo deu faixa de mercado mas não o sugerido,
+        # usa o ponto médio (assim o "+ Proposta" sempre vem com um valor).
+        e = analise.estimativa
+        if e and e.valor_sugerido is None and e.valor_mercado_min and e.valor_mercado_max:
+            e.valor_sugerido = round((e.valor_mercado_min + e.valor_mercado_max) / 2)
+
         await repo.salvar_analise_projeto(pid, analise.model_dump(mode="json"))
 
     return AnalisarProjetoResponse(projeto_id=projeto_id, analise=analise)

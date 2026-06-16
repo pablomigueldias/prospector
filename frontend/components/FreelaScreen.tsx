@@ -939,20 +939,27 @@ function ProjetoCard({
     let est = analise?.estimativa ?? p.estimativa ?? null;
     if (!est) {
       const a = await analisar();
-      est = a?.estimativa ?? null;
+      if (!a) {
+        // Análise falhou (IA indisponível/limite) — não cria card vazio.
+        setCriando(false);
+        setAviso('Não consegui analisar agora (IA indisponível). Tente de novo em instantes.');
+        return;
+      }
+      est = a.estimativa ?? null;
     }
+    const valor = est?.valor_sugerido ?? null;
     await onCriarProposta(
       p.id,
-      est?.valor_sugerido ?? null,
+      valor,
       null,
       est?.horas_estimadas ?? null,
       est?.prazo_dias != null ? `${est.prazo_dias} dias` : null,
     );
     setCriando(false);
     setAviso(
-      est
+      valor != null
         ? 'Proposta criada no Kanban com o orçamento de mercado — abra o card pra ajustar e rascunhar.'
-        : 'Proposta criada no Kanban — abra o card pra ajustar e rascunhar.',
+        : 'Proposta criada, mas o escopo não deu pra estimar a cotação — abra o card e defina o valor.',
     );
   }
 
