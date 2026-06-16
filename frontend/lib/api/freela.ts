@@ -5,6 +5,7 @@ import type {
   FreelaAnalisarResponse,
   FreelaCliente,
   FreelaClienteCreate,
+  FreelaExtrairProjeto,
   FreelaKanbanResponse,
   FreelaNegociarResponse,
   FreelaRedigirResponse,
@@ -69,6 +70,13 @@ export const freelaApi = {
   },
   freelaProjetoCriar(body: FreelaProjetoCreate): Promise<FreelaProjeto> {
     return request<FreelaProjeto>(`${BASE}/projetos`, { method: 'POST', body, timeoutMs: T });
+  },
+  freelaProjetoExtrair(texto: string): Promise<FreelaExtrairProjeto> {
+    return request<FreelaExtrairProjeto>(`${BASE}/projetos/extrair`, {
+      method: 'POST',
+      body: { texto },
+      timeoutMs: 60_000,
+    });
   },
   freelaProjetoDetalhe(id: string): Promise<FreelaProjeto> {
     return request<FreelaProjeto>(`${BASE}/projetos/${encodeURIComponent(id)}`, { timeoutMs: T });

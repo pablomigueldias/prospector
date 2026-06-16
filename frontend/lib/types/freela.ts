@@ -59,6 +59,13 @@ export interface FreelaProjetoCreate {
   n_interessados?: number | null;
 }
 
+export interface FreelaExtrairProjeto {
+  titulo?: string | null;
+  faixa_orcamento_min?: number | null;
+  faixa_orcamento_max?: number | null;
+  n_propostas_concorrentes?: number | null;
+}
+
 export interface FreelaProjeto extends FreelaProjetoCreate {
   id: string;
   analise_json?: Record<string, unknown> | null;

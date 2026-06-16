@@ -14,6 +14,7 @@ import {
 import {
   FREELA_STATUS,
   type FreelaAnalise,
+  type FreelaExtrairProjeto,
   type FreelaKanbanColuna,
   type FreelaKanbanItem,
   type FreelaMetricas,
@@ -21,6 +22,16 @@ import {
   type FreelaProjetoListItem,
   type FreelaStatus,
 } from '@/lib/types';
+
+/** Horas médias → "—" / "8h" / "2d 3h". */
+function formatHoras(h?: number | null): string {
+  if (h == null) return '—';
+  const horas = Math.round(h);
+  if (horas < 24) return `${horas}h`;
+  const d = Math.floor(horas / 24);
+  const r = horas % 24;
+  return r ? `${d}d ${r}h` : `${d}d`;
+}
 
 const STATUS_LABEL: Record<FreelaStatus, string> = {
   rascunho: 'Rascunho',
@@ -50,6 +61,8 @@ export default function FreelaScreen() {
   }
 
   const m = metricas.data;
+  // Cold start: ainda sem nenhuma fechada → o foco é RESPOSTA, não fechamento.
+  const coldStart = (m?.fechadas ?? 0) === 0;
 
   return (
     <div className="max-w-[1200px] mx-auto pb-16">
@@ -69,26 +82,48 @@ export default function FreelaScreen() {
         <StatCard
           label="Propostas"
           value={m?.total_propostas ?? 0}
+          trend={m ? `${m.enviadas} enviadas` : undefined}
           loading={metricas.loading}
         />
         <StatCard
           label="Taxa de resposta"
           value={m ? `${Math.round(m.taxa_resposta * 100)}%` : '—'}
+          trend={m ? `${m.respondidas} responderam` : undefined}
+          trendDirection={m && m.taxa_resposta >= 0.15 ? 'up' : 'neutral'}
           loading={metricas.loading}
         />
-        <StatCard
-          label="Taxa de fechamento"
-          value={m ? `${Math.round(m.taxa_fechamento * 100)}%` : '—'}
-          loading={metricas.loading}
-        />
-        <StatCard
-          label="Líquido fechado"
-          value={formatBRL(m?.liquido_total_fechado ?? 0)}
-          loading={metricas.loading}
-        />
+        {coldStart ? (
+          <>
+            <StatCard
+              label="Em conversa"
+              value={m?.respondidas ?? 0}
+              trend="responderam ou negociando"
+              loading={metricas.loading}
+            />
+            <StatCard
+              label="Tempo até resposta"
+              value={formatHoras(m?.tempo_medio_resposta_horas)}
+              trend="quanto antes, melhor"
+              loading={metricas.loading}
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              label="Taxa de fechamento"
+              value={m ? `${Math.round(m.taxa_fechamento * 100)}%` : '—'}
+              loading={metricas.loading}
+            />
+            <StatCard
+              label="Líquido fechado"
+              value={formatBRL(m?.liquido_total_fechado ?? 0)}
+              loading={metricas.loading}
+            />
+          </>
+        )}
       </div>
 
-      <MetaForecast m={m} loading={metricas.loading} />
+      {!coldStart && <MetaForecast m={m} loading={metricas.loading} />}
 
       <Precificador
         plataformaId={plataformas.items[0]?.id ?? null}
@@ -114,6 +149,7 @@ export default function FreelaScreen() {
           loading={acoes.loading}
           erro={acoes.error?.message ?? null}
           clientes={clientes.items.map((c) => ({ id: c.id, nome: c.nome }))}
+          onExtrair={acoes.extrairProjeto}
           onSubmit={async (body) => {
             const p = await acoes.criarProjeto(body);
             if (p) {
@@ -1023,6 +1059,7 @@ function NovoProjetoForm({
   erro,
   clientes,
   onSubmit,
+  onExtrair,
 }: {
   loading: boolean;
   erro: string | null;
@@ -1035,6 +1072,7 @@ function NovoProjetoForm({
     faixa_orcamento_max?: number | null;
     n_propostas_concorrentes?: number | null;
   }) => void;
+  onExtrair: (texto: string) => Promise<FreelaExtrairProjeto | null>;
 }) {
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -1042,6 +1080,19 @@ function NovoProjetoForm({
   const [min, setMin] = useState('');
   const [max, setMax] = useState('');
   const [nProp, setNProp] = useState('');
+  const [extraindo, setExtraindo] = useState(false);
+
+  async function autoPreencher() {
+    if (!descricao.trim()) return;
+    setExtraindo(true);
+    const r = await onExtrair(descricao.trim());
+    setExtraindo(false);
+    if (!r) return;
+    if (r.titulo && !titulo.trim()) setTitulo(r.titulo);
+    if (r.faixa_orcamento_min != null) setMin(String(r.faixa_orcamento_min));
+    if (r.faixa_orcamento_max != null) setMax(String(r.faixa_orcamento_max));
+    if (r.n_propostas_concorrentes != null) setNProp(String(r.n_propostas_concorrentes));
+  }
 
   return (
     <div className="card p-5 mb-4">
@@ -1050,14 +1101,27 @@ function NovoProjetoForm({
           Título do projeto
           <input className="input mt-1" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
         </label>
-        <label className="text-[13px] text-ink-soft">
-          Descrição (cole o texto do projeto)
+        <div>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[13px] text-ink-soft">
+              Descrição (cole o texto do projeto)
+            </span>
+            <button
+              type="button"
+              className="btn-ghost text-[12px] px-2 py-1 disabled:opacity-40"
+              onClick={autoPreencher}
+              disabled={extraindo || !descricao.trim()}
+              title="A IA lê o texto e preenche título, orçamento e nº de propostas"
+            >
+              {extraindo ? 'Lendo…' : '✨ Auto-preencher do texto'}
+            </button>
+          </div>
           <textarea
-            className="input mt-1 min-h-[120px]"
+            className="input min-h-[120px]"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
           />
-        </label>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <label className="text-[13px] text-ink-soft">
             Cliente

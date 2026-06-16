@@ -7,6 +7,7 @@ import type {
   FreelaAnalisarResponse,
   FreelaCliente,
   FreelaClienteCreate,
+  FreelaExtrairProjeto,
   FreelaPrecificarRequest,
   FreelaPrecificarResponse,
   FreelaProjeto,
@@ -80,6 +81,10 @@ export function useFreelaActions() {
     (id: string) => run<void>(() => api.freelaProjetoRemover(id)),
     [],
   );
+  const extrairProjeto = useCallback(
+    (texto: string) => run<FreelaExtrairProjeto>(() => api.freelaProjetoExtrair(texto)),
+    [],
+  );
   const analisarProjeto = useCallback(
     (id: string) => run<FreelaAnalisarResponse>(() => api.freelaProjetoAnalisar(id)),
     [],
@@ -127,6 +132,7 @@ export function useFreelaActions() {
     error,
     criarProjeto,
     removerProjeto,
+    extrairProjeto,
     analisarProjeto,
     criarProposta,
     mudarStatus,
