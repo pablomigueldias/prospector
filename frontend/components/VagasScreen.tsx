@@ -3,12 +3,20 @@ import { useState } from 'react';
 import { CurriculoPdf } from './CurriculoPdf';
 import { StatCard } from './StatCard';
 import { usePerfil } from '@/hooks/usePerfil';
-import { useVaga, useVagaActions, useVagas } from '@/hooks/useVagas';
+import {
+  useVaga,
+  useVagaActions,
+  useVagas,
+  useVagasMetricas,
+} from '@/hooks/useVagas';
 import type {
   CurriculoVaga,
+  FaixaSalarial,
   GerarCandidaturaResponse,
   VagaCreate,
   VagaListItem,
+  VagasFiltro,
+  VagasMetricas,
   VagaStatus,
 } from '@/lib/types';
 
@@ -28,8 +36,12 @@ const STATUS_ORDEM: VagaStatus[] = [
   'fim',
 ];
 
+const FILTRO_VAZIO: VagasFiltro = { ordenar_por: 'match' };
+
 export default function VagasScreen() {
-  const vagas = useVagas();
+  const [filtro, setFiltro] = useState<VagasFiltro>(FILTRO_VAZIO);
+  const vagas = useVagas(filtro);
+  const metr = useVagasMetricas();
   const { perfil } = usePerfil();
   const acoes = useVagaActions();
   const [selecionada, setSelecionada] = useState<string | null>(null);
@@ -37,16 +49,19 @@ export default function VagasScreen() {
 
   const semPerfil = perfil === null;
 
+  function recarregar() {
+    vagas.refetch();
+    metr.refetch();
+  }
+
   async function handleCriar(body: VagaCreate) {
     const v = await acoes.criar(body);
     if (v) {
       setMostrarForm(false);
-      vagas.refetch();
+      recarregar();
       setSelecionada(v.id);
     }
   }
-
-  const stats = computeStats(vagas.items);
 
   return (
     <div className="max-w-[1200px] mx-auto pb-16">
@@ -70,12 +85,7 @@ export default function VagasScreen() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-7">
-        <StatCard label="Vagas" value={vagas.total} loading={vagas.loading} />
-        <StatCard label="Quero candidatar" value={stats.quero_candidatar} loading={vagas.loading} />
-        <StatCard label="Candidatei" value={stats.candidatei} loading={vagas.loading} />
-        <StatCard label="Em processo" value={stats.emProcesso} loading={vagas.loading} />
-      </div>
+      <Metricas metricas={metr.metricas} loading={metr.loading} />
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
@@ -98,6 +108,13 @@ export default function VagasScreen() {
         />
       )}
 
+      <FiltrosBar
+        filtro={filtro}
+        onMudar={setFiltro}
+        total={vagas.total}
+        loading={vagas.loading}
+      />
+
       <div className="grid md:grid-cols-[340px_1fr] gap-5 mt-2">
         <ListaVagas
           items={vagas.items}
@@ -111,7 +128,7 @@ export default function VagasScreen() {
               key={selecionada}
               vagaId={selecionada}
               semPerfil={semPerfil}
-              onMudou={() => vagas.refetch()}
+              onMudou={recarregar}
             />
           ) : (
             <div className="card p-8 text-center text-sm text-ink-mute">
@@ -120,6 +137,193 @@ export default function VagasScreen() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Métricas (funil + taxas) ──────────────────────────────────────
+
+function Metricas({
+  metricas,
+  loading,
+}: {
+  metricas: VagasMetricas | null | undefined;
+  loading: boolean;
+}) {
+  const m = metricas;
+  const pct = (v: number | null | undefined) =>
+    v == null ? '—' : `${v}%`;
+  const matchCand = m?.match_medio_candidaturas ?? m?.match_medio ?? null;
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-7">
+      <StatCard
+        label="Vagas"
+        value={m?.total ?? 0}
+        trend={m ? `${m.em_andamento} em andamento` : undefined}
+        loading={loading}
+      />
+      <StatCard
+        label="Candidaturas"
+        value={m?.candidaturas ?? 0}
+        trend={m ? `${m.responderam} responderam` : undefined}
+        trendDirection={m && m.responderam > 0 ? 'up' : 'neutral'}
+        loading={loading}
+      />
+      <StatCard
+        label="Taxa de resposta"
+        value={pct(m?.taxa_resposta)}
+        trend={m ? `${m.entrevistas} em entrevista` : undefined}
+        trendDirection={m && (m.taxa_resposta ?? 0) >= 30 ? 'up' : 'neutral'}
+        loading={loading}
+      />
+      <StatCard
+        label="Match médio (candidaturas)"
+        value={pct(matchCand)}
+        trend="você está mirando vaga boa?"
+        loading={loading}
+      />
+    </div>
+  );
+}
+
+// ── Barra de busca + filtros ──────────────────────────────────────
+
+const MODELOS = ['remoto', 'híbrido', 'presencial'];
+
+function FiltrosBar({
+  filtro,
+  onMudar,
+  total,
+  loading,
+}: {
+  filtro: VagasFiltro;
+  onMudar: (f: VagasFiltro) => void;
+  total: number;
+  loading: boolean;
+}) {
+  function set<K extends keyof VagasFiltro>(k: K, v: VagasFiltro[K]) {
+    onMudar({ ...filtro, [k]: v });
+  }
+
+  const temFiltro =
+    !!filtro.busca ||
+    !!filtro.status ||
+    filtro.match_min != null ||
+    !!filtro.modelo ||
+    !!filtro.fonte ||
+    filtro.tem_rascunho != null;
+
+  return (
+    <div className="card p-4 mb-4">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1.5 grow min-w-[200px]">
+          <label className="text-[11px] font-medium text-ink-mute">Buscar</label>
+          <input
+            className="input"
+            placeholder="título ou empresa…"
+            value={filtro.busca ?? ''}
+            onChange={(e) => set('busca', e.target.value)}
+          />
+        </div>
+
+        <SelectFiltro
+          label="Status"
+          value={filtro.status ?? ''}
+          onChange={(v) => set('status', v as VagaStatus | '')}
+          options={[
+            ['', 'Todos'],
+            ...STATUS_ORDEM.map((s) => [s, STATUS_LABEL[s]] as [string, string]),
+          ]}
+        />
+
+        <SelectFiltro
+          label="Modelo"
+          value={filtro.modelo ?? ''}
+          onChange={(v) => set('modelo', v)}
+          options={[['', 'Qualquer'], ...MODELOS.map((m) => [m, m] as [string, string])]}
+        />
+
+        <div className="flex flex-col gap-1.5 w-[150px]">
+          <label className="text-[11px] font-medium text-ink-mute">
+            Match mín{filtro.match_min != null ? `: ${filtro.match_min}%` : ''}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={filtro.match_min ?? 0}
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              set('match_min', n === 0 ? null : n);
+            }}
+          />
+        </div>
+
+        <SelectFiltro
+          label="Ordenar"
+          value={filtro.ordenar_por ?? 'match'}
+          onChange={(v) => set('ordenar_por', (v || 'match') as 'match' | 'recentes')}
+          options={[
+            ['match', 'Maior match'],
+            ['recentes', 'Mais recentes'],
+          ]}
+        />
+
+        <label className="flex items-center gap-1.5 text-[12px] text-ink-soft pb-2">
+          <input
+            type="checkbox"
+            checked={filtro.tem_rascunho === true}
+            onChange={(e) => set('tem_rascunho', e.target.checked ? true : null)}
+          />
+          tem rascunho
+        </label>
+      </div>
+
+      <div className="flex items-center justify-between mt-3">
+        <span className="text-[12px] text-ink-mute">
+          {loading ? 'filtrando…' : `${total} vaga(s)`}
+        </span>
+        {temFiltro && (
+          <button
+            type="button"
+            className="text-[12px] text-brand hover:underline"
+            onClick={() => onMudar(FILTRO_VAZIO)}
+          >
+            limpar filtros
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SelectFiltro({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: [string, string][];
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[11px] font-medium text-ink-mute">{label}</label>
+      <select
+        className="input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {options.map(([v, rotulo]) => (
+          <option key={v} value={v}>
+            {rotulo}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -376,6 +580,10 @@ function VagaDetalhe({
           <Tags titulo="Desejáveis" itens={vaga.analise_json.desejaveis} />
           <Tags titulo="Stack" itens={vaga.analise_json.stack} />
 
+          {vaga.analise_json.salario && (
+            <BlocoSalario salario={vaga.analise_json.salario} />
+          )}
+
           {vaga.match_json && (
             <div className="mt-4 pt-4 border-t border-line">
               <div className="flex items-center gap-2 mb-2">
@@ -623,6 +831,84 @@ function Tags({
   );
 }
 
+function brl(v?: number | null): string | null {
+  if (v == null) return null;
+  return v.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  });
+}
+
+function faixa(min?: number | null, max?: number | null): string {
+  const a = brl(min);
+  const b = brl(max);
+  if (a && b) return a === b ? a : `${a} – ${b}`;
+  return a || b || '—';
+}
+
+function BlocoSalario({ salario }: { salario: FaixaSalarial }) {
+  const temFaixa =
+    salario.pj_min != null ||
+    salario.pj_max != null ||
+    salario.clt_min != null ||
+    salario.clt_max != null;
+  if (!temFaixa && salario.pretensao_pj == null && salario.pretensao_clt == null) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-line">
+      <div className="flex items-center gap-2 mb-2">
+        <h4 className="font-display font-semibold text-sm text-ink m-0">
+          Pretensão salarial
+        </h4>
+        <span className="font-mono text-[10px] text-ink-mute uppercase tracking-[0.06em]">
+          estimativa de mercado
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="bg-bg-alt border border-line rounded p-3">
+          <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-mute mb-1">
+            PJ · R$/mês
+          </div>
+          <div className="text-[15px] font-semibold text-ink leading-tight">
+            {faixa(salario.pj_min, salario.pj_max)}
+          </div>
+          {salario.pretensao_pj != null && (
+            <div className="text-[12px] text-success-ink mt-1">
+              pedir: <strong>{brl(salario.pretensao_pj)}</strong>
+            </div>
+          )}
+        </div>
+        <div className="bg-bg-alt border border-line rounded p-3">
+          <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-mute mb-1">
+            CLT · R$/mês
+          </div>
+          <div className="text-[15px] font-semibold text-ink leading-tight">
+            {faixa(salario.clt_min, salario.clt_max)}
+          </div>
+          {salario.pretensao_clt != null && (
+            <div className="text-[12px] text-success-ink mt-1">
+              pedir: <strong>{brl(salario.pretensao_clt)}</strong>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {salario.base && (
+        <p className="text-[12px] text-ink-soft mt-2">
+          <span className="text-ink-mute">Base:</span> {salario.base}
+        </p>
+      )}
+      {salario.observacao && (
+        <p className="text-[12px] text-ink-mute mt-1 italic">{salario.observacao}</p>
+      )}
+    </div>
+  );
+}
+
 function MatchPill({ score, grande }: { score: number; grande?: boolean }) {
   const cor =
     score >= 70
@@ -658,10 +944,4 @@ function StatusBadge({ status }: { status: VagaStatus }) {
       {STATUS_LABEL[status]}
     </span>
   );
-}
-
-function computeStats(items: VagaListItem[]) {
-  const c = { quero_candidatar: 0, candidatei: 0, respondeu: 0, entrevista: 0, fim: 0 };
-  for (const v of items) c[v.status]++;
-  return { ...c, emProcesso: c.respondeu + c.entrevista };
 }

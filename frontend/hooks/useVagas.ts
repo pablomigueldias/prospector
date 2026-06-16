@@ -10,13 +10,21 @@ import type {
   Vaga,
   VagaCreate,
   VagaListItem,
+  VagasFiltro,
+  VagasMetricas,
 } from '@/lib/types';
 
-export function useVagas(status?: string) {
-  const result = useFetch(() => api.vagasListar(status), [status]);
+export function useVagas(filtro: VagasFiltro = {}) {
+  const chave = JSON.stringify(filtro);
+  const result = useFetch(() => api.vagasListar(filtro), [chave]);
   const items: VagaListItem[] = result.data?.items ?? [];
   const total: number = result.data?.total ?? 0;
   return { ...result, items, total };
+}
+
+export function useVagasMetricas() {
+  const result = useFetch<VagasMetricas>(() => api.vagasMetricas(), []);
+  return { ...result, metricas: result.data };
 }
 
 export function useVaga(id: string | undefined) {

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -120,6 +120,34 @@ class VagaUpdate(BaseModel):
     status: Optional[str] = None
 
 
+class FaixaSalarial(BaseModel):
+    """Estimativa honesta de mercado (BR) pra esta vaga, PJ e CLT, R$/mês."""
+
+    pj_min: Optional[int] = None         # faixa de mercado PJ (bruto/mês)
+    pj_max: Optional[int] = None
+    clt_min: Optional[int] = None        # faixa de mercado CLT (salário base/mês)
+    clt_max: Optional[int] = None
+    pretensao_pj: Optional[int] = None   # quanto pedir em PJ dado seu fit
+    pretensao_clt: Optional[int] = None  # quanto pedir em CLT dado seu fit
+    base: Optional[str] = None           # no que a estimativa se baseia
+    observacao: Optional[str] = None     # ressalva honesta sobre a estimativa
+
+    @field_validator(
+        "pj_min", "pj_max", "clt_min", "clt_max",
+        "pretensao_pj", "pretensao_clt",
+        mode="before",
+    )
+    @classmethod
+    def _so_digitos(cls, v):
+        """Aceita 'R$ 8.000', '8000.0' etc. → 8000; vazio → None."""
+        if v is None or isinstance(v, int):
+            return v
+        if isinstance(v, float):
+            return int(v)
+        digitos = "".join(c for c in str(v) if c.isdigit())
+        return int(digitos) if digitos else None
+
+
 class AnaliseVaga(BaseModel):
     requisitos_obrigatorios: List[str] = Field(default_factory=list)
     desejaveis: List[str] = Field(default_factory=list)
@@ -127,6 +155,7 @@ class AnaliseVaga(BaseModel):
     senioridade: Optional[str] = None
     palavras_chave: List[str] = Field(default_factory=list)
     resumo: Optional[str] = None
+    salario: Optional[FaixaSalarial] = None
 
 
 class MatchVaga(BaseModel):
@@ -181,6 +210,23 @@ class AnalisarVagaResponse(BaseModel):
     analise: AnaliseVaga
     match: MatchVaga
     match_score: int
+
+
+class VagasMetricas(BaseModel):
+    """Funil + taxas do caçador de vagas (agrega todas, ignora filtros)."""
+
+    total: int = 0
+    por_status: dict = Field(default_factory=dict)  # status -> contagem
+    candidaturas: int = 0          # saiu de 'quero_candidatar' (candidatei+…+fim)
+    em_andamento: int = 0          # candidatei + respondeu + entrevista
+    responderam: int = 0           # respondeu + entrevista
+    entrevistas: int = 0           # entrevista
+    # Taxas sobre 'em_andamento' (não conta 'fim' pra não inflar/honesto). 0-100.
+    taxa_resposta: Optional[int] = None
+    taxa_entrevista: Optional[int] = None
+    # Match médio (0-100) de todas com score e só das que viraram candidatura.
+    match_medio: Optional[int] = None
+    match_medio_candidaturas: Optional[int] = None
 
 
 # ══════════════════════════════════════════════════════════════════

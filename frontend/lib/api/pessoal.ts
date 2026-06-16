@@ -6,6 +6,8 @@ import type {
   Vaga,
   VagaCreate,
   VagaListResponse,
+  VagasFiltro,
+  VagasMetricas,
   AnalisarVagaResponse,
   GerarCandidaturaResponse,
   GerarCurriculoResponse,
@@ -31,9 +33,25 @@ export const pessoalApi = {
   },
 
   // ── Vagas ───────────────────────────────────────────────────────
-  vagasListar(status?: string): Promise<VagaListResponse> {
-    const q = status ? `?status=${encodeURIComponent(status)}` : '';
-    return request<VagaListResponse>(`/api/pessoal/vagas${q}`, {
+  vagasListar(filtro: VagasFiltro = {}): Promise<VagaListResponse> {
+    const p = new URLSearchParams();
+    if (filtro.status) p.set('status', filtro.status);
+    if (filtro.busca?.trim()) p.set('busca', filtro.busca.trim());
+    if (filtro.match_min != null) p.set('match_min', String(filtro.match_min));
+    if (filtro.modelo) p.set('modelo', filtro.modelo);
+    if (filtro.fonte) p.set('fonte', filtro.fonte);
+    if (filtro.tem_rascunho != null)
+      p.set('tem_rascunho', String(filtro.tem_rascunho));
+    if (filtro.ordenar_por) p.set('ordenar_por', filtro.ordenar_por);
+    const q = p.toString();
+    return request<VagaListResponse>(
+      `/api/pessoal/vagas${q ? `?${q}` : ''}`,
+      { timeoutMs: 10_000 },
+    );
+  },
+
+  vagasMetricas(): Promise<VagasMetricas> {
+    return request<VagasMetricas>('/api/pessoal/vagas/metricas', {
       timeoutMs: 10_000,
     });
   },

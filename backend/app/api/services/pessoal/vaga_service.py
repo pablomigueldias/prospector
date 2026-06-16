@@ -32,6 +32,7 @@ from app.api.schemas.pessoal import (
     VagaListItem,
     VagaListResponse,
     VagaResponse,
+    VagasMetricas,
     VagaUpdate,
 )
 from app.api.services.pessoal.perfil_service import get_perfil
@@ -95,9 +96,26 @@ async def criar_vaga(payload: VagaCreate) -> VagaResponse:
         return _to_response(vaga)
 
 
-async def listar_vagas(status: Optional[str] = None) -> VagaListResponse:
+async def listar_vagas(
+    status: Optional[str] = None,
+    *,
+    busca: Optional[str] = None,
+    match_min: Optional[int] = None,
+    modelo: Optional[str] = None,
+    fonte: Optional[str] = None,
+    tem_rascunho: Optional[bool] = None,
+    ordenar_por: str = "match",
+) -> VagaListResponse:
     async with get_session() as session:
-        linhas = await VagaRepository(session).listar(status=status)
+        linhas = await VagaRepository(session).listar(
+            status=status,
+            busca=busca,
+            match_min=match_min,
+            modelo=modelo,
+            fonte=fonte,
+            tem_rascunho=tem_rascunho,
+            ordenar_por=ordenar_por,
+        )
         items = [
             VagaListItem(
                 id=str(v.id),
@@ -114,6 +132,37 @@ async def listar_vagas(status: Optional[str] = None) -> VagaListResponse:
             for v, qtd in linhas
         ]
     return VagaListResponse(items=items, total=len(items))
+
+
+async def metricas() -> VagasMetricas:
+    """Funil + taxas de resposta/entrevista pra medir se você está sendo efetivo."""
+    async with get_session() as session:
+        dados = await VagaRepository(session).metricas()
+
+    ps = dados["por_status"]
+    candidaturas = ps["candidatei"] + ps["respondeu"] + ps["entrevista"] + ps["fim"]
+    em_andamento = ps["candidatei"] + ps["respondeu"] + ps["entrevista"]
+    responderam = ps["respondeu"] + ps["entrevista"]
+    entrevistas = ps["entrevista"]
+
+    def _pct(parte: int, todo: int) -> Optional[int]:
+        return round(parte * 100 / todo) if todo else None
+
+    def _round(v) -> Optional[int]:
+        return round(v) if v is not None else None
+
+    return VagasMetricas(
+        total=sum(ps.values()),
+        por_status=ps,
+        candidaturas=candidaturas,
+        em_andamento=em_andamento,
+        responderam=responderam,
+        entrevistas=entrevistas,
+        taxa_resposta=_pct(responderam, em_andamento),
+        taxa_entrevista=_pct(entrevistas, em_andamento),
+        match_medio=_round(dados["match_medio"]),
+        match_medio_candidaturas=_round(dados["match_medio_candidaturas"]),
+    )
 
 
 async def get_vaga(vaga_id: str) -> VagaResponse:

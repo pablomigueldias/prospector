@@ -74,6 +74,17 @@ export type VagaStatus =
   | 'entrevista'
   | 'fim';
 
+export interface FaixaSalarial {
+  pj_min?: number | null;
+  pj_max?: number | null;
+  clt_min?: number | null;
+  clt_max?: number | null;
+  pretensao_pj?: number | null;
+  pretensao_clt?: number | null;
+  base?: string | null;
+  observacao?: string | null;
+}
+
 export interface AnaliseVaga {
   requisitos_obrigatorios: string[];
   desejaveis: string[];
@@ -81,6 +92,7 @@ export interface AnaliseVaga {
   senioridade?: string | null;
   palavras_chave: string[];
   resumo?: string | null;
+  salario?: FaixaSalarial | null;
 }
 
 export interface MatchVaga {
@@ -142,6 +154,29 @@ export interface VagaListItem {
 export interface VagaListResponse {
   items: VagaListItem[];
   total: number;
+}
+
+export interface VagasFiltro {
+  status?: VagaStatus | '';
+  busca?: string;
+  match_min?: number | null;
+  modelo?: string;
+  fonte?: string;
+  tem_rascunho?: boolean | null;
+  ordenar_por?: 'match' | 'recentes';
+}
+
+export interface VagasMetricas {
+  total: number;
+  por_status: Record<VagaStatus, number>;
+  candidaturas: number;
+  em_andamento: number;
+  responderam: number;
+  entrevistas: number;
+  taxa_resposta: number | null;
+  taxa_entrevista: number | null;
+  match_medio: number | null;
+  match_medio_candidaturas: number | null;
 }
 
 export interface AnalisarVagaResponse {

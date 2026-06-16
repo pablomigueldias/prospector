@@ -20,7 +20,17 @@ OUTPUT_SCHEMA = """
     "stack": ["<tecnologia citada>", "..."],
     "senioridade": "<júnior | pleno | sênior | não informado>",
     "palavras_chave": ["<termo que o ATS/recrutador busca>", "..."],
-    "resumo": "<2-3 frases: o que a vaga realmente quer>"
+    "resumo": "<2-3 frases: o que a vaga realmente quer>",
+    "salario": {
+      "pj_min": <inteiro R$/mês ou null>,
+      "pj_max": <inteiro R$/mês ou null>,
+      "clt_min": <inteiro R$/mês ou null>,
+      "clt_max": <inteiro R$/mês ou null>,
+      "pretensao_pj": <inteiro R$/mês: quanto PEDIR em PJ, dado o fit do candidato>,
+      "pretensao_clt": <inteiro R$/mês: quanto PEDIR em CLT, dado o fit>,
+      "base": "<no que baseou: senioridade, stack, modelo, mercado BR>",
+      "observacao": "<ressalva honesta: é estimativa, faixa ampla, sem dado da empresa>"
+    }
   },
   "match": {
     "aderencia": <inteiro 0-100>,
@@ -54,9 +64,22 @@ PARTE 2 — CRUZAR COM O CANDIDATO (campo "match"):
   (reorganizar a verdade, nunca inventá-la).
 - "veredito": uma frase dizendo se vale a pena se candidatar.
 
+PARTE 3 — PRETENSÃO SALARIAL (campo "analise.salario"):
+- Estime a faixa de mercado brasileira REAL pra esta vaga, em R$/mês,
+  separando PJ (bruto, sem encargos/benefícios) e CLT (salário base mensal).
+- PJ no Brasil costuma vir ~20-35% acima do CLT bruto, porque o profissional
+  arca com impostos, férias, 13º e benefícios. Respeite essa diferença.
+- Baseie nos sinais da vaga: senioridade, stack, modelo (remoto paga mais),
+  porte/segmento da empresa e faixa salarial se a vaga citar alguma.
+- "pretensao_pj"/"pretensao_clt": quanto o candidato deveria PEDIR. Se a
+  aderência for alta, mire o topo da faixa; se for baixa, seja realista.
+- Seja HONESTO: se faltam dados, dê uma faixa ampla e diga isso em "observacao".
+  Não invente precisão que você não tem. Use null quando não der pra estimar.
+
 REGRAS:
 - Seja honesto no score. Inflar aderência não ajuda o candidato.
 - Baseie "tenho" e "destaques" SOMENTE no que está no perfil.
+- Valores salariais são INTEIROS em reais por mês (ex: 8000, não "R$ 8.000").
 - Português brasileiro.
 - Responda APENAS com JSON. Sem markdown, sem texto antes ou depois.
 """

@@ -12,6 +12,7 @@ from app.api.schemas.pessoal import (
     VagaCreate,
     VagaListResponse,
     VagaResponse,
+    VagasMetricas,
     VagaUpdate,
 )
 from app.api.services.pessoal import vaga_service
@@ -34,9 +35,34 @@ def _handle(e: Exception) -> HTTPException:
 
 
 @router.get("", response_model=VagaListResponse, summary="Lista as vagas")
-async def listar(status: Optional[str] = None) -> VagaListResponse:
+async def listar(
+    status: Optional[str] = None,
+    busca: Optional[str] = None,
+    match_min: Optional[int] = None,
+    modelo: Optional[str] = None,
+    fonte: Optional[str] = None,
+    tem_rascunho: Optional[bool] = None,
+    ordenar_por: str = "match",
+) -> VagaListResponse:
     try:
-        return await vaga_service.listar_vagas(status=status)
+        return await vaga_service.listar_vagas(
+            status=status,
+            busca=busca,
+            match_min=match_min,
+            modelo=modelo,
+            fonte=fonte,
+            tem_rascunho=tem_rascunho,
+            ordenar_por=ordenar_por,
+        )
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/metricas", response_model=VagasMetricas,
+            summary="Funil e taxas de resposta/entrevista")
+async def metricas() -> VagasMetricas:
+    try:
+        return await vaga_service.metricas()
     except Exception as e:
         raise _handle(e)
 
