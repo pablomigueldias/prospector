@@ -277,6 +277,7 @@ async def listar_projetos() -> ProjetoListResponse:
                 n_propostas_concorrentes=projeto.n_propostas_concorrentes,
                 fit_score=analise.get("fit_score"),
                 risco=analise.get("risco"),
+                estimativa=analise.get("estimativa"),
                 tem_analise=projeto.analise_json is not None,
                 qtd_propostas=qtd,
                 cliente_recorrente=pago_usd > 0,
@@ -560,6 +561,55 @@ async def redigir_proposta(proposta_id: str, payload: RedigirRequest) -> Redigir
     return RedigirResponse(proposta_id=proposta_id, redacao=redacao)
 
 
+async def corrigir_proposta(
+    proposta_id: str, correcoes: list[str]
+) -> RedigirResponse:
+    """Reescreve a proposta corrigindo os pontos apontados pelo checklist."""
+    perfil = await get_perfil()
+    if perfil is None:
+        raise FreelaError("Cadastre seu Perfil Mestre antes de corrigir a proposta.")
+
+    pid = _uuid(proposta_id)
+    async with get_session() as session:
+        repo = FreelaRepository(session)
+        proposta = await repo.get_proposta(pid)
+        if proposta is None:
+            raise FreelaError("Proposta não encontrada.")
+        texto_atual = (proposta.texto_enviado or "").strip()
+        if not texto_atual:
+            raise FreelaError("Não há rascunho pra corrigir — gere a proposta antes.")
+        projeto = await repo.get_projeto(proposta.projeto_id)
+        if projeto is None:
+            raise FreelaError("Projeto da proposta não encontrado.")
+
+        _, qtd_fechadas = await repo.soma_liquido_fechado()
+        prompt = construir_prompt_redacao(
+            projeto.descricao,
+            perfil,
+            titulo=projeto.titulo,
+            analise=projeto.analise_json,
+            cold_start=qtd_fechadas == 0,
+            texto_atual=texto_atual,
+            correcoes=correcoes,
+        )
+        resposta = _chamar_llm(prompt, operacao="corrigir")
+        redacao = parse_redacao(resposta)
+        if redacao is None:
+            raise FreelaError("A IA não retornou uma correção válida. Tente de novo.")
+
+        await repo.update_proposta(
+            pid,
+            {
+                "texto_enviado": redacao.texto,
+                "projetos_destacados": redacao.projetos_destacados,
+                "habilidades_destacadas": redacao.habilidades_destacadas,
+                "prazo_proposto": redacao.prazo_sugerido or proposta.prazo_proposto,
+            },
+        )
+
+    return RedigirResponse(proposta_id=proposta_id, redacao=redacao)
+
+
 async def negociar_proposta(proposta_id: str, payload: NegociarRequest) -> NegociarResponse:
     if not payload.objecao.strip():
         raise FreelaError("Cole o que o cliente falou (a objeção).")
@@ -590,14 +640,18 @@ async def negociar_proposta(proposta_id: str, payload: NegociarRequest) -> Negoc
 
 
 # Conformidade Workana: contato/link no texto da proposta é filtrado/penalizado.
+# CUIDADO: só pega CONTATO real, não menção ao tema. Ex.: "sistema para WhatsApp"
+# é o assunto do projeto, NÃO o seu contato — não pode flagar.
 _RE_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
-_RE_URL = re.compile(r"(https?://|www\.|\b\w+\.(?:com|net|io|dev|me)\b)", re.I)
-_RE_TEL = re.compile(r"(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?\d{4,5}[-\s]?\d{4}")
-_RE_ZAP = re.compile(r"\b(whats\s?app|wpp|zap|telegram|t\.me|wa\.me)\b", re.I)
+_RE_URL = re.compile(r"(https?://\S+|\bwww\.\S+|\b[\w-]+\.(?:com|net|io|dev|me|br)\b\S*)", re.I)
+# telefone só quando tem cara de número de contato (DDD + 8/9 dígitos).
+_RE_TEL = re.compile(r"(?:\+?55[\s-]*)?\(?\d{2}\)?[\s-]*9?\d{4}[\s-]?\d{4}")
+# mensageria só por LINK explícito de contato (wa.me/t.me), não pela palavra solta.
+_RE_ZAP = re.compile(r"\b(?:wa\.me|t\.me)/\S+", re.I)
 
 
 def _scan_conformidade(texto: str) -> Optional[str]:
-    """Acha contato/link no texto da proposta (regra dura da Workana). None se limpo."""
+    """Acha CONTATO/link no texto da proposta (regra dura da Workana). None se limpo."""
     achados = []
     if _RE_EMAIL.search(texto):
         achados.append("e-mail")
@@ -605,9 +659,7 @@ def _scan_conformidade(texto: str) -> Optional[str]:
     sem_email = _RE_EMAIL.sub(" ", texto)
     if _RE_TEL.search(sem_email):
         achados.append("telefone")
-    if _RE_ZAP.search(texto):
-        achados.append("WhatsApp/Telegram")
-    if _RE_URL.search(sem_email):
+    if _RE_ZAP.search(texto) or _RE_URL.search(sem_email):
         achados.append("link externo")
     if not achados:
         return None

@@ -141,6 +141,7 @@ class ProjetoListItem(BaseModel):
     n_propostas_concorrentes: Optional[int] = None
     fit_score: Optional[int] = None       # vem do analise_json (Fase 3)
     risco: Optional[str] = None           # baixo / medio / alto (scam radar)
+    estimativa: Optional[EstimativaFreela] = None  # esforço/preço pra pré-preencher
     tem_analise: bool = False
     qtd_propostas: int = 0
     cliente_recorrente: bool = False      # cliente já me pagou (comissão menor)
@@ -264,6 +265,30 @@ class PrecificarResponse(BaseModel):
 # Analisador de projeto (Fase 3 — IA) → grava em projeto.analise_json
 # ══════════════════════════════════════════════════════════════════
 
+class EstimativaFreela(BaseModel):
+    """Esforço + preço justo de mercado (BR) pra este escopo. R$/horas/dias."""
+
+    horas_estimadas: Optional[int] = None      # horas de trabalho realistas
+    prazo_dias: Optional[int] = None           # prazo de entrega em dias
+    valor_mercado_min: Optional[int] = None    # faixa honesta de mercado (R$)
+    valor_mercado_max: Optional[int] = None
+    valor_sugerido: Optional[int] = None       # quanto cotar (R$), dado fit/concorrência
+
+    @field_validator(
+        "horas_estimadas", "prazo_dias",
+        "valor_mercado_min", "valor_mercado_max", "valor_sugerido",
+        mode="before",
+    )
+    @classmethod
+    def _so_numero(cls, v):
+        if v is None or isinstance(v, int):
+            return v
+        if isinstance(v, float):
+            return int(v)
+        digitos = "".join(c for c in str(v) if c.isdigit())
+        return int(digitos) if digitos else None
+
+
 class AnaliseFreela(BaseModel):
     fit_score: int = 0                 # 0-100: é a sua praia?
     recomendacao: Optional[str] = None  # vale / talvez / evite
@@ -274,6 +299,7 @@ class AnaliseFreela(BaseModel):
     red_flags: List[str] = Field(default_factory=list)
     sinais_cliente: List[str] = Field(default_factory=list)
     ganchos: List[str] = Field(default_factory=list)  # o que do perfil conversa
+    estimativa: Optional[EstimativaFreela] = None     # esforço + preço de mercado
 
 
 class AnalisarProjetoResponse(BaseModel):
@@ -308,6 +334,10 @@ class RedigirResponse(BaseModel):
 # ══════════════════════════════════════════════════════════════════
 # Assistente de negociação (IA) — não persiste, é conselho
 # ══════════════════════════════════════════════════════════════════
+
+class CorrigirRequest(BaseModel):
+    correcoes: List[str] = Field(default_factory=list)  # pontos do checklist a corrigir
+
 
 class NegociarRequest(BaseModel):
     objecao: str  # o que o cliente falou (ex.: "tá caro", "consegue por R$1000?")

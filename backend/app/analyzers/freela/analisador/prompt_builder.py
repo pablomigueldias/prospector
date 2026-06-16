@@ -22,7 +22,14 @@ OUTPUT_SCHEMA = """
   "stack": ["<tecnologia citada/implícita>", "..."],
   "red_flags": ["<risco: orçamento incompatível com escopo, cliente sem pagamento verificado, projeto MUITO concorrido, escopo vago, prazo irreal, pedido fora do seu núcleo>", "..."],
   "sinais_cliente": ["<sinal de qualidade do cliente: verificado, nº de projetos pagos, rating, recorrência>", "..."],
-  "ganchos": ["<algo do SEU perfil que conversa com este projeto — projeto/skill a citar>", "..."]
+  "ganchos": ["<algo do SEU perfil que conversa com este projeto — projeto/skill a citar>", "..."],
+  "estimativa": {
+    "horas_estimadas": <inteiro de horas de trabalho realistas, ou null>,
+    "prazo_dias": <inteiro de dias corridos pra entregar, ou null>,
+    "valor_mercado_min": <inteiro R$: piso honesto de mercado BR, ou null>,
+    "valor_mercado_max": <inteiro R$: teto honesto de mercado BR, ou null>,
+    "valor_sugerido": <inteiro R$: quanto COTAR dado fit e concorrência, ou null>
+  }
 }
 """
 
@@ -51,6 +58,15 @@ PERFIL MESTRE do freelancer. Produza:
 - "sinais_cliente": o que dá pra inferir da qualidade do cliente.
 - "ganchos": SOMENTE projetos/skills que ESTÃO no perfil e conversam com este
   projeto (pra depois a proposta citar). Nunca invente experiência.
+- "estimativa": estime o ESFORÇO e o PREÇO JUSTO DE MERCADO no Brasil pra este
+  escopo (contexto freelancer/Workana):
+  • "horas_estimadas": horas de trabalho realistas pro escopo descrito.
+  • "prazo_dias": prazo de entrega realista em dias corridos.
+  • "valor_mercado_min"/"max": faixa HONESTA que esse trabalho vale no mercado BR
+    — nem inflado, nem fundo de poço. Baseie no escopo, stack e senioridade.
+  • "valor_sugerido": quanto COTAR (R$), perto/levemente acima do mercado,
+    ajustando pela concorrência (muito concorrido → mais competitivo) e pelo fit.
+  Inteiros em R$. Se o escopo for vago demais pra estimar, use null nos campos.
 
 REGRAS:
 - Seja honesto no score. Inflar não ajuda — gasta proposta à toa.

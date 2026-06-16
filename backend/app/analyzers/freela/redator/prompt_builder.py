@@ -61,6 +61,10 @@ REGRAS (inegociáveis):
 - ANTI-MENTIRA: use SOMENTE experiência/projetos/skills que ESTÃO no perfil.
   Reorganize a verdade, nunca invente. Se o perfil não cobre algo que o projeto
   pede, não finja que cobre.
+- PROVA OBRIGATÓRIA: inclua SEMPRE pelo menos 1 prova concreta — um resultado
+  REAL de um projeto do perfil no formato problema → o que você fez → impacto.
+  Adjetivo ("robusto", "escalável", "experiente") NÃO é prova; resultado é.
+- PRAZO: deixe o prazo explícito no texto.
 - Não force contato fora da plataforma (a Workana penaliza).
 - NUNCA inclua no texto da proposta: e-mail, telefone, WhatsApp, ou links
   externos (GitHub, site, portfólio, LinkedIn). A Workana filtra/penaliza
@@ -81,6 +85,8 @@ def construir_prompt(
     analise: Optional[dict] = None,
     instrucoes_extra: Optional[str] = None,
     cold_start: bool = False,
+    texto_atual: Optional[str] = None,
+    correcoes: Optional[list] = None,
 ) -> str:
     cab = []
     if titulo:
@@ -102,6 +108,17 @@ def construir_prompt(
     if instrucoes_extra:
         bloco_extra = f"INSTRUÇÕES EXTRA DO FREELANCER (atenda): {instrucoes_extra}"
 
+    bloco_revisao = ""
+    if texto_atual:
+        pontos = "\n".join(f"- {c}" for c in (correcoes or [])) or "- (geral)"
+        bloco_revisao = (
+            "MODO REVISÃO: já existe um rascunho desta proposta. REESCREVA-O "
+            "corrigindo EXATAMENTE os pontos abaixo, preservando o que já está "
+            "bom. NÃO inclua contato/link no texto.\n\n"
+            f"PONTOS A CORRIGIR:\n{pontos}\n\n"
+            f"RASCUNHO ATUAL:\n{texto_atual}"
+        )
+
     bloco_projeto = "\n".join(
         cab + ["", "DESCRIÇÃO DO PROJETO (texto colado):", descricao_projeto]
     )
@@ -112,6 +129,8 @@ def construir_prompt(
     secoes += [perfil_para_texto(perfil), bloco_projeto]
     if bloco_analise:
         secoes.append(bloco_analise)
+    if bloco_revisao:
+        secoes.append(bloco_revisao)
     if bloco_extra:
         secoes.append(bloco_extra)
     secoes += ["FORMATO DE SAÍDA OBRIGATÓRIO (apenas JSON):", OUTPUT_SCHEMA.strip()]

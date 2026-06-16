@@ -13,6 +13,7 @@ from app.api.schemas.freela import (
     AnalisarProjetoResponse,
     ChecklistResponse,
     ClienteCreate,
+    CorrigirRequest,
     ClienteResponse,
     ClienteUpdate,
     ExtrairProjetoRequest,
@@ -262,6 +263,15 @@ async def negociar_proposta(proposta_id: str, body: NegociarRequest) -> Negociar
 async def checklist_proposta(proposta_id: str) -> ChecklistResponse:
     try:
         return await freela_service.avaliar_proposta(proposta_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/propostas/{proposta_id}/corrigir", response_model=RedigirResponse,
+             summary="Reescreve a proposta corrigindo os pontos do checklist")
+async def corrigir_proposta(proposta_id: str, body: CorrigirRequest) -> RedigirResponse:
+    try:
+        return await freela_service.corrigir_proposta(proposta_id, body.correcoes)
     except Exception as e:
         raise _handle(e)
 
