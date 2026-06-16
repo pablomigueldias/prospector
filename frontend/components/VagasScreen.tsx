@@ -244,6 +244,16 @@ function FiltrosBar({
           options={[['', 'Qualquer'], ...MODELOS.map((m) => [m, m] as [string, string])]}
         />
 
+        <div className="flex flex-col gap-1.5 w-[130px]">
+          <label className="text-[11px] font-medium text-ink-mute">Fonte</label>
+          <input
+            className="input"
+            placeholder="LinkedIn, Gupy…"
+            value={filtro.fonte ?? ''}
+            onChange={(e) => set('fonte', e.target.value)}
+          />
+        </div>
+
         <div className="flex flex-col gap-1.5 w-[150px]">
           <label className="text-[11px] font-medium text-ink-mute">
             Match mín{filtro.match_min != null ? `: ${filtro.match_min}%` : ''}
