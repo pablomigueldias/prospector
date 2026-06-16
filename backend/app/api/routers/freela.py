@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies.auth import require_permission
 from app.api.schemas.freela import (
     AnalisarProjetoResponse,
+    ChecklistResponse,
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
@@ -252,6 +253,15 @@ async def redigir_proposta(proposta_id: str, body: RedigirRequest) -> RedigirRes
 async def negociar_proposta(proposta_id: str, body: NegociarRequest) -> NegociarResponse:
     try:
         return await freela_service.negociar_proposta(proposta_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/propostas/{proposta_id}/checklist", response_model=ChecklistResponse,
+             summary="Gate anti-genérico: pontua o rascunho antes de enviar")
+async def checklist_proposta(proposta_id: str) -> ChecklistResponse:
+    try:
+        return await freela_service.avaliar_proposta(proposta_id)
     except Exception as e:
         raise _handle(e)
 

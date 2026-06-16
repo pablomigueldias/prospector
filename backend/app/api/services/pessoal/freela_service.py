@@ -7,6 +7,7 @@ IA) rascunha; você revisa e envia na mão, e marca o status no painel.
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -18,6 +19,10 @@ from app.analyzers.freela.analisador.prompt_builder import (
 from app.analyzers.freela.negociador.parser import parse_resposta as parse_negociacao
 from app.analyzers.freela.negociador.prompt_builder import (
     construir_prompt as construir_prompt_negociacao,
+)
+from app.analyzers.freela.checklist.parser import parse_resposta as parse_checklist
+from app.analyzers.freela.checklist.prompt_builder import (
+    construir_prompt as construir_prompt_checklist,
 )
 from app.analyzers.freela.extrator.parser import parse_resposta as parse_extracao
 from app.analyzers.freela.extrator.prompt_builder import (
@@ -31,6 +36,8 @@ from app.analyzers.llm_provider import gerar_texto
 from app.api.schemas.freela import (
     AnalisarProjetoResponse,
     AnaliseFreela,
+    ChecklistItem,
+    ChecklistResponse,
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
@@ -580,6 +587,87 @@ async def negociar_proposta(proposta_id: str, payload: NegociarRequest) -> Negoc
         raise FreelaError("A IA não retornou respostas válidas. Tente de novo.")
 
     return NegociarResponse(proposta_id=proposta_id, opcoes=opcoes)
+
+
+# Conformidade Workana: contato/link no texto da proposta é filtrado/penalizado.
+_RE_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+_RE_URL = re.compile(r"(https?://|www\.|\b\w+\.(?:com|net|io|dev|me)\b)", re.I)
+_RE_TEL = re.compile(r"(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?\d{4,5}[-\s]?\d{4}")
+_RE_ZAP = re.compile(r"\b(whats\s?app|wpp|zap|telegram|t\.me|wa\.me)\b", re.I)
+
+
+def _scan_conformidade(texto: str) -> Optional[str]:
+    """Acha contato/link no texto da proposta (regra dura da Workana). None se limpo."""
+    achados = []
+    if _RE_EMAIL.search(texto):
+        achados.append("e-mail")
+    # tira e-mails antes de procurar URL (o domínio do e-mail não é "link").
+    sem_email = _RE_EMAIL.sub(" ", texto)
+    if _RE_TEL.search(sem_email):
+        achados.append("telefone")
+    if _RE_ZAP.search(texto):
+        achados.append("WhatsApp/Telegram")
+    if _RE_URL.search(sem_email):
+        achados.append("link externo")
+    if not achados:
+        return None
+    return (
+        "A proposta contém " + ", ".join(achados) + ". A Workana filtra/penaliza "
+        "contato e link no texto antes do contrato — remova e remeta ao seu "
+        "perfil/portfólio aqui na Workana."
+    )
+
+
+def _selo(score: int) -> str:
+    if score >= 80:
+        return "pronta"
+    if score >= 50:
+        return "ajustar"
+    return "fraca"
+
+
+async def avaliar_proposta(proposta_id: str) -> ChecklistResponse:
+    """Gate anti-genérico: pontua o rascunho e aponta o que falta antes de enviar."""
+    pid = _uuid(proposta_id)
+    async with get_session() as session:
+        repo = FreelaRepository(session)
+        proposta = await repo.get_proposta(pid)
+        if proposta is None:
+            raise FreelaError("Proposta não encontrada.")
+        projeto = await repo.get_projeto(proposta.projeto_id)
+
+    texto = (proposta.texto_enviado or "").strip()
+    if not texto:
+        raise FreelaError("Rascunhe a proposta antes de conferir (texto vazio).")
+
+    prompt = construir_prompt_checklist(
+        texto,
+        descricao_projeto=projeto.descricao if projeto else None,
+        titulo=projeto.titulo if projeto else None,
+    )
+    resposta = _chamar_llm(prompt, operacao="checklist")
+    resultado = parse_checklist(resposta)
+    if resultado is None:
+        raise FreelaError("A IA não retornou uma avaliação válida. Tente de novo.")
+
+    resultado.proposta_id = proposta_id
+
+    # Conformidade Workana (determinística): contato/link no texto é penalizado.
+    alerta = _scan_conformidade(texto)
+    if alerta:
+        resultado.alerta_conformidade = alerta
+        resultado.itens.append(
+            ChecklistItem(
+                criterio="Sem contato/link externo (regra da Workana)",
+                ok=False,
+                nota="Encontrei contato ou link no texto.",
+            )
+        )
+        # Conformidade fura tudo: limita o selo enquanto não corrigir.
+        resultado.score = min(resultado.score, 49)
+
+    resultado.selo = _selo(resultado.score)
+    return resultado
 
 
 # ══════════════════════════════════════════════════════════════════

@@ -316,3 +316,21 @@ class NegociarRequest(BaseModel):
 class NegociarResponse(BaseModel):
     proposta_id: str
     opcoes: List[str]  # 2-3 respostas com estratégias diferentes
+
+
+class ChecklistItem(BaseModel):
+    criterio: str
+    ok: bool = False
+    nota: Optional[str] = None
+
+
+class ChecklistResponse(BaseModel):
+    """Gate de qualidade do rascunho: pontua e diz o que faltou antes de enviar."""
+
+    proposta_id: str
+    score: int = 0                      # 0-100
+    selo: Optional[str] = None          # "pronta" | "ajustar" | "fraca" (derivado)
+    itens: List[ChecklistItem] = Field(default_factory=list)
+    sugestoes: List[str] = Field(default_factory=list)
+    # Conformidade Workana: setado se o texto tiver e-mail/telefone/link externo.
+    alerta_conformidade: Optional[str] = None
