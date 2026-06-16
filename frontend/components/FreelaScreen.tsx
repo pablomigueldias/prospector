@@ -283,6 +283,27 @@ function PropostaModal({
     if (r) setChecklist(r);
   }
 
+  async function corrigir() {
+    if (!checklist) return;
+    const correcoes = [
+      ...checklist.itens
+        .filter((i) => !i.ok)
+        .map((i) => (i.nota ? `${i.criterio}: ${i.nota}` : i.criterio)),
+      ...checklist.sugestoes,
+      ...(checklist.alerta_conformidade
+        ? ['Remova qualquer e-mail, telefone, WhatsApp ou link do texto.']
+        : []),
+    ];
+    const r = await acoes.corrigirProposta(item.id, correcoes);
+    if (r) {
+      setTexto(r.redacao.texto);
+      setPrazo(r.redacao.prazo_sugerido ?? prazoEf);
+      setVariacoes(r.redacao.variacoes_abertura || []);
+      setChecklist(null); // limpa pra você reconferir o texto corrigido
+      void refetch();
+    }
+  }
+
   async function salvar() {
     await acoes.atualizarProposta(item.id, {
       texto_enviado: textoEf,
@@ -416,6 +437,16 @@ function PropostaModal({
                 </button>
               </div>
               {checklist && <ChecklistView c={checklist} />}
+              {checklist && checklist.selo !== 'pronta' && (
+                <button
+                  type="button"
+                  className="btn-primary text-[12px] mt-2"
+                  onClick={corrigir}
+                  disabled={acoes.loading}
+                >
+                  {acoes.loading ? 'Corrigindo…' : '🔧 Corrigir proposta com IA'}
+                </button>
+              )}
             </div>
 
             {/* Assistente de negociação */}
@@ -890,7 +921,30 @@ function ProjetoCard({
     const a = await onAnalisar(p.id);
     if (a) setAnalise(a);
     setAnalisando(false);
+    return a;
   }
+
+  // "+ Proposta": garante a estimativa (analisa se faltar) e pré-preenche o card
+  // com valor de mercado sugerido, horas e dias — você revisa e cria.
+  async function abrirProposta() {
+    if (abrir) {
+      setAbrir(false);
+      return;
+    }
+    let est = analise?.estimativa ?? p.estimativa ?? null;
+    if (!est) {
+      const a = await analisar();
+      est = a?.estimativa ?? null;
+    }
+    if (est) {
+      if (est.valor_sugerido != null && !valor) setValor(String(est.valor_sugerido));
+      if (est.horas_estimadas != null && !horas) setHoras(String(est.horas_estimadas));
+      if (est.prazo_dias != null && !prazo) setPrazo(`${est.prazo_dias} dias`);
+    }
+    setAbrir(true);
+  }
+
+  const estimativa = analise?.estimativa ?? p.estimativa ?? null;
 
   return (
     <div className="card p-4">
@@ -942,10 +996,12 @@ function ProjetoCard({
           </button>
           <button
             type="button"
-            className="btn-ghost text-[13px]"
-            onClick={() => setAbrir((v) => !v)}
+            className="btn-ghost text-[13px] disabled:opacity-40"
+            onClick={abrirProposta}
+            disabled={analisando}
+            title="Analisa o projeto e já preenche orçamento de mercado, horas e dias"
           >
-            {abrir ? 'Fechar' : '+ Proposta'}
+            {abrir ? 'Fechar' : analisando ? 'Analisando…' : '+ Proposta'}
           </button>
           <button
             type="button"
@@ -1005,7 +1061,19 @@ function ProjetoCard({
       )}
 
       {abrir && (
-        <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-2 items-end border-t border-line pt-3">
+        <div className="mt-3 border-t border-line pt-3">
+        {estimativa && (
+          <p className="text-[12px] text-ink-mute mb-2">
+            💡 Estimativa da IA
+            {estimativa.valor_mercado_min != null && estimativa.valor_mercado_max != null && (
+              <> · mercado {formatBRL(estimativa.valor_mercado_min)}–{formatBRL(estimativa.valor_mercado_max)}</>
+            )}
+            {estimativa.horas_estimadas != null && <> · ~{estimativa.horas_estimadas}h</>}
+            {estimativa.prazo_dias != null && <> · {estimativa.prazo_dias} dias</>}
+            <> — revise antes de criar.</>
+          </p>
+        )}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
           <label className="text-[12px] text-ink-soft">
             Cotar (R$)
             <input className="input mt-1" type="number" value={valor} onChange={(e) => setValor(e.target.value)} />
@@ -1042,6 +1110,7 @@ function ProjetoCard({
           >
             Criar
           </button>
+        </div>
         </div>
       )}
     </div>

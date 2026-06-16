@@ -122,6 +122,11 @@ export function useFreelaActions() {
     (id: string) => run<FreelaChecklist>(() => api.freelaPropostaChecklist(id)),
     [],
   );
+  const corrigirProposta = useCallback(
+    (id: string, correcoes: string[]) =>
+      run<FreelaRedigirResponse>(() => api.freelaPropostaCorrigir(id, correcoes)),
+    [],
+  );
   const criarCliente = useCallback(
     (body: FreelaClienteCreate) => run<FreelaCliente>(() => api.freelaClienteCriar(body)),
     [],
@@ -146,6 +151,7 @@ export function useFreelaActions() {
     redigirProposta,
     negociarProposta,
     avaliarProposta,
+    corrigirProposta,
     criarCliente,
     precificar,
   };

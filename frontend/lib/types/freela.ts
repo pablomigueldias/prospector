@@ -99,6 +99,7 @@ export interface FreelaProjetoListItem {
   n_propostas_concorrentes?: number | null;
   fit_score?: number | null;
   risco?: string | null;
+  estimativa?: FreelaEstimativa | null;
   tem_analise: boolean;
   qtd_propostas: number;
   cliente_recorrente: boolean;
@@ -196,6 +197,14 @@ export interface FreelaPrecificarResponse {
   alerta?: string | null;
 }
 
+export interface FreelaEstimativa {
+  horas_estimadas?: number | null;
+  prazo_dias?: number | null;
+  valor_mercado_min?: number | null;
+  valor_mercado_max?: number | null;
+  valor_sugerido?: number | null;
+}
+
 export interface FreelaAnalise {
   fit_score: number;
   recomendacao?: string | null; // vale | talvez | evite
@@ -206,6 +215,7 @@ export interface FreelaAnalise {
   red_flags: string[];
   sinais_cliente: string[];
   ganchos: string[];
+  estimativa?: FreelaEstimativa | null;
 }
 
 export interface FreelaAnalisarResponse {

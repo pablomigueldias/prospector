@@ -106,6 +106,13 @@ export const freelaApi = {
       timeoutMs: 60_000,
     });
   },
+  freelaPropostaCorrigir(id: string, correcoes: string[]): Promise<FreelaRedigirResponse> {
+    return request<FreelaRedigirResponse>(`${BASE}/propostas/${encodeURIComponent(id)}/corrigir`, {
+      method: 'POST',
+      body: { correcoes },
+      timeoutMs: 90_000,
+    });
+  },
   freelaPropostaNegociar(id: string, objecao: string): Promise<FreelaNegociarResponse> {
     return request<FreelaNegociarResponse>(`${BASE}/propostas/${encodeURIComponent(id)}/negociar`, {
       method: 'POST',
