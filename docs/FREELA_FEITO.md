@@ -3,7 +3,7 @@
 Registro do que **já foi entregue** no agente `freela`, por fase (espelha o
 plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`.
 
-Última atualização: **2026-06-14**.
+Última atualização: **2026-06-15** (cold start + conformidade Workana).
 
 > O agente é um **copiloto**: a IA nunca toca na Workana nem envia proposta.
 > Ele organiza (CRM), precifica e (nas fases de IA) rascunha — você revisa e
@@ -151,6 +151,36 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
 - ✅ **Pedir avaliação 5★ ao fechar (§10)** — quando a proposta está "fechada",
   o modal mostra uma mensagem pronta de pedido de avaliação (puro front) com
   botão copiar. A 1ª avaliação é a que mais destrava projetos futuros.
+
+## 🧊 Cold start + conformidade Workana (sessão 2026-06-15)
+
+- ✅ **Conformidade Workana auditada e endurecida** — confirmado que o agente
+  nunca loga/scrapeia/envia (é copiloto) e que redator, negociador e o job de
+  follow-up proíbem levar o cliente pra fora da plataforma; o analisador trata
+  "pede contato fora" como red flag de golpe. **Endurecimento:** redator e
+  negociador agora proíbem EXPLICITAMENTE colar e-mail/telefone/WhatsApp/links
+  externos no texto que vai pro cliente (a Workana filtra/penaliza). Prova vira
+  descrição (problema→solução→impacto) + "portfólio aqui na Workana".
+- ✅ **Modo cold start no redator (§0 A 🔴)** — sem nenhuma proposta `fechada`
+  (`repo.soma_liquido_fechado()` → qtd 0), o redator injeta um bloco que
+  compensa a falta de nota: prova por descrição, redução de risco pro cliente
+  (entrega em etapas / "aprova e paga ao ver funcionando") e tom confiante sem
+  dizer "iniciante". Bloco em `analyzers/freela/redator/prompt_builder.py`.
+- ✅ **Auto-preencher projeto ao colar (§2)** — novo extrator
+  `analyzers/freela/extrator/` + `POST /api/pessoal/freela/projetos/extrair`
+  (não salva). Lê o texto colado da Workana e devolve título, orçamento mín/máx
+  e nº de propostas (validator tolera "R$ 1.500"/"64 propostas"). No form, botão
+  **"✨ Auto-preencher do texto"** preenche os campos pra você revisar e salvar.
+- ✅ **Painel adaptativo pro cold start (§0 C 🔴)** — com 0 fechadas, os cards
+  de "taxa de fechamento / líquido fechado" dão lugar a **Em conversa** e
+  **Tempo até resposta**, e o forecast de fechado some (irrelevante sem cliente).
+  Ao fechar a 1ª, os cards financeiros voltam sozinhos.
+- ⛔ **Limite/contador de propostas DISPENSADO** — Pablo assinou o **Workana
+  Prime**; sem limite de propostas, esses itens do backlog saíram.
+
+> **Verificado:** app importa e rota `/projetos/extrair` registrada; coerção do
+> extrator testada ("R$ 1.500"→1500, "64 propostas"→64); `cold_start` liga/
+> desliga o bloco do redator; `tsc --noEmit` e `npm run build` verdes.
 
 ---
 

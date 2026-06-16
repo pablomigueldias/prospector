@@ -31,14 +31,12 @@ abaixo ataca isso — ou ajudando a *escolher onde gastar a proposta escassa*, o
 
 ### A) Escrever a proposta que vence sem reputação
 
-- [ ] 🔴 **Modo "cold start" no redator.** O redator deve, enquanto você tem 0
-  avaliações, **compensar a falta de nota**: (1) puxar prova EXTERNA do perfil —
-  **link do GitHub, portfólio e do projeto no ar** (você já tem isso no
-  `Perfil-Freelancer.md`); (2) oferecer **redução de risco pro cliente**
-  (entrega em etapas/marcos, "só aprova e paga ao ver funcionando", mini-escopo
-  pago de teste); (3) tom confiante sem mencionar que é "iniciante". É a maior
-  alavanca da fase. *(Hoje o redator ancora no perfil, mas não trata o cold
-  start explicitamente nem injeta os links.)*
+- [x] ✅ 🔴 **Modo "cold start" no redator** — FEITO 2026-06-15. Quando há 0
+  propostas fechadas, o redator entra em modo cold start: (1) prova por
+  DESCRIÇÃO (problema→solução→impacto) e remete ao "portfólio aqui na Workana"
+  — **sem colar link externo** (a Workana penaliza links na proposta); (2)
+  oferece redução de risco (entrega em etapas, "aprova e paga ao ver
+  funcionando"); (3) tom confiante, nunca diz "iniciante". Ver FREELA_FEITO.
 - [ ] 🔴 **Checklist anti-genérico antes de enviar (gate de qualidade).** Um
   passo de IA que, no rascunho pronto, confere e pontua: cita um **detalhe real**
   do projeto? propõe um **plano em passos**? tem **prazo**? tem **prova/link**?
@@ -62,18 +60,15 @@ abaixo ataca isso — ou ajudando a *escolher onde gastar a proposta escassa*, o
   verificado**, **poucas propostas**, **dentro do seu núcleo** e **orçamento
   saudável**. Estratégia clássica: aceitar 1–2 menores pra destravar reputação —
   a ferramenta aponta quais.
-- [ ] 🟡 **Contador de propostas do período (recurso escasso).** O plano grátis
-  dá poucas propostas/período. Registrar quantas você mandou e quantas restam,
-  e alertar — pra não gastar bala em projeto de fit baixo. (cf. §3 "limite de
-  propostas")
+- [x] ⛔ **Contador de propostas do período** — DISPENSADO 2026-06-15: o Pablo
+  assinou o **Workana Prime** (sem limite de propostas). Não se aplica.
 
 ### C) Medir o que FAZ o cliente responder (aprender rápido)
 
-- [ ] 🔴 **Métricas da fase = TAXA DE RESPOSTA, não fechamento.** O painel hoje
-  destaca "líquido fechado / forecast" — irrelevante com 0 cliente. Trocar o
-  foco (ou um modo "cold start") pra: **propostas enviadas**, **taxa de
-  resposta**, **tempo até resposta** e **quantas viraram conversa**. É o que diz
-  se você está melhorando AGORA.
+- [x] ✅ 🔴 **Métricas da fase = TAXA DE RESPOSTA** — FEITO 2026-06-15: o painel
+  é adaptativo. Com 0 fechadas, os 2 últimos cards viram **Em conversa**
+  (respondidas) e **Tempo até resposta**, e o forecast de fechado some
+  (irrelevante com 0 cliente). Quando fechar a 1ª, os cards financeiros voltam.
 - [ ] 🟡 **Resposta por ângulo de abertura (A/B real).** Você já gera 2–3
   aberturas (A/B). Registrar **qual ângulo você usou** em cada proposta e cruzar
   com quem **respondeu** → descobre que tipo de abertura converte (direta / com
@@ -128,16 +123,17 @@ abaixo ataca isso — ou ajudando a *escolher onde gastar a proposta escassa*, o
   anti-mentira), modal da proposta na tela com editar/copiar. Ver FREELA_FEITO.
 - [x] ✅ **Seletor (Fase 5)** — FEITO: escolhe até 3 projetos + 5 habilidades do
   perfil (sai junto do redator).
-- [ ] 🟢 **Auto-preencher o Projeto ao colar** — o analisador já extrai
-  orçamento/habilidades/nº de propostas do texto; gravar direto nos campos
-  (hoje você digita à mão).
+- [x] ✅ **Auto-preencher o Projeto ao colar** — FEITO 2026-06-15: extrator
+  dedicado (`POST /projetos/extrair`) lê o texto colado e pré-preenche título,
+  orçamento mín/máx e nº de propostas; botão "✨ Auto-preencher do texto" no
+  form. Ver FREELA_FEITO.
 
 ## 3. CRM / regras de negócio (refino do que já existe)
 
 - [x] ✅ **Atualizar `ja_me_pagou_usd` ao fechar** — FEITO 2026-06-14 (ver §9 e
   FREELA_FEITO).
-- [ ] 🟡 **Limite de propostas do plano grátis** — registrar quantas restam no
-  período e avisar; é o recurso escasso que justifica o priorizador.
+- [x] ⛔ **Limite de propostas do plano grátis** — DISPENSADO 2026-06-15:
+  Workana Prime ativo, sem limite. Não se aplica.
 - [ ] 🟢 **Motivo de perda estruturado** — enum (preço/escopo/sumiu/escolheu
   outro) além do texto livre, pra depois cruzar "por que perco".
 - [ ] 🟢 **Reabrir/desfazer status** — hoje dá pra voltar status (sem trava);
