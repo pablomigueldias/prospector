@@ -41,6 +41,7 @@ from app.api.schemas.freela import (
     ClienteCreate,
     ClienteResponse,
     ClienteUpdate,
+    EstimativaFreela,
     ExtrairProjetoResponse,
     NegociarRequest,
     NegociarResponse,
@@ -62,6 +63,7 @@ from app.api.schemas.freela import (
     PropostaResponse,
     PropostaStatusUpdate,
     PropostaUpdate,
+    VereditoPreco,
 )
 from app.db.models.pessoal.freela.cliente import Cliente
 from app.db.models.pessoal.freela.plataforma import Plataforma
@@ -277,6 +279,8 @@ async def listar_projetos() -> ProjetoListResponse:
                 n_propostas_concorrentes=projeto.n_propostas_concorrentes,
                 fit_score=analise.get("fit_score"),
                 risco=analise.get("risco"),
+                quadrante=analise.get("quadrante"),
+                preco_status=(analise.get("veredito_preco") or {}).get("status"),
                 estimativa=analise.get("estimativa"),
                 tem_analise=projeto.analise_json is not None,
                 qtd_propostas=qtd,
@@ -348,6 +352,73 @@ def _sinais_cliente_texto(cliente: Optional[Cliente]) -> Optional[str]:
     return "; ".join(partes)
 
 
+# Limiares do quadrante dificuldade × esforço.
+_HORAS_LONGO = 40      # >= isto conta como projeto "longo"
+_HORAS_QUICK = 16      # <= isto (e fácil) conta como "quick win"
+
+
+def _quadrante(
+    complexidade: Optional[str], clareza: Optional[str], horas: Optional[int]
+) -> str:
+    """Cruza dificuldade (complexidade) × esforço (horas) num rótulo acionável.
+
+    escopo_vago vence tudo (risco de scope creep). Senão: alta+longo =
+    dificil_longo; fácil+curto = quick_win (bom pra cravar reputação no cold
+    start); o resto = padrao.
+    """
+    if clareza == "vago":
+        return "escopo_vago"
+    longo = bool(horas and horas >= _HORAS_LONGO)
+    if complexidade == "alta" and longo:
+        return "dificil_longo"
+    if complexidade in ("trivial", "media") and horas and horas <= _HORAS_QUICK:
+        return "quick_win"
+    return "padrao"
+
+
+def _veredito_preco(
+    projeto: Projeto, estimativa: Optional["EstimativaFreela"]
+) -> VereditoPreco:
+    """Cruza o orçamento do cliente com a faixa de mercado da IA (determinístico).
+
+    Responde 'o valor está justo?' sem deixar a IA inventar — usa os números
+    reais do projeto.
+    """
+    orc_min = float(projeto.faixa_orcamento_min) if projeto.faixa_orcamento_min is not None else None
+    orc_max = float(projeto.faixa_orcamento_max) if projeto.faixa_orcamento_max is not None else None
+    vals = [v for v in (orc_min, orc_max) if v is not None]
+    if not vals:
+        return VereditoPreco(
+            status="sem_orcamento",
+            gap_texto="Cliente não informou orçamento — pergunte antes de cotar.",
+        )
+    orc_mid = sum(vals) / len(vals)
+
+    rh = None
+    if estimativa and estimativa.horas_estimadas:
+        rh = _r2(orc_mid / estimativa.horas_estimadas)
+
+    merc_min = estimativa.valor_mercado_min if estimativa else None
+    merc_max = estimativa.valor_mercado_max if estimativa else None
+    if merc_min is None or merc_max is None:
+        return VereditoPreco(
+            status=None,
+            gap_texto="Sem faixa de mercado pra comparar (escopo vago demais).",
+            rh_orcamento=rh,
+        )
+
+    if orc_mid < merc_min:
+        status = "subcotado"
+    elif orc_mid > merc_max:
+        status = "acima"
+    else:
+        status = "justo"
+
+    rotulo = {"subcotado": "subcotado", "justo": "dentro do mercado", "acima": "acima do mercado"}[status]
+    gap = f"Cliente ~R$ {orc_mid:.0f}; mercado R$ {merc_min:.0f}–{merc_max:.0f} → {rotulo}."
+    return VereditoPreco(status=status, gap_texto=gap, rh_orcamento=rh)
+
+
 async def analisar_projeto(projeto_id: str) -> AnalisarProjetoResponse:
     perfil = await get_perfil()
     if perfil is None:
@@ -388,6 +459,15 @@ async def analisar_projeto(projeto_id: str) -> AnalisarProjetoResponse:
         e = analise.estimativa
         if e and e.valor_sugerido is None and e.valor_mercado_min and e.valor_mercado_max:
             e.valor_sugerido = round((e.valor_mercado_min + e.valor_mercado_max) / 2)
+
+        # Pós-processamento determinístico (não confia na IA pra cruzar números):
+        # quadrante dificuldade × esforço e veredito de preço (orçamento × mercado).
+        analise.quadrante = _quadrante(
+            analise.complexidade_tecnica,
+            analise.clareza_escopo,
+            e.horas_estimadas if e else None,
+        )
+        analise.veredito_preco = _veredito_preco(projeto, e)
 
         await repo.salvar_analise_projeto(pid, analise.model_dump(mode="json"))
 

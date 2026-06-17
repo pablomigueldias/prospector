@@ -896,6 +896,38 @@ const RECOMENDACAO_COR: Record<string, string> = {
   evite: 'bg-red-50 text-red-700 border-red-200',
 };
 
+// Quadrante dificuldade × esforço (vem do analise_json, calculado no backend).
+const QUADRANTE_META: Record<string, { label: string; cls: string; title: string }> = {
+  quick_win: {
+    label: '⚡ quick win',
+    cls: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    title: 'Rápido e fácil — ótimo pra cravar reputação no começo',
+  },
+  dificil_longo: {
+    label: '🏔️ difícil & longo',
+    cls: 'bg-violet-50 text-violet-700 border-violet-200',
+    title: 'Técnico e demorado — ticket alto, mais risco; cote com folga',
+  },
+  escopo_vago: {
+    label: '⚠️ escopo vago',
+    cls: 'bg-amber-50 text-amber-800 border-amber-200',
+    title: 'Cliente descreveu pouco — risco de scope creep; pergunte antes de cotar',
+  },
+  padrao: {
+    label: '◑ padrão',
+    cls: 'bg-bg-alt text-ink-soft border-line',
+    title: 'Dificuldade/esforço medianos',
+  },
+};
+
+// Veredito de preço (orçamento do cliente × mercado, determinístico no backend).
+const PRECO_META: Record<string, { label: string; cls: string }> = {
+  subcotado: { label: '🔴 subcotado', cls: 'bg-red-50 text-red-700 border-red-200' },
+  justo: { label: '🟢 preço justo', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  acima: { label: '💎 paga acima', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+  sem_orcamento: { label: '❔ sem orçamento', cls: 'bg-bg-alt text-ink-soft border-line' },
+};
+
 function ProjetoCard({
   p,
   onCriarProposta,
@@ -998,6 +1030,22 @@ function ProjetoCard({
               ⚠️ risco {p.risco}
             </span>
           )}
+          {p.quadrante && QUADRANTE_META[p.quadrante] && (
+            <span
+              className={`text-[12px] font-medium px-2 py-0.5 rounded border ${QUADRANTE_META[p.quadrante].cls}`}
+              title={QUADRANTE_META[p.quadrante].title}
+            >
+              {QUADRANTE_META[p.quadrante].label}
+            </span>
+          )}
+          {p.preco_status && p.preco_status !== 'sem_orcamento' && PRECO_META[p.preco_status] && (
+            <span
+              className={`text-[12px] font-medium px-2 py-0.5 rounded border ${PRECO_META[p.preco_status].cls}`}
+              title="Orçamento do cliente vs faixa de mercado"
+            >
+              {PRECO_META[p.preco_status].label}
+            </span>
+          )}
           {p.tem_analise && p.fit_score != null ? (
             <span className="text-[12px] font-medium px-2 py-0.5 rounded bg-brand-soft text-brand-ink">
               fit {p.fit_score}
@@ -1052,8 +1100,31 @@ function ProjetoCard({
                 ⚠️ risco {analise.risco}
               </span>
             )}
+            {analise.quadrante && QUADRANTE_META[analise.quadrante] && (
+              <span
+                className={`text-[12px] font-medium px-2 py-0.5 rounded border ${QUADRANTE_META[analise.quadrante].cls}`}
+                title={QUADRANTE_META[analise.quadrante].title}
+              >
+                {QUADRANTE_META[analise.quadrante].label}
+              </span>
+            )}
+            {analise.veredito_preco?.status && PRECO_META[analise.veredito_preco.status] && (
+              <span
+                className={`text-[12px] font-medium px-2 py-0.5 rounded border ${PRECO_META[analise.veredito_preco.status].cls}`}
+              >
+                {PRECO_META[analise.veredito_preco.status].label}
+              </span>
+            )}
           </div>
           {analise.veredito && <p className="text-ink-soft m-0 mb-2">{analise.veredito}</p>}
+          {analise.veredito_preco?.gap_texto && (
+            <p className="text-[12px] text-ink-soft m-0 mb-2">
+              💰 {analise.veredito_preco.gap_texto}
+              {analise.veredito_preco.rh_orcamento != null && (
+                <> · orçamento ≈ <strong>{formatBRL(analise.veredito_preco.rh_orcamento)}/h</strong></>
+              )}
+            </p>
+          )}
           {analise.red_flags.length > 0 && (
             <div className="mb-1.5">
               <span className="text-[12px] font-medium text-red-600">Red flags:</span>

@@ -17,6 +17,8 @@ OUTPUT_SCHEMA = """
   "fit_score": <inteiro 0-100: quão "a sua praia" é este projeto>,
   "recomendacao": "<vale | talvez | evite>",
   "risco": "<baixo | medio | alto — risco de golpe/dor de cabeça: alto se cliente sem pagamento verificado + pede contato fora + oferta boa demais + escopo vago>",
+  "complexidade_tecnica": "<trivial | media | alta | incerta — quão DIFÍCIL é tecnicamente (não confundir com tempo): trivial=CRUD/landing, alta=arquitetura/integrações complexas/IA, incerta=não dá pra saber pelo texto>",
+  "clareza_escopo": "<claro | parcial | vago — o cliente descreveu o que quer a ponto de cotar com segurança? vago = risco de scope creep>",
   "veredito": "<1 frase honesta: vale gastar uma proposta aqui? por quê?>",
   "requisitos": ["<o que o projeto realmente pede>", "..."],
   "stack": ["<tecnologia citada/implícita>", "..."],
@@ -50,6 +52,11 @@ PERFIL MESTRE do freelancer. Produza:
   pagamento verificado, pedido de contato/pagamento fora da plataforma, oferta
   "boa demais", escopo vago demais pra cotar); "medio" se um desses; "baixo" se
   o cliente parece sólido.
+- "complexidade_tecnica": o quão DIFÍCIL tecnicamente — separe de tempo. Um CRUD
+  grande pode ser "trivial" e demorado; uma integração de pagamento pode ser
+  "alta" e rápida. "incerta" quando o texto não deixa claro.
+- "clareza_escopo": "claro" se dá pra cotar com segurança, "parcial" se faltam
+  detalhes que mudam o preço, "vago" se é genérico demais (risco de scope creep).
 - "veredito": uma frase direta pra decidir.
 - "requisitos" e "stack": o que o projeto pede de fato.
 - "red_flags": seja CÉTICO. Sinalize orçamento incompatível com o escopo,

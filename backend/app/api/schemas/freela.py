@@ -141,6 +141,8 @@ class ProjetoListItem(BaseModel):
     n_propostas_concorrentes: Optional[int] = None
     fit_score: Optional[int] = None       # vem do analise_json (Fase 3)
     risco: Optional[str] = None           # baixo / medio / alto (scam radar)
+    quadrante: Optional[str] = None       # quick_win | dificil_longo | escopo_vago | padrao
+    preco_status: Optional[str] = None    # subcotado | justo | acima | sem_orcamento
     estimativa: Optional[EstimativaFreela] = None  # esforço/preço pra pré-preencher
     tem_analise: bool = False
     qtd_propostas: int = 0
@@ -289,11 +291,25 @@ class EstimativaFreela(BaseModel):
         return int(digitos) if digitos else None
 
 
+class VereditoPreco(BaseModel):
+    """Cruzamento determinístico orçamento do cliente × mercado (calculado no
+    service, não pela IA). Responde 'o valor está justo?'."""
+
+    status: Optional[str] = None       # subcotado | justo | acima | sem_orcamento
+    gap_texto: Optional[str] = None    # frase legível ("cliente R$800; mercado R$1.5-2.5k → subcotado")
+    rh_orcamento: Optional[float] = None  # R$/hora efetivo do orçamento do cliente
+    rh_vs_alvo: Optional[bool] = None     # True se rh_orcamento abaixo do valor-hora alvo
+
+
 class AnaliseFreela(BaseModel):
     fit_score: int = 0                 # 0-100: é a sua praia?
     recomendacao: Optional[str] = None  # vale / talvez / evite
     risco: Optional[str] = None         # baixo / medio / alto (scam radar)
+    complexidade_tecnica: Optional[str] = None  # trivial | media | alta | incerta
+    clareza_escopo: Optional[str] = None        # claro | parcial | vago
+    quadrante: Optional[str] = None             # derivado: quick_win | dificil_longo | escopo_vago | padrao
     veredito: Optional[str] = None      # 1 frase: gasto proposta aqui?
+    veredito_preco: Optional[VereditoPreco] = None  # calculado no service (orçamento × mercado)
     requisitos: List[str] = Field(default_factory=list)
     stack: List[str] = Field(default_factory=list)
     red_flags: List[str] = Field(default_factory=list)

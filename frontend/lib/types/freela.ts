@@ -99,6 +99,8 @@ export interface FreelaProjetoListItem {
   n_propostas_concorrentes?: number | null;
   fit_score?: number | null;
   risco?: string | null;
+  quadrante?: string | null; // quick_win | dificil_longo | escopo_vago | padrao
+  preco_status?: string | null; // subcotado | justo | acima | sem_orcamento
   estimativa?: FreelaEstimativa | null;
   tem_analise: boolean;
   qtd_propostas: number;
@@ -205,11 +207,22 @@ export interface FreelaEstimativa {
   valor_sugerido?: number | null;
 }
 
+export interface FreelaVeredictoPreco {
+  status?: string | null; // subcotado | justo | acima | sem_orcamento
+  gap_texto?: string | null;
+  rh_orcamento?: number | null;
+  rh_vs_alvo?: boolean | null;
+}
+
 export interface FreelaAnalise {
   fit_score: number;
   recomendacao?: string | null; // vale | talvez | evite
   risco?: string | null; // baixo | medio | alto
+  complexidade_tecnica?: string | null; // trivial | media | alta | incerta
+  clareza_escopo?: string | null; // claro | parcial | vago
+  quadrante?: string | null; // quick_win | dificil_longo | escopo_vago | padrao
   veredito?: string | null;
+  veredito_preco?: FreelaVeredictoPreco | null;
   requisitos: string[];
   stack: string[];
   red_flags: string[];
