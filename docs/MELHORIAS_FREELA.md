@@ -75,19 +75,16 @@ o destino; §0 é o primeiro passo pra lá.
 > Mesmo dado, **muito mais acionável**: a tela tem que responder *"é difícil? é
 > rápido? o preço tá justo? o que vai dar trabalho?"* sem o Pablo reinterpretar.
 
-- [ ] 🔴 **Dificuldade × Esforço explícitos (quadrante).** Hoje "difícil" e
-  "demorado" estão fundidos no `horas_estimadas`. Separar em campos próprios:
-  `complexidade_tecnica` (trivial / média / alta / incerta) e `clareza_escopo`
-  (claro / parcial / vago). Cruzar num **quadrante**: *Rápido & fácil* (quick win,
-  ótimo p/ reputação no cold start), *Difícil & longo* (ticket alto, mais risco),
-  *Vago* (perigo de scope creep → cotar com folga ou perguntar antes). Resolve
-  direto o *"é difícil ou rápido?"*.
-- [ ] 🔴 **Veredito de PREÇO — "o valor está justo?"** Já temos `valor_mercado_min/
-  max` e `faixa_orcamento_min/max`. Falta o **cruzamento explícito**: selo
-  `subcotado / justo / acima do mercado` + o **gap** ("o cliente ofereceu R$800,
-  o mercado paga R$1.500–2.500 → subcotado, evite ou renegocie") + o **R$/hora
-  efetivo** do orçamento dele (valor ÷ horas estimadas) comparado ao seu
-  `valor_hora_real`. É o "analisar se o valor está justo no mercado" pedido.
+- [x] ✅ 🔴 **Dificuldade × Esforço explícitos (quadrante).** FEITO 2026-06-16:
+  o analisador devolve `complexidade_tecnica` (trivial/média/alta/incerta) e
+  `clareza_escopo` (claro/parcial/vago); o backend deriva o **quadrante**
+  (`quick_win` / `dificil_longo` / `escopo_vago` / `padrao`) e a tela mostra o
+  selo na fila e na análise. Resolve o *"é difícil ou rápido?"*. Ver FREELA_FEITO.
+- [x] ✅ 🔴 **Veredito de PREÇO — "o valor está justo?"** FEITO 2026-06-16:
+  cálculo **determinístico** no service (não confia na IA pra cruzar números) —
+  orçamento do cliente × faixa de mercado → selo `subcotado / justo / acima` +
+  `gap_texto` ("cliente ~R$800; mercado R$1.5–2.5k → subcotado") + **R$/h efetivo**
+  do orçamento. Selo na fila e linha 💰 na análise. Ver FREELA_FEITO.
 - [ ] 🔴 **Breakdown do escopo em tarefas + incertezas.** A IA quebra o projeto
   nas **entregas reais** (ex.: "auth, CRUD produtos, checkout, deploy") com horas
   por bloco — aí o "20h" deixa de ser número mágico. E lista **perguntas a fazer
@@ -129,25 +126,21 @@ o destino; §0 é o primeiro passo pra lá.
 > e usar a meta pra **priorizar** (já existe um forecast simples no painel §7 —
 > isto o evolui pra um motor de estratégia).
 
-- [ ] 🔴 **Matemática reversa da meta.** De R$10k líq/mês → **ticket médio alvo**,
-  **nº de projetos/mês**, e **propostas/semana necessárias** dado sua taxa de
-  resposta/fechamento. Diagnóstico do gargalo: *"no seu ritmo você chega em R$X;
-  o que falta é **volume / ticket / conversão** (escolhe um)."* Sem isso, "10k" é
-  só um número na parede.
-- [ ] 🔴 **Valor-hora alvo vs real.** `10.000 ÷ horas disponíveis/mês` = o **R$/h
-  que você PRECISA** cobrar pra bater a meta. Cruzar com o `valor_hora_real` que o
-  calibrador §9 já calcula → conclusão dura: *"por volume não fecha; pra bater 10k
-  você precisa subir ticket / mirar nicho / pegar gringo."* Evita o erro clássico
-  de tentar bater meta alta com projetos baratos.
-- [ ] 🟡 **Estratégia por FASE (o mix muda).** A meta e a tática evoluem:
-  **cold start** (mês 1–2: aceitar 1–2 menores p/ reputação, ticket menor ok, alvo
-  = avaliações) → **crescimento** (subir ticket, mirar **gringo/USD** que paga
-  mais, caçar **recorrente**). O agente diz em que fase você está e qual o mix do
-  mês. R$10k cheio é meta da fase de crescimento, não do mês 1.
-- [ ] 🟡 **Painel da meta com "plano da semana".** Evoluir o forecast §7: além de
-  "faltam R$X", mostrar o **ritmo necessário** ("mande N propostas no seu núcleo
-  esta semana, mire ticket ~R$Y") e o **progresso real vs ritmo** (no caminho /
-  atrás / na frente). Vira a tela que o Pablo abre todo dia.
+- [x] ✅ 🔴 **Matemática reversa da meta.** FEITO 2026-06-16: endpoint
+  `POST /freela/meta/plano` (reusa as métricas reais) → **valor-hora alvo**,
+  **projetos/mês**, **propostas/semana** e **diagnóstico de gargalo**
+  (`ticket / conversao / volume / no_caminho / sem_dados`). Testado em
+  `tests/test_freela_plano_meta.py`. Ver FREELA_FEITO.
+- [x] ✅ 🔴 **Valor-hora alvo vs real.** FEITO 2026-06-16: o painel mostra
+  `valor_hora_alvo` (meta ÷ horas faturáveis) vs `valor_hora_real`, pinta de
+  vermelho quando abaixo, e o gargalo `ticket` cospe a conclusão dura *"R$/h × horas
+  não fecha — suba ticket, não volume"*. Ver FREELA_FEITO.
+- [x] ✅ 🟡 **Estratégia por FASE (o mix muda).** FEITO 2026-06-16: rampa
+  **F1–F4** (`_RAMPA_META`), fase escolhida pela reputação (nº de fechadas); o
+  painel mostra o badge da fase + meta do degrau + foco. Ver FREELA_FEITO.
+- [~] 🟡 **Painel da meta com "plano da semana".** PARCIAL 2026-06-16: já mostra
+  o **ritmo necessário** (propostas/semana + projetos/mês + ticket). Falta o
+  **progresso real vs ritmo** (no caminho / atrás / na frente) no mês corrente.
 
 ## V.4 💡 O que você talvez não esteja vendo (alavancas de eficiência)
 
@@ -173,10 +166,18 @@ o destino; §0 é o primeiro passo pra lá.
 
 > **Resumo da direção:** §V.1 mata a "análise vaga" (difícil/rápido + preço justo +
 > breakdown), §V.2 responde *"é o momento pra mim?"*, §V.3 amarra tudo na meta de
-> R$10k, §V.4 são as alavancas. Próximo passo sugerido: o Pablo responde os 3
-> **inputs do motor** (acima) e marca 2–3 itens 🔴 — começo por **V.1 (preço justo
-> + quadrante)** e a **matemática reversa da meta (V.3)**, que dão o maior salto de
-> utilidade com pouco código novo.
+> R$10k, §V.4 são as alavancas.
+>
+> **✅ Entregue em 2026-06-16 (1ª leva):** o **par de maior impacto** — V.1
+> (quadrante dificuldade×esforço + veredito de preço) e V.3 (motor da meta:
+> matemática reversa, valor-hora alvo, propostas/semana, gargalo, rampa F1–F4).
+> Ver `docs/FREELA_FEITO.md`.
+>
+> **Próximos passos sugeridos (em ordem de retorno):** (1) **V.1 breakdown de
+> tarefas + extrair-toda-info do cliente** (completa a "análise profunda"); (2)
+> **V.2 timing pessoal + capacidade/agenda** (o *"é o momento pra mim?"* depende
+> de saber quantas horas você já comprometeu); (3) **V.3 progresso real vs ritmo**
+> no mês corrente. Marque o que quer e eu sigo.
 
 ---
 

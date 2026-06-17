@@ -3,7 +3,7 @@
 Registro do que **já foi entregue** no agente `freela`, por fase (espelha o
 plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`.
 
-Última atualização: **2026-06-15** (cold start + conformidade Workana).
+Última atualização: **2026-06-16** (§V 1ª leva: análise profunda + motor da meta).
 
 > O agente é um **copiloto**: a IA nunca toca na Workana nem envia proposta.
 > Ele organiza (CRM), precifica e (nas fases de IA) rascunha — você revisa e
@@ -206,6 +206,41 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
 > **Verificado:** app importa e rota `/projetos/extrair` registrada; coerção do
 > extrator testada ("R$ 1.500"→1500, "64 propostas"→64); `cold_start` liga/
 > desliga o bloco do redator; `tsc --noEmit` e `npm run build` verdes.
+
+## §V (1ª leva) — Análise profunda + motor da meta (R$10k)
+
+> Nova direção do `MELHORIAS_FREELA.md` §V: a análise estava "vaga" e não havia
+> nada que amarrasse o trabalho à meta de renda. Esta leva entrega o par de maior
+> impacto. **Sem migração** (V.1 mora no `analise_json` JSONB; V.3 usa localStorage
+> + constantes).
+
+- ✅ **Quadrante dificuldade × esforço (V.1)** — 2026-06-16. O analisador passou a
+  devolver `complexidade_tecnica` (trivial/média/alta/incerta) e `clareza_escopo`
+  (claro/parcial/vago); o service deriva `quadrante` (`quick_win` / `dificil_longo`
+  / `escopo_vago` / `padrao`) com limiares (`_HORAS_LONGO=40`, `_HORAS_QUICK=16`).
+  Selo na fila (`ProjetoCard`) e na análise. Responde *"é difícil ou rápido?"*.
+- ✅ **Veredito de preço determinístico (V.1)** — 2026-06-16. `_veredito_preco`
+  cruza o orçamento do cliente (`faixa_orcamento_min/max`) com a faixa de mercado
+  da IA (`valor_mercado_min/max`) → `subcotado / justo / acima / sem_orcamento` +
+  `gap_texto` + `rh_orcamento` (R$/h efetivo). **Calculado no código, não pela IA**
+  (não inventa números). Schema `VereditoPreco`; selo na fila + linha 💰 na análise.
+- ✅ **Motor da meta — matemática reversa (V.3)** — 2026-06-16. `POST
+  /freela/meta/plano` (`PlanoMetaRequest{meta_liquida, horas_dia, dias_mes,
+  pct_faturavel}` → `PlanoMetaResponse`): reusa `metricas()` e calcula **valor-hora
+  alvo** (meta ÷ horas faturáveis), **projetos/mês**, **propostas/semana**,
+  **projeção líquida** no ritmo atual e **gargalo** (`ticket / conversao / volume /
+  no_caminho / sem_dados`) com diagnóstico em texto.
+- ✅ **Rampa F1–F4 por reputação (V.3)** — 2026-06-16. `_RAMPA_META` (F1 cold start
+  R$1,5–2k → F4 R$10k); fase escolhida pelo nº de fechadas (0 / ≤2 / ≤5 / 6+).
+  Painel `PlanoMetaPanel` (visível também no cold start, pois F1 É o cold start)
+  com inputs de capacidade (localStorage), valor-hora alvo vs real, propostas/
+  semana, badge da fase e gargalo.
+
+> **Verificado:** `tests/test_freela_plano_meta.py` (6 casos: matemática reversa
+> R$10k/5h-dia → ~R$110/h alvo; cold start = F1/sem_dados; valor-hora baixo →
+> ticket; conversão fraca → conversao; saudável → volume; inputs inválidos →
+> FreelaError) **verde**; backend importa; `tsc --noEmit` verde. Inputs do Pablo:
+> meta R$10k líquido, 5h/dia, rampa (em MELHORIAS_FREELA.md §V).
 
 ---
 
