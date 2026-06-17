@@ -20,11 +20,8 @@
 
 ## 🔧 Ativar tooling (rápido, faça primeiro)
 
-- [ ] **ESLint no front** (config já existe em `frontend/.eslintrc.json`, só falta instalar):
-  ```bash
-  cd frontend && npm install -D eslint eslint-config-next@14.2.18
-  npm run lint        # primeira rodada: ver o que aparece (NÃO auto-fixar em massa)
-  ```
+- [x] **ESLint no front** — instalado (`fc8853e`); `next lint` roda e está **verde**
+  (escapadas as aspas em JSX que apareceram, commit `26aa4c2`).
 - [ ] **Ruff já instalado** no venv. Rodar quando quiser:
   ```bash
   cd backend && ./venv/bin/ruff check app
@@ -42,24 +39,23 @@
 > bug do `Estado` no Notion corrigido. Faltam as 3 abaixo. **Uma por vez, cada
 > uma com seu commit e verificação.**
 
-### [ ] Fatia 2 — Quebrar os "god-files" (alto valor)
+### [x] Fatia 2 — Quebrar os "god-files" (alto valor) ✅ FEITA
 
-Seguir o padrão que o projeto **já usa** (`financas/transacao_service/` é pacote;
+Seguiu o padrão que o projeto **já usa** (`financas/transacao_service/` é pacote;
 `components/financas/` é pasta). Sem mudar comportamento.
 
-- [ ] **Backend `freela_service.py` (1122 linhas)** → virar pacote
-  `app/api/services/pessoal/freela_service/` com `__init__.py` re-exportando, e
-  módulos por área: `_base.py` (helpers/_uuid/_chamar_llm/conversores),
-  `projetos.py`, `propostas.py`, `analise.py`, `meta.py` (plano_meta + rampa),
-  `checklist.py`, `precificador.py`. **Risco baixo** (mecânico). Verificar:
-  `./venv/bin/python -c "from app.api.main import app"` + `python -m tests.test_freela_plano_meta`.
-- [ ] **`FreelaScreen.tsx` (1613 linhas)** → quebrar por seção em
-  `components/freela/`: `PlanoMetaPanel`, `MetaForecast`, `Precificador`,
-  `FilaProjetos`/`ProjetoCard`, `Kanban`, `PropostaModal`, `NovoProjetoForm`.
-  Manter `FreelaScreen.tsx` como casca que monta as seções.
-- [ ] **`VagasScreen.tsx` (1293 linhas)** → mesmo tratamento em `components/vagas/`
-  (`Metricas`, `PainelEstudo`, `FiltrosBar`, `VagaDetalhe`, `NovaVagaForm`).
-- [ ] Verificar front: `cd frontend && npx tsc --noEmit`.
+- [x] **Backend `freela_service.py` (1111 linhas)** → pacote
+  `app/api/services/pessoal/freela_service/` com `__init__.py` re-exportando
+  (`ee00410`). Módulos: `_base`, `cadastro`, `projetos`, `analise`, `propostas`,
+  `checklist`, `metricas`, `meta`, `precificador`. Verificado: `from app.api.main
+  import app` OK (136 rotas) + `tests.test_freela_plano_meta` 6/6 (o teste passou
+  a dar patch em `metricas` no módulo `meta`, onde o nome é resolvido agora).
+- [x] **`FreelaScreen.tsx` (1613 → 210 linhas)** → `components/freela/`
+  (`PropostaModal`, `MetaForecast`, `PlanoMetaPanel`, `Precificador`,
+  `FilaProjetos`, `Kanban`, `NovoProjetoForm`) — `6ee6269`. `tsc` limpo.
+- [x] **`VagasScreen.tsx` (1293 → 129 linhas)** → `components/vagas/`
+  (`Metricas`, `PainelEstudo`, `FiltrosBar`, `ListaVagas`, `VagaDetalhe`,
+  `NovaVagaForm`, `_shared`) — `d3c2f7a`. `tsc` limpo.
 
 ### [ ] Fatia 3 — Organizar o front por domínio
 
