@@ -39,7 +39,7 @@
 | 1 | Importar vaga por **URL** (auto-preencher) | 🔥🔥🔥 | Médio | não |
 | 2 | **Follow-up / lembretes** (não perder timing) | 🔥🔥🔥 | Médio | sim |
 | 6 | **Prep de entrevista** (status = entrevista) | 🔥🔥 | Médio | não |
-| 7 | **Plano de ação pros gaps** do match | 🔥 | Baixo | não |
+| 7 | **Plano de ação pros gaps** do match ✅ | 🔥 | Baixo | não |
 | 8 | **Deduplicação** ao cadastrar | 🔥 | Baixo | talvez |
 | 9 | **Kanban** do pipeline (arrastar) | 🔥 | Médio | não |
 | 10 | **Enviar candidatura** com 1 clique (opt-in) | 🔥 | Médio | usa enviado_em |
@@ -119,12 +119,12 @@ valor — e a ferramenta para no `entrevista`.
 
 ---
 
-## 7. Plano de ação pros gaps 🔥
+## 7. Plano de ação pros gaps 🔥 ✅ FEITO (2026-06-17)
 
-> **Parcialmente coberto (2026-06-16):** o painel **"O que estudar"** já entrega a
-> visão AGREGADA — o que a maioria das vagas pede e você não tem, ranqueado por
-> demanda (`GET /vagas/estudo`, ver VAGAS_FEITO). O que falta deste item é o plano
-> POR vaga (1 linha acionável por gap). Os dois se complementam.
+> **Coberto:** (a) painel AGREGADO **"O que estudar"** (`GET /vagas/estudo`) +
+> (b) plano **POR vaga** — o match devolve `plano_gaps` (1 ação por gap decisivo,
+> de preferência virar projeto seu em prova) e o detalhe da vaga mostra o painel
+> "🎯 Plano pros gaps" sob os Gaps. Os dois se complementam.
 
 **Dor:** o match mostra os `gaps` mas não diz **o que fazer** com eles.
 

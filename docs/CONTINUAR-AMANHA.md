@@ -106,8 +106,8 @@ Seguiu o padrão que o projeto **já usa** (`financas/transacao_service/` é pac
   colunas novas no `Projeto`/fluxo de `Cliente`.
 - [ ] **Freela V.3 — progresso real vs ritmo** no mês corrente (o painel já mostra
   o ritmo necessário; falta o "no caminho / atrás / na frente").
-- [ ] **Vagas #7 — plano de ação POR vaga**: 1 linha acionável por gap (o painel
-  agregado "O que estudar" já foi feito; falta o por-vaga).
+- [x] **Vagas #7 — plano de ação POR vaga** ✅ (2026-06-17): match devolve
+  `plano_gaps` (1 ação por gap decisivo) + painel "🎯 Plano pros gaps" no detalhe.
 - [ ] **Perfil**: `portfolio` URL está vazio em `o_que_procuro`/contato (decidir
   se entra).
 
