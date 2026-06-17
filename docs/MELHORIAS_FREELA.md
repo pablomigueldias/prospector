@@ -211,10 +211,15 @@ abaixo ataca isso — ou ajudando a *escolher onde gastar a proposta escassa*, o
   conformidade:** varredura determinística (regex) de e-mail/telefone/WhatsApp/
   link no texto → alerta e limita o selo (a Workana penaliza). Botão "Conferir
   proposta" no modal. Ver FREELA_FEITO.
-- [ ] 🟡 **Completude do perfil puxa a qualidade.** O redator fica MUITO melhor
-  com `tom_escrita`, `experiencias` e `o_que_procuro` preenchidos — hoje vazios.
-  Um aviso na tela ("seu perfil está 60% — preencher tom e experiências melhora
-  todas as propostas") + atalho pro Perfil Mestre.
+- [x] ✅ 🟡 **Completude do perfil.** REVISADO 2026-06-16: a nota antiga ("perfil
+  60%, campos vazios") estava **desatualizada**. O Perfil Mestre já está bem
+  preenchido — `tom_escrita`, `resumo`, **6 projetos com prova git-lastreada**
+  (261 commits/em produção etc.), **22 habilidades**, contato/LinkedIn/GitHub e 6
+  blocos de currículo. Nesta data **completei o `o_que_procuro`** (tipo_empresa,
+  pretensão "a combinar", observações). Só a Sechat em `experiencias` — e está ok,
+  pois os **projetos são a vitrine** (decisão do Pablo). **Aprendizado:** o redator
+  inventou "90%/40%" MESMO com prova real disponível → era bug de **prompt** (já
+  corrigido, ver FREELA_FEITO "anti-mentira"), não falta de dado.
 
 ### B) Escolher onde gastar a proposta (ela é escassa)
 
