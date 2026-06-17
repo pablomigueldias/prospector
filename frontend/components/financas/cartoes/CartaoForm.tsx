@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/Modal';
+import { Modal } from '@/components/shared/Modal';
 import { api } from '@/lib/api';
 import { ApiError, type Cartao } from '@/lib/types';
 

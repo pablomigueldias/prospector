@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Modal } from '@/components/Modal';
+import { Modal } from '@/components/shared/Modal';
 import { useFetch } from '@/hooks/useFetch';
 import { useContas } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';

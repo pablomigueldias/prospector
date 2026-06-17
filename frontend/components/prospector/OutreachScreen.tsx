@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { StatCard } from './StatCard';
+import { StatCard } from '@/components/shared/StatCard';
 import {
   useOutreachEmails,
   useOutreachFollowups,

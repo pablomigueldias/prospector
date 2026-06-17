@@ -1,4 +1,4 @@
-import { StatCard } from '../StatCard';
+import { StatCard } from '@/components/shared/StatCard';
 import { type VagasMetricas } from '@/lib/types';
 
 // ── Métricas (funil + taxas) ──────────────────────────────────────

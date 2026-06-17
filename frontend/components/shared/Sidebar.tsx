@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 
-import { BrandMark } from './BrandMark';
+import { BrandMark } from '@/components/shared/BrandMark';
 import {
   IconChartBar,
   IconFromName,
   IconPlus,
   IconSettings,
-} from './Icon';
+} from '@/components/shared/Icon';
 import { useAgents } from '@/hooks/useAgents';
 import { useAuth } from '@/contexts/AuthContext';
 import { permissaoDoAgente } from '@/lib/permissions';

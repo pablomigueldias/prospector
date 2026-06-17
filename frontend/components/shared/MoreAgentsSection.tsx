@@ -1,4 +1,4 @@
-import { IconFromName } from './Icon';
+import { IconFromName } from '@/components/shared/Icon';
 import type { Agent } from '@/lib/types';
 
 interface MoreAgentsSectionProps {

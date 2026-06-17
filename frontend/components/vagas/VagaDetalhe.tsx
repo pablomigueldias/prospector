@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { CurriculoPdf } from '../CurriculoPdf';
+import { CurriculoPdf } from '@/components/vagas/CurriculoPdf';
 import { useVaga, useVagaActions } from '@/hooks/useVagas';
 import { type CurriculoVaga, type GerarCandidaturaResponse, type Vaga, type VagaStatus } from '@/lib/types';
 import { BlocoSalario, Campo, MatchPill, STATUS_LABEL, STATUS_ORDEM, Tags } from './_shared';

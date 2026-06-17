@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
-import { Metricas } from './vagas/Metricas';
-import { PainelEstudo } from './vagas/PainelEstudo';
-import { FiltrosBar } from './vagas/FiltrosBar';
-import { ListaVagas } from './vagas/ListaVagas';
-import { VagaDetalhe } from './vagas/VagaDetalhe';
-import { NovaVagaForm } from './vagas/NovaVagaForm';
-import { FILTRO_VAZIO } from './vagas/_shared';
+import { Metricas } from '@/components/vagas/Metricas';
+import { PainelEstudo } from '@/components/vagas/PainelEstudo';
+import { FiltrosBar } from '@/components/vagas/FiltrosBar';
+import { ListaVagas } from '@/components/vagas/ListaVagas';
+import { VagaDetalhe } from '@/components/vagas/VagaDetalhe';
+import { NovaVagaForm } from '@/components/vagas/NovaVagaForm';
+import { FILTRO_VAZIO } from '@/components/vagas/_shared';
 import { usePerfil } from '@/hooks/usePerfil';
 import {
   useVagaActions,

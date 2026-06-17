@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 
-import { CopiarLinha } from '@/components/CopiarLinha';
-import { EditarPrevistaModal } from '@/components/EditarPrevistaModal';
-import { PagarModal, type PagamentoAlvo } from '@/components/PagarModal';
-import { PagarMesModal } from '@/components/PagarMesModal';
+import { CopiarLinha } from '@/components/shared/CopiarLinha';
+import { EditarPrevistaModal } from '@/components/financas/EditarPrevistaModal';
+import { PagarModal, type PagamentoAlvo } from '@/components/financas/PagarModal';
+import { PagarMesModal } from '@/components/financas/PagarMesModal';
 import { useCategorias, useTransacoes } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';

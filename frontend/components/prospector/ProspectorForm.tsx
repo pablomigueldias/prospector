@@ -16,7 +16,7 @@ import {
   IconWhatsApp,
   IconWorld,
   IconX,
-} from './Icon';
+} from '@/components/shared/Icon';
 import {
   useProspectorPreview,
   useProspectorRun,

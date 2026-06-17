@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CopywriterRequest } from '../lib/types';
+import type { CopywriterRequest } from '@/lib/types';
 
 interface CopywriterFormProps {
   onSubmit: (dados: CopywriterRequest) => void;

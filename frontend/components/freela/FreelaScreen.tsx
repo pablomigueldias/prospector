@@ -1,13 +1,13 @@
 import { useState } from 'react';
 
-import { StatCard } from './StatCard';
-import { FilaProjetos } from './freela/FilaProjetos';
-import { Kanban } from './freela/Kanban';
-import { MetaForecast } from './freela/MetaForecast';
-import { NovoProjetoForm } from './freela/NovoProjetoForm';
-import { PlanoMetaPanel } from './freela/PlanoMetaPanel';
-import { Precificador } from './freela/Precificador';
-import { PropostaModal } from './freela/PropostaModal';
+import { StatCard } from '@/components/shared/StatCard';
+import { FilaProjetos } from '@/components/freela/FilaProjetos';
+import { Kanban } from '@/components/freela/Kanban';
+import { MetaForecast } from '@/components/freela/MetaForecast';
+import { NovoProjetoForm } from '@/components/freela/NovoProjetoForm';
+import { PlanoMetaPanel } from '@/components/freela/PlanoMetaPanel';
+import { Precificador } from '@/components/freela/Precificador';
+import { PropostaModal } from '@/components/freela/PropostaModal';
 import { formatBRL } from '@/lib/format';
 import {
   useFreelaActions,

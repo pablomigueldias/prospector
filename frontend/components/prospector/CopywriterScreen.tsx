@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { CopywriterForm } from './CopywriterForm';
-import { useCopywriter } from '../hooks/useCopywriter';
-import type { EmailGerado } from '../lib/types';
+import { CopywriterForm } from '@/components/prospector/CopywriterForm';
+import { useCopywriter } from '@/hooks/useCopywriter';
+import type { EmailGerado } from '@/lib/types';
 
 export default function CopywriterScreen() {
   const { gerar, resultado, carregando, erro, limpar } = useCopywriter();

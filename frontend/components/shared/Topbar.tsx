@@ -3,7 +3,7 @@ import {
   IconChevronRight,
   IconRobot,
   IconSearch,
-} from './Icon';
+} from '@/components/shared/Icon';
 
 interface TopbarProps {
   currentAgentName?: string | null;

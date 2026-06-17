@@ -2,22 +2,22 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 
-import { DashboardLayout } from '@/components/DashboardLayout';
-import { IconRocket } from '@/components/Icon';
-import { LeadHistoryList } from '@/components/LeadRow';
-import { MoreAgentsSection } from '@/components/MoreAgentsSection';
-import { ProspectorForm } from '@/components/ProspectorForm';
-import { StatCard } from '@/components/StatCard';
+import { DashboardLayout } from '@/components/shared/DashboardLayout';
+import { IconRocket } from '@/components/shared/Icon';
+import { LeadHistoryList } from '@/components/prospector/LeadRow';
+import { MoreAgentsSection } from '@/components/shared/MoreAgentsSection';
+import { ProspectorForm } from '@/components/prospector/ProspectorForm';
+import { StatCard } from '@/components/shared/StatCard';
 import { useAgent, useAgents } from '@/hooks/useAgents';
 import { useAuth } from '@/contexts/AuthContext';
 import { permissaoDoAgente } from '@/lib/permissions';
 import { useProspectorHistory } from '@/hooks/useProspector';
-import  CopywriterScreen  from '@/components/CopywriterScreen';
-import OutreachScreen from '@/components/OutreachScreen';
-import PerfilMestreScreen from '@/components/PerfilMestreScreen';
-import VagasScreen from '@/components/VagasScreen';
-import FinancasScreen from '@/components/FinancasScreen';
-import FreelaScreen from '@/components/FreelaScreen';
+import  CopywriterScreen  from '@/components/prospector/CopywriterScreen';
+import OutreachScreen from '@/components/prospector/OutreachScreen';
+import PerfilMestreScreen from '@/components/perfil/PerfilMestreScreen';
+import VagasScreen from '@/components/vagas/VagasScreen';
+import FinancasScreen from '@/components/financas/FinancasScreen';
+import FreelaScreen from '@/components/freela/FreelaScreen';
 
 
 export default function AgentPage() {

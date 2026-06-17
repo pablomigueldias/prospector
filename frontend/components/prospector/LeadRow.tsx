@@ -5,7 +5,7 @@ import {
   IconCode,
   IconInbox,
   IconTruck,
-} from './Icon';
+} from '@/components/shared/Icon';
 import type { LeadHistoryItem } from '@/lib/types';
 
 interface LeadRowProps {

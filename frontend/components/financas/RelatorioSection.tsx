@@ -12,7 +12,7 @@ import {
   type TooltipProps,
 } from 'recharts';
 
-import { CategoriaDonut } from '@/components/CategoriaDonut';
+import { CategoriaDonut } from '@/components/financas/CategoriaDonut';
 import { useCategorias, useContas, useRelatorio } from '@/hooks/useFinancas';
 import { achatarCategorias } from '@/lib/categorias';
 import { formatBRL, formatMesAno } from '@/lib/format';

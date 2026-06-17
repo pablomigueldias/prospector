@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/Modal';
+import { Modal } from '@/components/shared/Modal';
 import { useLeituras } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { ApiError, type LeituraConsumo } from '@/lib/types';
