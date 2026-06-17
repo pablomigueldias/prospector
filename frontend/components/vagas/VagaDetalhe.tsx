@@ -273,6 +273,23 @@ export function VagaDetalhe({
               <Tags titulo="Você tem" itens={vaga.match_json.tenho} ok />
               <Tags titulo="Gaps" itens={vaga.match_json.gaps} />
               <Tags titulo="Destacar" itens={vaga.match_json.destaques} />
+              {vaga.match_json.plano_gaps && vaga.match_json.plano_gaps.length > 0 && (
+                <div className="mt-1">
+                  <div className="text-[12px] font-medium text-ink-mute mb-1.5">
+                    🎯 Plano pros gaps (o que fazer)
+                  </div>
+                  <ul className="flex flex-col gap-1.5">
+                    {vaga.match_json.plano_gaps.map((p, i) => (
+                      <li
+                        key={i}
+                        className="text-[13px] text-ink-soft border border-line rounded p-2 bg-bg-alt/50"
+                      >
+                        <span className="text-ink font-medium">{p.gap}</span> → {p.acao}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -33,6 +33,9 @@ OUTPUT_SCHEMA = """
     "aderencia": <inteiro 0-100>,
     "tenho": ["<requisito da vaga que o candidato CLARAMENTE atende, com a prova>", "..."],
     "gaps": ["<requisito que falta ou precisa estudar/mencionar com cuidado>", "..."],
+    "plano_gaps": [
+      {"gap": "<um gap RELEVANTE da lista acima>", "acao": "<1 linha acionável: estude X em ~Yh, OU transforme um projeto seu em prova disto>"}
+    ],
     "destaques": ["<projeto/skill do perfil a enfatizar NESTA vaga>", "..."],
     "veredito": "<1 frase: vale o esforço de se candidatar? por quê?>"
   }
@@ -57,6 +60,11 @@ PARTE 2 — CRUZAR COM O CANDIDATO (campo "match"):
   NÃO invente experiência que não está no perfil.
 - "gaps": o que a vaga pede e o perfil não evidencia. Seja franco — isto
   serve pra decidir se vale o esforço e o que estudar.
+- "plano_gaps": pros gaps que REALMENTE importam pra esta vaga (não todos),
+  dê 1 linha acionável por gap. Prefira virar um PROJETO/experiência do perfil
+  em prova concreta (ex.: "Gap: Kubernetes → faça um deploy do seu Prospector em
+  k8s e cite no currículo") a "estude X"; quando for estudo, estime as horas.
+  Foco no que destrava a candidatura — no máximo os 3-4 gaps mais decisivos.
 - "destaques": o que do perfil merece destaque NESTA vaga específica
   (reorganizar a verdade, nunca inventá-la).
 - "veredito": uma frase dizendo se vale a pena se candidatar.

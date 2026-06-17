@@ -95,11 +95,17 @@ export interface AnaliseVaga {
   salario?: FaixaSalarial | null;
 }
 
+export interface PlanoGap {
+  gap: string;
+  acao: string;
+}
+
 export interface MatchVaga {
   aderencia: number;
   tenho: string[];
   gaps: string[];
   destaques: string[];
+  plano_gaps?: PlanoGap[];
   veredito?: string | null;
 }
 

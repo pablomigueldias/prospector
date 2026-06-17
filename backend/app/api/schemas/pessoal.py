@@ -155,11 +155,18 @@ class AnaliseVaga(BaseModel):
     salario: FaixaSalarial | None = None
 
 
+class PlanoGap(BaseModel):
+    """1 linha acionável pra fechar um gap do match (item #7 do MELHORIAS_VAGAS)."""
+    gap: str                          # o requisito que falta
+    acao: str                         # o que fazer (estudar X / virar prova num projeto)
+
+
 class MatchVaga(BaseModel):
     aderencia: int = 0                   # 0-100
     tenho: list[str] = Field(default_factory=list)
     gaps: list[str] = Field(default_factory=list)
     destaques: list[str] = Field(default_factory=list)
+    plano_gaps: list[PlanoGap] = Field(default_factory=list)  # ação por gap relevante
     veredito: str | None = None       # vale o esforço? (1 frase)
 
 
