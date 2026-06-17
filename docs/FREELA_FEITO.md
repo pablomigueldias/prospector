@@ -3,7 +3,8 @@
 Registro do que **já foi entregue** no agente `freela`, por fase (espelha o
 plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`.
 
-Última atualização: **2026-06-16** (§V 1ª leva: análise profunda + motor da meta).
+Última atualização: **2026-06-16** (§V 1ª e 2ª levas: análise profunda + motor da
+meta + breakdown/perguntas/gap).
 
 > O agente é um **copiloto**: a IA nunca toca na Workana nem envia proposta.
 > Ele organiza (CRM), precifica e (nas fases de IA) rascunha — você revisa e
@@ -241,6 +242,27 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
 > ticket; conversão fraca → conversao; saudável → volume; inputs inválidos →
 > FreelaError) **verde**; backend importa; `tsc --noEmit` verde. Inputs do Pablo:
 > meta R$10k líquido, 5h/dia, rampa (em MELHORIAS_FREELA.md §V).
+
+## §V (2ª leva) — Breakdown de tarefas + perguntas + gap de skill
+
+> Continua a "análise profunda" (§V.1): acaba com o "horas mágico" e diz o que
+> perguntar antes de cotar. **Sem migração.**
+
+- ✅ **Breakdown de tarefas (V.1)** — 2026-06-16. O analisador devolve `tarefas`
+  (`[{nome, horas}]`, com a soma ≈ `horas_estimadas`); a tela lista as entregas com
+  horas e **total**. Schema `TarefaEstimada` (coerção "6h"→6).
+- ✅ **Perguntas ao cliente (V.1)** — 2026-06-16. `perguntas_cliente`: as
+  ambiguidades que mudam preço/prazo, pra esclarecer antes de cravar a cotação.
+- ✅ **Gap de skill (V.1)** — 2026-06-16. `skills_faltando`: o que o projeto exige
+  e NÃO está claro no perfil (oposto de `ganchos`); badges âmbar na análise.
+- ✅ **Extrator mais rico (V.1, parcial)** — 2026-06-16. `POST /projetos/extrair`
+  passou a puxar `habilidades` (skills exigidas) e `n_interessados`; o form ganhou
+  campo "Habilidades exigidas" pré-preenchido. *(Falta: dados do cliente
+  país/pagamento/rating + data de publicação + tipo de contrato — pedem migração/
+  fluxo de Cliente; ver MELHORIAS_FREELA §V.1.)*
+
+> **Verificado:** schema aceita os campos e coage horas/interessados de texto
+> ("6h"→6, "12 interessados"→12); backend importa; `tsc --noEmit` verde.
 
 ---
 

@@ -85,18 +85,18 @@ o destino; §0 é o primeiro passo pra lá.
   orçamento do cliente × faixa de mercado → selo `subcotado / justo / acima` +
   `gap_texto` ("cliente ~R$800; mercado R$1.5–2.5k → subcotado") + **R$/h efetivo**
   do orçamento. Selo na fila e linha 💰 na análise. Ver FREELA_FEITO.
-- [ ] 🔴 **Breakdown do escopo em tarefas + incertezas.** A IA quebra o projeto
-  nas **entregas reais** (ex.: "auth, CRUD produtos, checkout, deploy") com horas
-  por bloco — aí o "20h" deixa de ser número mágico. E lista **perguntas a fazer
-  ao cliente** (o que está ambíguo e muda o preço). Dá pra reusar como corpo da
-  proposta ("plano em passos", que o checklist §0A já cobra).
-- [ ] 🟡 **Extrair TODA a info da proposta (não só título/orçamento).** O extrator
-  hoje pega título, orçamento e nº de propostas. Ampliar pra capturar, do texto
-  colado: **dados do cliente** (país, pagamento verificado, nº de projetos
-  publicados/contratados, rating, % de contratação, idioma), **data de
-  publicação** (frescor — cf. §0B/§7), **tipo de contrato** (fixo/hora) e
-  **skills exigidas vs as suas** (gap de skill). Tudo isso **alimenta** V.1–V.3 —
-  é a base de "pegar toda a informação".
+- [x] ✅ 🔴 **Breakdown do escopo em tarefas + incertezas.** FEITO 2026-06-16: a
+  análise devolve `tarefas` (entrega + horas, com total na tela), `perguntas_cliente`
+  (ambiguidades a esclarecer antes de cotar) e `skills_faltando` (gap — o que o
+  projeto exige e não está claro no seu perfil). O "20h mágico" virou lista. Ver
+  FREELA_FEITO.
+- [~] 🟡 **Extrair TODA a info da proposta (não só título/orçamento).** PARCIAL
+  2026-06-16: o extrator passou a puxar **habilidades exigidas** (campo novo no
+  form) e **nº de interessados**, e a análise já mostra o **gap de skill**. **Falta
+  (precisa de migração/fluxo de Cliente):** **dados do cliente** (país, pagamento
+  verificado, nº de projetos, rating, idioma) auto-preenchendo um `Cliente`,
+  **data de publicação** (frescor — cf. §0B/§7) e **tipo de contrato** (fixo/hora)
+  como colunas do projeto. → próximo passo desta frente.
 - [ ] 🟡 **Nota de confiança da análise.** Quando o texto colado é pobre, a IA não
   deve fingir certeza. Um `confianca` (alta/média/baixa) + "me dê o perfil do
   cliente / a data de publicação pra eu cravar". Evita decisão sobre achismo.
