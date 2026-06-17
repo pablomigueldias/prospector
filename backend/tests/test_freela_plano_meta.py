@@ -9,6 +9,7 @@ import asyncio
 from unittest.mock import patch
 
 from app.api.services.pessoal import freela_service as s
+from app.api.services.pessoal.freela_service import meta as meta_mod
 from app.api.schemas.freela import MetricasResponse, PlanoMetaRequest
 
 
@@ -29,7 +30,9 @@ def _plano(metrics: MetricasResponse, **req_kw):
         return metrics
 
     async def _run():
-        with patch.object(s, "metricas", _fake):
+        # `metricas` é usado dentro do módulo `meta` (plano_meta) — após a
+        # modularização do service, o patch tem que ser onde o nome é resolvido.
+        with patch.object(meta_mod, "metricas", _fake):
             return await s.plano_meta(PlanoMetaRequest(**req_kw))
 
     return asyncio.run(_run())
