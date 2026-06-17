@@ -26,7 +26,7 @@ export function ListaVagas({
   if (items.length === 0) {
     return (
       <div className="card p-6 text-center text-sm text-ink-mute">
-        Nenhuma vaga ainda. Clique em "Nova vaga".
+        Nenhuma vaga ainda. Clique em &quot;Nova vaga&quot;.
       </div>
     );
   }

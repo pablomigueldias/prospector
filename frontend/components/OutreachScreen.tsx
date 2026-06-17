@@ -91,8 +91,9 @@ export default function OutreachScreen() {
               Ações
             </h3>
             <p className="text-xs text-ink-mute">
-              "Gerar rascunhos" processa até 5 contatos pendentes por vez (cada
-              um vira um rascunho na sua caixa). "Sincronizar" confere o que
+              &quot;Gerar rascunhos&quot; processa até 5 contatos pendentes por
+              vez (cada um vira um rascunho na sua caixa). &quot;Sincronizar&quot;
+              confere o que
               você enviou e detecta respostas.
             </p>
           </div>
@@ -166,7 +167,7 @@ function EmailList({
     return (
       <div className="card p-8 text-center">
         <p className="text-sm text-ink-mute">
-          Nenhum e-mail ainda. Clique em "Gerar rascunhos" pra começar.
+          Nenhum e-mail ainda. Clique em &quot;Gerar rascunhos&quot; pra começar.
         </p>
       </div>
     );

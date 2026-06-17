@@ -36,7 +36,7 @@ export function FilaProjetos({
   if (items.length === 0) {
     return (
       <div className="card p-6 text-center text-sm text-ink-mute">
-        Nenhum projeto na fila. Clique em "Colar projeto".
+        Nenhum projeto na fila. Clique em &quot;Colar projeto&quot;.
       </div>
     );
   }
