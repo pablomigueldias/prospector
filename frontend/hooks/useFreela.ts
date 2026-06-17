@@ -9,6 +9,8 @@ import type {
   FreelaCliente,
   FreelaClienteCreate,
   FreelaExtrairProjeto,
+  FreelaPlanoMeta,
+  FreelaPlanoMetaRequest,
   FreelaPrecificarRequest,
   FreelaPrecificarResponse,
   FreelaProjeto,
@@ -136,6 +138,10 @@ export function useFreelaActions() {
       run<FreelaPrecificarResponse>(() => api.freelaPrecificar(body)),
     [],
   );
+  const planoMeta = useCallback(
+    (body: FreelaPlanoMetaRequest) => run<FreelaPlanoMeta>(() => api.freelaPlanoMeta(body)),
+    [],
+  );
 
   return {
     loading,
@@ -154,5 +160,6 @@ export function useFreelaActions() {
     corrigirProposta,
     criarCliente,
     precificar,
+    planoMeta,
   };
 }

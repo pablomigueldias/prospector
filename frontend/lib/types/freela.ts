@@ -180,6 +180,36 @@ export interface FreelaMetricas {
   valor_hora_real?: number | null;
 }
 
+export interface FreelaPlanoMetaRequest {
+  meta_liquida: number;
+  horas_dia: number;
+  dias_mes: number;
+  pct_faturavel: number;
+}
+
+export interface FreelaFaseRampa {
+  nome: string;
+  meta_min: number;
+  meta_max: number;
+  foco: string;
+}
+
+export interface FreelaPlanoMeta {
+  meta_liquida: number;
+  horas_faturaveis_mes: number;
+  valor_hora_alvo: number;
+  valor_hora_real?: number | null;
+  ticket_medio?: number | null;
+  projecao_liquida_mes?: number | null;
+  projetos_necessarios_mes?: number | null;
+  propostas_necessarias_mes?: number | null;
+  propostas_por_semana?: number | null;
+  alcancavel_por_volume: boolean;
+  gargalo: string; // ticket | conversao | volume | no_caminho | sem_dados
+  diagnostico: string;
+  fase: FreelaFaseRampa;
+}
+
 export interface FreelaPrecificarRequest {
   liquido_desejado: number;
   cliente_id?: string | null;

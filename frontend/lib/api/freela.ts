@@ -11,6 +11,8 @@ import type {
   FreelaNegociarResponse,
   FreelaRedigirResponse,
   FreelaMetricas,
+  FreelaPlanoMeta,
+  FreelaPlanoMetaRequest,
   FreelaPlataforma,
   FreelaPrecificarRequest,
   FreelaPrecificarResponse,
@@ -38,6 +40,13 @@ export const freelaApi = {
   },
   freelaPrecificar(body: FreelaPrecificarRequest): Promise<FreelaPrecificarResponse> {
     return request<FreelaPrecificarResponse>(`${BASE}/precificar`, {
+      method: 'POST',
+      body,
+      timeoutMs: T,
+    });
+  },
+  freelaPlanoMeta(body: FreelaPlanoMetaRequest): Promise<FreelaPlanoMeta> {
+    return request<FreelaPlanoMeta>(`${BASE}/meta/plano`, {
       method: 'POST',
       body,
       timeoutMs: T,

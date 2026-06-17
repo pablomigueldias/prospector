@@ -241,6 +241,40 @@ class MetricasResponse(BaseModel):
 
 
 # ══════════════════════════════════════════════════════════════════
+# Motor da meta (matemática reversa + rampa — sem IA)
+# ══════════════════════════════════════════════════════════════════
+
+class PlanoMetaRequest(BaseModel):
+    meta_liquida: float = 10000           # R$ líquido/mês (o que entra no bolso)
+    horas_dia: float = 5                  # capacidade diária
+    dias_mes: int = 26                    # dias trabalhados no mês
+    pct_faturavel: float = 0.7            # fração das horas que vira trabalho cobrado
+
+
+class FaseRampa(BaseModel):
+    nome: str          # ex.: "F1 — Cold start"
+    meta_min: float
+    meta_max: float
+    foco: str
+
+
+class PlanoMetaResponse(BaseModel):
+    meta_liquida: float
+    horas_faturaveis_mes: float
+    valor_hora_alvo: float                # meta ÷ horas faturáveis: o R$/h que fecha a conta
+    valor_hora_real: Optional[float] = None       # das fechadas (echo de métricas)
+    ticket_medio: Optional[float] = None          # echo de métricas
+    projecao_liquida_mes: Optional[float] = None  # valor_hora_real × horas (ritmo atual)
+    projetos_necessarios_mes: Optional[float] = None
+    propostas_necessarias_mes: Optional[float] = None
+    propostas_por_semana: Optional[float] = None
+    alcancavel_por_volume: bool = False   # o ritmo atual de R$/h enche a meta?
+    gargalo: str                          # ticket | conversao | volume | no_caminho | sem_dados
+    diagnostico: str
+    fase: FaseRampa
+
+
+# ══════════════════════════════════════════════════════════════════
 # Precificador (matemática da comissão — sem IA)
 # ══════════════════════════════════════════════════════════════════
 

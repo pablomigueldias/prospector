@@ -24,6 +24,8 @@ from app.api.schemas.freela import (
     RedigirResponse,
     KanbanResponse,
     MetricasResponse,
+    PlanoMetaRequest,
+    PlanoMetaResponse,
     PlataformaResponse,
     PrecificarRequest,
     PrecificarResponse,
@@ -88,6 +90,15 @@ async def metricas() -> MetricasResponse:
 async def precificar(body: PrecificarRequest) -> PrecificarResponse:
     try:
         return await freela_service.precificar(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/meta/plano", response_model=PlanoMetaResponse,
+             summary="Meta líquida → valor-hora alvo, propostas/semana, gargalo e fase da rampa")
+async def plano_meta(body: PlanoMetaRequest) -> PlanoMetaResponse:
+    try:
+        return await freela_service.plano_meta(body)
     except Exception as e:
         raise _handle(e)
 
