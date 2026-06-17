@@ -57,12 +57,17 @@ Seguiu o padrão que o projeto **já usa** (`financas/transacao_service/` é pac
   (`Metricas`, `PainelEstudo`, `FiltrosBar`, `ListaVagas`, `VagaDetalhe`,
   `NovaVagaForm`, `_shared`) — `d3c2f7a`. `tsc` limpo.
 
-### [ ] Fatia 3 — Organizar o front por domínio
+### [x] Fatia 3 — Organizar o front por domínio ✅ FEITA
 
-- [ ] Hoje: 35 componentes soltos em `components/` (só `financas/` é agrupado).
-  Agrupar em `components/{vagas,freela,prospector,perfil,shared}/` e ajustar os
-  imports (o `tsc` aponta o que quebrar). Fazer **depois** da Fatia 2 (senão move
-  duas vezes).
+- [x] Os 35 componentes soltos foram agrupados em
+  `components/{shared,prospector,perfil,vagas,freela,financas}/` (commit da Fatia 3).
+  Imports cross-componente normalizados pra `@/components/<dominio>/<nome>`
+  (absoluto). Verificado: `tsc --noEmit` + `next lint` verdes. **shared/**: BrandMark,
+  BuscaGlobalModal, CopiarLinha, DashboardLayout, DevSyncButton, Icon, Modal,
+  MoreAgentsSection, PermissionGate, Sidebar, StatCard, Topbar. **prospector/**:
+  ProspectorForm, LeadRow, Copywriter{Form,Screen}, OutreachScreen. **perfil/**:
+  PerfilMestreScreen. **vagas/**: VagasScreen, CurriculoPdf. **freela/**:
+  FreelaScreen. **financas/**: FinancasScreen + as ~14 Sections/Modais.
 
 ### [ ] Fatia 4 — Renomear árvores legadas (a mais arriscada — por último)
 
