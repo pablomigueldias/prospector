@@ -264,6 +264,24 @@ meta + breakdown/perguntas/gap).
 > **Verificado:** schema aceita os campos e coage horas/interessados de texto
 > ("6h"→6, "12 interessados"→12); backend importa; `tsc --noEmit` verde.
 
+## Correção — redator inventava métricas (anti-mentira)
+
+> Bug pego em proposta real (2026-06-16): o redator cravou "taxa de sucesso de
+> 90%" e "redução de 40%" que NÃO existem no perfil. Causa-raiz: `experiencias`
+> do Perfil Mestre quase vazio → sem fato real, a IA "completa" com número bonito.
+
+- ✅ **Redator não inventa número (prompt)** — 2026-06-16. Regra "NÚMEROS SÃO
+  SAGRADOS": só usa %/estatística que está LITERALMENTE no perfil; sem número
+  medido, impacto é qualitativo. Ajuste também no modo COLD START.
+- ✅ **Guard determinístico no checklist** — 2026-06-16. `_scan_metricas_inventadas`
+  compara números/percentuais do rascunho com o perfil; o que não está lá vira
+  item + sugestão e **limita o selo a < "pronta"** (cap 79). Ignora "100%"
+  (retórico). Testado: "90%/40%" fora do perfil → flag; "40%" no perfil → limpo.
+
+> **Raiz ainda aberta:** preencher `experiencias` do Perfil Mestre com resultados
+> REAIS (mesmo qualitativos) — é o item §0A do backlog e o que de fato eleva todas
+> as propostas. Sem isso, o redator tem pouco fato pra ancorar.
+
 ---
 
 ## Ainda NÃO feito (resumo — detalhe e prioridade em MELHORIAS_FREELA.md)
