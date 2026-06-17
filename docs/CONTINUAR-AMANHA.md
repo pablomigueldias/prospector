@@ -79,12 +79,18 @@ Seguiu o padrão que o projeto **já usa** (`financas/transacao_service/` é pac
   capturado antes: `app.api.main` importa (136 rotas), os 13 módulos da cadeia
   importam, `ruff` 1958 erros (inalterado), smoke `test_freela_plano_meta` 6/6.
 
-### [ ] (Opcional) Pass de modernização do ruff
+### [x] (Opcional) Pass de modernização do ruff ✅ FEITO (autofix seguro)
 
-- [ ] Sobraram ~1344 avisos **cosméticos** (`Optional[X]`→`X | None` UP045,
-  `List`→`list` UP006) + `B904` (raise ... from) + `F405` (há `import *` em algum
-  lugar — investigar). Tudo adiável. Se for fazer, é um commit isolado
-  `style: ruff modernization`, sozinho, pra não poluir diffs de feature.
+- [x] Aplicado o autofix seguro (1812 fixes, commit isolado `style: ruff
+  modernization`): `Optional[X]`→`X | None` (UP045), `List/Dict`→`list/dict`
+  (UP006), `datetime.UTC` (UP017), anotações sem aspas (UP037), imports ordenados
+  (I001). 204 arquivos, zero mudança de comportamento (validado: app 136 rotas +
+  smoke 6/6).
+- [ ] **Restam 362 avisos NÃO-autofixáveis** (precisam de mão/julgamento, adiáveis):
+  - `F405` (167) — **há `import *` em algum lugar**; investigar e explicitar os nomes.
+  - `B904` (152) — `raise ... from` dentro de `except` (cadeia de exceção).
+  - `B008` (18) — chamada de função em default de argumento.
+  - `E402` (9), `UP035` (112, precisa `--unsafe-fixes`), e alguns avulsos (B007/B905/E741/F601).
 
 ---
 
