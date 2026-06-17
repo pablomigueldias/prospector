@@ -3,7 +3,6 @@ conformidade Workana (contato/link) e anti-mentira (número fora do perfil)."""
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from app.analyzers._perfil_texto import perfil_para_texto
 from app.analyzers.freela.checklist.parser import parse_resposta as parse_checklist
@@ -28,7 +27,7 @@ _RE_TEL = re.compile(r"(?:\+?55[\s-]*)?\(?\d{2}\)?[\s-]*9?\d{4}[\s-]?\d{4}")
 _RE_ZAP = re.compile(r"\b(?:wa\.me|t\.me)/\S+", re.I)
 
 
-def _scan_conformidade(texto: str) -> Optional[str]:
+def _scan_conformidade(texto: str) -> str | None:
     """Acha CONTATO/link no texto da proposta (regra dura da Workana). None se limpo."""
     achados = []
     if _RE_EMAIL.search(texto):
@@ -55,7 +54,7 @@ def _scan_conformidade(texto: str) -> Optional[str]:
 _RE_METRICA = re.compile(r"\d{1,3}\s*%|\b\d+\s*x\b", re.I)
 
 
-def _scan_metricas_inventadas(texto: str, perfil_texto: str) -> Optional[str]:
+def _scan_metricas_inventadas(texto: str, perfil_texto: str) -> str | None:
     """Acha número/percentual no texto que não está no perfil. None se limpo."""
     achados = _RE_METRICA.findall(texto)
     if not achados:

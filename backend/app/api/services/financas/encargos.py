@@ -8,17 +8,16 @@ boleto de R$100: multa 2,00 + juros 100·1%·(10/30) = 0,33 → encargos 2,33.
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Optional
+from decimal import ROUND_HALF_UP, Decimal
 
 CENTAVO = Decimal("0.01")
 
 
 def calcular_encargos(
     valor: Decimal,
-    vencimento: Optional[date],
-    multa_percentual: Optional[Decimal],
-    juros_mensal_percentual: Optional[Decimal],
+    vencimento: date | None,
+    multa_percentual: Decimal | None,
+    juros_mensal_percentual: Decimal | None,
     referencia: date,
 ) -> Decimal:
     """Multa + juros projetados sobre ``valor`` até ``referencia``.

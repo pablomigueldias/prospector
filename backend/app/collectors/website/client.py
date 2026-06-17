@@ -1,6 +1,5 @@
 import asyncio
 import random
-from typing import Optional
 
 import httpx
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
@@ -14,7 +13,6 @@ from app.collectors.website.stealth import (
     obter_context_options,
 )
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -45,7 +43,7 @@ PLAYWRIGHT_WAIT_AFTER_LOAD = 2.0
     retry=retry_if_exception_type((httpx.TimeoutException, httpx.NetworkError)),
     reraise=True,
 )
-def _fetch_httpx(url: str) -> Optional[str]:
+def _fetch_httpx(url: str) -> str | None:
     headers = {**DEFAULT_HEADERS, "User-Agent": DEFAULT_USER_AGENT}
 
     try:
@@ -85,7 +83,7 @@ def _fetch_httpx(url: str) -> Optional[str]:
     return html
 
 
-async def _fetch_playwright_async(url: str) -> Optional[str]:
+async def _fetch_playwright_async(url: str) -> str | None:
     try:
         from playwright.async_api import async_playwright
     except ImportError:
@@ -129,7 +127,7 @@ async def _fetch_playwright_async(url: str) -> Optional[str]:
             await browser.close()
 
 
-def _fetch_playwright(url: str) -> Optional[str]:
+def _fetch_playwright(url: str) -> str | None:
     try:
         return asyncio.run(_fetch_playwright_async(url))
     except RuntimeError:
@@ -140,7 +138,7 @@ def _fetch_playwright(url: str) -> Optional[str]:
             loop.close()
 
 
-def fetch_html(url: str, force_playwright: bool = False) -> Optional[str]:
+def fetch_html(url: str, force_playwright: bool = False) -> str | None:
 
     if force_playwright:
         logger.info(f"🎭 Playwright (forçado): {url}")

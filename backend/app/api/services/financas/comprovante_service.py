@@ -5,7 +5,6 @@ import asyncio
 import hashlib
 import os
 import uuid
-from typing import Optional
 
 from sqlalchemy import select
 
@@ -60,9 +59,9 @@ async def salvar_comprovante(
     usuario_id: str,
     tipo: str,
     conteudo: bytes,
-    nome_original: Optional[str] = None,
-    content_type: Optional[str] = None,
-    transacao_id: Optional[str] = None,
+    nome_original: str | None = None,
+    content_type: str | None = None,
+    transacao_id: str | None = None,
 ) -> ComprovanteResponse:
     if tipo not in TIPOS_COMPROVANTE:
         raise ComprovanteError(
@@ -131,7 +130,7 @@ async def listar_por_transacao(transacao_id: str) -> ComprovanteListResponse:
 
 
 async def listar_por_usuario(
-    usuario_id: str, *, tipo: Optional[str] = None
+    usuario_id: str, *, tipo: str | None = None
 ) -> ComprovanteListResponse:
     uid = _uuid(usuario_id, campo="usuario_id")
     if tipo is not None and tipo not in TIPOS_COMPROVANTE:

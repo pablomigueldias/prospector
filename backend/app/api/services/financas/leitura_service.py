@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import select
 
@@ -77,7 +76,7 @@ async def criar_leitura(payload: LeituraConsumoCreate) -> LeituraConsumoResponse
 
 
 async def listar_leituras(
-    usuario_id: str, *, tipo: Optional[str] = None
+    usuario_id: str, *, tipo: str | None = None
 ) -> LeituraConsumoListResponse:
     uid = _uuid(usuario_id, campo="usuario_id")
     if tipo is not None and tipo not in TIPOS_CONSUMO:

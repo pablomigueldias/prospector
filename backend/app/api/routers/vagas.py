@@ -1,4 +1,3 @@
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -37,12 +36,12 @@ def _handle(e: Exception) -> HTTPException:
 
 @router.get("", response_model=VagaListResponse, summary="Lista as vagas")
 async def listar(
-    status: Optional[str] = None,
-    busca: Optional[str] = None,
-    match_min: Optional[int] = None,
-    modelo: Optional[str] = None,
-    fonte: Optional[str] = None,
-    tem_rascunho: Optional[bool] = None,
+    status: str | None = None,
+    busca: str | None = None,
+    match_min: int | None = None,
+    modelo: str | None = None,
+    fonte: str | None = None,
+    tem_rascunho: bool | None = None,
     ordenar_por: str = "match",
 ) -> VagaListResponse:
     try:
@@ -140,9 +139,9 @@ async def gerar_curriculo(vaga_id: str) -> GerarCurriculoResponse:
         raise _handle(e)
 
 
-@router.get("/{vaga_id}/rascunhos", response_model=List[CandidaturaEmailItem],
+@router.get("/{vaga_id}/rascunhos", response_model=list[CandidaturaEmailItem],
             summary="Rascunhos já gerados pra esta vaga")
-async def rascunhos(vaga_id: str) -> List[CandidaturaEmailItem]:
+async def rascunhos(vaga_id: str) -> list[CandidaturaEmailItem]:
     try:
         return await vaga_service.listar_rascunhos(vaga_id)
     except Exception as e:

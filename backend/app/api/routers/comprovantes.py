@@ -1,4 +1,3 @@
-from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
@@ -24,7 +23,7 @@ def _handle(e: Exception) -> HTTPException:
 async def upload(
     tipo: str = Form(..., description="boleto/comprovante/nota_fiscal"),
     file: UploadFile = File(...),
-    transacao_id: Optional[str] = Form(None),
+    transacao_id: str | None = Form(None),
     usuario_id: str = Depends(financas_usuario_id),
 ) -> ComprovanteResponse:
     try:
@@ -44,8 +43,8 @@ async def upload(
 @router.get("", response_model=ComprovanteListResponse,
             summary="Lista comprovantes por transação OU do usuário logado (galeria)")
 async def listar(
-    transacao_id: Optional[str] = None,
-    tipo: Optional[str] = None,
+    transacao_id: str | None = None,
+    tipo: str | None = None,
     usuario_id: str = Depends(financas_usuario_id),
 ) -> ComprovanteListResponse:
     try:

@@ -8,10 +8,10 @@ que o router mapeia) continua exatamente o mesmo de antes da centralização.
 from __future__ import annotations
 
 import uuid
-from typing import Callable, Optional
+from collections.abc import Callable
 
 
-def iso(dt) -> Optional[str]:
+def iso(dt) -> str | None:
     """datetime → ISO 8601 (precisão de segundos), ou None."""
     return dt.isoformat(timespec="seconds") if dt else None
 

@@ -4,10 +4,13 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from app.db.sync_bridge import bridge_session
 from app.db.models.email_outreach import EmailOutreach
+from app.db.sync_bridge import bridge_session
 from app.mailer.client import (
-    ler_enviados, ler_inbox, _extrair_emails, _normalizar_assunto,
+    _extrair_emails,
+    _normalizar_assunto,
+    ler_enviados,
+    ler_inbox,
 )
 from app.utils.logger import get_logger
 

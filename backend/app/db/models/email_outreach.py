@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import ForeignKey, Index, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -14,18 +14,18 @@ from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 class EmailOutreach(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "email_outreach"
 
-    empresa_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    empresa_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("empresas.id", ondelete="SET NULL"),
         nullable=True,
     )
-    contato_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    contato_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("contatos.id", ondelete="SET NULL"),
         nullable=True,
     )
 
-    parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("email_outreach.id", ondelete="SET NULL"),
         nullable=True,
@@ -35,7 +35,7 @@ class EmailOutreach(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     destinatario: Mapped[str] = mapped_column(String(300), nullable=False)
     assunto: Mapped[str] = mapped_column(String(500), nullable=False)
     corpo: Mapped[str] = mapped_column(Text, nullable=False)
-    tom: Mapped[Optional[str]] = mapped_column(String(100))
+    tom: Mapped[str | None] = mapped_column(String(100))
     canal: Mapped[str] = mapped_column(
         String(20), default="email", server_default="email", nullable=False
     )
@@ -47,18 +47,18 @@ class EmailOutreach(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(
         String(30), default="rascunho", server_default="rascunho", nullable=False
     )
-    message_id: Mapped[Optional[str]] = mapped_column(String(500))
-    sent_message_id: Mapped[Optional[str]] = mapped_column(String(500))
+    message_id: Mapped[str | None] = mapped_column(String(500))
+    sent_message_id: Mapped[str | None] = mapped_column(String(500))
 
-    draft_criado_em: Mapped[Optional[datetime]] = mapped_column()
-    enviado_em: Mapped[Optional[datetime]] = mapped_column()
-    primeira_resposta_em: Mapped[Optional[datetime]] = mapped_column()
-    resposta_trecho: Mapped[Optional[str]] = mapped_column(Text)
-    resposta_corpo: Mapped[Optional[str]] = mapped_column(Text)
+    draft_criado_em: Mapped[datetime | None] = mapped_column()
+    enviado_em: Mapped[datetime | None] = mapped_column()
+    primeira_resposta_em: Mapped[datetime | None] = mapped_column()
+    resposta_trecho: Mapped[str | None] = mapped_column(Text)
+    resposta_corpo: Mapped[str | None] = mapped_column(Text)
 
     # Dados pra treino futuro da IA
-    contexto: Mapped[Optional[dict]] = mapped_column(JSONB)
-    resultado: Mapped[Optional[dict]] = mapped_column(JSONB)
+    contexto: Mapped[dict | None] = mapped_column(JSONB)
+    resultado: Mapped[dict | None] = mapped_column(JSONB)
 
     __table_args__ = (
         Index("ix_email_outreach_contato_id", "contato_id"),

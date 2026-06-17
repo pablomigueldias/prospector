@@ -1,11 +1,9 @@
-from typing import Dict, Optional
 
 from notion_client.errors import APIResponseError
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.exporters.notion.mappers import format_cnpj
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -18,7 +16,7 @@ class NotionRepository:
         self.db_contatos = db_contatos
 
 
-    def find_empresa_by_cnpj(self, cnpj: str) -> Optional[str]:
+    def find_empresa_by_cnpj(self, cnpj: str) -> str | None:
         if not cnpj:
             return None
 
@@ -45,9 +43,9 @@ class NotionRepository:
     def find_contato(
         self,
         empresa_notion_id: str,
-        email: Optional[str] = None,
-        nome: Optional[str] = None,
-    ) -> Optional[str]:
+        email: str | None = None,
+        nome: str | None = None,
+    ) -> str | None:
         if not empresa_notion_id:
             return None
 
@@ -86,7 +84,7 @@ class NotionRepository:
 
         return None
 
-    def _query_first(self, database_id: str, filter_: dict) -> Optional[str]:
+    def _query_first(self, database_id: str, filter_: dict) -> str | None:
         try:
             response = self.client.databases.query(
                 database_id=database_id, filter=filter_
@@ -103,7 +101,7 @@ class NotionRepository:
         wait=wait_exponential(multiplier=2, min=2, max=10),
         reraise=True,
     )
-    def create_page(self, database_id: str, properties: Dict[str, dict]) -> str:
+    def create_page(self, database_id: str, properties: dict[str, dict]) -> str:
         response = self.client.pages.create(
             parent={"database_id": database_id},
             properties=properties,
@@ -115,5 +113,5 @@ class NotionRepository:
         wait=wait_exponential(multiplier=2, min=2, max=10),
         reraise=True,
     )
-    def update_page(self, page_id: str, properties: Dict[str, dict]) -> None:
+    def update_page(self, page_id: str, properties: dict[str, dict]) -> None:
         self.client.pages.update(page_id=page_id, properties=properties)

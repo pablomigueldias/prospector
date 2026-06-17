@@ -1,8 +1,6 @@
 """Precificador: matemática da comissão Workana (sem IA)."""
 from __future__ import annotations
 
-from typing import Optional
-
 from app.api.schemas.freela import PrecificarRequest, PrecificarResponse
 from app.api.services._helpers import r2 as _r2
 from app.db.models.pessoal.freela.plataforma import Plataforma
@@ -20,7 +18,7 @@ _COMISSAO_PADRAO = [
 _CUSTO_SERVICO_PADRAO = 0.045
 
 
-def _pct_comissao(config_comissao: Optional[dict], ja_me_pagou_usd: float) -> float:
+def _pct_comissao(config_comissao: dict | None, ja_me_pagou_usd: float) -> float:
     faixas = (config_comissao or {}).get("faixas") or _COMISSAO_PADRAO
     for faixa in faixas:
         ate = faixa.get("ate_usd")
@@ -33,7 +31,7 @@ async def precificar(req: PrecificarRequest) -> PrecificarResponse:
     if req.liquido_desejado <= 0:
         raise FreelaError("Informe o líquido desejado (maior que zero).")
 
-    plataforma: Optional[Plataforma] = None
+    plataforma: Plataforma | None = None
     ja_pagou = req.ja_me_pagou_usd or 0.0
 
     async with get_session() as session:

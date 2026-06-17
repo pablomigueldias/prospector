@@ -6,7 +6,6 @@ a partir da lista flat (suporta qualquer profundidade sem N+1).
 from __future__ import annotations
 
 import uuid
-from typing import Dict, List, Optional, Set
 
 from app.api.schemas.financas import (
     CategoriaCreate,
@@ -45,12 +44,12 @@ def _to_response(c: Categoria) -> CategoriaResponse:
     )
 
 
-def _build_tree(categorias: List[Categoria]) -> List[CategoriaTreeItem]:
-    nodes: Dict[uuid.UUID, CategoriaTreeItem] = {
+def _build_tree(categorias: list[Categoria]) -> list[CategoriaTreeItem]:
+    nodes: dict[uuid.UUID, CategoriaTreeItem] = {
         c.id: CategoriaTreeItem(id=str(c.id), nome=c.nome, ativa=c.ativa, filhos=[])
         for c in categorias
     }
-    raizes: List[CategoriaTreeItem] = []
+    raizes: list[CategoriaTreeItem] = []
     for c in categorias:  # já vem ordenado por nome → irmãos saem em ordem
         node = nodes[c.id]
         if c.categoria_pai_id and c.categoria_pai_id in nodes:
@@ -60,11 +59,11 @@ def _build_tree(categorias: List[Categoria]) -> List[CategoriaTreeItem]:
     return raizes
 
 
-def _descendentes(categoria_id: uuid.UUID, todas: List[Categoria]) -> Set[uuid.UUID]:
-    filhos_por_pai: Dict[Optional[uuid.UUID], List[uuid.UUID]] = {}
+def _descendentes(categoria_id: uuid.UUID, todas: list[Categoria]) -> set[uuid.UUID]:
+    filhos_por_pai: dict[uuid.UUID | None, list[uuid.UUID]] = {}
     for c in todas:
         filhos_por_pai.setdefault(c.categoria_pai_id, []).append(c.id)
-    desc: Set[uuid.UUID] = set()
+    desc: set[uuid.UUID] = set()
     pilha = [categoria_id]
     while pilha:
         atual = pilha.pop()

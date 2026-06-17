@@ -2,24 +2,21 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from typing import Optional
 
-
-from sqlalchemy import func,select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
-
 
 from app.db.converters import contato_to_orm, empresa_to_orm, socio_to_orm
 from app.db.models.contato import Contato as ContatoORM
 from app.db.models.empresa import Empresa as EmpresaORM
 from app.db.models.socio import Socio as SocioORM
+from app.db.sync_bridge import bridge_session
 from app.domain.lead import Lead
 from app.repositories.contato_repository import ContatoRepository
 from app.repositories.empresa_repository import EmpresaRepository
 from app.utils.logger import get_logger
-from app.db.sync_bridge import bridge_session
 
 logger = get_logger()
 
@@ -63,7 +60,7 @@ async def _persist_async(lead: Lead) -> uuid.UUID:
     async with bridge_session() as session:
         return await LeadPersistenceService(session).persist(lead)
 
-def persist_lead_sync(lead: Lead) -> Optional[uuid.UUID]:
+def persist_lead_sync(lead: Lead) -> uuid.UUID | None:
     return asyncio.run(_persist_async(lead))
 
 # stats endpoint de teste

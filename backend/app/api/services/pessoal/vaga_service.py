@@ -7,7 +7,6 @@ import re
 import unicodedata
 import uuid
 from collections import Counter
-from typing import List, Optional
 
 from app.analyzers.candidatura.parser import parse_resposta as parse_candidatura
 from app.analyzers.candidatura.prompt_builder import (
@@ -23,8 +22,8 @@ from app.analyzers.vaga.prompt_builder import (
     construir_prompt as construir_prompt_vaga,
 )
 from app.api.schemas.pessoal import (
-    AnaliseVaga,
     AnalisarVagaResponse,
+    AnaliseVaga,
     CandidaturaEmailItem,
     CurriculoVaga,
     EstudoVagasResponse,
@@ -40,7 +39,8 @@ from app.api.schemas.pessoal import (
     VagasMetricas,
     VagaUpdate,
 )
-from app.api.services._helpers import iso as _iso, parse_uuid
+from app.api.services._helpers import iso as _iso
+from app.api.services._helpers import parse_uuid
 from app.api.services.pessoal.perfil_service import get_perfil
 from app.db.models.pessoal.vaga import Vaga
 from app.db.session import get_session
@@ -97,13 +97,13 @@ async def criar_vaga(payload: VagaCreate) -> VagaResponse:
 
 
 async def listar_vagas(
-    status: Optional[str] = None,
+    status: str | None = None,
     *,
-    busca: Optional[str] = None,
-    match_min: Optional[int] = None,
-    modelo: Optional[str] = None,
-    fonte: Optional[str] = None,
-    tem_rascunho: Optional[bool] = None,
+    busca: str | None = None,
+    match_min: int | None = None,
+    modelo: str | None = None,
+    fonte: str | None = None,
+    tem_rascunho: bool | None = None,
     ordenar_por: str = "match",
 ) -> VagaListResponse:
     async with get_session() as session:
@@ -146,10 +146,10 @@ async def metricas() -> VagasMetricas:
     responderam = ps["respondeu"] + ps["entrevista"]
     entrevistas = ps["entrevista"]
 
-    def _pct(parte: int, todo: int) -> Optional[int]:
+    def _pct(parte: int, todo: int) -> int | None:
         return round(parte * 100 / todo) if todo else None
 
-    def _round(v) -> Optional[int]:
+    def _round(v) -> int | None:
         return round(v) if v is not None else None
 
     return VagasMetricas(
@@ -457,7 +457,7 @@ async def gerar_curriculo(vaga_id: str) -> GerarCurriculoResponse:
     )
 
 
-async def listar_rascunhos(vaga_id: str) -> List[CandidaturaEmailItem]:
+async def listar_rascunhos(vaga_id: str) -> list[CandidaturaEmailItem]:
     async with get_session() as session:
         rows = await VagaRepository(session).listar_emails(_uuid(vaga_id))
         return [

@@ -1,8 +1,7 @@
 """Kanban + métricas do pipeline (taxas, ticket, forecast)."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 
 from app.api.schemas.freela import (
     KanbanColuna,
@@ -18,11 +17,11 @@ from app.repositories.pessoal.freela_repository import FreelaRepository
 from ._base import _iso
 
 
-def _dias_desde(dt: Optional[datetime]) -> Optional[int]:
+def _dias_desde(dt: datetime | None) -> int | None:
     if dt is None:
         return None
-    agora = datetime.now(timezone.utc)
-    base = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    agora = datetime.now(UTC)
+    base = dt if dt.tzinfo else dt.replace(tzinfo=UTC)
     return (agora - base).days
 
 
@@ -30,7 +29,7 @@ async def kanban() -> KanbanResponse:
     async with get_session() as session:
         linhas = await FreelaRepository(session).listar_propostas_kanban()
 
-    por_status: dict[str, List[PropostaKanbanItem]] = {s: [] for s in STATUS_PROPOSTA}
+    por_status: dict[str, list[PropostaKanbanItem]] = {s: [] for s in STATUS_PROPOSTA}
     for proposta, projeto_titulo, cliente_nome in linhas:
         ref = proposta.enviada_em or proposta.created_at
         por_status.setdefault(proposta.status, []).append(

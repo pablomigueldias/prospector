@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from app.collectors.website.extractors import formatar_telefone
 from app.domain.lead import Contato, Lead
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -14,12 +12,12 @@ logger = get_logger()
 def aplicar_overrides_manuais(
     lead: Lead,
     *,
-    instagram: Optional[str] = None,
-    facebook: Optional[str] = None,
-    linkedin: Optional[str] = None,
-    email: Optional[str] = None,
-    telefone: Optional[str] = None,
-    whatsapp: Optional[str] = None,
+    instagram: str | None = None,
+    facebook: str | None = None,
+    linkedin: str | None = None,
+    email: str | None = None,
+    telefone: str | None = None,
+    whatsapp: str | None = None,
 ) -> Lead:
 
     aplicados: list[str] = []
@@ -98,7 +96,7 @@ def _obter_ou_criar_contato_principal(lead: Lead) -> Contato:
     return novo
 
 
-def _normalizar_instagram(valor: str) -> Optional[str]:
+def _normalizar_instagram(valor: str) -> str | None:
 
     if not valor:
         return None
@@ -116,7 +114,7 @@ def _normalizar_instagram(valor: str) -> Optional[str]:
     return f"https://instagram.com/{handle}"
 
 
-def _normalizar_facebook(valor: str) -> Optional[str]:
+def _normalizar_facebook(valor: str) -> str | None:
     if not valor:
         return None
     valor = valor.strip()
@@ -137,7 +135,7 @@ def _normalizar_facebook(valor: str) -> Optional[str]:
     return f"https://facebook.com/{handle}"
 
 
-def _normalizar_linkedin(valor: str) -> Optional[str]:
+def _normalizar_linkedin(valor: str) -> str | None:
     if not valor:
         return None
     valor = valor.strip()

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,10 +19,10 @@ class CategoriaRepository:
         await self.session.refresh(categoria)
         return categoria
 
-    async def get(self, categoria_id: uuid.UUID) -> Optional[Categoria]:
+    async def get(self, categoria_id: uuid.UUID) -> Categoria | None:
         return await self.session.get(Categoria, categoria_id)
 
-    async def listar_todas(self) -> List[Categoria]:
+    async def listar_todas(self) -> list[Categoria]:
         """Todas as categorias, flat (a árvore é montada no service)."""
         stmt = select(Categoria).order_by(Categoria.nome)
         result = await self.session.execute(stmt)
@@ -31,7 +30,7 @@ class CategoriaRepository:
 
     async def update(
         self, categoria_id: uuid.UUID, dados: dict
-    ) -> Optional[Categoria]:
+    ) -> Categoria | None:
         categoria = await self.get(categoria_id)
         if categoria is None:
             return None

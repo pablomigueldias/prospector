@@ -3,8 +3,7 @@ fases de IA (redator/seletor, correção e negociador)."""
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
-from typing import List
+from datetime import UTC, datetime
 
 from app.analyzers.freela.negociador.parser import parse_resposta as parse_negociacao
 from app.analyzers.freela.negociador.prompt_builder import (
@@ -90,7 +89,7 @@ async def mudar_status(proposta_id: str, payload: PropostaStatusUpdate) -> Propo
         # Carimba o timestamp da transição se ainda não tiver.
         campo = _CARIMBO.get(novo)
         if campo and getattr(proposta, campo) is None:
-            dados[campo] = datetime.now(timezone.utc)
+            dados[campo] = datetime.now(UTC)
         if novo == "perdida":
             dados["motivo_perda"] = payload.motivo_perda
 
@@ -141,7 +140,7 @@ async def deletar_proposta(proposta_id: str) -> None:
             raise FreelaError("Proposta não encontrada.")
 
 
-async def listar_propostas_do_projeto(projeto_id: str) -> List[PropostaResponse]:
+async def listar_propostas_do_projeto(projeto_id: str) -> list[PropostaResponse]:
     async with get_session() as session:
         linhas = await FreelaRepository(session).listar_propostas_do_projeto(_uuid(projeto_id))
         return [_proposta_to_resp(p) for p in linhas]

@@ -7,7 +7,6 @@ do merchant account info, tags 26-51, sub-tag 01). Sem IA — é só formato.
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
-from typing import Dict, Optional
 
 from app.api.schemas.financas import PixParseResponse
 
@@ -16,9 +15,9 @@ class PixError(Exception):
     """Código PIX inválido — vira HTTP 400 no router."""
 
 
-def _parse_tlv(s: str) -> Dict[str, str]:
+def _parse_tlv(s: str) -> dict[str, str]:
     """Quebra um EMV-TLV em {tag: valor}. Para no 1º campo malformado."""
-    out: Dict[str, str] = {}
+    out: dict[str, str] = {}
     i = 0
     n = len(s)
     while i + 4 <= n:
@@ -50,7 +49,7 @@ def parse_copia_cola(codigo: str) -> PixParseResponse:
     if not (campos.get("00") and tem_gui):
         raise PixError("Isso não parece um código PIX válido.")
 
-    valor: Optional[Decimal] = None
+    valor: Decimal | None = None
     if campos.get("54"):
         try:
             v = Decimal(campos["54"])
@@ -59,7 +58,7 @@ def parse_copia_cola(codigo: str) -> PixParseResponse:
             valor = None
 
     # Chave: merchant account info nas tags 26..51 (sub-TLV, chave na sub-tag 01).
-    chave: Optional[str] = None
+    chave: str | None = None
     for t in (f"{n:02d}" for n in range(26, 52)):
         if t in campos:
             sub = _parse_tlv(campos[t])

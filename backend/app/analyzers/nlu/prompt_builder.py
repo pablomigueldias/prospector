@@ -4,7 +4,6 @@ a melhor correspondência (em vez de inventar)."""
 from __future__ import annotations
 
 from datetime import date
-from typing import List
 
 OUTPUT_SCHEMA = """
 {
@@ -36,7 +35,7 @@ REGRAS:
 
 
 def construir_prompt(
-    texto: str, *, contas: List[str], categorias: List[str], hoje: date
+    texto: str, *, contas: list[str], categorias: list[str], hoje: date
 ) -> str:
     return "\n\n".join([
         INSTRUCOES.strip(),

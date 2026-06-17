@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
-def normalizar_opencnpj_para_brasilapi(raw: Dict[str, Any]) -> Dict[str, Any]:
+def normalizar_opencnpj_para_brasilapi(raw: dict[str, Any]) -> dict[str, Any]:
     return {
         "cnpj": raw.get("cnpj"),
         "razao_social": raw.get("razao_social"),
@@ -37,7 +37,7 @@ def normalizar_opencnpj_para_brasilapi(raw: Dict[str, Any]) -> Dict[str, Any]:
 
 
 
-def _parse_cnae(valor: Any) -> Optional[int]:
+def _parse_cnae(valor: Any) -> int | None:
     if valor is None or valor == "":
         return None
     try:
@@ -46,7 +46,7 @@ def _parse_cnae(valor: Any) -> Optional[int]:
         return None
 
 
-def _parse_capital_social(valor: Any) -> Optional[float]:
+def _parse_capital_social(valor: Any) -> float | None:
     if valor is None or valor == "":
         return None
     if isinstance(valor, (int, float)):
@@ -60,7 +60,7 @@ def _parse_capital_social(valor: Any) -> Optional[float]:
         return None
 
 
-def _extrair_sigla_porte(porte_extenso: Optional[str]) -> Optional[str]:
+def _extrair_sigla_porte(porte_extenso: str | None) -> str | None:
     if not porte_extenso:
         return None
     porte = porte_extenso.strip()
@@ -88,8 +88,8 @@ def _parse_opcao_mei(valor: Any) -> bool:
 
 
 def _montar_logradouro_com_tipo(
-    tipo: Optional[str], logradouro: Optional[str]
-) -> Optional[str]:
+    tipo: str | None, logradouro: str | None
+) -> str | None:
 
     if not logradouro:
         return None
@@ -101,21 +101,21 @@ def _montar_logradouro_com_tipo(
     return logradouro.strip()
 
 
-def _normalizar_cep(cep: Optional[str]) -> Optional[str]:
+def _normalizar_cep(cep: str | None) -> str | None:
     if not cep:
         return None
     digits = "".join(c for c in str(cep) if c.isdigit())
     return digits or None
 
 
-def _coletar_extras(raw: Dict[str, Any]) -> Dict[str, Any]:
-    extras: Dict[str, Any] = {}
+def _coletar_extras(raw: dict[str, Any]) -> dict[str, Any]:
+    extras: dict[str, Any] = {}
 
     email = (raw.get("email") or "").strip()
     if email:
         extras["email_receita"] = email.lower()
 
-    telefones_normalizados: List[Dict[str, Any]] = []
+    telefones_normalizados: list[dict[str, Any]] = []
     for tel in raw.get("telefones") or []:
         if not isinstance(tel, dict):
             continue

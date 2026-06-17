@@ -7,11 +7,8 @@ edita e responde na mão dentro da plataforma.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 from app.analyzers._perfil_texto import perfil_para_texto
 from app.api.schemas.pessoal import PerfilMestreResponse
-
 
 OUTPUT_SCHEMA = """
 {
@@ -46,10 +43,10 @@ PRINCÍPIOS:
 def construir_prompt(
     objecao: str,
     *,
-    perfil: Optional[PerfilMestreResponse] = None,
-    titulo: Optional[str] = None,
-    valor_cotado: Optional[float] = None,
-    descricao_projeto: Optional[str] = None,
+    perfil: PerfilMestreResponse | None = None,
+    titulo: str | None = None,
+    valor_cotado: float | None = None,
+    descricao_projeto: str | None = None,
 ) -> str:
     ctx = []
     if titulo:

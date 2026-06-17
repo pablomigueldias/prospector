@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, ForeignKey, Index, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -39,19 +39,19 @@ class Compra(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         String(20), nullable=False, default="cartao", server_default="cartao"
     )
 
-    cartao_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    cartao_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.cartoes.id", ondelete="SET NULL"),
         nullable=True,
     )
-    categoria_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    categoria_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.categorias.id", ondelete="SET NULL"),
         nullable=True,
     )
     # Quando a compra é a ocorrência mensal de uma recorrência no cartão
     # (ex.: assinatura). Liga pro mês não duplicar e pra rastrear o vínculo.
-    recorrencia_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    recorrencia_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey(
             "financas.recorrencias.id",
@@ -61,7 +61,7 @@ class Compra(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=True,
     )
 
-    parcelas: Mapped[List["Parcela"]] = relationship(
+    parcelas: Mapped[list[Parcela]] = relationship(
         back_populates="compra",
         cascade="all, delete-orphan",
         lazy="selectin",

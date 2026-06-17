@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
-
 
 # ══════════════════════════════════════════════════════════════════
 # Contas (onde o dinheiro mora)
@@ -18,16 +16,16 @@ class ContaCreate(BaseModel):
     saldo_atual: Decimal = Field(
         Decimal("0"), description="Saldo inicial (de abertura). Default 0."
     )
-    meta: Optional[Decimal] = Field(
+    meta: Decimal | None = Field(
         None, description="Objetivo de valor (ex.: reserva 'viagem: 5000'). Null = sem meta."
     )
 
 
 class ContaUpdate(BaseModel):
-    nome: Optional[str] = None
-    tipo: Optional[str] = None
-    ativa: Optional[bool] = None
-    meta: Optional[Decimal] = None
+    nome: str | None = None
+    tipo: str | None = None
+    ativa: bool | None = None
+    meta: Decimal | None = None
 
 
 class ContaResponse(BaseModel):
@@ -36,14 +34,14 @@ class ContaResponse(BaseModel):
     nome: str
     tipo: str
     saldo_atual: Decimal
-    meta: Optional[Decimal] = None
+    meta: Decimal | None = None
     ativa: bool
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class ContaListResponse(BaseModel):
-    items: List[ContaResponse]
+    items: list[ContaResponse]
     total: int
 
 

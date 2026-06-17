@@ -1,8 +1,7 @@
-from app.db.models.pessoal.freela.plataforma import Plataforma
 from app.db.models.pessoal.freela.cliente import Cliente
+from app.db.models.pessoal.freela.plataforma import Plataforma
 from app.db.models.pessoal.freela.projeto import Projeto
-from app.db.models.pessoal.freela.proposta import Proposta, STATUS_PROPOSTA
-
+from app.db.models.pessoal.freela.proposta import STATUS_PROPOSTA, Proposta
 
 __all__ = [
     "Plataforma",

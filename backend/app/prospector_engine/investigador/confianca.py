@@ -1,6 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
-
 
 PESOS_FONTE = {
     "usuario": 100,
@@ -18,7 +16,7 @@ PESOS_FONTE = {
 class CampoConfianca:
 
     valor: str
-    fontes: List[str] = field(default_factory=list)
+    fontes: list[str] = field(default_factory=list)
 
     def score(self) -> int:
         if not self.fontes:
@@ -38,26 +36,26 @@ class CampoConfianca:
 @dataclass
 class Investigacao:
 
-    nome: Optional[CampoConfianca] = None
-    cnpj: Optional[CampoConfianca] = None
-    razao_social: Optional[CampoConfianca] = None
-    cidade: Optional[CampoConfianca] = None
-    estado: Optional[CampoConfianca] = None
-    endereco: Optional[CampoConfianca] = None
-    site: Optional[CampoConfianca] = None
-    instagram: Optional[CampoConfianca] = None
-    facebook: Optional[CampoConfianca] = None
-    linkedin: Optional[CampoConfianca] = None
-    telefone: Optional[CampoConfianca] = None
-    whatsapp: Optional[CampoConfianca] = None
-    email: Optional[CampoConfianca] = None
+    nome: CampoConfianca | None = None
+    cnpj: CampoConfianca | None = None
+    razao_social: CampoConfianca | None = None
+    cidade: CampoConfianca | None = None
+    estado: CampoConfianca | None = None
+    endereco: CampoConfianca | None = None
+    site: CampoConfianca | None = None
+    instagram: CampoConfianca | None = None
+    facebook: CampoConfianca | None = None
+    linkedin: CampoConfianca | None = None
+    telefone: CampoConfianca | None = None
+    whatsapp: CampoConfianca | None = None
+    email: CampoConfianca | None = None
 
-    candidatos_site: List[Dict] = field(default_factory=list)
-    socios: List[Dict] = field(default_factory=list)
-    capital_social: Optional[CampoConfianca] = None
-    cnae_descricao: Optional[CampoConfianca] = None
+    candidatos_site: list[dict] = field(default_factory=list)
+    socios: list[dict] = field(default_factory=list)
+    capital_social: CampoConfianca | None = None
+    cnae_descricao: CampoConfianca | None = None
 
-    def adicionar(self, campo: str, valor: Optional[str], fonte: str) -> None:
+    def adicionar(self, campo: str, valor: str | None, fonte: str) -> None:
 
         if valor is None or valor == "":
             return
@@ -66,7 +64,7 @@ class Investigacao:
         if not valor_str:
             return
 
-        atual: Optional[CampoConfianca] = getattr(self, campo, None)
+        atual: CampoConfianca | None = getattr(self, campo, None)
 
         if atual is None:
             setattr(self, campo, CampoConfianca(valor=valor_str, fontes=[fonte]))
@@ -84,7 +82,7 @@ class Investigacao:
         if peso_novo > peso_atual:
             setattr(self, campo, CampoConfianca(valor=valor_str, fontes=[fonte]))
 
-    def campos_com_score(self) -> Dict[str, tuple]:
+    def campos_com_score(self) -> dict[str, tuple]:
         result = {}
         for nome in (
             "nome", "cnpj", "razao_social", "cidade", "estado", "endereco",
@@ -92,12 +90,12 @@ class Investigacao:
             "telefone", "whatsapp", "email",
             "capital_social", "cnae_descricao",
         ):
-            campo: Optional[CampoConfianca] = getattr(self, nome, None)
+            campo: CampoConfianca | None = getattr(self, nome, None)
             if campo:
                 result[nome] = (campo.valor, campo.score(), campo.fontes_str())
         return result
 
-    def campos_baixa_confianca(self, limiar: int = 70) -> List[str]:
+    def campos_baixa_confianca(self, limiar: int = 70) -> list[str]:
         return [
             nome for nome, (_, score, _) in self.campos_com_score().items()
             if score < limiar

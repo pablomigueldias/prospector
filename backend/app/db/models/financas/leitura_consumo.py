@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import Optional
 
 from sqlalchemy import Date, ForeignKey, Index, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 TIPOS_CONSUMO = ("agua", "gas", "luz")
 
@@ -27,12 +25,12 @@ class LeituraConsumo(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     mes_referencia: Mapped[date] = mapped_column(Date, nullable=False)  # 1º dia do mês
 
     leitura_atual: Mapped[float] = mapped_column(Numeric(12, 3), nullable=False)
-    leitura_anterior: Mapped[Optional[float]] = mapped_column(Numeric(12, 3))
-    consumo: Mapped[Optional[float]] = mapped_column(Numeric(12, 3))
-    valor: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+    leitura_anterior: Mapped[float | None] = mapped_column(Numeric(12, 3))
+    consumo: Mapped[float | None] = mapped_column(Numeric(12, 3))
+    valor: Mapped[float | None] = mapped_column(Numeric(12, 2))
 
     # Boleto/transação que trouxe a leitura (preenchido pelo importador).
-    transacao_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    transacao_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.transacoes.id", ondelete="SET NULL"),
         nullable=True,

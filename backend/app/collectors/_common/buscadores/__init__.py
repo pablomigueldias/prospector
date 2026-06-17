@@ -14,7 +14,6 @@ from app.collectors._common.buscadores.orchestrador import (
     get_orchestrador,
 )
 
-
 __all__ = [
     "buscar",
     "get_orchestrador",

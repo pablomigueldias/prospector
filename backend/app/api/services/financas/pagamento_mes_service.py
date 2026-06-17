@@ -7,7 +7,6 @@ import calendar
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional, Tuple
 
 from sqlalchemy import select
 
@@ -20,8 +19,10 @@ from app.api.schemas.financas import (
 )
 from app.api.services.financas import (
     cartao_service,
-    encargos as encargos_service,
     transacao_service,
+)
+from app.api.services.financas import (
+    encargos as encargos_service,
 )
 from app.db.models.financas.cartao import Cartao
 from app.db.models.financas.conta import Conta
@@ -42,7 +43,7 @@ def _uuid(valor: str, *, campo: str = "id") -> uuid.UUID:
         raise PagamentoMesError(f"{campo} inválido: {valor!r}")
 
 
-def _parse_competencia(s: Optional[str]) -> Tuple[int, int]:
+def _parse_competencia(s: str | None) -> tuple[int, int]:
     if not s:
         hoje = date.today()
         return hoje.year, hoje.month
@@ -57,7 +58,7 @@ def _parse_competencia(s: Optional[str]) -> Tuple[int, int]:
 
 
 async def preview_mes(
-    usuario_id: str, competencia: Optional[str] = None
+    usuario_id: str, competencia: str | None = None
 ) -> PagamentoMesPreview:
     """Tudo que está a pagar com vencimento até o fim do mês: boletos/contas a
     pagar (com encargos até hoje) + faturas de cartão em aberto."""
@@ -66,7 +67,7 @@ async def preview_mes(
     fim_mes = date(ano, mes, calendar.monthrange(ano, mes)[1])
     hoje = date.today()
 
-    itens: List[PagamentoMesItem] = []
+    itens: list[PagamentoMesItem] = []
     total = Decimal("0")
 
     async with get_session() as session:
@@ -133,7 +134,7 @@ async def pagar_mes(
     quando = payload.data_pagamento or date.today()
     pagos = 0
     total = Decimal("0")
-    falhas: List[str] = []
+    falhas: list[str] = []
 
     for item in payload.itens:
         try:

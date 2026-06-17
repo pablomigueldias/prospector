@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Optional
 
 from app.config import settings
 from app.utils.logger import get_logger
 
 logger = get_logger()
 
-_gemini_bloqueado_em: Optional[date] = None
+_gemini_bloqueado_em: date | None = None
 
 def _gemini_esta_bloqueado() -> bool:
     return _gemini_bloqueado_em == date.today()
@@ -49,7 +48,8 @@ def _gerar_com_fallback(
         logger.info('Gemini bloqueado hoje - indo direto pro Groq')
         return groq_gerar(prompt, response_json=json_mode)
 
-    from app.analyzers.gemini.client import GeminiRateLimit, gerar_conteudo as gemini_gerar
+    from app.analyzers.gemini.client import GeminiRateLimit
+    from app.analyzers.gemini.client import gerar_conteudo as gemini_gerar
 
     try:
         return gemini_gerar(

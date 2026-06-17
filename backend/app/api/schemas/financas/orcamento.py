@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
-
 
 # ══════════════════════════════════════════════════════════════════
 # Orçamento por categoria (teto mensal)
@@ -18,23 +16,23 @@ class OrcamentoCreate(BaseModel):
 
 
 class OrcamentoUpdate(BaseModel):
-    valor_mensal: Optional[Decimal] = Field(None, gt=0)
-    ativo: Optional[bool] = None
+    valor_mensal: Decimal | None = Field(None, gt=0)
+    ativo: bool | None = None
 
 
 class OrcamentoResponse(BaseModel):
     id: str
     usuario_id: str
     categoria_id: str
-    categoria_nome: Optional[str] = None
+    categoria_nome: str | None = None
     valor_mensal: Decimal
     ativo: bool
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class OrcamentoListResponse(BaseModel):
-    items: List[OrcamentoResponse]
+    items: list[OrcamentoResponse]
     total: int
 
 
@@ -42,7 +40,7 @@ class OrcamentoStatusItem(BaseModel):
     """Quanto de um orçamento já foi consumido no mês."""
     orcamento_id: str
     categoria_id: str
-    categoria_nome: Optional[str] = None
+    categoria_nome: str | None = None
     valor_mensal: Decimal
     consumido: Decimal
     restante: Decimal           # valor_mensal − consumido (pode ser negativo)
@@ -51,7 +49,7 @@ class OrcamentoStatusItem(BaseModel):
 
 class OrcamentoStatusResponse(BaseModel):
     competencia: str            # "YYYY-MM"
-    items: List[OrcamentoStatusItem]
+    items: list[OrcamentoStatusItem]
     total_orcado: Decimal
     total_consumido: Decimal
 

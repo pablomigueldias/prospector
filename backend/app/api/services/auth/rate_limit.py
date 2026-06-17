@@ -12,8 +12,7 @@ crescer). A mensagem de bloqueio pode ser específica (não vaza se o email exis
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,13 +31,13 @@ class Bloqueado(Exception):
 
 
 def _agora() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def registrar(
     session: AsyncSession,
-    email: Optional[str],
-    ip: Optional[str],
+    email: str | None,
+    ip: str | None,
     *,
     sucesso: bool,
 ) -> None:
@@ -64,7 +63,7 @@ async def _conta_falhas(session, *, coluna, valor, desde) -> int:
 
 
 async def checar(
-    session: AsyncSession, email: Optional[str], ip: Optional[str]
+    session: AsyncSession, email: str | None, ip: str | None
 ) -> None:
     """Levanta Bloqueado se o IP ou a conta estourou o limite. Não registra nada."""
     agora = _agora()

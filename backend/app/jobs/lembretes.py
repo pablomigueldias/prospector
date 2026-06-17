@@ -11,14 +11,12 @@ import asyncio
 import uuid
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.services.financas import encargos as encargos_service
-from app.api.services.financas import orcamento_service
-from app.api.services.financas import resumo_service
+from app.api.services.financas import orcamento_service, resumo_service
 from app.api.services.financas.bot_service import mapa_chat_usuario
 from app.config import settings
 from app.db.models.financas.cartao import Cartao
@@ -44,7 +42,7 @@ def _dm(d: date) -> str:
 
 async def _contas_a_pagar(
     session: AsyncSession, usuario_id: uuid.UUID, limite: date
-) -> List[Transacao]:
+) -> list[Transacao]:
     stmt = (
         select(Transacao)
         .where(
@@ -59,11 +57,11 @@ async def _contas_a_pagar(
     return list((await session.scalars(stmt)).all())
 
 
-def _montar_texto(itens: List[Transacao], hoje: date) -> Optional[str]:
+def _montar_texto(itens: list[Transacao], hoje: date) -> str | None:
     if not itens:
         return None
-    vencidas: List[str] = []
-    proximas: List[str] = []
+    vencidas: list[str] = []
+    proximas: list[str] = []
     total = Decimal("0")
     for t in itens:
         enc = encargos_service.calcular_encargos(
@@ -91,7 +89,7 @@ def _montar_texto(itens: List[Transacao], hoje: date) -> Optional[str]:
 
 async def _faturas_a_vencer(
     session: AsyncSession, usuario_id: uuid.UUID, limite: date
-) -> List[tuple]:
+) -> list[tuple]:
     """(Fatura, nome do cartão) das faturas não pagas que vencem até `limite`."""
     stmt = (
         select(Fatura, Cartao.nome)
@@ -107,10 +105,10 @@ async def _faturas_a_vencer(
     return list((await session.execute(stmt)).all())
 
 
-def _montar_texto_faturas(linhas: List[tuple], hoje: date) -> Optional[str]:
+def _montar_texto_faturas(linhas: list[tuple], hoje: date) -> str | None:
     if not linhas:
         return None
-    out: List[str] = []
+    out: list[str] = []
     total = Decimal("0")
     for f, nome in linhas:
         total += Decimal(f.valor_total)
@@ -126,7 +124,7 @@ def _montar_texto_faturas(linhas: List[tuple], hoje: date) -> Optional[str]:
     )
 
 
-async def _texto_orcamento(usuario_id: str, ref: date) -> Optional[str]:
+async def _texto_orcamento(usuario_id: str, ref: date) -> str | None:
     """Categorias que já passaram de `orcamento_alerta_pct` do teto no mês."""
     pct_alerta = max(0, settings.orcamento_alerta_pct)
     comp = f"{ref.year:04d}-{ref.month:02d}"
@@ -144,7 +142,7 @@ async def _texto_orcamento(usuario_id: str, ref: date) -> Optional[str]:
     return "📊 <b>Orçamentos no limite</b>\n" + "\n".join(linhas)
 
 
-async def _texto_saldo_negativo(usuario_id: str, ref: date) -> Optional[str]:
+async def _texto_saldo_negativo(usuario_id: str, ref: date) -> str | None:
     """Avisa se a projeção de fim de mês ficar no vermelho (o previsto a pagar
     passa do que há em caixa + a receber)."""
     proj = await resumo_service.projecao_mes(usuario_id, ref.year, ref.month)
@@ -158,7 +156,7 @@ async def _texto_saldo_negativo(usuario_id: str, ref: date) -> Optional[str]:
     )
 
 
-async def enviar_lembretes(ref: Optional[date] = None) -> dict:
+async def enviar_lembretes(ref: date | None = None) -> dict:
     """Manda o digest de contas a pagar pra cada chat configurado no Telegram.
     Pablo e Monique compartilham o usuario_id → ambos recebem (carteira junta)."""
     if not settings.lembretes_enabled:

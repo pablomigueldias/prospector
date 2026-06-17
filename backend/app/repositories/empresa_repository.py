@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.empresa import Empresa
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -20,11 +18,11 @@ class EmpresaRepository:
 
     # ── Reads ─────────────────────────────────────────────────────
 
-    async def get_by_id(self, empresa_id: uuid.UUID) -> Optional[Empresa]:
+    async def get_by_id(self, empresa_id: uuid.UUID) -> Empresa | None:
         """Busca empresa pelo UUID. Retorna None se não existir."""
         return await self.session.get(Empresa, empresa_id)
 
-    async def find_by_cnpj(self, cnpj: str) -> Optional[Empresa]:
+    async def find_by_cnpj(self, cnpj: str) -> Empresa | None:
         """
         Busca empresa pelo CNPJ (só dígitos, sem máscara).
         """
@@ -39,7 +37,7 @@ class EmpresaRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_recent(self, limit: int = 20) -> List[Empresa]:
+    async def list_recent(self, limit: int = 20) -> list[Empresa]:
         """Últimas N empresas, mais recente primeiro."""
         stmt = (
             select(Empresa)

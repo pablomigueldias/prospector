@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 if TYPE_CHECKING:
     from app.db.models.empresa import Empresa
@@ -24,10 +23,10 @@ class Socio(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     nome: Mapped[str] = mapped_column(String(300), nullable=False)
-    qualificacao: Mapped[Optional[str]] = mapped_column(String(200))
+    qualificacao: Mapped[str | None] = mapped_column(String(200))
 
     # ── Relacionamento reverso ───────────────────────────────────
-    empresa: Mapped["Empresa"] = relationship(back_populates="socios")
+    empresa: Mapped[Empresa] = relationship(back_populates="socios")
 
     __table_args__ = (
         Index("ix_socios_empresa_id", "empresa_id"),

@@ -5,10 +5,7 @@ Isolado dos demais schemas pessoais.
 """
 from __future__ import annotations
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field, field_validator
-
 
 # ══════════════════════════════════════════════════════════════════
 # Plataforma (read-only; seedada)
@@ -17,9 +14,9 @@ from pydantic import BaseModel, Field, field_validator
 class PlataformaResponse(BaseModel):
     id: str
     nome: str
-    url_base: Optional[str] = None
-    config_comissao: Optional[dict] = None
-    lance_minimo_padrao: Optional[float] = None
+    url_base: str | None = None
+    config_comissao: dict | None = None
+    lance_minimo_padrao: float | None = None
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -28,14 +25,14 @@ class PlataformaResponse(BaseModel):
 
 class ClienteBase(BaseModel):
     nome: str
-    plataforma_id: Optional[str] = None
-    rating: Optional[float] = None
-    projetos_publicados: Optional[int] = None
-    projetos_pagos: Optional[int] = None
+    plataforma_id: str | None = None
+    rating: float | None = None
+    projetos_publicados: int | None = None
+    projetos_pagos: int | None = None
     pagamento_verificado: bool = False
-    membro_desde: Optional[str] = None
+    membro_desde: str | None = None
     ja_me_pagou_usd: float = 0
-    notas: Optional[str] = None
+    notas: str | None = None
 
 
 class ClienteCreate(ClienteBase):
@@ -43,21 +40,21 @@ class ClienteCreate(ClienteBase):
 
 
 class ClienteUpdate(BaseModel):
-    nome: Optional[str] = None
-    plataforma_id: Optional[str] = None
-    rating: Optional[float] = None
-    projetos_publicados: Optional[int] = None
-    projetos_pagos: Optional[int] = None
-    pagamento_verificado: Optional[bool] = None
-    membro_desde: Optional[str] = None
-    ja_me_pagou_usd: Optional[float] = None
-    notas: Optional[str] = None
+    nome: str | None = None
+    plataforma_id: str | None = None
+    rating: float | None = None
+    projetos_publicados: int | None = None
+    projetos_pagos: int | None = None
+    pagamento_verificado: bool | None = None
+    membro_desde: str | None = None
+    ja_me_pagou_usd: float | None = None
+    notas: str | None = None
 
 
 class ClienteResponse(ClienteBase):
     id: str
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -67,16 +64,16 @@ class ClienteResponse(ClienteBase):
 class ProjetoBase(BaseModel):
     titulo: str
     descricao: str
-    plataforma_id: Optional[str] = None
-    cliente_id: Optional[str] = None
-    url: Optional[str] = None
-    faixa_orcamento_min: Optional[float] = None
-    faixa_orcamento_max: Optional[float] = None
-    habilidades: List[str] = Field(default_factory=list)
-    prazo_estimado: Optional[str] = None
-    status_no_site: Optional[str] = None
-    n_propostas_concorrentes: Optional[int] = None
-    n_interessados: Optional[int] = None
+    plataforma_id: str | None = None
+    cliente_id: str | None = None
+    url: str | None = None
+    faixa_orcamento_min: float | None = None
+    faixa_orcamento_max: float | None = None
+    habilidades: list[str] = Field(default_factory=list)
+    prazo_estimado: str | None = None
+    status_no_site: str | None = None
+    n_propostas_concorrentes: int | None = None
+    n_interessados: int | None = None
 
 
 class ProjetoCreate(ProjetoBase):
@@ -90,12 +87,12 @@ class ExtrairProjetoRequest(BaseModel):
 class ExtrairProjetoResponse(BaseModel):
     """Campos pré-preenchidos a partir do texto colado (revisar antes de salvar)."""
 
-    titulo: Optional[str] = None
-    faixa_orcamento_min: Optional[float] = None
-    faixa_orcamento_max: Optional[float] = None
-    n_propostas_concorrentes: Optional[int] = None
-    n_interessados: Optional[int] = None
-    habilidades: List[str] = Field(default_factory=list)  # skills exigidas no texto
+    titulo: str | None = None
+    faixa_orcamento_min: float | None = None
+    faixa_orcamento_max: float | None = None
+    n_propostas_concorrentes: int | None = None
+    n_interessados: int | None = None
+    habilidades: list[str] = Field(default_factory=list)  # skills exigidas no texto
 
     @field_validator(
         "faixa_orcamento_min", "faixa_orcamento_max",
@@ -112,50 +109,50 @@ class ExtrairProjetoResponse(BaseModel):
 
 
 class ProjetoUpdate(BaseModel):
-    titulo: Optional[str] = None
-    descricao: Optional[str] = None
-    plataforma_id: Optional[str] = None
-    cliente_id: Optional[str] = None
-    url: Optional[str] = None
-    faixa_orcamento_min: Optional[float] = None
-    faixa_orcamento_max: Optional[float] = None
-    habilidades: Optional[List[str]] = None
-    prazo_estimado: Optional[str] = None
-    status_no_site: Optional[str] = None
-    n_propostas_concorrentes: Optional[int] = None
-    n_interessados: Optional[int] = None
+    titulo: str | None = None
+    descricao: str | None = None
+    plataforma_id: str | None = None
+    cliente_id: str | None = None
+    url: str | None = None
+    faixa_orcamento_min: float | None = None
+    faixa_orcamento_max: float | None = None
+    habilidades: list[str] | None = None
+    prazo_estimado: str | None = None
+    status_no_site: str | None = None
+    n_propostas_concorrentes: int | None = None
+    n_interessados: int | None = None
 
 
 class ProjetoResponse(ProjetoBase):
     id: str
-    analise_json: Optional[dict] = None
-    coletado_em: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    analise_json: dict | None = None
+    coletado_em: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class ProjetoListItem(BaseModel):
     id: str
     titulo: str
-    cliente_nome: Optional[str] = None
-    status_no_site: Optional[str] = None
-    faixa_orcamento_min: Optional[float] = None
-    faixa_orcamento_max: Optional[float] = None
-    n_propostas_concorrentes: Optional[int] = None
-    fit_score: Optional[int] = None       # vem do analise_json (Fase 3)
-    risco: Optional[str] = None           # baixo / medio / alto (scam radar)
-    quadrante: Optional[str] = None       # quick_win | dificil_longo | escopo_vago | padrao
-    preco_status: Optional[str] = None    # subcotado | justo | acima | sem_orcamento
-    estimativa: Optional[EstimativaFreela] = None  # esforço/preço pra pré-preencher
+    cliente_nome: str | None = None
+    status_no_site: str | None = None
+    faixa_orcamento_min: float | None = None
+    faixa_orcamento_max: float | None = None
+    n_propostas_concorrentes: int | None = None
+    fit_score: int | None = None       # vem do analise_json (Fase 3)
+    risco: str | None = None           # baixo / medio / alto (scam radar)
+    quadrante: str | None = None       # quick_win | dificil_longo | escopo_vago | padrao
+    preco_status: str | None = None    # subcotado | justo | acima | sem_orcamento
+    estimativa: EstimativaFreela | None = None  # esforço/preço pra pré-preencher
     tem_analise: bool = False
     qtd_propostas: int = 0
     cliente_recorrente: bool = False      # cliente já me pagou (comissão menor)
     cliente_pago_usd: float = 0
-    created_at: Optional[str] = None
+    created_at: str | None = None
 
 
 class ProjetoListResponse(BaseModel):
-    items: List[ProjetoListItem]
+    items: list[ProjetoListItem]
     total: int
 
 
@@ -164,13 +161,13 @@ class ProjetoListResponse(BaseModel):
 # ══════════════════════════════════════════════════════════════════
 
 class PropostaBase(BaseModel):
-    valor_cotado: Optional[float] = None
-    horas_estimadas: Optional[float] = None
-    valor_liquido_estimado: Optional[float] = None
-    texto_enviado: Optional[str] = None
-    projetos_destacados: List[str] = Field(default_factory=list)
-    habilidades_destacadas: List[str] = Field(default_factory=list)
-    prazo_proposto: Optional[str] = None
+    valor_cotado: float | None = None
+    horas_estimadas: float | None = None
+    valor_liquido_estimado: float | None = None
+    texto_enviado: str | None = None
+    projetos_destacados: list[str] = Field(default_factory=list)
+    habilidades_destacadas: list[str] = Field(default_factory=list)
+    prazo_proposto: str | None = None
 
 
 class PropostaCreate(PropostaBase):
@@ -186,38 +183,38 @@ class PropostaResponse(PropostaBase):
     id: str
     projeto_id: str
     status: str
-    enviada_em: Optional[str] = None
-    data_resposta: Optional[str] = None
-    data_fechamento: Optional[str] = None
-    motivo_perda: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    enviada_em: str | None = None
+    data_resposta: str | None = None
+    data_fechamento: str | None = None
+    motivo_perda: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class PropostaStatusUpdate(BaseModel):
     status: str
-    motivo_perda: Optional[str] = None  # usado quando status="perdida"
+    motivo_perda: str | None = None  # usado quando status="perdida"
 
 
 class PropostaKanbanItem(BaseModel):
     id: str
     projeto_id: str
     projeto_titulo: str
-    cliente_nome: Optional[str] = None
-    valor_cotado: Optional[float] = None
-    valor_liquido_estimado: Optional[float] = None
+    cliente_nome: str | None = None
+    valor_cotado: float | None = None
+    valor_liquido_estimado: float | None = None
     status: str
-    dias_desde_envio: Optional[int] = None
-    created_at: Optional[str] = None
+    dias_desde_envio: int | None = None
+    created_at: str | None = None
 
 
 class KanbanColuna(BaseModel):
     status: str
-    items: List[PropostaKanbanItem]
+    items: list[PropostaKanbanItem]
 
 
 class KanbanResponse(BaseModel):
-    colunas: List[KanbanColuna]
+    colunas: list[KanbanColuna]
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -239,8 +236,8 @@ class MetricasResponse(BaseModel):
     pipeline_aberto_liquido: float          # soma do líquido em aberto
     forecast_liquido: float                 # pipeline × taxa de fechamento
     # Calibração
-    tempo_medio_resposta_horas: Optional[float] = None  # velocidade do cliente
-    valor_hora_real: Optional[float] = None             # líquido/hora das fechadas
+    tempo_medio_resposta_horas: float | None = None  # velocidade do cliente
+    valor_hora_real: float | None = None             # líquido/hora das fechadas
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -265,12 +262,12 @@ class PlanoMetaResponse(BaseModel):
     meta_liquida: float
     horas_faturaveis_mes: float
     valor_hora_alvo: float                # meta ÷ horas faturáveis: o R$/h que fecha a conta
-    valor_hora_real: Optional[float] = None       # das fechadas (echo de métricas)
-    ticket_medio: Optional[float] = None          # echo de métricas
-    projecao_liquida_mes: Optional[float] = None  # valor_hora_real × horas (ritmo atual)
-    projetos_necessarios_mes: Optional[float] = None
-    propostas_necessarias_mes: Optional[float] = None
-    propostas_por_semana: Optional[float] = None
+    valor_hora_real: float | None = None       # das fechadas (echo de métricas)
+    ticket_medio: float | None = None          # echo de métricas
+    projecao_liquida_mes: float | None = None  # valor_hora_real × horas (ritmo atual)
+    projetos_necessarios_mes: float | None = None
+    propostas_necessarias_mes: float | None = None
+    propostas_por_semana: float | None = None
     alcancavel_por_volume: bool = False   # o ritmo atual de R$/h enche a meta?
     gargalo: str                          # ticket | conversao | volume | no_caminho | sem_dados
     diagnostico: str
@@ -283,21 +280,21 @@ class PlanoMetaResponse(BaseModel):
 
 class PrecificarRequest(BaseModel):
     liquido_desejado: float
-    cliente_id: Optional[str] = None          # puxa ja_me_pagou_usd do cliente
-    ja_me_pagou_usd: Optional[float] = None    # ou passe direto (cliente novo = 0)
-    plataforma_id: Optional[str] = None        # de onde vêm as faixas de comissão
-    horas_estimadas: Optional[float] = None
-    valor_hora_alvo: Optional[float] = None
+    cliente_id: str | None = None          # puxa ja_me_pagou_usd do cliente
+    ja_me_pagou_usd: float | None = None    # ou passe direto (cliente novo = 0)
+    plataforma_id: str | None = None        # de onde vêm as faixas de comissão
+    horas_estimadas: float | None = None
+    valor_hora_alvo: float | None = None
 
 
 class PrecificarResponse(BaseModel):
     pct_comissao: float          # 0.20 / 0.10 / 0.05
     valor_a_cotar: float         # o que você poe no campo "valor total"
     cliente_paga: float          # valor_a_cotar + custo de serviço do cliente
-    lance_minimo: Optional[float] = None
+    lance_minimo: float | None = None
     abaixo_do_lance_minimo: bool = False
-    liquido_por_hora: Optional[float] = None
-    alerta: Optional[str] = None  # ex: "abaixo do seu valor-hora alvo"
+    liquido_por_hora: float | None = None
+    alerta: str | None = None  # ex: "abaixo do seu valor-hora alvo"
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -307,11 +304,11 @@ class PrecificarResponse(BaseModel):
 class EstimativaFreela(BaseModel):
     """Esforço + preço justo de mercado (BR) pra este escopo. R$/horas/dias."""
 
-    horas_estimadas: Optional[int] = None      # horas de trabalho realistas
-    prazo_dias: Optional[int] = None           # prazo de entrega em dias
-    valor_mercado_min: Optional[int] = None    # faixa honesta de mercado (R$)
-    valor_mercado_max: Optional[int] = None
-    valor_sugerido: Optional[int] = None       # quanto cotar (R$), dado fit/concorrência
+    horas_estimadas: int | None = None      # horas de trabalho realistas
+    prazo_dias: int | None = None           # prazo de entrega em dias
+    valor_mercado_min: int | None = None    # faixa honesta de mercado (R$)
+    valor_mercado_max: int | None = None
+    valor_sugerido: int | None = None       # quanto cotar (R$), dado fit/concorrência
 
     @field_validator(
         "horas_estimadas", "prazo_dias",
@@ -332,17 +329,17 @@ class VereditoPreco(BaseModel):
     """Cruzamento determinístico orçamento do cliente × mercado (calculado no
     service, não pela IA). Responde 'o valor está justo?'."""
 
-    status: Optional[str] = None       # subcotado | justo | acima | sem_orcamento
-    gap_texto: Optional[str] = None    # frase legível ("cliente R$800; mercado R$1.5-2.5k → subcotado")
-    rh_orcamento: Optional[float] = None  # R$/hora efetivo do orçamento do cliente
-    rh_vs_alvo: Optional[bool] = None     # True se rh_orcamento abaixo do valor-hora alvo
+    status: str | None = None       # subcotado | justo | acima | sem_orcamento
+    gap_texto: str | None = None    # frase legível ("cliente R$800; mercado R$1.5-2.5k → subcotado")
+    rh_orcamento: float | None = None  # R$/hora efetivo do orçamento do cliente
+    rh_vs_alvo: bool | None = None     # True se rh_orcamento abaixo do valor-hora alvo
 
 
 class TarefaEstimada(BaseModel):
     """Uma entrega do escopo com horas — quebra o 'horas_estimadas' mágico."""
 
     nome: str
-    horas: Optional[int] = None
+    horas: int | None = None
 
     @field_validator("horas", mode="before")
     @classmethod
@@ -357,22 +354,22 @@ class TarefaEstimada(BaseModel):
 
 class AnaliseFreela(BaseModel):
     fit_score: int = 0                 # 0-100: é a sua praia?
-    recomendacao: Optional[str] = None  # vale / talvez / evite
-    risco: Optional[str] = None         # baixo / medio / alto (scam radar)
-    complexidade_tecnica: Optional[str] = None  # trivial | media | alta | incerta
-    clareza_escopo: Optional[str] = None        # claro | parcial | vago
-    quadrante: Optional[str] = None             # derivado: quick_win | dificil_longo | escopo_vago | padrao
-    veredito: Optional[str] = None      # 1 frase: gasto proposta aqui?
-    veredito_preco: Optional[VereditoPreco] = None  # calculado no service (orçamento × mercado)
-    requisitos: List[str] = Field(default_factory=list)
-    stack: List[str] = Field(default_factory=list)
-    tarefas: List[TarefaEstimada] = Field(default_factory=list)  # escopo quebrado em entregas + horas
-    perguntas_cliente: List[str] = Field(default_factory=list)   # ambiguidades a esclarecer antes de cotar
-    skills_faltando: List[str] = Field(default_factory=list)     # exige e NÃO está claro no seu perfil (gap)
-    red_flags: List[str] = Field(default_factory=list)
-    sinais_cliente: List[str] = Field(default_factory=list)
-    ganchos: List[str] = Field(default_factory=list)  # o que do perfil conversa
-    estimativa: Optional[EstimativaFreela] = None     # esforço + preço de mercado
+    recomendacao: str | None = None  # vale / talvez / evite
+    risco: str | None = None         # baixo / medio / alto (scam radar)
+    complexidade_tecnica: str | None = None  # trivial | media | alta | incerta
+    clareza_escopo: str | None = None        # claro | parcial | vago
+    quadrante: str | None = None             # derivado: quick_win | dificil_longo | escopo_vago | padrao
+    veredito: str | None = None      # 1 frase: gasto proposta aqui?
+    veredito_preco: VereditoPreco | None = None  # calculado no service (orçamento × mercado)
+    requisitos: list[str] = Field(default_factory=list)
+    stack: list[str] = Field(default_factory=list)
+    tarefas: list[TarefaEstimada] = Field(default_factory=list)  # escopo quebrado em entregas + horas
+    perguntas_cliente: list[str] = Field(default_factory=list)   # ambiguidades a esclarecer antes de cotar
+    skills_faltando: list[str] = Field(default_factory=list)     # exige e NÃO está claro no seu perfil (gap)
+    red_flags: list[str] = Field(default_factory=list)
+    sinais_cliente: list[str] = Field(default_factory=list)
+    ganchos: list[str] = Field(default_factory=list)  # o que do perfil conversa
+    estimativa: EstimativaFreela | None = None     # esforço + preço de mercado
 
 
 class AnalisarProjetoResponse(BaseModel):
@@ -386,17 +383,17 @@ class AnalisarProjetoResponse(BaseModel):
 
 class RedacaoProposta(BaseModel):
     texto: str = ""                 # rascunho completo (estrutura Workana)
-    prazo_sugerido: Optional[str] = None
-    tom: Optional[str] = None       # técnico | institucional
+    prazo_sugerido: str | None = None
+    tom: str | None = None       # técnico | institucional
     # Seletor: dos SEUS projetos/habilidades (max 3 / max 5)
-    projetos_destacados: List[str] = Field(default_factory=list)
-    habilidades_destacadas: List[str] = Field(default_factory=list)
+    projetos_destacados: list[str] = Field(default_factory=list)
+    habilidades_destacadas: list[str] = Field(default_factory=list)
     # A/B: 2-3 primeiras linhas alternativas pra testar qual converte mais
-    variacoes_abertura: List[str] = Field(default_factory=list)
+    variacoes_abertura: list[str] = Field(default_factory=list)
 
 
 class RedigirRequest(BaseModel):
-    instrucoes_extra: Optional[str] = None  # "cita o teste no Safari iOS" etc.
+    instrucoes_extra: str | None = None  # "cita o teste no Safari iOS" etc.
 
 
 class RedigirResponse(BaseModel):
@@ -409,7 +406,7 @@ class RedigirResponse(BaseModel):
 # ══════════════════════════════════════════════════════════════════
 
 class CorrigirRequest(BaseModel):
-    correcoes: List[str] = Field(default_factory=list)  # pontos do checklist a corrigir
+    correcoes: list[str] = Field(default_factory=list)  # pontos do checklist a corrigir
 
 
 class NegociarRequest(BaseModel):
@@ -418,13 +415,13 @@ class NegociarRequest(BaseModel):
 
 class NegociarResponse(BaseModel):
     proposta_id: str
-    opcoes: List[str]  # 2-3 respostas com estratégias diferentes
+    opcoes: list[str]  # 2-3 respostas com estratégias diferentes
 
 
 class ChecklistItem(BaseModel):
     criterio: str
     ok: bool = False
-    nota: Optional[str] = None
+    nota: str | None = None
 
 
 class ChecklistResponse(BaseModel):
@@ -432,8 +429,8 @@ class ChecklistResponse(BaseModel):
 
     proposta_id: str
     score: int = 0                      # 0-100
-    selo: Optional[str] = None          # "pronta" | "ajustar" | "fraca" (derivado)
-    itens: List[ChecklistItem] = Field(default_factory=list)
-    sugestoes: List[str] = Field(default_factory=list)
+    selo: str | None = None          # "pronta" | "ajustar" | "fraca" (derivado)
+    itens: list[ChecklistItem] = Field(default_factory=list)
+    sugestoes: list[str] = Field(default_factory=list)
     # Conformidade Workana: setado se o texto tiver e-mail/telefone/link externo.
-    alerta_conformidade: Optional[str] = None
+    alerta_conformidade: str | None = None

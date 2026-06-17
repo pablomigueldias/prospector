@@ -6,7 +6,6 @@ Tudo aqui é reusado pelos módulos por área (cadastro, projetos, propostas, �
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from app.analyzers.llm_provider import gerar_texto
 from app.api.schemas.freela import (
@@ -32,7 +31,7 @@ def _uuid(valor: str, label: str = "id") -> uuid.UUID:
     return parse_uuid(valor, erro=FreelaError, label=label)
 
 
-def _uuid_opt(valor: Optional[str], label: str = "id") -> Optional[uuid.UUID]:
+def _uuid_opt(valor: str | None, label: str = "id") -> uuid.UUID | None:
     return _uuid(valor, label) if valor else None
 
 

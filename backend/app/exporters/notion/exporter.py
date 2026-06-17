@@ -1,17 +1,15 @@
-from typing import Dict
 
 from notion_client import Client
 
 from app.config import settings
+from app.domain.lead import Contato, Empresa, Lead
 from app.exporters.notion.mappers import (
     apply_schema,
     contato_to_values,
     empresa_to_values,
 )
 from app.exporters.notion.repository import NotionRepository
-from app.domain.lead import Contato, Empresa, Lead
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -28,8 +26,8 @@ class NotionExporter:
             db_contatos=self.db_contatos,
         )
 
-        self._schema_empresas: Dict[str, str] = {}
-        self._schema_contatos: Dict[str, str] = {}
+        self._schema_empresas: dict[str, str] = {}
+        self._schema_contatos: dict[str, str] = {}
         self._schemas_loaded = False
 
 

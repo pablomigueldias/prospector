@@ -2,7 +2,6 @@ import httpx
 
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 TOR_SOCKS = "socks5://127.0.0.1:9050"

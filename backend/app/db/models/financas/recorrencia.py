@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -9,7 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import expression
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 FREQUENCIAS = ("mensal",)  # por ora só mensal
 # Como a recorrência é paga: numa conta (débito direto), no cartão (entra na
@@ -41,18 +39,18 @@ class Recorrencia(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         String(20), nullable=False, default="conta", server_default="conta"
     )
 
-    categoria_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    categoria_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.categorias.id", ondelete="SET NULL"),
         nullable=True,
     )
-    conta_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    conta_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.contas.id", ondelete="SET NULL"),
         nullable=True,
     )
     # Cartão onde a recorrência é cobrada (quando forma_pagamento == "cartao").
-    cartao_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    cartao_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.cartoes.id", ondelete="SET NULL"),
         nullable=True,

@@ -1,10 +1,7 @@
 """Comprovantes (arquivos no MinIO) — schemas do domínio financas."""
 from __future__ import annotations
 
-from typing import List, Optional
-
 from pydantic import BaseModel
-
 
 # ══════════════════════════════════════════════════════════════════
 # Comprovantes (arquivos no MinIO)
@@ -13,21 +10,21 @@ from pydantic import BaseModel
 class ComprovanteResponse(BaseModel):
     id: str
     usuario_id: str
-    transacao_id: Optional[str] = None
+    transacao_id: str | None = None
     tipo: str
     bucket: str
     arquivo_path: str
-    nome_original: Optional[str] = None
-    content_type: Optional[str] = None
-    tamanho: Optional[int] = None
+    nome_original: str | None = None
+    content_type: str | None = None
+    tamanho: int | None = None
     hash: str
-    url: Optional[str] = None        # presigned, preenchida sob demanda
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    url: str | None = None        # presigned, preenchida sob demanda
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class ComprovanteListResponse(BaseModel):
-    items: List[ComprovanteResponse]
+    items: list[ComprovanteResponse]
     total: int
 
 

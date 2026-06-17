@@ -1,8 +1,6 @@
 """Cadastro: plataformas e clientes (CRM)."""
 from __future__ import annotations
 
-from typing import List
-
 from app.api.schemas.freela import (
     ClienteCreate,
     ClienteResponse,
@@ -18,7 +16,7 @@ from ._base import FreelaError, _cliente_to_resp, _uuid, _uuid_opt
 # Plataforma
 # ══════════════════════════════════════════════════════════════════
 
-async def listar_plataformas() -> List[PlataformaResponse]:
+async def listar_plataformas() -> list[PlataformaResponse]:
     async with get_session() as session:
         linhas = await FreelaRepository(session).listar_plataformas()
         return [
@@ -47,7 +45,7 @@ async def criar_cliente(payload: ClienteCreate) -> ClienteResponse:
         return _cliente_to_resp(cliente)
 
 
-async def listar_clientes() -> List[ClienteResponse]:
+async def listar_clientes() -> list[ClienteResponse]:
     async with get_session() as session:
         return [_cliente_to_resp(c) for c in await FreelaRepository(session).listar_clientes()]
 

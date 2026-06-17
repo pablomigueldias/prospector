@@ -2,11 +2,9 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 from app.config import DATA_DIR
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -26,7 +24,7 @@ def _path_for_url(url: str) -> Path:
     return CACHE_DIR / f"{_key_for_url(url)}.json"
 
 
-def get(url: str, ttl_days: int = CACHE_TTL_DAYS) -> Optional[str]:
+def get(url: str, ttl_days: int = CACHE_TTL_DAYS) -> str | None:
 
     path = _path_for_url(url)
     if not path.exists():

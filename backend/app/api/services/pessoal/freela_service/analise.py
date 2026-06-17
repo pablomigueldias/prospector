@@ -2,8 +2,6 @@
 (quadrante dificuldade × esforço e veredito de preço orçamento × mercado)."""
 from __future__ import annotations
 
-from typing import Optional
-
 from app.analyzers.freela.analisador.parser import parse_resposta as parse_analise
 from app.analyzers.freela.analisador.prompt_builder import (
     construir_prompt as construir_prompt_analise,
@@ -23,7 +21,7 @@ from app.repositories.pessoal.freela_repository import FreelaRepository
 from ._base import FreelaError, _chamar_llm, _uuid
 
 
-def _sinais_cliente_texto(cliente: Optional[Cliente]) -> Optional[str]:
+def _sinais_cliente_texto(cliente: Cliente | None) -> str | None:
     if cliente is None:
         return None
     partes = []
@@ -43,7 +41,7 @@ _HORAS_QUICK = 16      # <= isto (e fácil) conta como "quick win"
 
 
 def _quadrante(
-    complexidade: Optional[str], clareza: Optional[str], horas: Optional[int]
+    complexidade: str | None, clareza: str | None, horas: int | None
 ) -> str:
     """Cruza dificuldade (complexidade) × esforço (horas) num rótulo acionável.
 
@@ -62,7 +60,7 @@ def _quadrante(
 
 
 def _veredito_preco(
-    projeto: Projeto, estimativa: Optional["EstimativaFreela"]
+    projeto: Projeto, estimativa: EstimativaFreela | None
 ) -> VereditoPreco:
     """Cruza o orçamento do cliente com a faixa de mercado da IA (determinístico).
 

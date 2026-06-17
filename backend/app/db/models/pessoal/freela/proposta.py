@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 if TYPE_CHECKING:
     from app.db.models.pessoal.freela.projeto import Projeto
@@ -43,25 +43,25 @@ class Proposta(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
     )
 
-    valor_cotado: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
-    horas_estimadas: Mapped[Optional[float]] = mapped_column(Numeric(8, 2))
-    valor_liquido_estimado: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+    valor_cotado: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    horas_estimadas: Mapped[float | None] = mapped_column(Numeric(8, 2))
+    valor_liquido_estimado: Mapped[float | None] = mapped_column(Numeric(12, 2))
 
-    texto_enviado: Mapped[Optional[str]] = mapped_column(Text)
-    projetos_destacados: Mapped[Optional[list]] = mapped_column(JSONB)
-    habilidades_destacadas: Mapped[Optional[list]] = mapped_column(JSONB)
-    prazo_proposto: Mapped[Optional[str]] = mapped_column(String(100))
+    texto_enviado: Mapped[str | None] = mapped_column(Text)
+    projetos_destacados: Mapped[list | None] = mapped_column(JSONB)
+    habilidades_destacadas: Mapped[list | None] = mapped_column(JSONB)
+    prazo_proposto: Mapped[str | None] = mapped_column(String(100))
 
     status: Mapped[str] = mapped_column(
         String(20), default="rascunho", server_default="rascunho", nullable=False
     )
 
-    enviada_em: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    data_resposta: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    data_fechamento: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    motivo_perda: Mapped[Optional[str]] = mapped_column(Text)
+    enviada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    data_resposta: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    data_fechamento: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    motivo_perda: Mapped[str | None] = mapped_column(Text)
 
-    projeto: Mapped["Projeto"] = relationship(
+    projeto: Mapped[Projeto] = relationship(
         back_populates="propostas", lazy="selectin"
     )
 

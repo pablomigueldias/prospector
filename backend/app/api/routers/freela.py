@@ -4,7 +4,6 @@ A IA não toca na Workana: aqui é só a sua mesa de trabalho (organizar,
 precificar, marcar status). As fases de IA (analisar/redigir/selecionar)
 entram em endpoints próprios depois.
 """
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -13,17 +12,15 @@ from app.api.schemas.freela import (
     AnalisarProjetoResponse,
     ChecklistResponse,
     ClienteCreate,
-    CorrigirRequest,
     ClienteResponse,
     ClienteUpdate,
+    CorrigirRequest,
     ExtrairProjetoRequest,
     ExtrairProjetoResponse,
-    NegociarRequest,
-    NegociarResponse,
-    RedigirRequest,
-    RedigirResponse,
     KanbanResponse,
     MetricasResponse,
+    NegociarRequest,
+    NegociarResponse,
     PlanoMetaRequest,
     PlanoMetaResponse,
     PlataformaResponse,
@@ -37,6 +34,8 @@ from app.api.schemas.freela import (
     PropostaResponse,
     PropostaStatusUpdate,
     PropostaUpdate,
+    RedigirRequest,
+    RedigirResponse,
 )
 from app.api.services.pessoal import freela_service
 from app.api.services.pessoal.freela_service import FreelaError
@@ -57,9 +56,9 @@ def _handle(e: Exception) -> HTTPException:
 
 
 # ── Plataformas ──────────────────────────────────────────────────
-@router.get("/plataformas", response_model=List[PlataformaResponse],
+@router.get("/plataformas", response_model=list[PlataformaResponse],
             summary="Plataformas (Workana...) e suas faixas de comissão")
-async def listar_plataformas() -> List[PlataformaResponse]:
+async def listar_plataformas() -> list[PlataformaResponse]:
     try:
         return await freela_service.listar_plataformas()
     except Exception as e:
@@ -104,8 +103,8 @@ async def plano_meta(body: PlanoMetaRequest) -> PlanoMetaResponse:
 
 
 # ── Clientes ─────────────────────────────────────────────────────
-@router.get("/clientes", response_model=List[ClienteResponse], summary="Lista clientes")
-async def listar_clientes() -> List[ClienteResponse]:
+@router.get("/clientes", response_model=list[ClienteResponse], summary="Lista clientes")
+async def listar_clientes() -> list[ClienteResponse]:
     try:
         return await freela_service.listar_clientes()
     except Exception as e:
@@ -197,9 +196,9 @@ async def remover_projeto(projeto_id: str) -> None:
         raise _handle(e)
 
 
-@router.get("/projetos/{projeto_id}/propostas", response_model=List[PropostaResponse],
+@router.get("/projetos/{projeto_id}/propostas", response_model=list[PropostaResponse],
             summary="Propostas de um projeto")
-async def propostas_do_projeto(projeto_id: str) -> List[PropostaResponse]:
+async def propostas_do_projeto(projeto_id: str) -> list[PropostaResponse]:
     try:
         return await freela_service.listar_propostas_do_projeto(projeto_id)
     except Exception as e:

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,7 +12,7 @@ class Permissao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "permissoes"
 
     codigo: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
-    descricao: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    descricao: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     __table_args__ = ({"schema": "auth"},)
 

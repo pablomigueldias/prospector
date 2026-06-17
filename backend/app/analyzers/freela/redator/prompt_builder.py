@@ -6,11 +6,8 @@ Espelha o redator de candidatura — mesma regra anti-mentira.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 from app.analyzers._perfil_texto import perfil_para_texto
 from app.api.schemas.pessoal import PerfilMestreResponse
-
 
 OUTPUT_SCHEMA = """
 {
@@ -91,12 +88,12 @@ def construir_prompt(
     descricao_projeto: str,
     perfil: PerfilMestreResponse,
     *,
-    titulo: Optional[str] = None,
-    analise: Optional[dict] = None,
-    instrucoes_extra: Optional[str] = None,
+    titulo: str | None = None,
+    analise: dict | None = None,
+    instrucoes_extra: str | None = None,
     cold_start: bool = False,
-    texto_atual: Optional[str] = None,
-    correcoes: Optional[list] = None,
+    texto_atual: str | None = None,
+    correcoes: list | None = None,
 ) -> str:
     cab = []
     if titulo:

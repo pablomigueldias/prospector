@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from app.db.models.contato import Contato as ContatoORM
 from app.db.models.empresa import Empresa as EmpresaORM
@@ -11,7 +10,7 @@ from app.domain.lead import Empresa as EmpresaPydantic
 from app.domain.lead import Socio as SocioPydantic
 
 
-def _cnpj_digits(cnpj: Optional[str]) -> Optional[str]:
+def _cnpj_digits(cnpj: str | None) -> str | None:
     if not cnpj:
         return None
     digits  = ''.join(c for c in cnpj if c.isdigit())

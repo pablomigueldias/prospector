@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.collectors.brasilapi.classifiers import (
     classificar_setor,
@@ -8,11 +8,10 @@ from app.config import ESTADO_OPCOES
 from app.domain.lead import Contato, Empresa, Lead, Socio
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 
-def _montar_endereco(data: Dict[str, Any]) -> Optional[str]:
+def _montar_endereco(data: dict[str, Any]) -> str | None:
     parts = []
     logradouro = data.get("logradouro")
     numero = data.get("numero")
@@ -37,14 +36,14 @@ def _montar_endereco(data: Dict[str, Any]) -> Optional[str]:
     return ", ".join(parts) if parts else None
 
 
-def _normalizar_estado(uf: Optional[str]) -> Optional[str]:
+def _normalizar_estado(uf: str | None) -> str | None:
     if not uf:
         return None
     uf = uf.strip().upper()
     return uf if uf else None
 
 
-def _capitalizar_se_tudo_caps(texto: Optional[str]) -> Optional[str]:
+def _capitalizar_se_tudo_caps(texto: str | None) -> str | None:
     if not texto:
         return None
     texto = texto.strip()
@@ -53,8 +52,8 @@ def _capitalizar_se_tudo_caps(texto: Optional[str]) -> Optional[str]:
     return texto
 
 
-def _build_socios(qsa: List[Dict[str, Any]]) -> List[Socio]:
-    socios: List[Socio] = []
+def _build_socios(qsa: list[dict[str, Any]]) -> list[Socio]:
+    socios: list[Socio] = []
     for item in qsa or []:
         nome = item.get("nome_socio") or item.get("nome")
         if not nome:
@@ -70,8 +69,8 @@ def _build_socios(qsa: List[Dict[str, Any]]) -> List[Socio]:
 
 
 def _avisar_situacao_irregular(
-    descricao_situacao: Optional[str], empresa_nome: str
-) -> Optional[str]:
+    descricao_situacao: str | None, empresa_nome: str
+) -> str | None:
     if not descricao_situacao:
         return None
     situacao = descricao_situacao.strip().upper()
@@ -82,7 +81,7 @@ def _avisar_situacao_irregular(
     return aviso
 
 
-def map_to_empresa(data: Dict[str, Any]) -> Empresa:
+def map_to_empresa(data: dict[str, Any]) -> Empresa:
     razao_social = _capitalizar_se_tudo_caps(data.get("razao_social"))
     nome_fantasia = _capitalizar_se_tudo_caps(data.get("nome_fantasia"))
     nome = nome_fantasia or razao_social or "Empresa sem nome"
@@ -137,9 +136,9 @@ def map_to_empresa(data: Dict[str, Any]) -> Empresa:
     )
 
 
-def map_to_contatos(empresa: Empresa) -> List[Contato]:
+def map_to_contatos(empresa: Empresa) -> list[Contato]:
 
-    contatos: List[Contato] = []
+    contatos: list[Contato] = []
     for socio in empresa.socios:
         contatos.append(
             Contato(
@@ -151,7 +150,7 @@ def map_to_contatos(empresa: Empresa) -> List[Contato]:
     return contatos
 
 
-def map_to_lead(data: Dict[str, Any]) -> Lead:
+def map_to_lead(data: dict[str, Any]) -> Lead:
     empresa = map_to_empresa(data)
     contatos = map_to_contatos(empresa)
     return Lead(empresa=empresa, contatos=contatos)

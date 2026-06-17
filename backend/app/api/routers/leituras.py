@@ -1,4 +1,3 @@
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -23,7 +22,7 @@ def _handle(e: Exception) -> HTTPException:
 @router.get("", response_model=LeituraConsumoListResponse,
             summary="Lista leituras de consumo (tendência), opcional por tipo")
 async def listar(
-    tipo: Optional[str] = None,
+    tipo: str | None = None,
     usuario_id: str = Depends(financas_usuario_id),
 ) -> LeituraConsumoListResponse:
     try:

@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 if TYPE_CHECKING:
     from app.db.models.empresa import Empresa
@@ -27,16 +26,16 @@ class Contato(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     # ── Identidade ───────────────────────────────────────────────
     nome: Mapped[str] = mapped_column(String(300), nullable=False)
-    cargo: Mapped[Optional[str]] = mapped_column(String(200))
+    cargo: Mapped[str | None] = mapped_column(String(200))
     decisor: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default="true", nullable=False
     )
 
     # ── Canais de contato ────────────────────────────────────────
-    email: Mapped[Optional[str]] = mapped_column(String(300))
-    telefone: Mapped[Optional[str]] = mapped_column(String(50))
-    whatsapp: Mapped[Optional[str]] = mapped_column(String(50))
-    linkedin: Mapped[Optional[str]] = mapped_column(String(500))
+    email: Mapped[str | None] = mapped_column(String(300))
+    telefone: Mapped[str | None] = mapped_column(String(50))
+    whatsapp: Mapped[str | None] = mapped_column(String(50))
+    linkedin: Mapped[str | None] = mapped_column(String(500))
 
     # ── Metadata de origem ───────────────────────────────────────
     origem_contato: Mapped[str] = mapped_column(
@@ -44,11 +43,11 @@ class Contato(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     # ── Sync com Notion ──────────────────────────────────────────
-    notion_page_id: Mapped[Optional[str]] = mapped_column(String(50))
-    notion_synced_at: Mapped[Optional[datetime]] = mapped_column()
+    notion_page_id: Mapped[str | None] = mapped_column(String(50))
+    notion_synced_at: Mapped[datetime | None] = mapped_column()
 
     # ── Relacionamento ───────────────────────────────────────────
-    empresa: Mapped["Empresa"] = relationship(back_populates="contatos")
+    empresa: Mapped[Empresa] = relationship(back_populates="contatos")
 
     __table_args__ = (
         Index("ix_contatos_empresa_id", "empresa_id"),

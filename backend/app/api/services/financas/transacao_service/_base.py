@@ -6,7 +6,6 @@ from __future__ import annotations
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -90,7 +89,7 @@ async def _buscar_conta(
 
 
 async def _validar_categoria(
-    session: AsyncSession, categoria_id: Optional[uuid.UUID]
+    session: AsyncSession, categoria_id: uuid.UUID | None
 ) -> None:
     if categoria_id is not None:
         if await session.get(Categoria, categoria_id) is None:
@@ -104,13 +103,13 @@ async def _finalizar_transacao(
     usuario_id: uuid.UUID,
     descricao: str,
     valor_total: Decimal,
-    categoria_id: Optional[uuid.UUID],
+    categoria_id: uuid.UUID | None,
     competencia: date,
-    pagamento_em: Optional[date],
+    pagamento_em: date | None,
     status: str,
-    notas: Optional[str],
-    pagamentos: List[Tuple[Conta, Decimal]],
-    vencimento: Optional[date] = None,
+    notas: str | None,
+    pagamentos: list[tuple[Conta, Decimal]],
+    vencimento: date | None = None,
 ) -> TransacaoResponse:
     """Núcleo: cria a transação (despesa/receita) com N pagamentos e ajusta o
     saldo de cada conta (só quando paga). Assume contas/categoria já validadas."""
@@ -153,8 +152,8 @@ def _checar_status(status: str) -> None:
 
 
 
-def _intervalo_mes(ano: Optional[int], mes: Optional[int]) -> Tuple[
-    Optional[date], Optional[date]
+def _intervalo_mes(ano: int | None, mes: int | None) -> tuple[
+    date | None, date | None
 ]:
     """(inicio, proximo_mes) para filtrar por competência; (None, None) se
     ano/mes não vierem juntos."""

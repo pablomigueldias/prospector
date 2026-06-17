@@ -7,9 +7,6 @@ fora daqui, de forma determinística.
 """
 from __future__ import annotations
 
-from typing import Optional
-
-
 OUTPUT_SCHEMA = """
 {
   "itens": [
@@ -51,8 +48,8 @@ REGRAS:
 
 
 def construir_prompt(
-    texto_proposta: str, *, descricao_projeto: Optional[str] = None,
-    titulo: Optional[str] = None,
+    texto_proposta: str, *, descricao_projeto: str | None = None,
+    titulo: str | None = None,
 ) -> str:
     bloco = []
     if titulo:

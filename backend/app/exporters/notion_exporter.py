@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from notion_client import Client
 from notion_client.errors import APIResponseError
@@ -19,7 +19,6 @@ from app.config import (
 from app.domain.lead import Contato, Empresa, Lead
 from app.utils.logger import get_logger
 from app.utils.storage import log_unmapped_field
-
 
 logger = get_logger()
 
@@ -44,8 +43,8 @@ class NotionExporter:
         self.db_empresas = settings.notion_db_empresas
         self.db_contatos = settings.notion_db_contatos
 
-        self._schema_empresas: Dict[str, str] = {}
-        self._schema_contatos: Dict[str, str] = {}
+        self._schema_empresas: dict[str, str] = {}
+        self._schema_contatos: dict[str, str] = {}
         self._schemas_loaded = False
 
     def _load_schemas(self) -> None:
@@ -75,10 +74,10 @@ class NotionExporter:
     def _validate_select(
         self,
         field_name: str,
-        value: Optional[str],
+        value: str | None,
         valid_options: list,
         empresa_nome: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         if value is None or value == "":
             return None
         if value in valid_options:
@@ -88,7 +87,7 @@ class NotionExporter:
 
 
     @staticmethod
-    def _build_value_for_type(notion_type: str, value: Any) -> Optional[dict]:
+    def _build_value_for_type(notion_type: str, value: Any) -> dict | None:
         if value is None or value == "":
             return _empty_value_for_type(notion_type)
 
@@ -144,7 +143,7 @@ class NotionExporter:
         return None
 
 
-    def _empresa_to_values(self, empresa: Empresa) -> Dict[str, Any]:
+    def _empresa_to_values(self, empresa: Empresa) -> dict[str, Any]:
         nome = empresa.nome
 
         setor = self._validate_select(
@@ -191,7 +190,7 @@ class NotionExporter:
 
     def _contato_to_values(
         self, contato: Contato, empresa_nome: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         origem = self._validate_select(
             "origem_contato",
             contato.origem_contato or DEFAULT_ORIGEM_CONTATO,
@@ -217,11 +216,11 @@ class NotionExporter:
 
 
     def _apply_schema(
-        self, values: Dict[str, Any], schema: Dict[str, str], context: str
-    ) -> Dict[str, dict]:
+        self, values: dict[str, Any], schema: dict[str, str], context: str
+    ) -> dict[str, dict]:
         properties = {}
-        skipped_unsupported: List[str] = []
-        skipped_missing: List[str] = []
+        skipped_unsupported: list[str] = []
+        skipped_missing: list[str] = []
 
         for field_name, value in values.items():
             notion_type = schema.get(field_name)
@@ -255,7 +254,7 @@ class NotionExporter:
         return properties
 
 
-    def find_empresa_by_cnpj(self, cnpj: str) -> Optional[str]:
+    def find_empresa_by_cnpj(self, cnpj: str) -> str | None:
 
         if not cnpj:
             return None
@@ -283,9 +282,9 @@ class NotionExporter:
     def find_contato(
         self,
         empresa_notion_id: str,
-        email: Optional[str] = None,
-        nome: Optional[str] = None,
-    ) -> Optional[str]:
+        email: str | None = None,
+        nome: str | None = None,
+    ) -> str | None:
 
         if not empresa_notion_id:
             return None
@@ -446,7 +445,7 @@ class NotionExporter:
         return f"{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:]}"
 
 
-def _empty_value_for_type(notion_type: str) -> Optional[dict]:
+def _empty_value_for_type(notion_type: str) -> dict | None:
     if notion_type in NOT_WRITABLE_TYPES:
         return None
     empties = {

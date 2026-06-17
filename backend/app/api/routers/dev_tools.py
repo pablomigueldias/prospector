@@ -78,7 +78,7 @@ async def sync_prod_to_dev(_: Usuario = Depends(usuario_atual)) -> dict:
             env=env,
         )
         out, _err = await asyncio.wait_for(proc.communicate(), timeout=300)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         raise HTTPException(status_code=504, detail="Sync demorou demais (timeout 5min).")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Falha ao rodar o sync: {e}")

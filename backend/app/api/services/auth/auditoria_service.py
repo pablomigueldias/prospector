@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,10 +24,10 @@ async def registrar(
     session: AsyncSession,
     evento: str,
     *,
-    usuario_id: Optional[uuid.UUID] = None,
-    ip: Optional[str] = None,
-    user_agent: Optional[str] = None,
-    detalhe: Optional[dict[str, Any]] = None,
+    usuario_id: uuid.UUID | None = None,
+    ip: str | None = None,
+    user_agent: str | None = None,
+    detalhe: dict[str, Any] | None = None,
 ) -> None:
     """Adiciona uma linha de auditoria. Não faz commit (quem chama controla)."""
     session.add(

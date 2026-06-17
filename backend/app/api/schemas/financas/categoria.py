@@ -1,10 +1,7 @@
 """Categorias hierárquicas — schemas do domínio financas."""
 from __future__ import annotations
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
-
 
 # ══════════════════════════════════════════════════════════════════
 # Categorias (hierárquicas, compartilhadas)
@@ -12,24 +9,24 @@ from pydantic import BaseModel, Field
 
 class CategoriaCreate(BaseModel):
     nome: str
-    categoria_pai_id: Optional[str] = Field(
+    categoria_pai_id: str | None = Field(
         None, description="Pai na hierarquia. Null = categoria raiz."
     )
 
 
 class CategoriaUpdate(BaseModel):
-    nome: Optional[str] = None
-    categoria_pai_id: Optional[str] = None
-    ativa: Optional[bool] = None
+    nome: str | None = None
+    categoria_pai_id: str | None = None
+    ativa: bool | None = None
 
 
 class CategoriaResponse(BaseModel):
     id: str
     nome: str
-    categoria_pai_id: Optional[str] = None
+    categoria_pai_id: str | None = None
     ativa: bool
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class CategoriaTreeItem(BaseModel):
@@ -37,11 +34,11 @@ class CategoriaTreeItem(BaseModel):
     id: str
     nome: str
     ativa: bool
-    filhos: List["CategoriaTreeItem"] = Field(default_factory=list)
+    filhos: list[CategoriaTreeItem] = Field(default_factory=list)
 
 
 class CategoriaTreeResponse(BaseModel):
-    items: List[CategoriaTreeItem]   # raízes
+    items: list[CategoriaTreeItem]   # raízes
     total: int                       # total de categorias (todos os níveis)
 
 

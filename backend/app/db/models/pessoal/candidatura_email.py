@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Index, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 if TYPE_CHECKING:
     from app.db.models.pessoal.vaga import Vaga
@@ -36,22 +36,22 @@ class CandidaturaEmail(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         String(20), default="email", server_default="email", nullable=False
     )
 
-    destinatario: Mapped[Optional[str]] = mapped_column(String(300))
-    assunto: Mapped[Optional[str]] = mapped_column(String(500))
+    destinatario: Mapped[str | None] = mapped_column(String(300))
+    assunto: Mapped[str | None] = mapped_column(String(500))
     corpo: Mapped[str] = mapped_column(Text, nullable=False)
-    tom: Mapped[Optional[str]] = mapped_column(String(100))
+    tom: Mapped[str | None] = mapped_column(String(100))
 
     # ciclo de vida — nasce rascunho; envio é manual, fora da ferramenta
     status: Mapped[str] = mapped_column(
         String(30), default="rascunho", server_default="rascunho", nullable=False
     )
-    enviado_em: Mapped[Optional[datetime]] = mapped_column()
+    enviado_em: Mapped[datetime | None] = mapped_column()
 
     # variantes A/B e contexto usado na geração (pra revisar/treinar)
-    variantes: Mapped[Optional[list]] = mapped_column(JSONB)
-    contexto: Mapped[Optional[dict]] = mapped_column(JSONB)
+    variantes: Mapped[list | None] = mapped_column(JSONB)
+    contexto: Mapped[dict | None] = mapped_column(JSONB)
 
-    vaga: Mapped["Vaga"] = relationship(back_populates="emails")
+    vaga: Mapped[Vaga] = relationship(back_populates="emails")
 
     __table_args__ = (
         Index("ix_pessoal_cand_emails_vaga_id", "vaga_id"),

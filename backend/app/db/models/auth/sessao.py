@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -43,8 +42,8 @@ class Sessao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     # Auditoria leve da sessão (de onde veio).
-    ip: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    user_agent: Mapped[Optional[str]] = mapped_column(String(400), nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(400), nullable=True)
 
     __table_args__ = (
         Index("ix_auth_sessoes_usuario_id", "usuario_id"),

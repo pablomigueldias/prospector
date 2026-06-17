@@ -5,7 +5,6 @@ estruturados pra pré-preencher o form. Não inventa: o que não achar, deixa nu
 """
 from __future__ import annotations
 
-
 OUTPUT_SCHEMA = """
 {
   "titulo": "<título curto do projeto, ou null se não der pra inferir>",

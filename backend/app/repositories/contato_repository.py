@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.contato import Contato
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -19,10 +17,10 @@ class ContatoRepository:
 
     # ── Reads ─────────────────────────────────────────────────────
 
-    async def get_by_id(self, contato_id: uuid.UUID) -> Optional[Contato]:
+    async def get_by_id(self, contato_id: uuid.UUID) -> Contato | None:
         return await self.session.get(Contato, contato_id)
 
-    async def list_by_empresa(self, empresa_id: uuid.UUID) -> List[Contato]:
+    async def list_by_empresa(self, empresa_id: uuid.UUID) -> list[Contato]:
         stmt = (
             select(Contato)
             .where(Contato.empresa_id == empresa_id)
@@ -33,7 +31,7 @@ class ContatoRepository:
 
     async def find_by_empresa_and_email(
         self, empresa_id: uuid.UUID, email: str
-    ) -> Optional[Contato]:
+    ) -> Contato | None:
         if not email:
             return None
         stmt = select(Contato).where(
@@ -45,7 +43,7 @@ class ContatoRepository:
 
     async def find_by_empresa_and_nome(
         self, empresa_id: uuid.UUID, nome: str
-    ) -> Optional[Contato]:
+    ) -> Contato | None:
         if not nome:
             return None
         stmt = select(Contato).where(
@@ -62,7 +60,7 @@ class ContatoRepository:
         return contato
 
     async def upsert(self, contato: Contato) -> Contato:
-        existing: Optional[Contato] = None
+        existing: Contato | None = None
 
         if contato.email:
             existing = await self.find_by_empresa_and_email(

@@ -1,4 +1,3 @@
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -23,7 +22,7 @@ def _handle(e: Exception) -> HTTPException:
 @router.get("/preview", response_model=PagamentoMesPreview,
             summary="Pendências do mês: boletos a pagar + faturas em aberto")
 async def preview(
-    competencia: Optional[str] = None,
+    competencia: str | None = None,
     usuario_id: str = Depends(financas_usuario_id),
 ) -> PagamentoMesPreview:
     try:

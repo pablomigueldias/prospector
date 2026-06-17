@@ -1,12 +1,12 @@
 """Service do Copywriter — orquestra a geração de e-mails."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from app.api.schemas.copywriter import CopywriterRequest, CopywriterResponse
-from app.analyzers.copywriter.prompt_builder import construir_prompt
 from app.analyzers.copywriter.parser import parse_resposta
+from app.analyzers.copywriter.prompt_builder import construir_prompt
 from app.analyzers.llm_provider import gerar_texto
+from app.api.schemas.copywriter import CopywriterRequest, CopywriterResponse
 from app.config import DATA_DIR
 from app.utils.logger import get_logger
 
@@ -63,7 +63,7 @@ def _salvar_email(req: CopywriterRequest, resp: CopywriterResponse) -> None:
         pasta = DATA_DIR / "emails"
         pasta.mkdir(parents=True, exist_ok=True)
 
-        carimbo = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        carimbo = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         empresa_slug = "".join(
             c for c in req.empresa.lower() if c.isalnum() or c == " "
         ).strip().replace(" ", "_")[:40]

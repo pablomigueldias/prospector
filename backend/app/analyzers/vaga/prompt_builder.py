@@ -6,11 +6,8 @@ com você (Fase 3) numa única chamada.
 """
 from __future__ import annotations
 
-from typing import Optional
-
-from app.api.schemas.pessoal import PerfilMestreResponse
 from app.analyzers._perfil_texto import perfil_para_texto
-
+from app.api.schemas.pessoal import PerfilMestreResponse
 
 OUTPUT_SCHEMA = """
 {
@@ -89,8 +86,8 @@ def construir_prompt(
     descricao_vaga: str,
     perfil: PerfilMestreResponse,
     *,
-    titulo: Optional[str] = None,
-    empresa: Optional[str] = None,
+    titulo: str | None = None,
+    empresa: str | None = None,
 ) -> str:
     cabecalho = []
     if titulo:

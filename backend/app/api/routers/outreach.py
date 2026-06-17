@@ -2,10 +2,10 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.schemas.outreach import (
     EmailHistoryResponse,
-    GerarRascunhosRequest,
-    GerarRascunhosResponse,
     GerarFollowupsRequest,
     GerarFollowupsResponse,
+    GerarRascunhosRequest,
+    GerarRascunhosResponse,
     SyncResponse,
 )
 from app.api.services import outreach_service

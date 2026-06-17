@@ -5,8 +5,6 @@ emails existem (anti-enumeração). O anti-timing fica no senha_service.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 from sqlalchemy import select
 
 from app.api.services.auth import (
@@ -33,9 +31,9 @@ async def login(
     email: str,
     senha: str,
     *,
-    codigo_2fa: Optional[str] = None,
-    ip: Optional[str] = None,
-    user_agent: Optional[str] = None,
+    codigo_2fa: str | None = None,
+    ip: str | None = None,
+    user_agent: str | None = None,
 ) -> tuple[str, Usuario]:
     """Valida email+senha (+2FA se ativo) e devolve (token_de_sessão, usuario).
 

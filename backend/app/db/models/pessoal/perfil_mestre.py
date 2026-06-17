@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from sqlalchemy import Boolean, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -24,27 +22,27 @@ class PerfilMestre(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         Boolean, default=True, server_default="true", nullable=False
     )
     nome: Mapped[str] = mapped_column(String(200), nullable=False)
-    titulo: Mapped[Optional[str]] = mapped_column(String(200))  # ex: "Dev Full-Stack"
-    resumo: Mapped[Optional[str]] = mapped_column(Text)  # bio curta
+    titulo: Mapped[str | None] = mapped_column(String(200))  # ex: "Dev Full-Stack"
+    resumo: Mapped[str | None] = mapped_column(Text)  # bio curta
 
     # ── Tom de escrita (pra carta soar como você, não como IA) ───
-    tom_escrita: Mapped[Optional[str]] = mapped_column(Text)
+    tom_escrita: Mapped[str | None] = mapped_column(Text)
 
     # ── Blocos estruturados (JSONB) ──────────────────────────────
     # habilidades: [{nome, nivel, onde_usou}]
-    habilidades: Mapped[Optional[list]] = mapped_column(JSONB)
+    habilidades: Mapped[list | None] = mapped_column(JSONB)
     # projetos: [{nome, descricao, prova, stack: [], link}]
-    projetos: Mapped[Optional[list]] = mapped_column(JSONB)
+    projetos: Mapped[list | None] = mapped_column(JSONB)
     # experiencias: [{empresa, cargo, periodo, descricao}]
-    experiencias: Mapped[Optional[list]] = mapped_column(JSONB)
+    experiencias: Mapped[list | None] = mapped_column(JSONB)
     # formacao: [{instituicao, curso, periodo}]
-    formacao: Mapped[Optional[list]] = mapped_column(JSONB)
+    formacao: Mapped[list | None] = mapped_column(JSONB)
     # o_que_procuro: {stack: [], modelo, tipo_empresa, pretensao, observacoes}
-    o_que_procuro: Mapped[Optional[dict]] = mapped_column(JSONB)
+    o_que_procuro: Mapped[dict | None] = mapped_column(JSONB)
     # blocos_curriculo: [{titulo, conteudo, tags: []}] — reaproveitáveis
-    blocos_curriculo: Mapped[Optional[list]] = mapped_column(JSONB)
+    blocos_curriculo: Mapped[list | None] = mapped_column(JSONB)
     # contato: {email, telefone, linkedin, github, portfolio}
-    contato: Mapped[Optional[dict]] = mapped_column(JSONB)
+    contato: Mapped[dict | None] = mapped_column(JSONB)
 
     __table_args__ = (
         Index("ix_pessoal_perfil_ativo", "ativo"),

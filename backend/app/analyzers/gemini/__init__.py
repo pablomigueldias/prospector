@@ -10,11 +10,10 @@ from app.analyzers.llm_provider import gerar_texto
 from app.domain.lead import Lead
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 
-def analisar_lead(lead: Lead) -> Optional[AnaliseGemini]:
+def analisar_lead(lead: Lead) -> AnaliseGemini | None:
 
     prompt = construir_prompt(lead)
     logger.debug(f"Prompt ({len(prompt)} chars) montado")

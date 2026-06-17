@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 if TYPE_CHECKING:
     from app.db.models.pessoal.candidatura_email import CandidaturaEmail
@@ -35,20 +34,20 @@ class Vaga(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     # ── Identidade da vaga ───────────────────────────────────────
     titulo: Mapped[str] = mapped_column(String(300), nullable=False)
-    empresa: Mapped[Optional[str]] = mapped_column(String(300))
-    link: Mapped[Optional[str]] = mapped_column(String(800))
-    fonte: Mapped[Optional[str]] = mapped_column(String(100))  # LinkedIn, Gupy...
+    empresa: Mapped[str | None] = mapped_column(String(300))
+    link: Mapped[str | None] = mapped_column(String(800))
+    fonte: Mapped[str | None] = mapped_column(String(100))  # LinkedIn, Gupy...
 
     # ── Contato pra candidatura ──────────────────────────────────
-    contato_nome: Mapped[Optional[str]] = mapped_column(String(200))
-    contato_email: Mapped[Optional[str]] = mapped_column(String(300))
+    contato_nome: Mapped[str | None] = mapped_column(String(200))
+    contato_email: Mapped[str | None] = mapped_column(String(300))
 
     # ── Detalhes ─────────────────────────────────────────────────
-    localizacao: Mapped[Optional[str]] = mapped_column(String(200))
-    modelo: Mapped[Optional[str]] = mapped_column(String(30))  # remoto/hibrido/presencial
-    senioridade: Mapped[Optional[str]] = mapped_column(String(50))
+    localizacao: Mapped[str | None] = mapped_column(String(200))
+    modelo: Mapped[str | None] = mapped_column(String(30))  # remoto/hibrido/presencial
+    senioridade: Mapped[str | None] = mapped_column(String(50))
     descricao: Mapped[str] = mapped_column(Text, nullable=False)  # JD colada
-    notas: Mapped[Optional[str]] = mapped_column(Text)
+    notas: Mapped[str | None] = mapped_column(Text)
 
     # ── Pipeline ─────────────────────────────────────────────────
     status: Mapped[str] = mapped_column(
@@ -61,19 +60,19 @@ class Vaga(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # ── Saídas da IA ─────────────────────────────────────────────
     # analise_json (Fase 2): {requisitos_obrigatorios[], desejaveis[],
     #   stack[], senioridade, palavras_chave[], resumo}
-    analise_json: Mapped[Optional[dict]] = mapped_column(JSONB)
+    analise_json: Mapped[dict | None] = mapped_column(JSONB)
     # match_json (Fase 3): {aderencia, tenho[], gaps[], destaques[]}
-    match_json: Mapped[Optional[dict]] = mapped_column(JSONB)
+    match_json: Mapped[dict | None] = mapped_column(JSONB)
     # Match resumido como inteiro 0-100 (espelha 'score' da Empresa)
-    match_score: Mapped[Optional[int]] = mapped_column(Integer)
+    match_score: Mapped[int | None] = mapped_column(Integer)
 
     # ── Currículo ATS gerado (persistido pra não regerar toda vez) ───
     # curriculo_json: CurriculoVaga adaptado a ESTA vaga (resumo/competências/
     #   experiências/projetos). Dados factuais ainda saem do perfil ao gerar.
-    curriculo_json: Mapped[Optional[dict]] = mapped_column(JSONB)
-    curriculo_gerado_em: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    curriculo_json: Mapped[dict | None] = mapped_column(JSONB)
+    curriculo_gerado_em: Mapped[datetime | None] = mapped_column(DateTime)
 
-    emails: Mapped[List["CandidaturaEmail"]] = relationship(
+    emails: Mapped[list[CandidaturaEmail]] = relationship(
         back_populates="vaga",
         cascade="all, delete-orphan",
         lazy="selectin",

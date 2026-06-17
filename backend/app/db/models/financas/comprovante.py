@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
@@ -9,7 +8,6 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 TIPOS_COMPROVANTE = ("boleto", "comprovante", "nota_fiscal")
 
@@ -31,7 +29,7 @@ class Comprovante(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         PG_UUID(as_uuid=True), nullable=False
     )
     # Nullable: no importador o arquivo chega antes da transação existir.
-    transacao_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    transacao_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.transacoes.id", ondelete="CASCADE"),
         nullable=True,
@@ -41,12 +39,12 @@ class Comprovante(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     bucket: Mapped[str] = mapped_column(String(63), nullable=False)
     arquivo_path: Mapped[str] = mapped_column(String(500), nullable=False)  # key no bucket
 
-    nome_original: Mapped[Optional[str]] = mapped_column(String(500))
-    content_type: Mapped[Optional[str]] = mapped_column(String(150))
-    tamanho: Mapped[Optional[int]] = mapped_column(Integer)
+    nome_original: Mapped[str | None] = mapped_column(String(500))
+    content_type: Mapped[str | None] = mapped_column(String(150))
+    tamanho: Mapped[int | None] = mapped_column(Integer)
     hash: Mapped[str] = mapped_column(String(64), nullable=False)  # sha256, dedup
 
-    extraido_json: Mapped[Optional[dict]] = mapped_column(JSONB)
+    extraido_json: Mapped[dict | None] = mapped_column(JSONB)
 
     __table_args__ = (
         Index("ix_fin_comprovantes_usuario_id", "usuario_id"),

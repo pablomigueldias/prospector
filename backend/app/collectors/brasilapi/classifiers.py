@@ -1,5 +1,3 @@
-from typing import Optional
-
 
 _CNAE_DIVISAO_TO_SETOR = {
     "05": "Indústria", "06": "Indústria", "07": "Indústria", "08": "Indústria",
@@ -58,7 +56,7 @@ _CNAE_DIVISAO_TO_SETOR = {
 }
 
 
-def classificar_setor(cnae_codigo: Optional[int]) -> Optional[str]:
+def classificar_setor(cnae_codigo: int | None) -> str | None:
 
     if cnae_codigo is None:
         return None
@@ -75,10 +73,10 @@ _LIMITE_GRANDE = 50_000_000.0
 
 
 def classificar_tamanho(
-    porte_descricao: Optional[str],
-    capital_social: Optional[float],
+    porte_descricao: str | None,
+    capital_social: float | None,
     opcao_mei: bool = False,
-) -> Optional[str]:
+) -> str | None:
 
     if opcao_mei:
         return "MEI"

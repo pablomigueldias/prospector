@@ -1,8 +1,6 @@
 """Service do Perfil Mestre — o 'quem EU sou' dos agentes pessoais."""
 from __future__ import annotations
 
-from typing import Optional
-
 from app.api.schemas.pessoal import PerfilMestreResponse, PerfilMestreUpsert
 from app.api.services._helpers import iso as _iso
 from app.db.models.pessoal.perfil_mestre import PerfilMestre
@@ -34,7 +32,7 @@ def _to_response(p: PerfilMestre) -> PerfilMestreResponse:
     )
 
 
-async def get_perfil() -> Optional[PerfilMestreResponse]:
+async def get_perfil() -> PerfilMestreResponse | None:
     async with get_session() as session:
         perfil = await PerfilRepository(session).get_ativo()
         return _to_response(perfil) if perfil else None

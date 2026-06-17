@@ -8,11 +8,8 @@ Regras (ver plano, seção 2):
 """
 from __future__ import annotations
 
-from typing import Optional
-
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
-
 
 # Parâmetros sólidos (plano: time_cost=3, memory=64MB, parallelism=4).
 _ph = PasswordHasher(
@@ -59,7 +56,7 @@ def hash_senha(senha: str) -> str:
     return _ph.hash(senha)
 
 
-def conferir_senha(hash_armazenado: Optional[str], senha: str) -> bool:
+def conferir_senha(hash_armazenado: str | None, senha: str) -> bool:
     """Confere a senha contra o hash. Anti-timing embutido: se o hash for None
     (usuário inexistente), gasta o mesmo tempo verificando contra o dummy e
     retorna False — sem vazar pelo tempo se o email existe."""

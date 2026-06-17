@@ -1,4 +1,3 @@
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -38,7 +37,7 @@ async def listar(
 @router.get("/status", response_model=OrcamentoStatusResponse,
             summary="Consumido × orçado por categoria no mês")
 async def status(
-    competencia: Optional[str] = None,
+    competencia: str | None = None,
     usuario_id: str = Depends(financas_usuario_id),
 ) -> OrcamentoStatusResponse:
     try:

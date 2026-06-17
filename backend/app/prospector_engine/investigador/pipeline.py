@@ -1,4 +1,3 @@
-from typing import Optional
 
 from app.collectors import duckduckgo
 from app.collectors.brasilapi.client import (
@@ -12,7 +11,6 @@ from app.prospector_engine.investigador.confianca import Investigacao
 from app.prospector_engine.investigador.input_model import InputInvestigacao
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 
@@ -24,7 +22,7 @@ def investigar(input_: InputInvestigacao) -> Investigacao:
     if input_.cnpj:
         _enriquecer_via_brasilapi(inv, input_.cnpj)
 
-    site_inicial: Optional[str] = inv.site.valor if inv.site else None
+    site_inicial: str | None = inv.site.valor if inv.site else None
     if site_inicial:
         _enriquecer_via_site(inv, site_inicial)
 
@@ -172,7 +170,7 @@ def _enriquecer_via_site(inv: Investigacao, url_site: str) -> None:
 
 
 def _enriquecer_via_ddg(
-    inv: Investigacao, nome: str, cidade: Optional[str]
+    inv: Investigacao, nome: str, cidade: str | None
 ) -> None:
     achados = duckduckgo.buscar_redes_sociais(nome=nome, cidade=cidade)
 
@@ -188,7 +186,7 @@ def _enriquecer_via_ddg(
         inv.candidatos_site = candidatos
 
 
-def _capitalizar(texto: Optional[str]) -> Optional[str]:
+def _capitalizar(texto: str | None) -> str | None:
     if not texto:
         return None
     texto = str(texto).strip()
@@ -199,7 +197,7 @@ def _capitalizar(texto: Optional[str]) -> Optional[str]:
     return texto
 
 
-def _montar_endereco(data: dict) -> Optional[str]:
+def _montar_endereco(data: dict) -> str | None:
     partes = []
     logradouro = data.get("logradouro")
     numero = data.get("numero")

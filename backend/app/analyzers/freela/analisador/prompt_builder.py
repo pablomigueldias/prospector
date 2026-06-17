@@ -6,11 +6,8 @@ ESCASSA: dizer onde vale gastar bala. Espelha o analisador de vaga.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 from app.analyzers._perfil_texto import perfil_para_texto
 from app.api.schemas.pessoal import PerfilMestreResponse
-
 
 OUTPUT_SCHEMA = """
 {
@@ -101,11 +98,11 @@ def construir_prompt(
     descricao_projeto: str,
     perfil: PerfilMestreResponse,
     *,
-    titulo: Optional[str] = None,
-    faixa_orcamento: Optional[str] = None,
-    n_propostas: Optional[int] = None,
-    n_interessados: Optional[int] = None,
-    sinais_cliente: Optional[str] = None,
+    titulo: str | None = None,
+    faixa_orcamento: str | None = None,
+    n_propostas: int | None = None,
+    n_interessados: int | None = None,
+    sinais_cliente: str | None = None,
 ) -> str:
     cab = []
     if titulo:

@@ -6,7 +6,6 @@ cadastro público: usuários nascem por aqui.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +29,7 @@ class AdminError(Exception):
     """Erro de negócio do admin de usuários — vira 400/404/409 no router."""
 
 
-def _iso(dt) -> Optional[str]:
+def _iso(dt) -> str | None:
     return dt.isoformat() if dt else None
 
 
@@ -152,7 +151,7 @@ async def atualizar_usuario(
         if payload.ativo is not None:
             u.ativo = payload.ativo
 
-        papeis_finais: Optional[list[str]] = None
+        papeis_finais: list[str] | None = None
         if payload.papeis is not None:
             papeis = await _resolver_papeis(session, payload.papeis)
             nomes = {p.nome for p in papeis}

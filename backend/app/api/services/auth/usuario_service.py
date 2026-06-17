@@ -1,15 +1,13 @@
 """Mapeamento Usuario → response e helpers de request (IP/UA)."""
 from __future__ import annotations
 
-from typing import List, Optional
-
 from fastapi import Request
 
 from app.api.schemas.auth import UsuarioResponse
 from app.db.models.auth.usuario import Usuario
 
 
-def to_response(usuario: Usuario, permissoes: Optional[List[str]] = None) -> UsuarioResponse:
+def to_response(usuario: Usuario, permissoes: list[str] | None = None) -> UsuarioResponse:
     return UsuarioResponse(
         id=str(usuario.id),
         email=usuario.email,
@@ -21,7 +19,7 @@ def to_response(usuario: Usuario, permissoes: Optional[List[str]] = None) -> Usu
     )
 
 
-def ip_do_request(request: Request) -> Optional[str]:
+def ip_do_request(request: Request) -> str | None:
     """IP real do cliente. Atrás do Caddy vem em X-Forwarded-For (1º da lista)."""
     fwd = request.headers.get("x-forwarded-for")
     if fwd:
@@ -29,5 +27,5 @@ def ip_do_request(request: Request) -> Optional[str]:
     return request.client.host if request.client else None
 
 
-def user_agent_do_request(request: Request) -> Optional[str]:
+def user_agent_do_request(request: Request) -> str | None:
     return request.headers.get("user-agent")

@@ -11,7 +11,6 @@ from app.prospector_engine.investigador.revisor_interativo import (
 )
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 
@@ -50,7 +49,7 @@ def investigar_e_montar_lead(
 
 def _investigacao_para_lead(inv: Investigacao, status: str) -> Lead:
 
-    def v(campo: str) -> Optional[str]:
+    def v(campo: str) -> str | None:
         c = getattr(inv, campo, None)
         return c.valor if c else None
 

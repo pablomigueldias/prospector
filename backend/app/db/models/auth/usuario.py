@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -33,7 +32,7 @@ class Usuario(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         Boolean, nullable=False, default=False, server_default=expression.false()
     )
 
-    ultimo_login: Mapped[Optional[datetime]] = mapped_column(
+    ultimo_login: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 

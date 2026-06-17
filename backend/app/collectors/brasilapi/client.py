@@ -1,5 +1,5 @@
 
-from typing import Any, Dict
+from typing import Any
 
 import httpx
 from tenacity import (
@@ -10,7 +10,6 @@ from tenacity import (
 )
 
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -63,7 +62,7 @@ def _validate_cnpj_digits(cnpj_digits: str) -> bool:
     ),
     reraise=True,
 )
-def _http_get(url: str) -> Dict[str, Any]:
+def _http_get(url: str) -> dict[str, Any]:
     try:
         with httpx.Client(timeout=TIMEOUT_SECONDS) as client:
             response = client.get(url, headers={"User-Agent": "Prospector/1.0"})
@@ -91,7 +90,7 @@ def _http_get(url: str) -> Dict[str, Any]:
 
 
 
-def buscar_cnpj(cnpj: str) -> Dict[str, Any]:
+def buscar_cnpj(cnpj: str) -> dict[str, Any]:
 
     digits = _digits_only(cnpj)
     if not _validate_cnpj_digits(digits):

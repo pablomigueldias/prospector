@@ -1,7 +1,5 @@
-from typing import Optional
 
 from app.domain.lead import Lead
-
 
 OUTPUT_SCHEMA = """
 {
@@ -34,7 +32,7 @@ OUTPUT_SCHEMA = """
 """
 
 
-def _formatar_capital(capital: Optional[float]) -> str:
+def _formatar_capital(capital: float | None) -> str:
     if capital is None:
         return "(não informado)"
     if capital >= 1_000_000:

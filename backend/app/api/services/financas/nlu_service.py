@@ -7,7 +7,6 @@ from __future__ import annotations
 import asyncio
 import uuid
 from datetime import date
-from typing import List, Optional, Tuple
 
 from app.analyzers.nlu import extrator
 from app.analyzers.nlu.parser import parse_nlu
@@ -29,7 +28,7 @@ def _uuid(valor: str, *, campo: str = "id") -> uuid.UUID:
         raise NLUError(f"{campo} inválido: {valor!r}")
 
 
-def _casar(guess: Optional[str], itens: List) -> Tuple[Optional[str], Optional[str]]:
+def _casar(guess: str | None, itens: list) -> tuple[str | None, str | None]:
     """Casa o nome chutado pelo LLM com a lista (id, nome): exato (case-insensitive)
     e depois por substring. Devolve (id, nome) ou (None, None)."""
     if not guess:

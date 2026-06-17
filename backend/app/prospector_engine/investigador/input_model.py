@@ -1,17 +1,16 @@
-from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
 
 class InputInvestigacao(BaseModel):
 
-    nome: Optional[str] = None
-    cnpj: Optional[str] = None
-    cidade: Optional[str] = None
-    estado: Optional[str] = None  # sigla UF
-    site: Optional[str] = None
-    instagram: Optional[str] = None  # @handle ou URL
-    telefone: Optional[str] = None  # qualquer formato
+    nome: str | None = None
+    cnpj: str | None = None
+    cidade: str | None = None
+    estado: str | None = None  # sigla UF
+    site: str | None = None
+    instagram: str | None = None  # @handle ou URL
+    telefone: str | None = None  # qualquer formato
 
     @field_validator("nome", "cidade", "estado", "site", mode="before")
     @classmethod

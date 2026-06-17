@@ -1,18 +1,16 @@
 from __future__ import annotations
 
+import email
 import imaplib
 import re
-import email
-from email.header import decode_header, make_header
-from email.utils import parsedate_to_datetime
 from datetime import datetime
+from email.header import decode_header, make_header
 from email.message import EmailMessage
-from email.utils import formataddr, make_msgid
-from typing import Optional,List,Dict,Any
+from email.utils import formataddr, make_msgid, parsedate_to_datetime
+from typing import Any
 
 from app.config import settings
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -43,7 +41,7 @@ def _achar_pasta(imap: imaplib.IMAP4_SSL, tipo: str) -> str:
 
     padrao = re.compile(
         r'\((?P<flags>[^)]*)\)\s+(?:"[^"]*"|NIL)\s+(?P<name>.+)$')
-    fallback: Optional[str] = None
+    fallback: str | None = None
 
     for raw in linhas:
         linha = raw.decode(errors="ignore").strip()
@@ -75,7 +73,7 @@ def salvar_rascunho(
         para: str,
         assunto: str,
         corpo: str,
-        de_nome: Optional[str] = None,
+        de_nome: str | None = None,
 ) -> str:
 
     de_nome = de_nome or settings.mail_from_name
@@ -101,7 +99,7 @@ def salvar_rascunho(
     finally:
         imap.logout()
 
-def _decodificar(valor: Optional[str]) -> str:
+def _decodificar(valor: str | None) -> str:
     if not valor:
         return ""
     try:
@@ -118,7 +116,7 @@ def _normalizar_assunto(assunto: str) -> str:
         s = novo
     return s.strip()
 
-def _ler_pasta(pasta_tipo: str, dias: int = 30) -> List[Dict[str, Any]]:
+def _ler_pasta(pasta_tipo: str, dias: int = 30) -> list[dict[str, Any]]:
     imap = _conectar_imap()
     try:
         if pasta_tipo == "INBOX":
@@ -138,7 +136,7 @@ def _ler_pasta(pasta_tipo: str, dias: int = 30) -> List[Dict[str, Any]]:
             return []
 
         ids = dados[0].split()
-        mensagens: List[Dict[str, Any]] = []
+        mensagens: list[dict[str, Any]] = []
 
         for num in ids:
             status, msg_data = imap.fetch(num, "(BODY.PEEK[])")
@@ -163,7 +161,7 @@ def _ler_pasta(pasta_tipo: str, dias: int = 30) -> List[Dict[str, Any]]:
         imap.logout()
 
 
-def _parse_data(valor: Optional[str]) -> Optional[datetime]:
+def _parse_data(valor: str | None) -> datetime | None:
     if not valor:
         return None
     try:
@@ -172,14 +170,14 @@ def _parse_data(valor: Optional[str]) -> Optional[datetime]:
     except Exception:
         return None
 
-def ler_enviados(dias: int = 30) -> List[Dict[str, Any]]:
+def ler_enviados(dias: int = 30) -> list[dict[str, Any]]:
     return _ler_pasta("Sent", dias=dias)
 
 
-def ler_inbox(dias: int = 30) -> List[Dict[str, Any]]:
+def ler_inbox(dias: int = 30) -> list[dict[str, Any]]:
     return _ler_pasta("INBOX", dias=dias)
 
-def _extrair_emails(campo: str) -> List[str]:
+def _extrair_emails(campo: str) -> list[str]:
     return [e.lower() for e in re.findall(r"[\w\.\-\+]+@[\w\-\.]+", campo or "")]
 
 def _extrair_corpo_texto(msg: email.message.Message) -> str:

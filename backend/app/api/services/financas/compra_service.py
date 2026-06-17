@@ -9,7 +9,6 @@ import calendar
 import uuid
 from datetime import date
 from decimal import ROUND_DOWN, Decimal
-from typing import List, Optional, Tuple
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,7 +47,7 @@ def _uuid(valor: str, *, campo: str = "id") -> uuid.UUID:
         raise CompraError(f"{campo} inválido: {valor!r}")
 
 
-def distribuir(total: Decimal, n: int) -> List[Decimal]:
+def distribuir(total: Decimal, n: int) -> list[Decimal]:
     """Divide ``total`` em ``n`` partes de centavo certo; a última absorve o
     resto (ex.: 100/3 = 33.33, 33.33, 33.34)."""
     base = (total / n).quantize(_CENTAVO, rounding=ROUND_DOWN)
@@ -57,7 +56,7 @@ def distribuir(total: Decimal, n: int) -> List[Decimal]:
     return valores
 
 
-def add_meses(ano: int, mes: int, k: int) -> Tuple[int, int]:
+def add_meses(ano: int, mes: int, k: int) -> tuple[int, int]:
     idx = ano * 12 + (mes - 1) + k
     return idx // 12, idx % 12 + 1
 
@@ -66,7 +65,7 @@ def dia_valido(ano: int, mes: int, dia: int) -> int:
     return min(dia, calendar.monthrange(ano, mes)[1])
 
 
-def competencia_inicial(data_compra: date, dia_fechamento: int) -> Tuple[int, int]:
+def competencia_inicial(data_compra: date, dia_fechamento: int) -> tuple[int, int]:
     """Em qual mês cai a 1ª fatura: se a compra entrou até o fechamento, no
     próprio mês; senão, no mês seguinte."""
     if data_compra.day <= dia_fechamento:
@@ -87,7 +86,7 @@ def vencimento_fatura(
     return date(vy, vm, dia_valido(vy, vm, dia_vencimento))
 
 
-async def _carregar_compra(session: AsyncSession, compra_id: uuid.UUID) -> Optional[Compra]:
+async def _carregar_compra(session: AsyncSession, compra_id: uuid.UUID) -> Compra | None:
     return await session.scalar(
         select(Compra)
         .options(selectinload(Compra.parcelas))
@@ -161,8 +160,8 @@ async def lancar_avista_na_sessao(
     descricao: str,
     valor: Decimal,
     data_compra: date,
-    categoria_id: Optional[uuid.UUID] = None,
-    recorrencia_id: Optional[uuid.UUID] = None,
+    categoria_id: uuid.UUID | None = None,
+    recorrencia_id: uuid.UUID | None = None,
 ) -> Compra:
     """Lança uma compra à vista (1 parcela) na fatura do mês, dentro da sessão
     dada (não commita). Usado pelo cron e pelo "marcar pago" das recorrências
@@ -198,7 +197,7 @@ async def lancar_avista_na_sessao(
 
 
 async def criar_compra_parcelada(
-    payload: CompraParceladaCreate, *, recorrencia_id: Optional[uuid.UUID] = None
+    payload: CompraParceladaCreate, *, recorrencia_id: uuid.UUID | None = None
 ) -> CompraResponse:
     if not payload.descricao.strip():
         raise CompraError("A compra precisa de uma descrição.")

@@ -36,7 +36,7 @@ class TransacaoPagamento(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     valor: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
 
-    transacao: Mapped["Transacao"] = relationship(back_populates="pagamentos")
+    transacao: Mapped[Transacao] = relationship(back_populates="pagamentos")
 
     __table_args__ = (
         Index("ix_fin_transacao_pagamentos_transacao_id", "transacao_id"),

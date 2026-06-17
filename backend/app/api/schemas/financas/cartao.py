@@ -3,10 +3,8 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
-
 
 # ══════════════════════════════════════════════════════════════════
 # Cartões, faturas, compras parceladas e parcelas
@@ -15,36 +13,36 @@ from pydantic import BaseModel, Field
 class CartaoCreate(BaseModel):
     usuario_id: str
     nome: str
-    bandeira: Optional[str] = None
+    bandeira: str | None = None
     dia_fechamento: int = Field(..., ge=1, le=31)
     dia_vencimento: int = Field(..., ge=1, le=31)
-    limite: Optional[Decimal] = Field(None, ge=0)
+    limite: Decimal | None = Field(None, ge=0)
 
 
 class CartaoUpdate(BaseModel):
-    nome: Optional[str] = None
-    bandeira: Optional[str] = None
-    dia_fechamento: Optional[int] = Field(None, ge=1, le=31)
-    dia_vencimento: Optional[int] = Field(None, ge=1, le=31)
-    limite: Optional[Decimal] = Field(None, ge=0)
-    ativo: Optional[bool] = None
+    nome: str | None = None
+    bandeira: str | None = None
+    dia_fechamento: int | None = Field(None, ge=1, le=31)
+    dia_vencimento: int | None = Field(None, ge=1, le=31)
+    limite: Decimal | None = Field(None, ge=0)
+    ativo: bool | None = None
 
 
 class CartaoResponse(BaseModel):
     id: str
     usuario_id: str
     nome: str
-    bandeira: Optional[str] = None
+    bandeira: str | None = None
     dia_fechamento: int
     dia_vencimento: int
-    limite: Optional[Decimal] = None
+    limite: Decimal | None = None
     ativo: bool
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class CartaoListResponse(BaseModel):
-    items: List["CartaoResponse"]
+    items: list[CartaoResponse]
     total: int
 
 
@@ -59,7 +57,7 @@ class FaturaResponse(BaseModel):
 
 class FaturasCartaoResponse(BaseModel):
     cartao_id: str
-    faturas: List[FaturaResponse]
+    faturas: list[FaturaResponse]
     total_em_aberto: Decimal       # soma das faturas não pagas
     total_juros: Decimal           # soma de valor_juros das parcelas do cartão
 
@@ -74,18 +72,18 @@ class ProjecaoMesItem(BaseModel):
 class ProjecaoFaturasResponse(BaseModel):
     """Comprometido por mês nos próximos N meses, somando as faturas não pagas
     de todos os cartões do usuário."""
-    meses: List[ProjecaoMesItem]
+    meses: list[ProjecaoMesItem]
     total: Decimal                 # soma do período
 
 
 class PagarFaturaRequest(BaseModel):
     """Pagamento de uma fatura: debita de uma conta e baixa a fatura."""
     conta_id: str
-    data_pagamento: Optional[date] = None
-    valor_pago: Optional[Decimal] = Field(
+    data_pagamento: date | None = None
+    valor_pago: Decimal | None = Field(
         None, gt=0, description="Valor real que saiu (default = total da fatura)"
     )
-    categoria_id: Optional[str] = None
+    categoria_id: str | None = None
 
 
 class FaturaExtratoItem(BaseModel):
@@ -98,14 +96,14 @@ class FaturaExtratoItem(BaseModel):
     valor: Decimal
     valor_juros: Decimal
     vencimento: date
-    categoria_id: Optional[str] = None
-    categoria_nome: Optional[str] = None
+    categoria_id: str | None = None
+    categoria_nome: str | None = None
 
 
 class FaturaExtratoResponse(BaseModel):
     fatura: FaturaResponse
     cartao_nome: str
-    itens: List[FaturaExtratoItem]
+    itens: list[FaturaExtratoItem]
     total_juros: Decimal
 
 
@@ -116,8 +114,8 @@ class CompraParceladaCreate(BaseModel):
     descricao: str
     valor_total: Decimal = Field(..., gt=0, description="Total a pagar (já com juros)")
     total_parcelas: int = Field(..., ge=1, le=120)
-    data_compra: Optional[date] = None
-    categoria_id: Optional[str] = None
+    data_compra: date | None = None
+    categoria_id: str | None = None
     valor_juros_total: Decimal = Field(
         Decimal("0"), ge=0, description="Quanto do total é juro (distribuído nas parcelas)"
     )
@@ -131,7 +129,7 @@ class BoletoParceladoCreate(BaseModel):
     valor_total: Decimal = Field(..., gt=0)
     total_parcelas: int = Field(..., ge=1, le=120)
     primeiro_vencimento: date
-    categoria_id: Optional[str] = None
+    categoria_id: str | None = None
     valor_juros_total: Decimal = Field(Decimal("0"), ge=0)
 
 
@@ -143,29 +141,29 @@ class ParcelaResponse(BaseModel):
     tem_juros: bool
     valor_juros: Decimal
     vencimento: date
-    fatura_id: Optional[str] = None
+    fatura_id: str | None = None
 
 
 class CompraResponse(BaseModel):
     id: str
     usuario_id: str
-    cartao_id: Optional[str] = None
+    cartao_id: str | None = None
     descricao: str
     valor_total: Decimal
     total_parcelas: int
     data_compra: date
     origem: str
-    categoria_id: Optional[str] = None
-    parcelas: List[ParcelaResponse] = Field(default_factory=list)
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    categoria_id: str | None = None
+    parcelas: list[ParcelaResponse] = Field(default_factory=list)
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class CompraCategoriaSugestao(BaseModel):
     """Categoria da última compra com a mesma descrição (auto-categoria do
     cartão). Vem nula quando não há histórico."""
-    categoria_id: Optional[str] = None
-    categoria_nome: Optional[str] = None
+    categoria_id: str | None = None
+    categoria_nome: str | None = None
 
 
 class PixParseRequest(BaseModel):
@@ -175,9 +173,9 @@ class PixParseRequest(BaseModel):
 
 class PixParseResponse(BaseModel):
     """Dados extraídos do PIX copia-e-cola (campos podem vir nulos)."""
-    valor: Optional[Decimal] = None
-    beneficiario: Optional[str] = None
-    cidade: Optional[str] = None
-    chave: Optional[str] = None
+    valor: Decimal | None = None
+    beneficiario: str | None = None
+    cidade: str | None = None
+    chave: str | None = None
 
 

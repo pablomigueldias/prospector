@@ -4,39 +4,37 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.services.auth.cookie import cookie_name
-from app.api.services.auth.csrf import valido as csrf_valido
-
-from app.api.routers import auth as auth_router
 from app.api.routers import admin_usuarios as admin_usuarios_router
 from app.api.routers import agents as agents_router
-from app.api.routers import prospector as prospector_router
-from app.api.routers import copywriter as copywriter_router
-from app.api.routers import observability as observability_router
-from app.api.routers import dev_tools as dev_tools_router
-from app.api.routers import outreach as outreach_router
-from app.api.routers import perfil as perfil_router
-from app.api.routers import vagas as vagas_router
-from app.api.routers import freela as freela_router
-from app.api.routers import contas as contas_router
-from app.api.routers import categorias as categorias_router
-from app.api.routers import transacoes as transacoes_router
-from app.api.routers import resumo as resumo_router
+from app.api.routers import auth as auth_router
 from app.api.routers import cartoes as cartoes_router
+from app.api.routers import categorias as categorias_router
 from app.api.routers import compras as compras_router
-from app.api.routers import recorrencias as recorrencias_router
-from app.api.routers import orcamentos as orcamentos_router
-from app.api.routers import pagar_mes as pagar_mes_router
-from app.api.routers import leituras as leituras_router
 from app.api.routers import comprovantes as comprovantes_router
-from app.api.routers import importador as importador_router
-from app.api.routers import nlu as nlu_router
-from app.api.routers import pix as pix_router
-from app.api.routers import telegram as telegram_router
+from app.api.routers import contas as contas_router
+from app.api.routers import copywriter as copywriter_router
+from app.api.routers import dev_tools as dev_tools_router
 from app.api.routers import eventos as eventos_router
+from app.api.routers import freela as freela_router
+from app.api.routers import importador as importador_router
+from app.api.routers import leituras as leituras_router
+from app.api.routers import nlu as nlu_router
+from app.api.routers import observability as observability_router
+from app.api.routers import orcamentos as orcamentos_router
+from app.api.routers import outreach as outreach_router
+from app.api.routers import pagar_mes as pagar_mes_router
+from app.api.routers import perfil as perfil_router
+from app.api.routers import pix as pix_router
+from app.api.routers import prospector as prospector_router
+from app.api.routers import recorrencias as recorrencias_router
+from app.api.routers import resumo as resumo_router
+from app.api.routers import telegram as telegram_router
+from app.api.routers import transacoes as transacoes_router
+from app.api.routers import vagas as vagas_router
+from app.api.services.auth.cookie import cookie_name
+from app.api.services.auth.csrf import valido as csrf_valido
 from app.config import settings
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 

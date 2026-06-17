@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Optional
 
 from app.utils.logger import get_logger
 
@@ -27,7 +26,7 @@ def _limpar_texto(texto: str) -> str:
     return t.strip()
 
 
-def _reparar_json_truncado(texto: str) -> Optional[str]:
+def _reparar_json_truncado(texto: str) -> str | None:
     """Fecha um JSON cortado no meio (limite de tokens da LLM)."""
     t = texto.rstrip()
     if not t:
@@ -69,7 +68,7 @@ def _reparar_json_truncado(texto: str) -> Optional[str]:
         return None
 
 
-def extrair_json(texto_cru: str) -> Optional[dict]:
+def extrair_json(texto_cru: str) -> dict | None:
     """Converte o texto cru da LLM num dict, ou None se não der.
 
     Tenta: parse direto do texto limpo → reparo de truncamento → desiste.

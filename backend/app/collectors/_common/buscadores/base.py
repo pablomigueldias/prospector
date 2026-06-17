@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List
 from urllib.parse import urlparse
 
 
@@ -37,5 +36,5 @@ class BuscadorBase(ABC):
     nome: str = "base"
 
     @abstractmethod
-    def buscar(self, query: str, max_resultados: int = 10) -> List[ResultadoBusca]:
+    def buscar(self, query: str, max_resultados: int = 10) -> list[ResultadoBusca]:
         ...

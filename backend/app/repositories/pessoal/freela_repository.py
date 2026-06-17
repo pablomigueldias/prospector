@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,11 +16,11 @@ class FreelaRepository:
         self.session = session
 
     # ── Plataforma ───────────────────────────────────────────────
-    async def listar_plataformas(self) -> List[Plataforma]:
+    async def listar_plataformas(self) -> list[Plataforma]:
         stmt = select(Plataforma).order_by(Plataforma.nome)
         return list((await self.session.execute(stmt)).scalars().all())
 
-    async def get_plataforma(self, pid: uuid.UUID) -> Optional[Plataforma]:
+    async def get_plataforma(self, pid: uuid.UUID) -> Plataforma | None:
         return await self.session.get(Plataforma, pid)
 
     # ── Cliente ──────────────────────────────────────────────────
@@ -32,14 +31,14 @@ class FreelaRepository:
         await self.session.refresh(cliente)
         return cliente
 
-    async def get_cliente(self, cid: uuid.UUID) -> Optional[Cliente]:
+    async def get_cliente(self, cid: uuid.UUID) -> Cliente | None:
         return await self.session.get(Cliente, cid)
 
-    async def listar_clientes(self) -> List[Cliente]:
+    async def listar_clientes(self) -> list[Cliente]:
         stmt = select(Cliente).order_by(Cliente.nome)
         return list((await self.session.execute(stmt)).scalars().all())
 
-    async def update_cliente(self, cid: uuid.UUID, dados: dict) -> Optional[Cliente]:
+    async def update_cliente(self, cid: uuid.UUID, dados: dict) -> Cliente | None:
         cliente = await self.get_cliente(cid)
         if cliente is None:
             return None
@@ -62,12 +61,12 @@ class FreelaRepository:
         await self.session.refresh(projeto)
         return projeto
 
-    async def get_projeto(self, pid: uuid.UUID) -> Optional[Projeto]:
+    async def get_projeto(self, pid: uuid.UUID) -> Projeto | None:
         return await self.session.get(Projeto, pid)
 
     async def listar_projetos(
         self,
-    ) -> List[tuple[Projeto, Optional[str], int, float]]:
+    ) -> list[tuple[Projeto, str | None, int, float]]:
         """Projetos + nome do cliente + nº de propostas + US$ já pago pelo cliente."""
         propostas = (
             select(
@@ -91,7 +90,7 @@ class FreelaRepository:
         result = await self.session.execute(stmt)
         return [(row[0], row[1], int(row[2]), float(row[3])) for row in result.all()]
 
-    async def update_projeto(self, pid: uuid.UUID, dados: dict) -> Optional[Projeto]:
+    async def update_projeto(self, pid: uuid.UUID, dados: dict) -> Projeto | None:
         projeto = await self.get_projeto(pid)
         if projeto is None:
             return None
@@ -103,7 +102,7 @@ class FreelaRepository:
 
     async def salvar_analise_projeto(
         self, pid: uuid.UUID, analise: dict
-    ) -> Optional[Projeto]:
+    ) -> Projeto | None:
         projeto = await self.get_projeto(pid)
         if projeto is None:
             return None
@@ -125,10 +124,10 @@ class FreelaRepository:
         await self.session.refresh(proposta)
         return proposta
 
-    async def get_proposta(self, pid: uuid.UUID) -> Optional[Proposta]:
+    async def get_proposta(self, pid: uuid.UUID) -> Proposta | None:
         return await self.session.get(Proposta, pid)
 
-    async def update_proposta(self, pid: uuid.UUID, dados: dict) -> Optional[Proposta]:
+    async def update_proposta(self, pid: uuid.UUID, dados: dict) -> Proposta | None:
         proposta = await self.get_proposta(pid)
         if proposta is None:
             return None
@@ -145,7 +144,7 @@ class FreelaRepository:
 
     async def listar_propostas_kanban(
         self,
-    ) -> List[tuple[Proposta, str, Optional[str]]]:
+    ) -> list[tuple[Proposta, str, str | None]]:
         """Todas as propostas + título do projeto + nome do cliente (pro board)."""
         stmt = (
             select(Proposta, Projeto.titulo, Cliente.nome)
@@ -158,7 +157,7 @@ class FreelaRepository:
 
     async def listar_propostas_do_projeto(
         self, projeto_id: uuid.UUID
-    ) -> List[Proposta]:
+    ) -> list[Proposta]:
         stmt = (
             select(Proposta)
             .where(Proposta.projeto_id == projeto_id)
@@ -182,7 +181,7 @@ class FreelaRepository:
         soma, qtd = (await self.session.execute(stmt)).one()
         return float(soma), int(qtd)
 
-    async def tempo_medio_resposta_horas(self) -> Optional[float]:
+    async def tempo_medio_resposta_horas(self) -> float | None:
         """Média de horas entre enviar e o cliente responder (onde houver ambos)."""
         stmt = select(
             func.avg(
@@ -195,7 +194,7 @@ class FreelaRepository:
         v = (await self.session.execute(stmt)).scalar()
         return round(float(v) / 3600, 1) if v is not None else None
 
-    async def valor_hora_real_fechadas(self) -> Optional[float]:
+    async def valor_hora_real_fechadas(self) -> float | None:
         """Média do líquido/hora das propostas fechadas com horas estimadas."""
         stmt = select(
             func.avg(Proposta.valor_liquido_estimado / Proposta.horas_estimadas)

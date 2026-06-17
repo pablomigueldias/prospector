@@ -1,15 +1,13 @@
-from typing import List
 
 from fastapi import APIRouter, HTTPException
 
 from app.api.registry import get_agent, list_agents
 
-
 router = APIRouter(prefix="/api/agents", tags=["agents"])
 
 
 @router.get("", summary="Lista todos os agentes da plataforma")
-def list_all() -> List[dict]:
+def list_all() -> list[dict]:
     return [a.to_dict() for a in list_agents()]
 
 

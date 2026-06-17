@@ -1,6 +1,6 @@
-from typing import Optional
 
 from app.prospector_engine.investigador.confianca import Investigacao
+
 
 def _icon_score(score: int) -> str:
     if score >= 85:
@@ -66,7 +66,7 @@ def pedir_aprovacao(inv: Investigacao) -> bool:
         print("   Resposta inválida. Digite 's' ou 'n'.")
 
 
-def perguntar_qual_site(inv: Investigacao) -> Optional[str]:
+def perguntar_qual_site(inv: Investigacao) -> str | None:
 
     if not inv.candidatos_site or inv.site:
         return None

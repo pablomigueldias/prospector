@@ -1,5 +1,4 @@
 import time
-from typing import List
 
 import httpx
 from bs4 import BeautifulSoup
@@ -16,7 +15,6 @@ from app.collectors._common.humano import delay_humano_curto
 from app.collectors._common.sessao import cliente_com_perfil
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 ENDPOINT = "https://www.bing.com/search"
@@ -26,7 +24,7 @@ PERFIL = "bing"
 class BingBuscador(BuscadorBase):
     nome = "bing"
 
-    def buscar(self, query: str, max_resultados: int = 10) -> List[ResultadoBusca]:
+    def buscar(self, query: str, max_resultados: int = 10) -> list[ResultadoBusca]:
         if not query.strip():
             return []
 
@@ -69,9 +67,9 @@ class BingBuscador(BuscadorBase):
             raise BuscadorBloqueado("Bing HTML suspeito")
         return html
 
-    def _parse(self, html: str, max_resultados: int) -> List[ResultadoBusca]:
+    def _parse(self, html: str, max_resultados: int) -> list[ResultadoBusca]:
         soup = BeautifulSoup(html, "lxml")
-        resultados: List[ResultadoBusca] = []
+        resultados: list[ResultadoBusca] = []
 
         for li in soup.select("li.b_algo")[: max_resultados * 2]:
             a = li.select_one("h2 a") or li.select_one("a")

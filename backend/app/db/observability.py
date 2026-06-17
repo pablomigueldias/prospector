@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Optional
 
 from sqlalchemy import func, select
 
@@ -41,7 +40,7 @@ def _rodar_async(coro_factory) -> None:
     if "e" in erro:
         raise erro["e"]
 
-def _estimar_custo(modelo: str, ti: Optional[int], to: Optional[int]) -> Optional[float]:
+def _estimar_custo(modelo: str, ti: int | None, to: int | None) -> float | None:
     p = _PRECOS_USD_1M.get(modelo)
     if not p or ti is None or to is None:
         return None
@@ -52,18 +51,18 @@ def _estimar_custo(modelo: str, ti: Optional[int], to: Optional[int]) -> Optiona
 @dataclass
 class AiCallRecord:
     agente: str = 'desconhecido'
-    operacao: Optional[str] = None
+    operacao: str | None = None
     provider: str = '?'
     modelo: str = '?'
-    prompt: Optional[str] = None
-    resposta: Optional[str] = None
-    tokens_input: Optional[int] = None
-    tokens_output: Optional[int] = None
-    latencia_ms: Optional[int] = None
+    prompt: str | None = None
+    resposta: str | None = None
+    tokens_input: int | None = None
+    tokens_output: int | None = None
+    latencia_ms: int | None = None
     sucesso: bool = True
-    finish_reason: Optional[str] = None
-    erro: Optional[str] = None
-    empresa_cnpj: Optional[str] = None
+    finish_reason: str | None = None
+    erro: str | None = None
+    empresa_cnpj: str | None = None
 
 
 async def _registrar_ai_call_async(rec: AiCallRecord) -> None:
@@ -108,8 +107,8 @@ def register_ai_call(rec: AiCallRecord) -> None:
 
 
 async def _registrar_evento_async(
-    evento: str, status: str, detalhe: Optional[str],
-    empresa_cnpj: Optional[str], duracao_ms: Optional[int],
+    evento: str, status: str, detalhe: str | None,
+    empresa_cnpj: str | None, duracao_ms: int | None,
 ) -> None:
     async with bridge_session() as session:
         session.add(PipelineEvent(
@@ -123,9 +122,9 @@ def registrar_evento(
     evento: str,
     *,
     status: str = "ok",
-    detalhe: Optional[str] = None,
-    empresa_cnpj: Optional[str] = None,
-    duracao_ms: Optional[int] = None,
+    detalhe: str | None = None,
+    empresa_cnpj: str | None = None,
+    duracao_ms: int | None = None,
 ) -> None:
     if not settings.observer_enabled:
         return

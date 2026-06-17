@@ -1,8 +1,6 @@
 """Admin de usuários — /api/admin/* (exige usuarios.gerenciar)."""
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.dependencies.auth import require_permission
@@ -32,8 +30,8 @@ def _handle(e: Exception) -> HTTPException:
     return HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
 
-@router.get("/papeis", response_model=List[PapelItem], summary="Lista os papéis")
-async def listar_papeis(_: Usuario = Depends(_admin)) -> List[PapelItem]:
+@router.get("/papeis", response_model=list[PapelItem], summary="Lista os papéis")
+async def listar_papeis(_: Usuario = Depends(_admin)) -> list[PapelItem]:
     return await admin_service.listar_papeis()
 
 
