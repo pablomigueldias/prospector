@@ -3,7 +3,7 @@
 Registro do que **já foi entregue** no agente `vagas` (caçador de vagas). O que
 **falta** está em `docs/MELHORIAS_VAGAS.md`.
 
-Última atualização: **2026-06-15** (currículo persistido).
+Última atualização: **2026-06-16** (painel "O que estudar" — gaps agregados).
 
 > **Princípios que NÃO mudam:** (1) *para no rascunho* — a ferramenta nunca envia
 > nada sem você mandar; (2) *anti-mentira* — a IA reorganiza a verdade do Perfil
@@ -75,6 +75,29 @@ Registro do que **já foi entregue** no agente `vagas` (caçador de vagas). O qu
 > **Verificado:** roundtrip no banco (salvar → ler `curriculo_json`/
 > `curriculo_gerado_em` → `tem_curriculo` na lista) verde; migration aplica e
 > reverte; `tsc --noEmit` limpo.
+
+## Painel "O que estudar" — gaps agregados de TODAS as vagas
+
+> Pedido do Pablo (2026-06-16): "uma área que analisa todas as vagas e mostra o
+> que eu não tenho e o que a maioria pede, pra eu estudar depois". Visão
+> **agregada** (complementa o item #7 do backlog, que é o plano POR vaga). **Sem
+> migração** — usa o `analise_json`/`match_json` que já existem.
+
+- ✅ **Agregação backend** — 2026-06-16. `GET /api/pessoal/vagas/estudo` →
+  `EstudoVagasResponse`: varre todas as vagas com análise, conta cada skill
+  (requisitos_obrigatorios + desejáveis + stack, **uma vez por vaga**), cruza com
+  o Perfil Mestre (habilidades + stacks dos projetos + alvo) e devolve
+  **`para_estudar`** (demandadas que você NÃO tem, ranqueadas por nº de vagas e
+  obrigatoriedade) + **`pontos_fortes`** (demandadas que você já tem, pra destacar
+  no CV). Normaliza variações ("React.js"≈"react", "Postgres"≈"postgresql") com
+  `_norm_skill` + alias. `repo.listar_com_analise()`.
+- ✅ **Tela** — 2026-06-16. `PainelEstudo` em `VagasScreen.tsx` abaixo das
+  métricas: barra por demanda, "em N de M vagas (X%)", badge "obrig. K", "ver
+  todas", e os pontos fortes como chips. Recarrega junto ao analisar/criar vaga.
+
+> **Verificado:** agregação testada com vagas+perfil simulados (AWS/Inglês no topo
+> de "pra estudar"; React/Python/Docker em "pontos fortes"; variações casaram);
+> rota viva (401 sem auth, antes de `/{vaga_id}`); `tsc --noEmit` verde.
 
 ---
 

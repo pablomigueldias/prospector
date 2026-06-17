@@ -121,6 +121,11 @@ valor — e a ferramenta para no `entrevista`.
 
 ## 7. Plano de ação pros gaps 🔥
 
+> **Parcialmente coberto (2026-06-16):** o painel **"O que estudar"** já entrega a
+> visão AGREGADA — o que a maioria das vagas pede e você não tem, ranqueado por
+> demanda (`GET /vagas/estudo`, ver VAGAS_FEITO). O que falta deste item é o plano
+> POR vaga (1 linha acionável por gap). Os dois se complementam.
+
 **Dor:** o match mostra os `gaps` mas não diz **o que fazer** com eles.
 
 **O que fazer:** pra cada gap relevante, 1 linha acionável: "Gap: Kubernetes →
