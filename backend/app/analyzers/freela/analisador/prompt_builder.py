@@ -22,6 +22,9 @@ OUTPUT_SCHEMA = """
   "veredito": "<1 frase honesta: vale gastar uma proposta aqui? por quê?>",
   "requisitos": ["<o que o projeto realmente pede>", "..."],
   "stack": ["<tecnologia citada/implícita>", "..."],
+  "tarefas": [{"nome": "<entrega concreta do escopo>", "horas": <inteiro de horas pra ESSA entrega>}, "..."],
+  "perguntas_cliente": ["<dúvida que muda o preço/prazo e precisa ser esclarecida antes de cotar>", "..."],
+  "skills_faltando": ["<skill/experiência que o projeto exige e que NÃO aparece clara no perfil do freela (gap)>", "..."],
   "red_flags": ["<risco: orçamento incompatível com escopo, cliente sem pagamento verificado, projeto MUITO concorrido, escopo vago, prazo irreal, pedido fora do seu núcleo>", "..."],
   "sinais_cliente": ["<sinal de qualidade do cliente: verificado, nº de projetos pagos, rating, recorrência>", "..."],
   "ganchos": ["<algo do SEU perfil que conversa com este projeto — projeto/skill a citar>", "..."],
@@ -59,6 +62,17 @@ PERFIL MESTRE do freelancer. Produza:
   detalhes que mudam o preço, "vago" se é genérico demais (risco de scope creep).
 - "veredito": uma frase direta pra decidir.
 - "requisitos" e "stack": o que o projeto pede de fato.
+- "tarefas": quebre o escopo nas ENTREGAS concretas (ex.: "autenticação",
+  "CRUD de produtos", "integração de pagamento", "deploy") com horas realistas
+  por entrega. A SOMA das horas deve bater, grosso modo, com
+  "estimativa.horas_estimadas". Se o escopo for vago demais pra quebrar, devolva
+  lista vazia. Acaba com o "número de horas mágico".
+- "perguntas_cliente": o que está AMBÍGUO e muda preço/prazo (ex.: "tem design
+  pronto?", "quantas telas?", "precisa de painel admin?"). São as perguntas que
+  você faria antes de cravar a cotação. Vazio se o escopo já estiver claro.
+- "skills_faltando": seja honesto — skills/experiências que o projeto EXIGE e que
+  NÃO aparecem claras no perfil do freela (o gap). Use só o que o projeto pede de
+  verdade; se ele cobre tudo, devolva lista vazia. (É o oposto de "ganchos".)
 - "red_flags": seja CÉTICO. Sinalize orçamento incompatível com o escopo,
   cliente sem pagamento verificado, projeto muito concorrido (muitas propostas/
   interessados), escopo vago, prazo irreal, ou pedido fora do núcleo do freela.

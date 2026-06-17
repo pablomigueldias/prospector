@@ -94,9 +94,12 @@ class ExtrairProjetoResponse(BaseModel):
     faixa_orcamento_min: Optional[float] = None
     faixa_orcamento_max: Optional[float] = None
     n_propostas_concorrentes: Optional[int] = None
+    n_interessados: Optional[int] = None
+    habilidades: List[str] = Field(default_factory=list)  # skills exigidas no texto
 
     @field_validator(
-        "faixa_orcamento_min", "faixa_orcamento_max", "n_propostas_concorrentes",
+        "faixa_orcamento_min", "faixa_orcamento_max",
+        "n_propostas_concorrentes", "n_interessados",
         mode="before",
     )
     @classmethod
@@ -335,6 +338,23 @@ class VereditoPreco(BaseModel):
     rh_vs_alvo: Optional[bool] = None     # True se rh_orcamento abaixo do valor-hora alvo
 
 
+class TarefaEstimada(BaseModel):
+    """Uma entrega do escopo com horas — quebra o 'horas_estimadas' mágico."""
+
+    nome: str
+    horas: Optional[int] = None
+
+    @field_validator("horas", mode="before")
+    @classmethod
+    def _so_numero(cls, v):
+        if v is None or isinstance(v, int):
+            return v
+        if isinstance(v, float):
+            return int(v)
+        digitos = "".join(c for c in str(v) if c.isdigit())
+        return int(digitos) if digitos else None
+
+
 class AnaliseFreela(BaseModel):
     fit_score: int = 0                 # 0-100: é a sua praia?
     recomendacao: Optional[str] = None  # vale / talvez / evite
@@ -346,6 +366,9 @@ class AnaliseFreela(BaseModel):
     veredito_preco: Optional[VereditoPreco] = None  # calculado no service (orçamento × mercado)
     requisitos: List[str] = Field(default_factory=list)
     stack: List[str] = Field(default_factory=list)
+    tarefas: List[TarefaEstimada] = Field(default_factory=list)  # escopo quebrado em entregas + horas
+    perguntas_cliente: List[str] = Field(default_factory=list)   # ambiguidades a esclarecer antes de cotar
+    skills_faltando: List[str] = Field(default_factory=list)     # exige e NÃO está claro no seu perfil (gap)
     red_flags: List[str] = Field(default_factory=list)
     sinais_cliente: List[str] = Field(default_factory=list)
     ganchos: List[str] = Field(default_factory=list)  # o que do perfil conversa

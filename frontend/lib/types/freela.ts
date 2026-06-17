@@ -79,6 +79,8 @@ export interface FreelaExtrairProjeto {
   faixa_orcamento_min?: number | null;
   faixa_orcamento_max?: number | null;
   n_propostas_concorrentes?: number | null;
+  n_interessados?: number | null;
+  habilidades?: string[];
 }
 
 export interface FreelaProjeto extends FreelaProjetoCreate {
@@ -237,6 +239,11 @@ export interface FreelaEstimativa {
   valor_sugerido?: number | null;
 }
 
+export interface FreelaTarefa {
+  nome: string;
+  horas?: number | null;
+}
+
 export interface FreelaVeredictoPreco {
   status?: string | null; // subcotado | justo | acima | sem_orcamento
   gap_texto?: string | null;
@@ -255,6 +262,9 @@ export interface FreelaAnalise {
   veredito_preco?: FreelaVeredictoPreco | null;
   requisitos: string[];
   stack: string[];
+  tarefas: FreelaTarefa[];
+  perguntas_cliente: string[];
+  skills_faltando: string[];
   red_flags: string[];
   sinais_cliente: string[];
   ganchos: string[];

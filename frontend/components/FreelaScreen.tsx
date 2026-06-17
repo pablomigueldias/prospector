@@ -1295,6 +1295,59 @@ function ProjetoCard({
               )}
             </p>
           )}
+          {analise.tarefas?.length > 0 && (
+            <div className="mb-2">
+              <span className="text-[12px] font-medium text-ink">🧩 Escopo em tarefas:</span>
+              <ul className="mt-0.5 text-ink-soft">
+                {analise.tarefas.map((t, i) => (
+                  <li key={i} className="flex justify-between gap-3 border-b border-line/50 py-0.5">
+                    <span>{t.nome}</span>
+                    {t.horas != null && (
+                      <span className="text-ink-faint shrink-0 tabular-nums">{t.horas}h</span>
+                    )}
+                  </li>
+                ))}
+                {(() => {
+                  const total = analise.tarefas.reduce((s, t) => s + (t.horas ?? 0), 0);
+                  return total > 0 ? (
+                    <li className="flex justify-between gap-3 py-0.5 font-medium text-ink">
+                      <span>Total</span>
+                      <span className="tabular-nums">{total}h</span>
+                    </li>
+                  ) : null;
+                })()}
+              </ul>
+            </div>
+          )}
+          {analise.perguntas_cliente?.length > 0 && (
+            <div className="mb-2">
+              <span className="text-[12px] font-medium text-sky-700">
+                ❓ Perguntar ao cliente antes de cotar:
+              </span>
+              <ul className="list-disc ml-5 text-ink-soft">
+                {analise.perguntas_cliente.map((q, i) => (
+                  <li key={i}>{q}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {analise.skills_faltando?.length > 0 && (
+            <div className="mb-1.5">
+              <span className="text-[12px] font-medium text-amber-700">
+                ⚠️ Gap de skill (o projeto pede e não vi no seu perfil):
+              </span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {analise.skills_faltando.map((s, i) => (
+                  <span
+                    key={i}
+                    className="text-[12px] px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-200"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           {analise.red_flags.length > 0 && (
             <div className="mb-1.5">
               <span className="text-[12px] font-medium text-red-600">Red flags:</span>
@@ -1434,6 +1487,8 @@ function NovoProjetoForm({
     faixa_orcamento_min?: number | null;
     faixa_orcamento_max?: number | null;
     n_propostas_concorrentes?: number | null;
+    n_interessados?: number | null;
+    habilidades?: string[];
   }) => void;
   onExtrair: (texto: string) => Promise<FreelaExtrairProjeto | null>;
 }) {
@@ -1443,6 +1498,8 @@ function NovoProjetoForm({
   const [min, setMin] = useState('');
   const [max, setMax] = useState('');
   const [nProp, setNProp] = useState('');
+  const [nInteress, setNInteress] = useState('');
+  const [habilidades, setHabilidades] = useState('');
   const [extraindo, setExtraindo] = useState(false);
 
   async function autoPreencher() {
@@ -1455,6 +1512,8 @@ function NovoProjetoForm({
     if (r.faixa_orcamento_min != null) setMin(String(r.faixa_orcamento_min));
     if (r.faixa_orcamento_max != null) setMax(String(r.faixa_orcamento_max));
     if (r.n_propostas_concorrentes != null) setNProp(String(r.n_propostas_concorrentes));
+    if (r.n_interessados != null) setNInteress(String(r.n_interessados));
+    if (r.habilidades?.length && !habilidades.trim()) setHabilidades(r.habilidades.join(', '));
   }
 
   return (
@@ -1474,7 +1533,7 @@ function NovoProjetoForm({
               className="btn-ghost text-[12px] px-2 py-1 disabled:opacity-40"
               onClick={autoPreencher}
               disabled={extraindo || !descricao.trim()}
-              title="A IA lê o texto e preenche título, orçamento e nº de propostas"
+              title="A IA lê o texto e preenche título, orçamento, propostas, interessados e habilidades exigidas"
             >
               {extraindo ? 'Lendo…' : '✨ Auto-preencher do texto'}
             </button>
@@ -1509,7 +1568,20 @@ function NovoProjetoForm({
             Nº propostas
             <input className="input mt-1" type="number" value={nProp} onChange={(e) => setNProp(e.target.value)} />
           </label>
+          <label className="text-[13px] text-ink-soft">
+            Nº interessados
+            <input className="input mt-1" type="number" value={nInteress} onChange={(e) => setNInteress(e.target.value)} />
+          </label>
         </div>
+        <label className="text-[13px] text-ink-soft">
+          Habilidades exigidas <span className="text-ink-faint">(separe por vírgula)</span>
+          <input
+            className="input mt-1"
+            value={habilidades}
+            placeholder="React, FastAPI, PostgreSQL…"
+            onChange={(e) => setHabilidades(e.target.value)}
+          />
+        </label>
         {erro && <div className="text-[13px] text-red-600">{erro}</div>}
         <div>
           <button
@@ -1524,6 +1596,11 @@ function NovoProjetoForm({
                 faixa_orcamento_min: min ? Number(min) : null,
                 faixa_orcamento_max: max ? Number(max) : null,
                 n_propostas_concorrentes: nProp ? Number(nProp) : null,
+                n_interessados: nInteress ? Number(nInteress) : null,
+                habilidades: habilidades
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean),
               })
             }
           >
