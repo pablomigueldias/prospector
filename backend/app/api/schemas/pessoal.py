@@ -233,6 +233,26 @@ class VagasMetricas(BaseModel):
 
 
 # ══════════════════════════════════════════════════════════════════
+# Estudo — o que a maioria das vagas pede e você ainda não tem
+# ══════════════════════════════════════════════════════════════════
+
+class SkillEstudo(BaseModel):
+    skill: str                 # nome de exibição (forma mais comum nas vagas)
+    n_vagas: int               # em quantas vagas analisadas aparece (demanda)
+    pct_vagas: int             # % das vagas analisadas
+    obrigatoria_em: int        # em quantas é requisito OBRIGATÓRIO
+    tenho: bool                # já está no seu Perfil Mestre?
+
+
+class EstudoVagasResponse(BaseModel):
+    """Agrega as skills pedidas por TODAS as vagas analisadas e cruza com o perfil."""
+
+    total_vagas: int = 0                          # vagas com análise consideradas
+    para_estudar: List[SkillEstudo] = Field(default_factory=list)   # demandadas que você NÃO tem
+    pontos_fortes: List[SkillEstudo] = Field(default_factory=list)  # demandadas que você JÁ tem (destacar no CV)
+
+
+# ══════════════════════════════════════════════════════════════════
 # Candidatura (Fase 4 — gera rascunho, PARA antes de enviar)
 # ══════════════════════════════════════════════════════════════════
 

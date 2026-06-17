@@ -182,6 +182,20 @@ export interface VagasMetricas {
   match_medio_candidaturas: number | null;
 }
 
+export interface SkillEstudo {
+  skill: string;
+  n_vagas: number;
+  pct_vagas: number;
+  obrigatoria_em: number;
+  tenho: boolean;
+}
+
+export interface EstudoVagas {
+  total_vagas: number;
+  para_estudar: SkillEstudo[];
+  pontos_fortes: SkillEstudo[];
+}
+
 export interface AnalisarVagaResponse {
   success: boolean;
   analise: AnaliseVaga;

@@ -3,7 +3,10 @@ geração de candidatura (Fase 4). PARA no rascunho: nada aqui envia e-mail.
 """
 from __future__ import annotations
 
+import re
+import unicodedata
 import uuid
+from collections import Counter
 from typing import List, Optional
 
 from app.analyzers.candidatura.parser import parse_resposta as parse_candidatura
@@ -24,10 +27,12 @@ from app.api.schemas.pessoal import (
     AnalisarVagaResponse,
     CandidaturaEmailItem,
     CurriculoVaga,
+    EstudoVagasResponse,
     GerarCandidaturaRequest,
     GerarCandidaturaResponse,
     GerarCurriculoResponse,
     MatchVaga,
+    SkillEstudo,
     VagaCreate,
     VagaListItem,
     VagaListResponse,
@@ -165,6 +170,102 @@ async def metricas() -> VagasMetricas:
         taxa_entrevista=_pct(entrevistas, em_andamento),
         match_medio=_round(dados["match_medio"]),
         match_medio_candidaturas=_round(dados["match_medio_candidaturas"]),
+    )
+
+
+# Apelidos comuns → forma canônica (normalizada, sem ponto/acento).
+_SKILL_ALIAS = {
+    "reactjs": "react",
+    "nextjs": "next",
+    "nodejs": "node",
+    "postgres": "postgresql",
+    "postgre": "postgresql",
+    "js": "javascript",
+    "ts": "typescript",
+    "tailwindcss": "tailwind",
+    "github actions": "ci/cd",
+}
+
+
+def _norm_skill(s: str) -> str:
+    """Normaliza nome de skill pra agregar variações ('React.js'≈'react')."""
+    t = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+    t = t.lower().replace(".", "").strip()
+    t = re.sub(r"[^a-z0-9+# ]", " ", t)   # mantém + e # (c++, c#); resto vira espaço
+    t = re.sub(r"\s+", " ", t).strip()
+    return _SKILL_ALIAS.get(t, t)
+
+
+async def estudo_gaps() -> EstudoVagasResponse:
+    """Agrega as skills pedidas por TODAS as vagas analisadas e cruza com o perfil.
+
+    Resultado: o que a maioria das vagas pede e você ainda NÃO tem (lista de
+    estudo, ranqueada por demanda) + seus pontos fortes mais demandados.
+    """
+    perfil = await get_perfil()
+    async with get_session() as session:
+        vagas = await VagaRepository(session).listar_com_analise()
+
+    total = len(vagas)
+    if total == 0:
+        return EstudoVagasResponse(total_vagas=0)
+
+    # Skills que você JÁ tem (perfil): habilidades + stacks de projetos + alvo.
+    tenho: set[str] = set()
+    if perfil is not None:
+        for h in perfil.habilidades:
+            tenho.add(_norm_skill(h.nome))
+        for pr in perfil.projetos:
+            for s in pr.stack or []:
+                tenho.add(_norm_skill(s))
+        if perfil.o_que_procuro:
+            for s in perfil.o_que_procuro.stack or []:
+                tenho.add(_norm_skill(s))
+    tenho.discard("")
+
+    n_vagas: Counter = Counter()        # norm -> nº de vagas em que aparece
+    obrig: Counter = Counter()          # norm -> nº de vagas em que é OBRIGATÓRIA
+    formas: dict[str, Counter] = {}     # norm -> contagem das formas originais (display)
+
+    for v in vagas:
+        a = v.analise_json or {}
+        obrigatorias = {_norm_skill(x) for x in (a.get("requisitos_obrigatorios") or [])}
+        # uma skill conta UMA vez por vaga (mesmo se repetir em campos diferentes)
+        na_vaga: dict[str, str] = {}
+        for campo in ("requisitos_obrigatorios", "desejaveis", "stack"):
+            for x in a.get(campo) or []:
+                nk = _norm_skill(x)
+                if nk:
+                    na_vaga.setdefault(nk, x)
+        for nk, orig in na_vaga.items():
+            n_vagas[nk] += 1
+            formas.setdefault(nk, Counter())[orig] += 1
+            if nk in obrigatorias:
+                obrig[nk] += 1
+
+    def _mk(nk: str) -> SkillEstudo:
+        disp = formas[nk].most_common(1)[0][0]
+        return SkillEstudo(
+            skill=disp,
+            n_vagas=n_vagas[nk],
+            pct_vagas=round(n_vagas[nk] * 100 / total),
+            obrigatoria_em=obrig[nk],
+            tenho=nk in tenho,
+        )
+
+    itens = [_mk(nk) for nk in n_vagas]
+    para_estudar = sorted(
+        (i for i in itens if not i.tenho),
+        key=lambda i: (-i.n_vagas, -i.obrigatoria_em, i.skill.lower()),
+    )
+    pontos_fortes = sorted(
+        (i for i in itens if i.tenho),
+        key=lambda i: (-i.n_vagas, i.skill.lower()),
+    )[:12]
+    return EstudoVagasResponse(
+        total_vagas=total,
+        para_estudar=para_estudar,
+        pontos_fortes=pontos_fortes,
     )
 
 

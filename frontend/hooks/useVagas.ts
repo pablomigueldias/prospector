@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { ApiError } from '@/lib/types';
 import type {
   AnalisarVagaResponse,
+  EstudoVagas,
   GerarCandidaturaResponse,
   GerarCurriculoResponse,
   Vaga,
@@ -25,6 +26,11 @@ export function useVagas(filtro: VagasFiltro = {}) {
 export function useVagasMetricas() {
   const result = useFetch<VagasMetricas>(() => api.vagasMetricas(), []);
   return { ...result, metricas: result.data };
+}
+
+export function useVagasEstudo() {
+  const result = useFetch<EstudoVagas>(() => api.vagasEstudo(), []);
+  return { ...result, estudo: result.data };
 }
 
 export function useVaga(id: string | undefined) {

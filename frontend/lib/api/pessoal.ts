@@ -2,6 +2,7 @@
 
 import { request } from './client';
 import type {
+  EstudoVagas,
   PerfilMestre,
   Vaga,
   VagaCreate,
@@ -53,6 +54,12 @@ export const pessoalApi = {
   vagasMetricas(): Promise<VagasMetricas> {
     return request<VagasMetricas>('/api/pessoal/vagas/metricas', {
       timeoutMs: 10_000,
+    });
+  },
+
+  vagasEstudo(): Promise<EstudoVagas> {
+    return request<EstudoVagas>('/api/pessoal/vagas/estudo', {
+      timeoutMs: 12_000,
     });
   },
 

@@ -6,6 +6,7 @@ from app.api.dependencies.auth import require_permission
 from app.api.schemas.pessoal import (
     AnalisarVagaResponse,
     CandidaturaEmailItem,
+    EstudoVagasResponse,
     GerarCandidaturaRequest,
     GerarCandidaturaResponse,
     GerarCurriculoResponse,
@@ -63,6 +64,15 @@ async def listar(
 async def metricas() -> VagasMetricas:
     try:
         return await vaga_service.metricas()
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/estudo", response_model=EstudoVagasResponse,
+            summary="O que a maioria das vagas pede e você ainda não tem (lista de estudo)")
+async def estudo() -> EstudoVagasResponse:
+    try:
+        return await vaga_service.estudo_gaps()
     except Exception as e:
         raise _handle(e)
 

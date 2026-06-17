@@ -24,6 +24,12 @@ class VagaRepository:
     async def get(self, vaga_id: uuid.UUID) -> Optional[Vaga]:
         return await self.session.get(Vaga, vaga_id)
 
+    async def listar_com_analise(self) -> List[Vaga]:
+        """Todas as vagas que já têm análise (pra agregar a demanda de skills)."""
+        stmt = select(Vaga).where(Vaga.analise_json.isnot(None))
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def listar(
         self,
         status: Optional[str] = None,
