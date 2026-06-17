@@ -2,7 +2,7 @@ from typing import Dict, List, Optional
 
 from app.collectors.website.crawler import coletar_do_site
 from app.collectors.website.extractors import formatar_telefone, normalizar_url
-from app.models.lead import Contato, Empresa, Lead
+from app.domain.lead import Contato, Empresa, Lead
 from app.utils.logger import get_logger
 
 DDD_POR_ESTADO = {

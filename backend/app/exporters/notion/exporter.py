@@ -9,7 +9,7 @@ from app.exporters.notion.mappers import (
     empresa_to_values,
 )
 from app.exporters.notion.repository import NotionRepository
-from app.models.lead import Contato, Empresa, Lead
+from app.domain.lead import Contato, Empresa, Lead
 from app.utils.logger import get_logger
 
 

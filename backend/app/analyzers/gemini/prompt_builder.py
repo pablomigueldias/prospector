@@ -1,6 +1,6 @@
 from typing import Optional
 
-from app.models.lead import Lead
+from app.domain.lead import Lead
 
 
 OUTPUT_SCHEMA = """

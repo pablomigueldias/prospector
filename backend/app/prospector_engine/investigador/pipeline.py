@@ -8,8 +8,8 @@ from app.collectors.brasilapi.client import (
 )
 from app.collectors.website import coletar_do_site
 from app.collectors.website.extractors import formatar_telefone, normalizar_url
-from app.services.investigador.confianca import Investigacao
-from app.services.investigador.input_model import InputInvestigacao
+from app.prospector_engine.investigador.confianca import Investigacao
+from app.prospector_engine.investigador.input_model import InputInvestigacao
 from app.utils.logger import get_logger
 
 

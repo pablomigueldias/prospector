@@ -12,7 +12,7 @@ from app.config import (
     TAMANHO_OPCOES,
 )
 from app.exporters.notion.property_builder import NOT_WRITABLE_TYPES, build_value
-from app.models.lead import Contato, Empresa
+from app.domain.lead import Contato, Empresa
 from app.utils.logger import get_logger
 from app.utils.storage import log_unmapped_field
 

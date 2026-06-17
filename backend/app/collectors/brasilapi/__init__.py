@@ -12,7 +12,7 @@ from app.collectors.brasilapi.client import (
 from app.collectors.brasilapi.mappers import map_to_lead
 from app.collectors.brasilapi.normalizers import normalizar_opencnpj_para_brasilapi
 from app.collectors.brasilapi.opencnpj_client import buscar_cnpj_opencnpj
-from app.models.lead import Lead
+from app.domain.lead import Lead
 from app.utils.logger import get_logger
 from app.utils.storage import save_lead
 

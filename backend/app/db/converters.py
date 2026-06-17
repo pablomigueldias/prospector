@@ -6,9 +6,9 @@ from typing import Optional
 from app.db.models.contato import Contato as ContatoORM
 from app.db.models.empresa import Empresa as EmpresaORM
 from app.db.models.socio import Socio as SocioORM
-from app.models.lead import Contato as ContatoPydantic
-from app.models.lead import Empresa as EmpresaPydantic
-from app.models.lead import Socio as SocioPydantic
+from app.domain.lead import Contato as ContatoPydantic
+from app.domain.lead import Empresa as EmpresaPydantic
+from app.domain.lead import Socio as SocioPydantic
 
 
 def _cnpj_digits(cnpj: Optional[str]) -> Optional[str]:

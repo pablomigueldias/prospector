@@ -13,7 +13,7 @@ from sqlalchemy import select
 from app.analyzers.gemini import enriquecer_lead_com_analise
 from app.db.sync_bridge import bridge_session
 from app.db.models.empresa import Empresa as EmpresaORM
-from app.models.lead import Empresa as EmpresaPyd, Lead, Socio, Contato
+from app.domain.lead import Empresa as EmpresaPyd, Lead, Socio, Contato
 from app.repositories.empresa_repository import EmpresaRepository
 from app.utils.logger import get_logger
 

@@ -4,7 +4,7 @@ import re
 from typing import Optional
 
 from app.collectors.website.extractors import formatar_telefone
-from app.models.lead import Contato, Lead
+from app.domain.lead import Contato, Lead
 from app.utils.logger import get_logger
 
 

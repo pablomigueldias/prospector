@@ -16,7 +16,7 @@ from app.config import (
     TAMANHO_OPCOES,
     settings,
 )
-from app.models.lead import Contato, Empresa, Lead
+from app.domain.lead import Contato, Empresa, Lead
 from app.utils.logger import get_logger
 from app.utils.storage import log_unmapped_field
 

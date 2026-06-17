@@ -15,7 +15,7 @@ from app.db.converters import contato_to_orm, empresa_to_orm, socio_to_orm
 from app.db.models.contato import Contato as ContatoORM
 from app.db.models.empresa import Empresa as EmpresaORM
 from app.db.models.socio import Socio as SocioORM
-from app.models.lead import Lead
+from app.domain.lead import Lead
 from app.repositories.contato_repository import ContatoRepository
 from app.repositories.empresa_repository import EmpresaRepository
 from app.utils.logger import get_logger

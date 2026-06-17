@@ -11,8 +11,8 @@ from app.collectors.brasilapi import buscar_lead_por_cnpj as _orchestrate
 from app.collectors.brasilapi.client import _digits_only, _validate_cnpj_digits
 from app.collectors.website import enriquecer_lead_com_site
 from app.exporters.notion import NotionExporter
-from app.models.lead import Lead
-from app.services.manual_overrides import aplicar_overrides_manuais
+from app.domain.lead import Lead
+from app.prospector_engine.manual_overrides import aplicar_overrides_manuais
 from app.utils.logger import get_logger
 from app.utils.storage import save_lead
 

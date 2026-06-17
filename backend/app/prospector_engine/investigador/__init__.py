@@ -1,11 +1,11 @@
 from typing import Optional
 
 from app.collectors.brasilapi.classifiers import classificar_tamanho
-from app.models.lead import Contato, Empresa, Lead, Socio
-from app.services.investigador.confianca import Investigacao
-from app.services.investigador.input_model import InputInvestigacao
-from app.services.investigador.pipeline import investigar
-from app.services.investigador.revisor_interativo import (
+from app.domain.lead import Contato, Empresa, Lead, Socio
+from app.prospector_engine.investigador.confianca import Investigacao
+from app.prospector_engine.investigador.input_model import InputInvestigacao
+from app.prospector_engine.investigador.pipeline import investigar
+from app.prospector_engine.investigador.revisor_interativo import (
     pedir_aprovacao,
     perguntar_qual_site,
 )
@@ -33,7 +33,7 @@ def investigar_e_montar_lead(
     if interativo and not inv.site and inv.candidatos_site:
         url_escolhida = perguntar_qual_site(inv)
         if url_escolhida:
-            from app.services.investigador.pipeline import _enriquecer_via_site
+            from app.prospector_engine.investigador.pipeline import _enriquecer_via_site
             inv.adicionar("site", url_escolhida, "usuario")
             _enriquecer_via_site(inv, url_escolhida)
 

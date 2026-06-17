@@ -5,7 +5,7 @@ from app.collectors.brasilapi.classifiers import (
     classificar_tamanho,
 )
 from app.config import ESTADO_OPCOES
-from app.models.lead import Contato, Empresa, Lead, Socio
+from app.domain.lead import Contato, Empresa, Lead, Socio
 from app.utils.logger import get_logger
 
 

@@ -7,7 +7,7 @@ from app.analyzers.gemini.client import (
 from app.analyzers.gemini.parser import AnaliseGemini, formatar_para_notas, parse_resposta
 from app.analyzers.gemini.prompt_builder import construir_prompt
 from app.analyzers.llm_provider import gerar_texto
-from app.models.lead import Lead
+from app.domain.lead import Lead
 from app.utils.logger import get_logger
 
 

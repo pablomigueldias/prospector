@@ -1,6 +1,6 @@
 from typing import Optional
 
-from app.services.investigador.confianca import Investigacao
+from app.prospector_engine.investigador.confianca import Investigacao
 
 def _icon_score(score: int) -> str:
     if score >= 85:

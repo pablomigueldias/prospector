@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 from slugify import slugify
 
 from app.config import PROCESSED_DIR, RAW_DIR, SENT_DIR, UNMAPPED_FIELDS_FILE
-from app.models.lead import Lead
+from app.domain.lead import Lead
 from app.utils.logger import get_logger
 
 
