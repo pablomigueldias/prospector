@@ -69,13 +69,15 @@ Seguiu o padrão que o projeto **já usa** (`financas/transacao_service/` é pac
   PerfilMestreScreen. **vagas/**: VagasScreen, CurriculoPdf. **freela/**:
   FreelaScreen. **financas/**: FinancasScreen + as ~14 Sections/Modais.
 
-### [ ] Fatia 4 — Renomear árvores legadas (a mais arriscada — por último)
+### [x] Fatia 4 — Renomear árvores legadas ✅ FEITA
 
-- [ ] Dualidade que confunde: `app/services` (engine CLI do Prospector) vs
-  `app/api/services`; `app/models` (dataclasses) vs `app/db/models` (ORM). **Ambas
-  vivas.** Renomear pra nomes claros (ex.: `app/prospector_engine/`,
-  `app/domain/`) e atualizar **todos** os imports. Muitos call sites →
-  fazer isolado, com `ruff check` + import de `app.api.main` + smokes pra validar.
+- [x] Resolvida a dualidade: `app/services` → **`app/prospector_engine/`** (engine
+  CLI do Prospector: `manual_overrides` + `investigador/`) e `app/models` →
+  **`app/domain/`** (Pydantic do Lead). `app/api/services` e `app/db/models`
+  ficaram intactos (a sed só casa o prefixo exato). Imports atualizados em 14
+  arquivos + `run.py` + `scripts/reanalisar_lote.py`. Validado vs baseline
+  capturado antes: `app.api.main` importa (136 rotas), os 13 módulos da cadeia
+  importam, `ruff` 1958 erros (inalterado), smoke `test_freela_plano_meta` 6/6.
 
 ### [ ] (Opcional) Pass de modernização do ruff
 
