@@ -27,8 +27,10 @@ COLD_START = """
 MODO COLD START (o freelancer ainda NÃO tem avaliações nesta plataforma):
 Sem nota, o cliente desconfia — a proposta tem que COMPENSAR isso. Faça:
 1) PROVA por descrição: em vez de só citar projetos, descreva 1 resultado real
-   do perfil no formato problema → o que fez → impacto. Pode remeter a "meus
-   projetos no meu perfil/portfólio aqui na Workana" — NUNCA cole link externo.
+   do perfil no formato problema → o que fez → impacto. O impacto é QUALITATIVO
+   quando não há número medido no perfil — NÃO invente percentual/estatística pra
+   preencher. Pode remeter a "meus projetos no meu perfil/portfólio aqui na
+   Workana" — NUNCA cole link externo.
 2) REDUÇÃO DE RISCO pro cliente (escolha o que couber): entrega em etapas/marcos
    com aprovação a cada uma; "você só aprova e paga ao ver funcionando"; ou um
    primeiro marco pequeno como teste. Tirar o risco do cliente vale mais que nota.
@@ -61,9 +63,17 @@ REGRAS (inegociáveis):
 - ANTI-MENTIRA: use SOMENTE experiência/projetos/skills que ESTÃO no perfil.
   Reorganize a verdade, nunca invente. Se o perfil não cobre algo que o projeto
   pede, não finja que cobre.
+- NÚMEROS SÃO SAGRADOS: NUNCA invente métricas, percentuais ou estatísticas
+  ("taxa de sucesso de 90%", "redução de 40%", "3x mais rápido", "+200 clientes",
+  "milhares de usuários"). Só use um número se ele estiver LITERALMENTE no perfil.
+  Sem número medido, descreva o impacto QUALITATIVAMENTE ("gerava textos
+  utilizáveis e acelerou a criação de campanhas") — jamais crave um percentual só
+  pra impressionar. Um número fabricado que o cliente cobra depois destrói a
+  confiança e a avaliação.
 - PROVA OBRIGATÓRIA: inclua SEMPRE pelo menos 1 prova concreta — um resultado
   REAL de um projeto do perfil no formato problema → o que você fez → impacto.
-  Adjetivo ("robusto", "escalável", "experiente") NÃO é prova; resultado é.
+  Adjetivo ("robusto", "escalável", "experiente") NÃO é prova; resultado é. O
+  impacto pode ser qualitativo — NÃO precisa (nem pode) inventar número pra ele.
 - PRAZO: deixe o prazo explícito no texto.
 - Não force contato fora da plataforma (a Workana penaliza).
 - NUNCA inclua no texto da proposta: e-mail, telefone, WhatsApp, ou links

@@ -32,6 +32,7 @@ from app.analyzers.freela.redator.parser import parse_resposta as parse_redacao
 from app.analyzers.freela.redator.prompt_builder import (
     construir_prompt as construir_prompt_redacao,
 )
+from app.analyzers._perfil_texto import perfil_para_texto
 from app.analyzers.llm_provider import gerar_texto
 from app.api.schemas.freela import (
     AnalisarProjetoResponse,
@@ -759,6 +760,38 @@ def _scan_conformidade(texto: str) -> Optional[str]:
     )
 
 
+# Métrica "impressiva" inventada: a IA às vezes crava % / "Nx" que NÃO está no
+# perfil (ex.: "90% de sucesso", "redução de 40%"). Pegamos números do texto que
+# não aparecem no perfil pra alertar (anti-mentira determinístico). 100% é
+# retórico ("100% focado") → ignorado pra reduzir falso-positivo.
+_RE_METRICA = re.compile(r"\d{1,3}\s*%|\b\d+\s*x\b", re.I)
+
+
+def _scan_metricas_inventadas(texto: str, perfil_texto: str) -> Optional[str]:
+    """Acha número/percentual no texto que não está no perfil. None se limpo."""
+    achados = _RE_METRICA.findall(texto)
+    if not achados:
+        return None
+    perfil_digitos = set(re.findall(r"\d+", perfil_texto))
+    suspeitos: list[str] = []
+    for a in achados:
+        nums = re.findall(r"\d+", a)
+        if not nums or nums[0] in perfil_digitos:
+            continue
+        if a.rstrip().endswith("%") and nums[0] == "100":
+            continue  # "100%" costuma ser retórico, não métrica fabricada
+        token = a.strip().replace(" ", "")
+        if token not in suspeitos:
+            suspeitos.append(token)
+    if not suspeitos:
+        return None
+    return (
+        "Número(s) que NÃO encontrei no seu perfil: " + ", ".join(suspeitos) + ". "
+        "A IA pode ter inventado — confirme que é real ou troque por descrição "
+        "qualitativa (problema→solução→impacto, sem percentual fabricado)."
+    )
+
+
 def _selo(score: int) -> str:
     if score >= 80:
         return "pronta"
@@ -806,6 +839,23 @@ async def avaliar_proposta(proposta_id: str) -> ChecklistResponse:
         )
         # Conformidade fura tudo: limita o selo enquanto não corrigir.
         resultado.score = min(resultado.score, 49)
+
+    # Anti-mentira determinístico: número/percentual no texto que não está no
+    # perfil cheira a invenção da IA. Não derruba pra "fraca" (pode ser falso-
+    # positivo), mas impede o selo "pronta" e avisa explicitamente.
+    perfil = await get_perfil()
+    if perfil is not None:
+        alerta_num = _scan_metricas_inventadas(texto, perfil_para_texto(perfil))
+        if alerta_num:
+            resultado.itens.append(
+                ChecklistItem(
+                    criterio="Sem número inventado (anti-mentira)",
+                    ok=False,
+                    nota=alerta_num,
+                )
+            )
+            resultado.sugestoes.append(alerta_num)
+            resultado.score = min(resultado.score, 79)
 
     resultado.selo = _selo(resultado.score)
     return resultado
