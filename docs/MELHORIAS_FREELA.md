@@ -8,9 +8,175 @@ ideias com **prioridade sugerida** (🔴 alta / 🟡 média / 🟢 baixa) e o *p
 > implemento; o que entra pra valer sai daqui pro `docs/FREELA_FEITO.md`.
 > O plano-mãe é o `docs/Workana.md`; o que já está pronto, o `FREELA_FEITO.md`.
 
-Última revisão: **2026-06-14** (Fases 1, 2, 3, 5 e 6 + 9 alavancas §7–§10).
-**👉 Foco AGORA: §0 — landar o 1º cliente** (ver abaixo). As §7–§10 já feitas
-rendem mais *depois* que você começa a fechar; o gargalo de hoje é outro.
+Última revisão: **2026-06-16** (+ §V: nova direção — análise profunda + motor da
+meta R$10k/mês). Fases 1, 2, 3, 5 e 6 + 9 alavancas §7–§10 já feitas.
+**👉 Foco AGORA: §0 — landar o 1º cliente** (tática imediata). **§V abaixo é o
+PORQUÊ/visão** que o Pablo pediu em 2026-06-16: "a análise está vaga, quero pegar
+TODA a info da proposta, saber se o valor é justo, se é difícil ou rápido, se é o
+MOMENTO de gastar essa proposta, e amarrar tudo à minha meta de R$10k/mês". §V é
+o destino; §0 é o primeiro passo pra lá.
+
+---
+
+# 🧭 §V. NOVA DIREÇÃO — de "copiloto de proposta" a MOTOR DA META (R$10k/mês)
+
+> **Pedido do Pablo (2026-06-16):** *"Sinto que falta muita coisa pra esse agente
+> ser útil — a análise está muito vaga. Quero pegar TODA a informação da proposta,
+> analisar se o valor está justo no mercado, se é um projeto difícil ou rápido,
+> ter uma meta de R$10.000/mês com uma estratégia pra bater, e na análise saber se
+> é o MOMENTO de iniciar essa proposta (ainda estou começando). E outras coisas
+> que eu não esteja vendo."*
+>
+> **Diagnóstico:** o analisador de hoje já cospe `fit_score`, `risco`, `veredito`,
+> `red_flags`, `ganchos` e `estimativa` (horas, prazo, valor de mercado, valor a
+> cotar). O problema **não é "não ter dado"** — é que o dado vem **solto e
+> genérico**, sem (a) dizer **o quão difícil/demorado** é de forma clara, (b)
+> cravar se o **preço está justo**, (c) responder **"vale a pena AGORA, pra mim,
+> nesta fase?"** e (d) ligar cada decisão à **meta de R$10k**. §V resolve isso em
+> 4 frentes. Muita coisa **reaproveita o que já existe** (forecast §7, calibrador
+> de valor-hora §9, radar de recorrente §7, o próprio analisador) — é mais
+> **enriquecer a saída + um motor de meta por cima** do que construir do zero.
+
+### ⚙️ Inputs do motor — RESPONDIDOS pelo Pablo (2026-06-16)
+- **Meta = R$10.000 LÍQUIDO/mês** (o que entra no bolso, depois da comissão
+  Workana + impostos). O motor mira líquido e faz o caminho de volta pro bruto a
+  cotar.
+- **Capacidade = 5h/dia no começo**, podendo subir conforme a renda melhora.
+  Premissa de planejamento: 5h/dia × ~26 dias ≈ **~130h/mês brutas**; descontando
+  propostas/admin/estudo (~30%), sobram **~90h/mês faturáveis** na largada.
+- **Meta em RAMPA** (não 10k de cara) — a meta cresce junto com a reputação e a
+  dedicação. Rampa sugerida abaixo.
+
+### 📈 Rampa de meta sugerida (ajustável)
+> A lógica: no cold start o gargalo é **reputação**, não R$; conforme as notas
+> chegam, o win-rate e o ticket sobem e a meta financeira acelera. Cada degrau só
+> "abre" quando o anterior é batido — não pular etapa.
+
+| Fase | Foco real | Meta líquida/mês | Estratégia dominante |
+|------|-----------|------------------|----------------------|
+| **F1 — Cold start** (mês ~1) | **1–2 avaliações 5★** (R$ é secundário) | R$ 1,5–2k | Aceitar 1–2 menores/quick wins; entregar impecável p/ destravar nota |
+| **F2 — Tração** (mês ~2) | Converter com 1–2 notas na conta | R$ 3,5–4,5k | Subir ticket, parar de aceitar fundo de poço, focar no núcleo |
+| **F3 — Crescimento** (mês ~3) | Ticket + recorrência | R$ 6,5–7,5k | Caçar **recorrente** e **gringo/USD**; nicho claro |
+| **F4 — Meta cheia** (mês ~4+) | Renda estável de R$10k | **R$ 10k** | Mix maduro: 1–2 recorrentes de base + projetos de ticket alto; subir horas se preciso |
+
+### 🧮 Matemática reversa (com os números do Pablo) — insight que muda a estratégia
+> Com **~90h faturáveis/mês**, bater **R$10k líquido** exige um **valor-hora
+> efetivo de ~R$110–120/h líquido** (10.000 ÷ ~90h). **Conclusão dura:** *não dá
+> pra bater 10k empilhando projeto barato* — no preço de fundo de poço seriam
+> 200h+ que o Pablo não tem. A meta cheia (F4) **depende de ticket/nicho/gringo**,
+> não de volume. Por isso a rampa: F1–F2 constroem a reputação que **permite
+> cobrar** o R$/h que fecha a conta em F4. (Se a dedicação subir de 5h → 7h/dia, o
+> R$/h alvo cai pra ~R$80–90 e a meta fica mais folgada — o motor recalcula.)
+
+---
+
+## V.1 🔬 Análise PROFUNDA — acabar com a "análise vaga"
+
+> Mesmo dado, **muito mais acionável**: a tela tem que responder *"é difícil? é
+> rápido? o preço tá justo? o que vai dar trabalho?"* sem o Pablo reinterpretar.
+
+- [ ] 🔴 **Dificuldade × Esforço explícitos (quadrante).** Hoje "difícil" e
+  "demorado" estão fundidos no `horas_estimadas`. Separar em campos próprios:
+  `complexidade_tecnica` (trivial / média / alta / incerta) e `clareza_escopo`
+  (claro / parcial / vago). Cruzar num **quadrante**: *Rápido & fácil* (quick win,
+  ótimo p/ reputação no cold start), *Difícil & longo* (ticket alto, mais risco),
+  *Vago* (perigo de scope creep → cotar com folga ou perguntar antes). Resolve
+  direto o *"é difícil ou rápido?"*.
+- [ ] 🔴 **Veredito de PREÇO — "o valor está justo?"** Já temos `valor_mercado_min/
+  max` e `faixa_orcamento_min/max`. Falta o **cruzamento explícito**: selo
+  `subcotado / justo / acima do mercado` + o **gap** ("o cliente ofereceu R$800,
+  o mercado paga R$1.500–2.500 → subcotado, evite ou renegocie") + o **R$/hora
+  efetivo** do orçamento dele (valor ÷ horas estimadas) comparado ao seu
+  `valor_hora_real`. É o "analisar se o valor está justo no mercado" pedido.
+- [ ] 🔴 **Breakdown do escopo em tarefas + incertezas.** A IA quebra o projeto
+  nas **entregas reais** (ex.: "auth, CRUD produtos, checkout, deploy") com horas
+  por bloco — aí o "20h" deixa de ser número mágico. E lista **perguntas a fazer
+  ao cliente** (o que está ambíguo e muda o preço). Dá pra reusar como corpo da
+  proposta ("plano em passos", que o checklist §0A já cobra).
+- [ ] 🟡 **Extrair TODA a info da proposta (não só título/orçamento).** O extrator
+  hoje pega título, orçamento e nº de propostas. Ampliar pra capturar, do texto
+  colado: **dados do cliente** (país, pagamento verificado, nº de projetos
+  publicados/contratados, rating, % de contratação, idioma), **data de
+  publicação** (frescor — cf. §0B/§7), **tipo de contrato** (fixo/hora) e
+  **skills exigidas vs as suas** (gap de skill). Tudo isso **alimenta** V.1–V.3 —
+  é a base de "pegar toda a informação".
+- [ ] 🟡 **Nota de confiança da análise.** Quando o texto colado é pobre, a IA não
+  deve fingir certeza. Um `confianca` (alta/média/baixa) + "me dê o perfil do
+  cliente / a data de publicação pra eu cravar". Evita decisão sobre achismo.
+
+## V.2 ⏱️ "É o MOMENTO?" — timing e custo de oportunidade
+
+> O Pablo está começando e a proposta é escassa. A pergunta não é só *"esse
+> projeto é bom?"* e sim *"é bom **pra mim, agora**, dado minha fase e minha
+> agenda?"*.
+
+- [ ] 🔴 **Veredito de timing pessoal.** Um campo `momento` (`agora / espere /
+  passe`) que combina: fase cold start (cf. detector de **bom 1º projeto** §0B) +
+  frescor/concorrência (§7) + sua capacidade livre. Ex.: *"fit alto, mas é difícil
+  e longo pra primeira nota — comece por um quick win; volte a este quando tiver
+  1–2 avaliações."* Responde literalmente o *"é o momento ou não de iniciar"*.
+- [ ] 🔴 **Capacidade / agenda (anti-furada).** Guardar horas livres/semana e horas
+  já comprometidas em projetos abertos. Alertar **"você não tem mão pra isso sem
+  atrasar o resto"** — atraso = avaliação ruim = mata a meta. Fechar demais é tão
+  ruim quanto fechar de menos.
+- [ ] 🟡 **Custo de oportunidade — ranquear a fila por valor esperado.** Ordenar as
+  oportunidades por **valor esperado rumo à meta** = `ticket × prob. de resposta ×
+  fit ÷ horas`. Mostra *onde* a próxima proposta rende mais — não só "fit alto".
+
+## V.3 🎯 MOTOR DA META — R$10.000/mês como bússola
+
+> O grande pedido novo. Transformar "quero 10k" num **plano com números e ritmo**,
+> e usar a meta pra **priorizar** (já existe um forecast simples no painel §7 —
+> isto o evolui pra um motor de estratégia).
+
+- [ ] 🔴 **Matemática reversa da meta.** De R$10k líq/mês → **ticket médio alvo**,
+  **nº de projetos/mês**, e **propostas/semana necessárias** dado sua taxa de
+  resposta/fechamento. Diagnóstico do gargalo: *"no seu ritmo você chega em R$X;
+  o que falta é **volume / ticket / conversão** (escolhe um)."* Sem isso, "10k" é
+  só um número na parede.
+- [ ] 🔴 **Valor-hora alvo vs real.** `10.000 ÷ horas disponíveis/mês` = o **R$/h
+  que você PRECISA** cobrar pra bater a meta. Cruzar com o `valor_hora_real` que o
+  calibrador §9 já calcula → conclusão dura: *"por volume não fecha; pra bater 10k
+  você precisa subir ticket / mirar nicho / pegar gringo."* Evita o erro clássico
+  de tentar bater meta alta com projetos baratos.
+- [ ] 🟡 **Estratégia por FASE (o mix muda).** A meta e a tática evoluem:
+  **cold start** (mês 1–2: aceitar 1–2 menores p/ reputação, ticket menor ok, alvo
+  = avaliações) → **crescimento** (subir ticket, mirar **gringo/USD** que paga
+  mais, caçar **recorrente**). O agente diz em que fase você está e qual o mix do
+  mês. R$10k cheio é meta da fase de crescimento, não do mês 1.
+- [ ] 🟡 **Painel da meta com "plano da semana".** Evoluir o forecast §7: além de
+  "faltam R$X", mostrar o **ritmo necessário** ("mande N propostas no seu núcleo
+  esta semana, mire ticket ~R$Y") e o **progresso real vs ritmo** (no caminho /
+  atrás / na frente). Vira a tela que o Pablo abre todo dia.
+
+## V.4 💡 O que você talvez não esteja vendo (alavancas de eficiência)
+
+> Pontos que o Pablo pediu pra eu levantar — coisas que mexem na meta e não são
+> óbvias no dia a dia. Várias **ligam features que já existem** à meta.
+
+- [ ] 🟡 **Gringo/USD paga mais → menos projetos pra bater 10k.** Priorizar
+  internacional encurta o caminho (ticket maior, menos esforço de prospecção).
+  Liga o **multimoeda §9** à priorização da fila e à matemática da meta.
+- [ ] 🟡 **1 cliente recorrente > 5 avulsos** pra renda estável e previsível.
+  O **radar de recorrente §7** já existe — usar como peso forte no motor da meta
+  (recorrente = quase-receita garantida do mês).
+- [ ] 🟡 **Nicho/especialização sobe win-rate E ticket.** Espalhar proposta por
+  tudo dilui; focar no núcleo (React/FastAPI/IA) faz o cliente confiar mais e
+  pagar mais. O **win-rate por categoria §7** mostra ONDE focar — conectar isso ao
+  "gaste proposta aqui".
+- [ ] 🟢 **ROI da proposta (tempo é dinheiro).** Redigir custa tempo; medir
+  "minutos por proposta × taxa de resposta" mostra se vale automatizar mais. O
+  **banco de propostas vencedoras §8** corta esse custo (reusa o que converteu).
+- [ ] 🟢 **Entregar no prazo = 5★ = mais convites** (loop de reputação). O
+  **acompanhar prazo §10** protege a meta de longo prazo: avaliação boa traz
+  cliente sem gastar proposta.
+
+> **Resumo da direção:** §V.1 mata a "análise vaga" (difícil/rápido + preço justo +
+> breakdown), §V.2 responde *"é o momento pra mim?"*, §V.3 amarra tudo na meta de
+> R$10k, §V.4 são as alavancas. Próximo passo sugerido: o Pablo responde os 3
+> **inputs do motor** (acima) e marca 2–3 itens 🔴 — começo por **V.1 (preço justo
+> + quadrante)** e a **matemática reversa da meta (V.3)**, que dão o maior salto de
+> utilidade com pouco código novo.
 
 ---
 
