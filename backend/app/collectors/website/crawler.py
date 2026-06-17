@@ -45,7 +45,7 @@ def _eh_landing_page_completa(html: str) -> bool:
     for a in soup.find_all("a", href=True):
         href = a.get("href", "").lower()
         if any(p in href for p in ("/contato", "/contact", "/sobre", "/about")):
-            return False 
+            return False
     return True
 
 
@@ -71,7 +71,7 @@ def _descobrir_links_contato(html: str, dominio_base: str) -> List[str]:
 def _mesclar_contatos(
     acc: Dict[str, object], novo: Dict[str, object]
 ) -> Dict[str, object]:
- 
+
     for chave in ("emails", "whatsapps", "telefones"):
         atual: List[str] = list(acc.get(chave, []))  # type: ignore
         for item in novo.get(chave, []):  # type: ignore

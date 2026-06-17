@@ -1,11 +1,10 @@
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from app.collectors._common.buscadores.base import (
     BuscadorBase,
     BuscadorBloqueado,
-    BuscadorError,
     BuscadorIndisponivel,
     ResultadoBusca,
 )
@@ -18,7 +17,7 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 
-TTL_BLOQUEIO = 3600 
+TTL_BLOQUEIO = 3600
 
 
 @dataclass
@@ -43,7 +42,7 @@ class OrchestradorBuscadores:
         }
 
     def buscar(self, query: str, max_resultados: int = 10) -> List[ResultadoBusca]:
-   
+
         if not query.strip():
             return []
 
@@ -61,7 +60,7 @@ class OrchestradorBuscadores:
                 est.sucessos_totais += 1
                 if resultados:
                     return resultados
-     
+
                 logger.info(f"   📭 {buscador.nome} sem resultados pra essa query")
                 return []
 
@@ -88,16 +87,16 @@ class OrchestradorBuscadores:
         return []
 
     def _ordem_dinamica(self) -> List[BuscadorBase]:
- 
+
         agora = time.time()
 
         def chave(b: BuscadorBase) -> tuple:
             est = self.estado[b.nome]
             bloqueado = est.bloqueado_ate > agora
             return (
-                bloqueado,                             
-                -est.sucessos_totais,                   
-                est.falhas_consecutivas,            
+                bloqueado,
+                -est.sucessos_totais,
+                est.falhas_consecutivas,
             )
 
         return sorted(self.buscadores, key=chave)

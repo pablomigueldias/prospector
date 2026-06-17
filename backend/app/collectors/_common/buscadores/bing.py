@@ -1,6 +1,5 @@
 import time
 from typing import List
-from urllib.parse import unquote
 
 import httpx
 from bs4 import BeautifulSoup
@@ -46,8 +45,8 @@ class BingBuscador(BuscadorBase):
     def _fetch(self, query: str) -> str:
         params = {
             "q": query,
-            "cc": "BR",         
-            "setlang": "pt-BR",  
+            "cc": "BR",
+            "setlang": "pt-BR",
         }
         extras = {
             "Referer": "https://www.bing.com/",

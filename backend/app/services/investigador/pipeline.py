@@ -6,10 +6,6 @@ from app.collectors.brasilapi.client import (
     CNPJNaoEncontrado,
     buscar_cnpj,
 )
-from app.collectors.brasilapi.classifiers import (
-    classificar_setor,
-    classificar_tamanho,
-)
 from app.collectors.website import coletar_do_site
 from app.collectors.website.extractors import formatar_telefone, normalizar_url
 from app.services.investigador.confianca import Investigacao

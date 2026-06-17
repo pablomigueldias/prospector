@@ -42,13 +42,13 @@ def _gerar_com_fallback(
         prompt: str, *,json_mode:bool,
         agente: str, operacao: str | None,
         ) -> str:
-    
+
     from app.analyzers.groq.client import gerar_conteudo as groq_gerar
 
     if _gemini_esta_bloqueado():
         logger.info('Gemini bloqueado hoje - indo direto pro Groq')
         return groq_gerar(prompt, response_json=json_mode)
-    
+
     from app.analyzers.gemini.client import GeminiRateLimit, gerar_conteudo as gemini_gerar
 
     try:

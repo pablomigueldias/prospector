@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import select
 
@@ -16,7 +15,7 @@ logger = get_logger()
 
 
 async def _reconciliar_enviados(session, dias: int) -> int:
-    
+
     enviados = ler_enviados(dias=dias)
     if not enviados:
         logger.info("Nenhum e-mail na pasta Enviados (ou nada enviado ainda).")

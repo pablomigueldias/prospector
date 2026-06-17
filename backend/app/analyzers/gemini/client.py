@@ -152,13 +152,13 @@ def gerar_conteudo(
     operacao: str | None = None,
     empresa_cnpj: str | None = None,
 ) -> str:
-   
+
     from app.db.observability import AiCallRecord, register_ai_call
 
     inicio = time.perf_counter()
     try:
         texto, meta = _request_gemini(prompt, response_json)
-        
+
     except Exception as e:
         register_ai_call(AiCallRecord(
             agente=agente, operacao=operacao, provider="gemini", modelo=MODEL,

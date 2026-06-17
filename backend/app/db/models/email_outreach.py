@@ -47,8 +47,8 @@ class EmailOutreach(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(
         String(30), default="rascunho", server_default="rascunho", nullable=False
     )
-    message_id: Mapped[Optional[str]] = mapped_column(String(500))       
-    sent_message_id: Mapped[Optional[str]] = mapped_column(String(500)) 
+    message_id: Mapped[Optional[str]] = mapped_column(String(500))
+    sent_message_id: Mapped[Optional[str]] = mapped_column(String(500))
 
     draft_criado_em: Mapped[Optional[datetime]] = mapped_column()
     enviado_em: Mapped[Optional[datetime]] = mapped_column()
@@ -57,7 +57,7 @@ class EmailOutreach(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     resposta_corpo: Mapped[Optional[str]] = mapped_column(Text)
 
     # Dados pra treino futuro da IA
-    contexto: Mapped[Optional[dict]] = mapped_column(JSONB) 
+    contexto: Mapped[Optional[dict]] = mapped_column(JSONB)
     resultado: Mapped[Optional[dict]] = mapped_column(JSONB)
 
     __table_args__ = (

@@ -4,7 +4,7 @@ A IA não toca na Workana: aqui é só a sua mesa de trabalho (organizar,
 precificar, marcar status). As fases de IA (analisar/redigir/selecionar)
 entram em endpoints próprios depois.
 """
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 

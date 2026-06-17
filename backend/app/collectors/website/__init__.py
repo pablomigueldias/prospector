@@ -44,7 +44,7 @@ def _ordenar_por_ddd(numeros,estado):
     ddds_esperados = DDD_POR_ESTADO.get(estado.upper())
     if not ddds_esperados:
         return numeros
-    
+
     da_regiao = [n for n in numeros if n[:2] in ddds_esperados]
     de_fora = [n for n in numeros if n[:2] not in ddds_esperados]
     return da_regiao + de_fora

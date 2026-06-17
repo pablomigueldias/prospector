@@ -78,7 +78,7 @@ def _montar_contexto_analise(empresa) -> Optional[str]:
     return "\n".join(linhas) if linhas else None
 
 def _montar_request_followup(original: EmailOutreach) -> CopywriterRequest:
-    
+
     contexto = (
         "Este é um FOLLOW-UP (segundo contato). A pessoa recebeu o e-mail "
         "abaixo e não respondeu. Escreva uma mensagem curta e leve "

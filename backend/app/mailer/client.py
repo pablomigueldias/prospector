@@ -108,7 +108,7 @@ def _decodificar(valor: Optional[str]) -> str:
         return str(make_header(decode_header(valor)))
     except Exception:
         return valor
-    
+
 def _normalizar_assunto(assunto: str) -> str:
     s = _decodificar(assunto).strip().lower()
     while True:
@@ -171,7 +171,7 @@ def _parse_data(valor: Optional[str]) -> Optional[datetime]:
         return dt.replace(tzinfo=None) if dt and dt.tzinfo else dt
     except Exception:
         return None
-    
+
 def ler_enviados(dias: int = 30) -> List[Dict[str, Any]]:
     return _ler_pasta("Sent", dias=dias)
 

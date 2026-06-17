@@ -23,7 +23,7 @@ def investigar_e_montar_lead(
     input_: InputInvestigacao,
     interativo: bool = True,
 ) -> tuple[Lead, Investigacao, bool]:
-   
+
     if not input_.tem_algo():
         raise ValueError("Pelo menos um campo do input deve estar preenchido")
 

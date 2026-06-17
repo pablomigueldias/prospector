@@ -1,0 +1,21 @@
+# Ruff — linter do backend. Rode com: ./venv/bin/ruff check app
+# (instalável via `pip install -r requirements-dev.txt`)
+target-version = "py312"
+line-length = 100
+
+# Não lintar artefatos/ambiente.
+extend-exclude = ["venv", ".venv", "migrations", "alembic/versions"]
+
+[lint]
+# Conjunto focado: pega erro de verdade sem afogar em ruído na 1ª passada.
+#   F  = pyflakes (import/variável não usados, nome indefinido)
+#   E,W= pycodestyle
+#   I  = ordenação de imports (isort)
+#   B  = flake8-bugbear (armadilhas comuns)
+#   UP = pyupgrade (sintaxe moderna)
+select = ["F", "E", "W", "I", "B", "UP"]
+# E501 (linha longa): muitos prompts/strings PT-BR longos — ligar depois com calma.
+ignore = ["E501"]
+
+[lint.isort]
+known-first-party = ["app"]

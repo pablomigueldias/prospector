@@ -36,7 +36,7 @@ class DominioInvalido(Exception):
 
 HTTPX_TIMEOUT = 15.0
 PLAYWRIGHT_TIMEOUT = 30_000
-PLAYWRIGHT_WAIT_AFTER_LOAD = 2.0 
+PLAYWRIGHT_WAIT_AFTER_LOAD = 2.0
 
 
 @retry(
@@ -141,7 +141,7 @@ def _fetch_playwright(url: str) -> Optional[str]:
 
 
 def fetch_html(url: str, force_playwright: bool = False) -> Optional[str]:
-  
+
     if force_playwright:
         logger.info(f"🎭 Playwright (forçado): {url}")
         return _fetch_playwright(url)

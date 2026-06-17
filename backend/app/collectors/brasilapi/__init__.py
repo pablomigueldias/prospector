@@ -37,7 +37,7 @@ def buscar_lead_por_cnpj(cnpj: str, salvar_raw: bool = True) -> Optional[Lead]:
         _anexar_extras_nas_notas(lead, extras)
 
     logger.success(
-        f"Lead montado via {fonte.upper()}: {lead.empresa.nome} " 
+        f"Lead montado via {fonte.upper()}: {lead.empresa.nome} "
         f"({len(lead.contatos)} contato(s))"
     )
 

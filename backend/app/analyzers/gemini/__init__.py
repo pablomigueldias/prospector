@@ -41,7 +41,7 @@ def enriquecer_lead_com_analise(lead: Lead) -> Lead:
     if analise is None:
         logger.warning("Lead segue sem análise da IA (vide logs)")
         return lead
-    
+
     lead.empresa.score = analise.score
     lead.empresa.score = analise.score
     lead.empresa.analise_json = {

@@ -36,7 +36,6 @@ from app.analyzers._perfil_texto import perfil_para_texto
 from app.analyzers.llm_provider import gerar_texto
 from app.api.schemas.freela import (
     AnalisarProjetoResponse,
-    AnaliseFreela,
     ChecklistItem,
     ChecklistResponse,
     ClienteCreate,
@@ -75,6 +74,7 @@ from app.db.models.pessoal.freela.projeto import Projeto
 from app.db.models.pessoal.freela.proposta import STATUS_PROPOSTA, Proposta
 from app.db.models.pipeline_event import PipelineEvent
 from app.db.session import get_session
+from app.api.services._helpers import iso as _iso, parse_uuid, r2 as _r2
 from app.api.services.pessoal.perfil_service import get_perfil
 from app.repositories.pessoal.freela_repository import FreelaRepository
 from app.utils.logger import get_logger
@@ -104,23 +104,12 @@ class FreelaError(Exception):
     """Erro de negócio do agente freela — vira HTTP 400/404 no router."""
 
 
-def _iso(dt) -> Optional[str]:
-    return dt.isoformat(timespec="seconds") if dt else None
-
-
 def _uuid(valor: str, label: str = "id") -> uuid.UUID:
-    try:
-        return uuid.UUID(valor)
-    except (ValueError, AttributeError):
-        raise FreelaError(f"{label} inválido: {valor!r}")
+    return parse_uuid(valor, erro=FreelaError, label=label)
 
 
 def _uuid_opt(valor: Optional[str], label: str = "id") -> Optional[uuid.UUID]:
     return _uuid(valor, label) if valor else None
-
-
-def _r2(x: float) -> float:
-    return round(float(x), 2)
 
 
 # ── Conversores ──────────────────────────────────────────────────

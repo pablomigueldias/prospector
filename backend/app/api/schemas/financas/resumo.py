@@ -1,11 +1,10 @@
 """Resumo do mês, projeção e relatório — schemas do domínio financas."""
 from __future__ import annotations
 
-from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 # ══════════════════════════════════════════════════════════════════

@@ -21,7 +21,7 @@ def aplicar_overrides_manuais(
     telefone: Optional[str] = None,
     whatsapp: Optional[str] = None,
 ) -> Lead:
- 
+
     aplicados: list[str] = []
 
     if instagram:

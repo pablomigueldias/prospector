@@ -13,8 +13,6 @@ from app.analyzers.nlu import extrator
 from app.analyzers.nlu.parser import parse_nlu
 from app.analyzers.nlu.prompt_builder import construir_prompt
 from app.api.schemas.financas import InterpretacaoResponse
-from app.db.models.financas.categoria import Categoria
-from app.db.models.financas.conta import Conta
 from app.db.session import get_session
 from app.repositories.financas.categoria_repository import CategoriaRepository
 from app.repositories.financas.conta_repository import ContaRepository

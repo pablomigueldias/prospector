@@ -105,7 +105,7 @@ def apply_schema(
     schema: Dict[str, str],
     context: str,
 ) -> Dict[str, dict]:
-    
+
     properties: Dict[str, dict] = {}
     skipped_unsupported: List[str] = []
     skipped_missing: List[str] = []

@@ -3,20 +3,20 @@ from typing import Dict, List, Optional
 
 
 PESOS_FONTE = {
-    "usuario": 100,           
-    "brasilapi": 95,          
-    "site_oficial": 85,       
-    "duckduckgo": 60,        
-    "google_maps": 75,        
-    "instagram_bio": 70,     
-    "ia_suposicao": 30,       
+    "usuario": 100,
+    "brasilapi": 95,
+    "site_oficial": 85,
+    "duckduckgo": 60,
+    "google_maps": 75,
+    "instagram_bio": 70,
+    "ia_suposicao": 30,
     "desconhecido": 50,
 }
 
 
 @dataclass
 class CampoConfianca:
- 
+
     valor: str
     fontes: List[str] = field(default_factory=list)
 
@@ -58,7 +58,7 @@ class Investigacao:
     cnae_descricao: Optional[CampoConfianca] = None
 
     def adicionar(self, campo: str, valor: Optional[str], fonte: str) -> None:
-     
+
         if valor is None or valor == "":
             return
 

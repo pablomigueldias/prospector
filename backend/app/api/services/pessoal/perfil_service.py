@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from app.api.schemas.pessoal import PerfilMestreResponse, PerfilMestreUpsert
+from app.api.services._helpers import iso as _iso
 from app.db.models.pessoal.perfil_mestre import PerfilMestre
 from app.db.session import get_session
 from app.repositories.pessoal.perfil_repository import PerfilRepository
@@ -11,10 +12,6 @@ from app.repositories.pessoal.perfil_repository import PerfilRepository
 
 class PerfilError(Exception):
     """Erro de negócio do Perfil Mestre — vira HTTP 400 no router."""
-
-
-def _iso(dt) -> Optional[str]:
-    return dt.isoformat(timespec="seconds") if dt else None
 
 
 def _to_response(p: PerfilMestre) -> PerfilMestreResponse:

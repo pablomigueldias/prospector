@@ -10,7 +10,7 @@ from app.repositories.email_outreach_repository import EmailOutreachRepository
 
 async def gerar(limit, pausa) -> dict:
     return await gerar_rascunhos_pendentes(limit=limit, pausa=pausa)
-    
+
 async def gerar_followups(dias, max_followups, limit, pausa) -> dict:
     return await gerar_followups_pendentes(
         dias=dias, max_followups=max_followups, limit=limit, pausa=pausa

@@ -8,31 +8,18 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.financas import (
-    DespesaAutoSplitCreate,
-    DespesaCreate,
-    DespesaDivididaCreate,
-    ReceitaCreate,
-    TransferenciaCreate,
-    TransferenciaResponse,
     TransacaoItemResponse,
-    TransacaoListItem,
-    TransacaoListResponse,
     TransacaoPagamentoResponse,
     TransacaoResponse,
 )
-from app.api.services.financas import encargos as encargos_service
 from app.api.services.financas import eventos, saldo_service
 from app.db.models.financas.categoria import Categoria
 from app.db.models.financas.conta import Conta
-from app.db.models.financas.recorrencia import Recorrencia
 from app.db.models.financas.transacao import STATUS_TRANSACAO, Transacao
-from app.db.models.financas.transacao_item import TransacaoItem
 from app.db.models.financas.transacao_pagamento import TransacaoPagamento
-from app.db.session import get_session
 from app.repositories.financas.transacao_repository import TransacaoRepository
 
 

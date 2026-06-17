@@ -182,7 +182,7 @@ def _limpar_numero(numero: str) -> str:
     if len(digits) >= 12 and digits.startswith("55"):
         digits = digits[2:]
     if len(digits) < 10 or len(digits) > 11:
-        return "" 
+        return ""
     return digits
 
 DDDS_VALIDOS_BR = frozenset({
@@ -310,7 +310,7 @@ def parece_spa(html: str) -> bool:
     body = soup.find("body")
     if not body:
         return True
-    
+
     for tag in body(["script", "style", "noscript"]):
         tag.decompose()
     texto_visivel = body.get_text(strip=True)

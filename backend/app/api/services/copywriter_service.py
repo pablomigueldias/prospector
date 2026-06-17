@@ -2,13 +2,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 
 from app.api.schemas.copywriter import CopywriterRequest, CopywriterResponse
 from app.analyzers.copywriter.prompt_builder import construir_prompt
 from app.analyzers.copywriter.parser import parse_resposta
 from app.analyzers.llm_provider import gerar_texto
-from app.config import settings, DATA_DIR
+from app.config import DATA_DIR
 from app.utils.logger import get_logger
 
 logger = get_logger()
@@ -20,7 +19,7 @@ class CopywriterError(Exception):
 
 def _enriquecer_com_lead(req: CopywriterRequest) -> CopywriterRequest:
     """Preenche campos vazios do request com dados de um lead já coletado."""
-    from app.utils.storage import load_lead  
+    from app.utils.storage import load_lead
 
     try:
         lead = load_lead(req.lead_arquivo) #type: ignore

@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import contextlib
-import io
-import logging
 from typing import Optional, Tuple
 
 from app.analyzers.gemini import enriquecer_lead_com_analise
@@ -22,7 +19,7 @@ from app.utils.storage import save_lead
 
 logger = get_logger()
 class ProspectorError(Exception):
-  
+
 
     def __init__(self, message: str, *, status_code: int = 400, detail: Optional[str] = None):
         super().__init__(message)

@@ -41,7 +41,7 @@ def imprimir_resumo(inv: Investigacao) -> None:
 
     if inv.candidatos_site and not inv.site:
         print()
-        print(f"  🔗  Candidatos a site (nenhum confirmado):")
+        print("  🔗  Candidatos a site (nenhum confirmado):")
         for i, c in enumerate(inv.candidatos_site[:3], 1):
             print(f"      {i}. {c['dominio']} — {c['titulo'][:50]}")
 
@@ -67,7 +67,7 @@ def pedir_aprovacao(inv: Investigacao) -> bool:
 
 
 def perguntar_qual_site(inv: Investigacao) -> Optional[str]:
- 
+
     if not inv.candidatos_site or inv.site:
         return None
 
@@ -75,7 +75,7 @@ def perguntar_qual_site(inv: Investigacao) -> Optional[str]:
     print("🔎  Encontrei possíveis sites oficiais — qual é o da empresa?")
     for i, c in enumerate(inv.candidatos_site[:5], 1):
         print(f"   [{i}] {c['dominio']}  ({c['titulo'][:60]})")
-    print(f"   [0] Nenhum desses / pular")
+    print("   [0] Nenhum desses / pular")
 
     while True:
         resp = input("Escolha (0-5): ").strip()

@@ -1,6 +1,5 @@
 import json
-import re
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -58,18 +57,18 @@ def _limpar_json_cru(texto: str) -> str:
 
 
 def _reparar_json_truncado(texto: str) -> Optional[str]:
- 
+
     safe_cuts = []
     for i, c in enumerate(texto):
         if c in '},]':
             safe_cuts.append(i + 1)
     for cut in reversed(safe_cuts[-50:]):
         candidato = texto[:cut]
-       
+
         if candidato.rstrip().endswith(","):
             candidato = candidato.rstrip()[:-1]
 
-       
+
         reparado = _fechar_delimitadores(candidato)
         if reparado is None:
             continue
@@ -84,7 +83,7 @@ def _reparar_json_truncado(texto: str) -> Optional[str]:
 
 def _fechar_delimitadores(texto: str) -> Optional[str]:
 
-    pilha: List[str] = [] 
+    pilha: List[str] = []
     em_string = False
     escape_next = False
 
@@ -114,7 +113,7 @@ def _fechar_delimitadores(texto: str) -> Optional[str]:
             if pilha and pilha[-1] == "}":
                 pilha.pop()
             else:
-                return None 
+                return None
         elif c == "]":
             if pilha and pilha[-1] == "]":
                 pilha.pop()
@@ -127,7 +126,7 @@ def _fechar_delimitadores(texto: str) -> Optional[str]:
 
 
 def _salvar_debug(texto_cru: str, motivo: str) -> None:
-  
+
     try:
         from datetime import datetime
         from app.config import DATA_DIR
@@ -143,7 +142,7 @@ def _salvar_debug(texto_cru: str, motivo: str) -> None:
 
 
 def parse_resposta(texto_cru: str) -> Optional[AnaliseGemini]:
- 
+
     texto_limpo = _limpar_json_cru(texto_cru)
 
 
@@ -190,18 +189,18 @@ def _emoji_score(score: int) -> str:
 
 
 def formatar_para_notas(analise: AnaliseGemini) -> str:
- 
+
     linhas: List[str] = []
 
     emoji = _emoji_score(analise.score)
-    linhas.append(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    linhas.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     linhas.append(f"ANÁLISE IA  |  {emoji} Score: {analise.score}/100")
-    linhas.append(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    linhas.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     if analise.score_justificativa:
         linhas.append(analise.score_justificativa)
     linhas.append("")
 
-  
+
     if analise.resumo_executivo:
         linhas.append("RESUMO")
         linhas.append(analise.resumo_executivo)

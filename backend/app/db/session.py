@@ -47,6 +47,6 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 
 
 async def dispose_engine() -> None:
-    
+
     logger.info(" Fechando engine do Postgres...")
     await engine.dispose()

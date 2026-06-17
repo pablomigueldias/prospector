@@ -25,19 +25,19 @@ _CNAE_DIVISAO_TO_SETOR = {
     "62": "Tech",
     "63": "Tech",
 
-    
+
     "64": "Financeiro",
     "65": "Financeiro",
     "66": "Financeiro",
 
-    
+
     "69": "Jurídico",
 
-   
-    "73": "Marketing",  
-    "58": "Marketing",  
-    "59": "Marketing",  
-    "60": "Marketing",  
+
+    "73": "Marketing",
+    "58": "Marketing",
+    "59": "Marketing",
+    "60": "Marketing",
 
     "85": "Educação",
 
@@ -46,14 +46,14 @@ _CNAE_DIVISAO_TO_SETOR = {
     "88": "Saúde",
 
     "49": "Serviços", "50": "Serviços", "51": "Serviços", "52": "Serviços",
-    "53": "Serviços", 
+    "53": "Serviços",
     "55": "Serviços", "56": "Serviços",
-    "70": "Serviços", "71": "Serviços", "72": "Serviços", 
-    "74": "Serviços", "75": "Serviços", 
-    "77": "Serviços", 
-    "78": "Serviços", 
-    "79": "Serviços", 
-    "80": "Serviços", "81": "Serviços", "82": "Serviços", 
+    "70": "Serviços", "71": "Serviços", "72": "Serviços",
+    "74": "Serviços", "75": "Serviços",
+    "77": "Serviços",
+    "78": "Serviços",
+    "79": "Serviços",
+    "80": "Serviços", "81": "Serviços", "82": "Serviços",
     "94": "Serviços", "95": "Serviços", "96": "Serviços",
 }
 
@@ -79,7 +79,7 @@ def classificar_tamanho(
     capital_social: Optional[float],
     opcao_mei: bool = False,
 ) -> Optional[str]:
-    
+
     if opcao_mei:
         return "MEI"
 

@@ -176,7 +176,7 @@ class NotionExporter:
             "CNPJ": cnpj_formatado,
             "Capital Social": empresa.capital_social,
             "Cidade": empresa.cidade,
-            "Estado": empresa.estado,
+            "Estado": estado,  # valor validado (igual a setor/tamanho/status)
             "Local": empresa.local,
             "Site": empresa.site,
             "Instagram": empresa.instagram,
@@ -286,10 +286,10 @@ class NotionExporter:
         email: Optional[str] = None,
         nome: Optional[str] = None,
     ) -> Optional[str]:
-        
+
         if not empresa_notion_id:
             return None
-        
+
         empresa_filter = {
             "property": "Empresas",
             "relation": {"contains": empresa_notion_id},
@@ -338,7 +338,7 @@ class NotionExporter:
                 logger.error(f"Erro ao buscar contato por nome: {e}")
 
         return None
-    
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=2, min=2, max=10),

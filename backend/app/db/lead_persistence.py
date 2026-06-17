@@ -2,20 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
+from typing import Optional
 
 
 from sqlalchemy import func,select
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
 )
 
-from sqlalchemy.pool import NullPool
 
-from app.config import settings
 from app.db.converters import contato_to_orm, empresa_to_orm, socio_to_orm
 from app.db.models.contato import Contato as ContatoORM
 from app.db.models.empresa import Empresa as EmpresaORM
@@ -61,13 +56,13 @@ class LeadPersistenceService:
             f"({len(lead.empresa.socios)} sócio(s), {len(lead.contatos)} contato(s))"
         )
         return empresa.id
-    
+
 # ponte sync -> async
 
 async def _persist_async(lead: Lead) -> uuid.UUID:
     async with bridge_session() as session:
         return await LeadPersistenceService(session).persist(lead)
-    
+
 def persist_lead_sync(lead: Lead) -> Optional[uuid.UUID]:
     return asyncio.run(_persist_async(lead))
 
@@ -81,7 +76,7 @@ async def _db_stats_async() -> dict:
             "socios": await session.scalar(select(func.count(SocioORM.id))) or 0,
             "contatos": await session.scalar(select(func.count(ContatoORM.id))) or 0,
         }
-    
+
 def db_stats_sync() -> dict:
     return asyncio.run(_db_stats_async())
 

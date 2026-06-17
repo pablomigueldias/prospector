@@ -6,7 +6,6 @@ ContaRepository.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy.exc import IntegrityError
 

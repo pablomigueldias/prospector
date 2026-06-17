@@ -55,6 +55,6 @@ class Contato(BaseModel):
     notion_page_id: Optional[str] = None
 
 class Lead(BaseModel):
-   
+
     empresa: Empresa
     contatos: List[Contato] = Field(default_factory=list)

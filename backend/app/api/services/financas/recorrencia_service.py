@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 from sqlalchemy import func, select
 

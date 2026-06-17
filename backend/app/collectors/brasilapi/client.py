@@ -75,7 +75,7 @@ def _http_get(url: str) -> Dict[str, Any]:
         return response.json()
 
     if response.status_code == 404:
-        raise CNPJNaoEncontrado(f"CNPJ não encontrado na Receita")
+        raise CNPJNaoEncontrado("CNPJ não encontrado na Receita")
 
     if response.status_code == 400:
         raise CNPJInvalido(f"CNPJ rejeitado pela API: {response.text[:200]}")
@@ -92,7 +92,7 @@ def _http_get(url: str) -> Dict[str, Any]:
 
 
 def buscar_cnpj(cnpj: str) -> Dict[str, Any]:
-    
+
     digits = _digits_only(cnpj)
     if not _validate_cnpj_digits(digits):
         raise CNPJInvalido(f"CNPJ inválido: {cnpj}")

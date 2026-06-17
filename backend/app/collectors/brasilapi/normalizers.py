@@ -17,7 +17,7 @@ def normalizar_opencnpj_para_brasilapi(raw: Dict[str, Any]) -> Dict[str, Any]:
 
         "capital_social": _parse_capital_social(raw.get("capital_social")),
 
-    
+
         "porte": _extrair_sigla_porte(raw.get("porte_empresa")),
         "opcao_pelo_mei": _parse_opcao_mei(raw.get("opcao_mei")),
 

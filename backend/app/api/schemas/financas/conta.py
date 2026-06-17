@@ -1,7 +1,6 @@
 """Contas e transferências — schemas do domínio financas."""
 from __future__ import annotations
 
-from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 

@@ -40,8 +40,8 @@ from app.api.schemas.pessoal import (
     VagasMetricas,
     VagaUpdate,
 )
+from app.api.services._helpers import iso as _iso, parse_uuid
 from app.api.services.pessoal.perfil_service import get_perfil
-from app.db.models.pessoal.candidatura_email import CandidaturaEmail
 from app.db.models.pessoal.vaga import Vaga
 from app.db.session import get_session
 from app.repositories.pessoal.vaga_repository import VagaRepository
@@ -54,15 +54,8 @@ class VagaError(Exception):
     """Erro de negócio de Vagas — vira HTTP 400 no router."""
 
 
-def _iso(dt) -> Optional[str]:
-    return dt.isoformat(timespec="seconds") if dt else None
-
-
 def _uuid(valor: str) -> uuid.UUID:
-    try:
-        return uuid.UUID(valor)
-    except (ValueError, AttributeError):
-        raise VagaError(f"id de vaga inválido: {valor!r}")
+    return parse_uuid(valor, erro=VagaError, label="id de vaga")
 
 
 def _to_response(v: Vaga) -> VagaResponse:
