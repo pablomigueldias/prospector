@@ -66,8 +66,8 @@ class FreelaRepository:
 
     async def listar_projetos(
         self,
-    ) -> list[tuple[Projeto, str | None, int, float]]:
-        """Projetos + nome do cliente + nº de propostas + US$ já pago pelo cliente."""
+    ) -> list[tuple[Projeto, str | None, int, float, bool]]:
+        """Projetos + nome do cliente + nº de propostas + US$ já pago + pagamento verificado."""
         propostas = (
             select(
                 Proposta.projeto_id,
@@ -82,13 +82,17 @@ class FreelaRepository:
                 Cliente.nome,
                 func.coalesce(propostas.c.qtd, 0),
                 func.coalesce(Cliente.ja_me_pagou_usd, 0),
+                func.coalesce(Cliente.pagamento_verificado, False),
             )
             .outerjoin(Cliente, Cliente.id == Projeto.cliente_id)
             .outerjoin(propostas, propostas.c.projeto_id == Projeto.id)
             .order_by(Projeto.created_at.desc())
         )
         result = await self.session.execute(stmt)
-        return [(row[0], row[1], int(row[2]), float(row[3])) for row in result.all()]
+        return [
+            (row[0], row[1], int(row[2]), float(row[3]), bool(row[4]))
+            for row in result.all()
+        ]
 
     async def update_projeto(self, pid: uuid.UUID, dados: dict) -> Projeto | None:
         projeto = await self.get_projeto(pid)

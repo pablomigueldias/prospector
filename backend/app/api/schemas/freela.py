@@ -148,6 +148,8 @@ class ProjetoListItem(BaseModel):
     qtd_propostas: int = 0
     cliente_recorrente: bool = False      # cliente já me pagou (comissão menor)
     cliente_pago_usd: float = 0
+    bom_primeiro: bool = False            # selo cold start: bom candidato a 1ª nota 5★
+    bom_primeiro_motivos: list[str] = Field(default_factory=list)
     created_at: str | None = None
 
 

@@ -111,6 +111,8 @@ export interface FreelaProjetoListItem {
   qtd_propostas: number;
   cliente_recorrente: boolean;
   cliente_pago_usd: number;
+  bom_primeiro: boolean;
+  bom_primeiro_motivos: string[];
   created_at?: string | null;
 }
 

@@ -227,6 +227,14 @@ function ProjetoCard({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {p.bom_primeiro && (
+            <span
+              className="text-[12px] font-medium px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200"
+              title={`Bom candidato à 1ª nota 5★: ${p.bom_primeiro_motivos.join(', ')}`}
+            >
+              🌱 bom 1º projeto
+            </span>
+          )}
           {p.risco && p.risco !== 'baixo' && (
             <span
               className={`text-[12px] font-medium px-2 py-0.5 rounded ${

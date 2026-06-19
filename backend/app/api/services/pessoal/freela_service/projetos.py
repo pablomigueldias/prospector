@@ -37,8 +37,11 @@ async def listar_projetos() -> ProjetoListResponse:
     async with get_session() as session:
         linhas = await FreelaRepository(session).listar_projetos()
     items = []
-    for projeto, cliente_nome, qtd, pago_usd in linhas:
+    for projeto, cliente_nome, qtd, pago_usd, pag_verificado in linhas:
         analise = projeto.analise_json or {}
+        bom, motivos = _detectar_bom_primeiro(
+            analise, projeto.n_propostas_concorrentes, pag_verificado
+        )
         items.append(
             ProjetoListItem(
                 id=str(projeto.id),
@@ -57,15 +60,65 @@ async def listar_projetos() -> ProjetoListResponse:
                 qtd_propostas=qtd,
                 cliente_recorrente=pago_usd > 0,
                 cliente_pago_usd=round(pago_usd, 2),
+                bom_primeiro=bom,
+                bom_primeiro_motivos=motivos,
                 created_at=_iso(projeto.created_at),
             )
         )
     # Fila de oportunidades: cliente recorrente vale ouro (vem primeiro), depois
-    # maior fit (sem análise vai pro fim).
+    # "bom 1º projeto" (foco do cold start) e, por fim, maior fit.
     items.sort(
-        key=lambda i: (not i.cliente_recorrente, i.fit_score is None, -(i.fit_score or 0))
+        key=lambda i: (
+            not i.cliente_recorrente,
+            not i.bom_primeiro,
+            i.fit_score is None,
+            -(i.fit_score or 0),
+        )
     )
     return ProjetoListResponse(items=items, total=len(items))
+
+
+# Limiares do detector de "bom 1º projeto" (fase cold start).
+_FIT_MIN = 70
+_CONCORRENTES_MAX = 10
+_HORAS_ENXUTO = 20
+
+
+def _detectar_bom_primeiro(
+    analise: dict, n_concorrentes: int | None, pagamento_verificado: bool
+) -> tuple[bool, list[str]]:
+    """Selo determinístico p/ achar a 1ª nota 5★ na fase cold start.
+
+    Pagamento verificado é pré-requisito (não dá pra arriscar a 1ª nota com
+    cliente não-verificado). Acima disso, exige 3 de 4 sinais favoráveis.
+    Só dispara em projeto já analisado (fit/quadrante/preço vêm da análise).
+    """
+    if not pagamento_verificado:
+        return False, []
+    motivos = ["pagamento verificado"]
+    sinais = 0
+
+    fit = analise.get("fit_score")
+    if isinstance(fit, (int, float)) and fit >= _FIT_MIN:
+        sinais += 1
+        motivos.append("fit alto")
+
+    if n_concorrentes is not None and n_concorrentes <= _CONCORRENTES_MAX:
+        sinais += 1
+        motivos.append("pouca concorrência")
+
+    horas = (analise.get("estimativa") or {}).get("horas_estimadas")
+    if analise.get("quadrante") == "quick_win" or (
+        isinstance(horas, (int, float)) and horas <= _HORAS_ENXUTO
+    ):
+        sinais += 1
+        motivos.append("escopo enxuto")
+
+    if (analise.get("veredito_preco") or {}).get("status") in ("justo", "acima"):
+        sinais += 1
+        motivos.append("orçamento saudável")
+
+    return sinais >= 3, motivos
 
 
 async def get_projeto(projeto_id: str) -> ProjetoResponse:
