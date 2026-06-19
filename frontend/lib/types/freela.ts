@@ -41,6 +41,9 @@ export interface FreelaClienteCreate {
   ja_me_pagou_usd?: number;
   pagamento_verificado?: boolean;
   rating?: number | null;
+  projetos_publicados?: number | null;
+  projetos_pagos?: number | null;
+  membro_desde?: string | null;
   notas?: string | null;
 }
 

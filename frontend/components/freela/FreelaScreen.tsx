@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { StatCard } from '@/components/shared/StatCard';
+import { ClientesPanel } from '@/components/freela/ClientesPanel';
 import { FilaProjetos } from '@/components/freela/FilaProjetos';
 import { Kanban } from '@/components/freela/Kanban';
 import { MetaForecast } from '@/components/freela/MetaForecast';
@@ -116,6 +117,17 @@ export default function FreelaScreen() {
       <Precificador
         plataformaId={plataformas.items[0]?.id ?? null}
         clientes={clientes.items.map((c) => ({ id: c.id, nome: c.nome }))}
+      />
+
+      <ClientesPanel
+        clientes={clientes.items}
+        loading={clientes.loading}
+        salvando={acoes.loading}
+        plataformas={plataformas.items.map((p) => ({ id: p.id, nome: p.nome }))}
+        onCriar={acoes.criarCliente}
+        onAtualizar={acoes.atualizarCliente}
+        onRemover={acoes.removerCliente}
+        onMudou={() => clientes.refetch()}
       />
 
       {/* Fila de oportunidades */}

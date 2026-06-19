@@ -133,6 +133,15 @@ export function useFreelaActions() {
     (body: FreelaClienteCreate) => run<FreelaCliente>(() => api.freelaClienteCriar(body)),
     [],
   );
+  const atualizarCliente = useCallback(
+    (id: string, body: Partial<FreelaCliente>) =>
+      run<FreelaCliente>(() => api.freelaClienteAtualizar(id, body)),
+    [],
+  );
+  const removerCliente = useCallback(
+    (id: string) => run<void>(() => api.freelaClienteRemover(id)),
+    [],
+  );
   const precificar = useCallback(
     (body: FreelaPrecificarRequest) =>
       run<FreelaPrecificarResponse>(() => api.freelaPrecificar(body)),
@@ -159,6 +168,8 @@ export function useFreelaActions() {
     avaliarProposta,
     corrigirProposta,
     criarCliente,
+    atualizarCliente,
+    removerCliente,
     precificar,
     planoMeta,
   };
