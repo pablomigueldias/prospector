@@ -16,6 +16,7 @@ export function FilaProjetos({
   onCriarProposta,
   onAnalisar,
   onAtualizar,
+  onAbrir,
   onRemover,
 }: {
   items: FreelaProjetoListItem[];
@@ -29,6 +30,7 @@ export function FilaProjetos({
   ) => Promise<void> | void;
   onAnalisar: (id: string) => Promise<FreelaAnalise | null>;
   onAtualizar: (id: string, patch: Partial<FreelaProjeto>) => Promise<void>;
+  onAbrir: (p: FreelaProjetoListItem) => void;
   onRemover: (id: string) => void;
 }) {
   if (loading) {
@@ -56,6 +58,7 @@ export function FilaProjetos({
           onCriarProposta={onCriarProposta}
           onAnalisar={onAnalisar}
           onAtualizar={onAtualizar}
+          onAbrir={onAbrir}
           onRemover={onRemover}
         />
       ))}
@@ -113,6 +116,7 @@ function ProjetoCard({
   onCriarProposta,
   onAnalisar,
   onAtualizar,
+  onAbrir,
   onRemover,
 }: {
   p: FreelaProjetoListItem;
@@ -125,6 +129,7 @@ function ProjetoCard({
   ) => Promise<void> | void;
   onAnalisar: (id: string) => Promise<FreelaAnalise | null>;
   onAtualizar: (id: string, patch: Partial<FreelaProjeto>) => Promise<void>;
+  onAbrir: (p: FreelaProjetoListItem) => void;
   onRemover: (id: string) => void;
 }) {
   const [analise, setAnalise] = useState<FreelaAnalise | null>(null);
@@ -176,13 +181,14 @@ function ProjetoCard({
     <div className="card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <InlineCell
-            campo="titulo"
-            valor={p.titulo}
-            kind="text"
-            className="font-medium text-ink text-[15px] max-w-full truncate"
-            onSave={(v) => onAtualizar(p.id, { titulo: String(v) })}
-          />
+          <button
+            type="button"
+            onClick={() => onAbrir(p)}
+            className="font-medium text-ink text-[15px] max-w-full truncate text-left hover:text-brand transition-colors"
+            title="Abrir detalhes (porquê da decisão + editar)"
+          >
+            {p.titulo}
+          </button>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-ink-mute">
             {p.cliente_nome && <span>{p.cliente_nome}</span>}
             {p.cliente_recorrente && (

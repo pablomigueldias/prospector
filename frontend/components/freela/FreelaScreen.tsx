@@ -12,6 +12,7 @@ import { OndeInsistir } from '@/components/freela/OndeInsistir';
 import { PerdaDialog } from '@/components/freela/PerdaDialog';
 import { PlanoMetaPanel } from '@/components/freela/PlanoMetaPanel';
 import { Precificador } from '@/components/freela/Precificador';
+import { ProjetoDrawer } from '@/components/freela/ProjetoDrawer';
 import { PropostaModal } from '@/components/freela/PropostaModal';
 import { formatBRL } from '@/lib/format';
 import {
@@ -24,7 +25,7 @@ import {
   useFreelaCapacidade,
   useFreelaTaxaPorStack,
 } from '@/hooks/useFreela';
-import { type FreelaKanbanItem } from '@/lib/types';
+import { type FreelaKanbanItem, type FreelaProjetoListItem } from '@/lib/types';
 
 /** Horas médias → "—" / "8h" / "2d 3h". */
 function formatHoras(h?: number | null): string {
@@ -49,6 +50,7 @@ export default function FreelaScreen() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [propostaAberta, setPropostaAberta] = useState<FreelaKanbanItem | null>(null);
   const [perdaItem, setPerdaItem] = useState<FreelaKanbanItem | null>(null);
+  const [projetoAberto, setProjetoAberto] = useState<FreelaProjetoListItem | null>(null);
   const [gerirOpcoes, setGerirOpcoes] = useState(false);
 
   function refetchTudo() {
@@ -196,6 +198,7 @@ export default function FreelaScreen() {
           const r = await acoes.atualizarProjeto(id, patch);
           if (r) void projetos.refetch();
         }}
+        onAbrir={setProjetoAberto}
         onRemover={async (id) => {
           if (confirm('Remover este projeto e suas propostas?')) {
             await acoes.removerProjeto(id);
@@ -244,6 +247,21 @@ export default function FreelaScreen() {
           item={propostaAberta}
           onClose={() => setPropostaAberta(null)}
           onMudou={refetchTudo}
+        />
+      )}
+
+      {projetoAberto && (
+        <ProjetoDrawer
+          projeto={projetoAberto}
+          clientes={clientes.items.map((c) => ({ id: c.id, nome: c.nome }))}
+          plataformas={plataformas.items.map((pl) => ({ id: pl.id, nome: pl.nome }))}
+          salvando={acoes.loading}
+          onClose={() => setProjetoAberto(null)}
+          onAtualizar={async (id, patch) => {
+            await acoes.atualizarProjeto(id, patch);
+          }}
+          onAnalisar={(id) => acoes.analisarProjeto(id)}
+          onMudou={() => projetos.refetch()}
         />
       )}
 

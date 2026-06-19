@@ -56,8 +56,11 @@
 > O CRM já tem o padrão "tipo Notion" (edição inline, drawer lateral, CRUD completo).
 > O freela ainda usa telas/forms antigos. Trazer a mesma fluidez.
 - [x] ✅ **Reusar `InlineCell` + `SidePanel`** — `InlineCell` generalizado (prop
-  `onSave`, CRM intocado) e aplicado na fila (título/orçamento/nº concorrentes);
-  cliente via `SidePanel`. *RecordModal não reusado: a proposta já tem `PropostaModal` rico.*
+  `onSave`, CRM intocado) na fila (orçamento/nº concorrentes/publicado); **`ProjetoDrawer`**
+  (SidePanel): clicar no projeto abre o detalhe 360 com o **porquê da decisão** (momento,
+  fit, risco, quadrante, preço, frescor, concorrência, bom 1º projeto), **todos os campos
+  editáveis** e a análise (tarefas/perguntas/skills/red flags/ganchos). *RecordModal não
+  reusado: a proposta já tem `PropostaModal` rico.*
 - [x] ✅ **CRUD de cliente na tela** — seção "Clientes" + drawer criar/editar/excluir.
 - [~] 🟡 **Opções dinâmicas** — **motivo de perda** feito (`OpcoesManager` generalizado
   com prop `grupos`, grupo `freela_motivo_perda`; diálogo no lugar do `window.prompt`).
