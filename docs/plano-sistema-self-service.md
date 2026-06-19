@@ -14,7 +14,7 @@
 
 Mapeamento do que hoje te faz "pedir pro Claude" e a tela que resolve cada caso.
 
-### S1 — Central de Agentes (cockpit) ⭐ comece por aqui
+### S1 — Central de Agentes (cockpit) ✅ FEITO (2026-06-18)
 **Dor:** os agentes vivem espalhados em `/agents/<slug>`; não há uma visão única do
 que existe, do que está rodando e do que precisa de você.
 **Tela:** uma home `/` (ou `/cockpit`) dirigida pelo `registry.py`: cards de todos os
@@ -22,6 +22,14 @@ agentes (ativo/em breve), o **Resumo da Noite** (MAS-4) no topo, e "o que precis
 você hoje" (vagas a triar, follow-ups, atividades atrasadas) com link direto.
 **Backend:** já existe (`registry`, `/orchestrator/briefing`). É montagem de front.
 **Done:** abrir o sistema e ver, numa tela, tudo que importa + 1 clique pra agir.
+
+**Entregue:** `components/cockpit/CockpitScreen.tsx` (eyebrow "Central de Agentes" +
+saudação, `ResumoNoite` no topo = o que precisa de você hoje, grid de **agentes
+ativos** clicáveis filtrados por permissão, e `MoreAgentsSection` pros próximos). A
+home `pages/index.tsx` deixou de redirecionar pro prospector e agora renderiza o
+cockpit no `DashboardLayout` — é onde o login pousa e onde o logo do menu aponta.
+Reusa `useAgents`/`registry`, `ResumoNoite` (MAS-4) e `IconFromName`. Verificado:
+`tsc` + `next lint` verdes.
 
 ### S2 — Observabilidade & Custos de IA
 **Dor:** você não vê o que os agentes gastam nem o que falha — isso mora só no banco
