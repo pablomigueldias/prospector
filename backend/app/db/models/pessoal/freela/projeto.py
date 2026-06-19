@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -49,6 +49,10 @@ class Projeto(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     status_no_site: Mapped[str | None] = mapped_column(String(50))
     n_propostas_concorrentes: Mapped[int | None] = mapped_column(Integer)
     n_interessados: Mapped[int | None] = mapped_column(Integer)
+
+    # Data em que o cliente publicou o projeto no site (frescor → vantagem de
+    # responder cedo, vale na fase cold start independente de reputação).
+    publicado_em: Mapped[date | None] = mapped_column(Date)
 
     coletado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

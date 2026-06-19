@@ -60,6 +60,7 @@ export interface FreelaProjetoCreate {
   status_no_site?: string | null;
   n_propostas_concorrentes?: number | null;
   n_interessados?: number | null;
+  publicado_em?: string | null;
 }
 
 export interface FreelaChecklistItem {
@@ -113,6 +114,8 @@ export interface FreelaProjetoListItem {
   cliente_pago_usd: number;
   bom_primeiro: boolean;
   bom_primeiro_motivos: string[];
+  publicado_em?: string | null;
+  dias_desde_publicacao?: number | null;
   created_at?: string | null;
 }
 

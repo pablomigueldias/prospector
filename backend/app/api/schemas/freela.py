@@ -74,6 +74,7 @@ class ProjetoBase(BaseModel):
     status_no_site: str | None = None
     n_propostas_concorrentes: int | None = None
     n_interessados: int | None = None
+    publicado_em: str | None = None       # YYYY-MM-DD (data de publicação no site)
 
 
 class ProjetoCreate(ProjetoBase):
@@ -121,6 +122,7 @@ class ProjetoUpdate(BaseModel):
     status_no_site: str | None = None
     n_propostas_concorrentes: int | None = None
     n_interessados: int | None = None
+    publicado_em: str | None = None
 
 
 class ProjetoResponse(ProjetoBase):
@@ -150,6 +152,8 @@ class ProjetoListItem(BaseModel):
     cliente_pago_usd: float = 0
     bom_primeiro: bool = False            # selo cold start: bom candidato a 1ª nota 5★
     bom_primeiro_motivos: list[str] = Field(default_factory=list)
+    publicado_em: str | None = None       # YYYY-MM-DD
+    dias_desde_publicacao: int | None = None  # frescor (responder cedo é vantagem)
     created_at: str | None = None
 
 

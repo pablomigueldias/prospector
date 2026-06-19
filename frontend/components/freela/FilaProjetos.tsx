@@ -223,6 +223,23 @@ function ProjetoCard({
                 }
               />
             </span>
+            <span className="flex items-center gap-1">
+              ·
+              <InlineCell
+                campo="publicado_em"
+                valor={p.publicado_em ?? undefined}
+                display={
+                  p.publicado_em
+                    ? p.dias_desde_publicacao != null
+                      ? `publicado há ${p.dias_desde_publicacao}d`
+                      : `publicado ${p.publicado_em}`
+                    : undefined
+                }
+                kind="date"
+                vazioLabel="publicado em?"
+                onSave={(v) => onAtualizar(p.id, { publicado_em: v ? String(v) : null })}
+              />
+            </span>
             <span>· {p.qtd_propostas} sua(s)</span>
           </div>
         </div>
@@ -233,6 +250,14 @@ function ProjetoCard({
               title={`Bom candidato à 1ª nota 5★: ${p.bom_primeiro_motivos.join(', ')}`}
             >
               🌱 bom 1º projeto
+            </span>
+          )}
+          {p.dias_desde_publicacao != null && p.dias_desde_publicacao <= 3 && (
+            <span
+              className="text-[12px] font-medium px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200"
+              title="Projeto fresco — responder cedo é vantagem, mesmo sem reputação"
+            >
+              🆕 {p.dias_desde_publicacao === 0 ? 'hoje' : `${p.dias_desde_publicacao}d`}
             </span>
           )}
           {p.risco && p.risco !== 'baixo' && (

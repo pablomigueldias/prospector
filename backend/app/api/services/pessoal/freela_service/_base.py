@@ -69,6 +69,7 @@ def _projeto_to_resp(p: Projeto) -> ProjetoResponse:
         status_no_site=p.status_no_site,
         n_propostas_concorrentes=p.n_propostas_concorrentes,
         n_interessados=p.n_interessados,
+        publicado_em=p.publicado_em.isoformat() if p.publicado_em else None,
         analise_json=p.analise_json,
         coletado_em=_iso(p.coletado_em),
         created_at=_iso(p.created_at),

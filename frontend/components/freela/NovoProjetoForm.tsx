@@ -23,6 +23,7 @@ export function NovoProjetoForm({
     n_propostas_concorrentes?: number | null;
     n_interessados?: number | null;
     habilidades?: string[];
+    publicado_em?: string | null;
   }) => void;
   onExtrair: (texto: string) => Promise<FreelaExtrairProjeto | null>;
 }) {
@@ -34,6 +35,7 @@ export function NovoProjetoForm({
   const [nProp, setNProp] = useState('');
   const [nInteress, setNInteress] = useState('');
   const [habilidades, setHabilidades] = useState('');
+  const [pubEm, setPubEm] = useState('');
   const [extraindo, setExtraindo] = useState(false);
 
   async function autoPreencher() {
@@ -106,6 +108,10 @@ export function NovoProjetoForm({
             Nº interessados
             <input className="input mt-1" type="number" value={nInteress} onChange={(e) => setNInteress(e.target.value)} />
           </label>
+          <label className="text-[13px] text-ink-soft">
+            Publicado em
+            <input className="input mt-1" type="date" value={pubEm} onChange={(e) => setPubEm(e.target.value)} />
+          </label>
         </div>
         <label className="text-[13px] text-ink-soft">
           Habilidades exigidas <span className="text-ink-faint">(separe por vírgula)</span>
@@ -135,6 +141,7 @@ export function NovoProjetoForm({
                   .split(',')
                   .map((s) => s.trim())
                   .filter(Boolean),
+                publicado_em: pubEm || null,
               })
             }
           >
