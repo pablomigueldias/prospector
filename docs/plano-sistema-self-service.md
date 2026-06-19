@@ -40,13 +40,26 @@ erro, últimas chamadas. Gráficos com Recharts (ver `[[grafico-recharts]]`).
 `observability` — estender). 
 **Done:** "quanto meu sistema gastou de IA esta semana e onde" numa tela.
 
-### S3 — Configurações na UI (sem mexer em `.env`/`config.py`) ⭐ o coração do self-service
+### S3 — Configurações na UI (sem mexer em `.env`/`config.py`) ✅ FEITO (2026-06-18)
 **Dor:** ligar/desligar briefing, mudar a hora, trocar `llm_provider` (gemini/groq),
 dias de follow-up… tudo isso é `settings` no código — só eu mexo hoje.
 **Como:** tabela `config_app` (chave/valor/tipo) + `config_service` que faz override
 das `settings` em runtime; tela `/configuracoes` com toggles/inputs por seção
 (Agendador, Briefing, Freela, LLM, CRM). Mesmo padrão do `crm_opcoes` que já fizemos.
 **Done:** você muda o comportamento do sistema na tela; reinício não é necessário.
+
+**Entregue:** modelo `config_app` (só os overrides; migração `c4a9e7b21d68`) +
+`config_service` com **catálogo curado** de 10 settings editáveis (Agendador,
+Briefing, Freela, LLM, Orçamento) — segredos/infra ficam de fora de propósito.
+`aplicar()` sobrescreve o singleton `settings` em runtime (rodado no topo do
+`lifespan`, antes do scheduler) e a cada PATCH; quem lê `settings.x` em tempo de
+chamada (followups, LLM, alertas) já vê o novo valor. O que afeta o *agendamento*
+dos jobs (horas/scheduler) é marcado `requer_restart` e avisado na UI. Router
+`/api/config` (GET/PATCH) gateado por `usuarios.gerenciar`; tela `/configuracoes`
+(toggle/number/select, badge "alterado"/"restart", default, salvar/descartar) +
+link no Sidebar (admin). Verificado e2e no DB de dev: atualizar→aplicar no
+`settings`, listar reflete override, validação rejeita fora-de-range. `tsc`/`lint`/
+`ruff` verdes. *(De quebra: corrigido o log `%sh` do agendador — loguru usa `{}`.)*
 
 ### S4 — Agendamentos na UI
 **Dor:** os jobs (briefing 18h, lembretes 8h, follow-up) são fixos no `main.py`.

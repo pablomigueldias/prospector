@@ -11,6 +11,7 @@ from app.api.routers import cartoes as cartoes_router
 from app.api.routers import categorias as categorias_router
 from app.api.routers import compras as compras_router
 from app.api.routers import comprovantes as comprovantes_router
+from app.api.routers import config as config_router
 from app.api.routers import contas as contas_router
 from app.api.routers import copywriter as copywriter_router
 from app.api.routers import crm as crm_router
@@ -45,6 +46,17 @@ logger = get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 API da Reativa subindo...")
+    # S3 — aplica os overrides de config (UI) sobre o `settings` ANTES de tudo,
+    # pra valer inclusive no agendamento dos jobs abaixo.
+    try:
+        from app.api.services import config_service
+        from app.db.session import SessionLocal
+        async with SessionLocal() as _session:
+            n_over = await config_service.aplicar(_session)
+        if n_over:
+            logger.info(f"⚙️  Config: {n_over} override(s) aplicado(s) da UI.")
+    except Exception as e:  # noqa: BLE001 — config nunca derruba o boot
+        logger.warning(f"Config override pulado ({type(e).__name__}: {e}).")
     agendador = None
     if settings.scheduler_enabled:
         # Agendador in-process: 1x/dia processa recorrências e manda o lembrete
@@ -71,8 +83,8 @@ async def lifespan(app: FastAPI):
             )
         agendador.start()
         logger.info(
-            "⏰ Agendador ligado (rotina %sh · briefing %sh).",
-            settings.lembretes_hora, settings.briefing_hora,
+            f"⏰ Agendador ligado (rotina {settings.lembretes_hora}h · "
+            f"briefing {settings.briefing_hora}h)."
         )
     yield
     if agendador is not None:
@@ -136,6 +148,7 @@ def healthcheck() -> dict:
 # ── Autenticação (portão de entrada) ──────────────────────────────
 app.include_router(auth_router.router)
 app.include_router(admin_usuarios_router.router)
+app.include_router(config_router.router)
 
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)

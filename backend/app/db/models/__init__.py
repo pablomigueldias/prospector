@@ -11,6 +11,7 @@ from app.db.models.auth.usuario import Usuario
 from app.db.models.auth.usuario_2fa import UsuarioTwoFA
 from app.db.models.auth.usuario_papel import UsuarioPapel
 from app.db.models.atividade import Atividade
+from app.db.models.config_app import ConfigApp
 from app.db.models.contato import Contato
 from app.db.models.crm_opcao import CrmOpcao
 from app.db.models.email_outreach import EmailOutreach
@@ -69,6 +70,7 @@ __all__ = [
     "PipelineEvent",
     "EmailOutreach",
     "CrmOpcao",
+    "ConfigApp",
     # pessoal
     "PerfilMestre",
     "Vaga",
