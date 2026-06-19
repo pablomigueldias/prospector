@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, settings
 from app.db.models.config_app import ConfigApp
+from app.db.session import get_session
 
 
 class ConfigError(ValueError):
@@ -126,9 +127,10 @@ async def aplicar(session: AsyncSession) -> int:
     return n
 
 
-async def listar(session: AsyncSession) -> list[dict]:
+async def listar() -> list[dict]:
     """Catálogo com o valor efetivo atual, o default e se está sobrescrito."""
-    rows = (await session.execute(select(ConfigApp))).scalars().all()
+    async with get_session() as session:
+        rows = (await session.execute(select(ConfigApp))).scalars().all()
     sobrescritos = {r.chave for r in rows}
     return [
         {
@@ -149,24 +151,25 @@ async def listar(session: AsyncSession) -> list[dict]:
     ]
 
 
-async def atualizar(session: AsyncSession, mudancas: dict[str, Any]) -> None:
+async def atualizar(mudancas: dict[str, Any]) -> None:
     """Valida, faz upsert dos overrides e reaplica no `settings`."""
     if not mudancas:
         return
-    for chave, valor in mudancas.items():
-        item = _POR_CHAVE.get(chave)
-        if item is None:
-            raise ConfigError(f"chave desconhecida: {chave}")
-        tipado = _parse(item, valor)  # valida
-        texto = _serializar(tipado)
-        existente = (
-            await session.execute(
-                select(ConfigApp).where(ConfigApp.chave == chave)
-            )
-        ).scalar_one_or_none()
-        if existente is not None:
-            existente.valor = texto
-        else:
-            session.add(ConfigApp(chave=chave, valor=texto))
-    await session.commit()
-    await aplicar(session)
+    async with get_session() as session:
+        for chave, valor in mudancas.items():
+            item = _POR_CHAVE.get(chave)
+            if item is None:
+                raise ConfigError(f"chave desconhecida: {chave}")
+            tipado = _parse(item, valor)  # valida
+            texto = _serializar(tipado)
+            existente = (
+                await session.execute(
+                    select(ConfigApp).where(ConfigApp.chave == chave)
+                )
+            ).scalar_one_or_none()
+            if existente is not None:
+                existente.valor = texto
+            else:
+                session.add(ConfigApp(chave=chave, valor=texto))
+        await session.commit()
+        await aplicar(session)
