@@ -5,6 +5,7 @@
 
 import { coreApi } from './core';
 import { prospectorApi } from './prospector';
+import { crmApi } from './crm';
 import { outreachApi } from './outreach';
 import { pessoalApi } from './pessoal';
 import { freelaApi } from './freela';
@@ -16,6 +17,7 @@ export { API_URL } from './client';
 export const api = {
   ...coreApi,
   ...prospectorApi,
+  ...crmApi,
   ...outreachApi,
   ...pessoalApi,
   ...freelaApi,

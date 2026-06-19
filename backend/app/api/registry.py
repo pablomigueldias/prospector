@@ -37,6 +37,18 @@ _AGENTS: list[Agent] = [
         },
     ),
     Agent(
+        slug="crm",
+        name="CRM",
+        description=(
+            "Suas empresas, contatos e pipeline — dentro do sistema, "
+            "sem depender do Notion."
+        ),
+        icon="ti-users",
+        status="active",
+        order=12,  # entre prospector (10) e copywriter (15)
+        capabilities={"empresas": True, "kanban": True, "contatos": True},
+    ),
+    Agent(
         slug="copywriter",
         name="Copywriter",
         description=(

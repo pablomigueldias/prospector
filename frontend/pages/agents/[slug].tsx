@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { permissaoDoAgente } from '@/lib/permissions';
 import { useProspectorHistory } from '@/hooks/useProspector';
 import  CopywriterScreen  from '@/components/prospector/CopywriterScreen';
+import CrmScreen from '@/components/crm/CrmScreen';
 import OutreachScreen from '@/components/prospector/OutreachScreen';
 import PerfilMestreScreen from '@/components/perfil/PerfilMestreScreen';
 import VagasScreen from '@/components/vagas/VagasScreen';
@@ -72,6 +73,8 @@ export default function AgentPage() {
       <DashboardLayout currentAgentName={agent.name}>
         {agent.slug === 'prospector' ? (
   <ProspectorScreen agents={agents} />
+) : agent.slug === 'crm' ? (
+  <CrmScreen />
 ) : agent.slug === 'copywriter' ? (
   <CopywriterScreen />
 ) : agent.slug === 'outreach' ? (
