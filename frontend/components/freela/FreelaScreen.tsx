@@ -7,6 +7,7 @@ import { FilaProjetos } from '@/components/freela/FilaProjetos';
 import { Kanban } from '@/components/freela/Kanban';
 import { MetaForecast } from '@/components/freela/MetaForecast';
 import { NovoProjetoForm } from '@/components/freela/NovoProjetoForm';
+import { OndeInsistir } from '@/components/freela/OndeInsistir';
 import { PerdaDialog } from '@/components/freela/PerdaDialog';
 import { PlanoMetaPanel } from '@/components/freela/PlanoMetaPanel';
 import { Precificador } from '@/components/freela/Precificador';
@@ -19,6 +20,7 @@ import {
   useFreelaMetricas,
   useFreelaPlataformas,
   useFreelaProjetos,
+  useFreelaTaxaPorStack,
 } from '@/hooks/useFreela';
 import { type FreelaKanbanItem } from '@/lib/types';
 
@@ -38,6 +40,7 @@ export default function FreelaScreen() {
   const projetos = useFreelaProjetos();
   const plataformas = useFreelaPlataformas();
   const clientes = useFreelaClientes();
+  const taxaStack = useFreelaTaxaPorStack();
   const acoes = useFreelaActions();
 
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -115,6 +118,8 @@ export default function FreelaScreen() {
       </div>
 
       <PlanoMetaPanel refreshKey={m?.fechadas ?? 0} />
+
+      <OndeInsistir itens={taxaStack.itens} loading={taxaStack.loading} />
 
       {!coldStart && <MetaForecast m={m} loading={metricas.loading} />}
 

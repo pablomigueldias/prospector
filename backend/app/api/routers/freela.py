@@ -36,6 +36,7 @@ from app.api.schemas.freela import (
     PropostaUpdate,
     RedigirRequest,
     RedigirResponse,
+    TaxaPorStackResponse,
 )
 from app.api.services.pessoal import freela_service
 from app.api.services.pessoal.freela_service import FreelaError
@@ -80,6 +81,15 @@ async def kanban() -> KanbanResponse:
 async def metricas() -> MetricasResponse:
     try:
         return await freela_service.metricas()
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/metricas/por-stack", response_model=TaxaPorStackResponse,
+            summary="Taxa de resposta por stack/categoria — onde insistir")
+async def metricas_por_stack() -> TaxaPorStackResponse:
+    try:
+        return await freela_service.taxa_por_stack()
     except Exception as e:
         raise _handle(e)
 

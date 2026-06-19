@@ -8,6 +8,8 @@ from app.api.schemas.freela import (
     KanbanResponse,
     MetricasResponse,
     PropostaKanbanItem,
+    TaxaPorStackItem,
+    TaxaPorStackResponse,
 )
 from app.api.services._helpers import r2 as _r2
 from app.db.models.pessoal.freela.proposta import STATUS_PROPOSTA
@@ -95,3 +97,47 @@ async def metricas() -> MetricasResponse:
         tempo_medio_resposta_horas=tempo_resposta,
         valor_hora_real=valor_hora_real,
     )
+
+
+# Status que contam como "o cliente respondeu" (espelha metricas()).
+_RESPONDIDAS = {"respondida", "negociando", "fechada"}
+
+
+async def taxa_por_stack(min_enviadas: int = 2) -> TaxaPorStackResponse:
+    """Taxa de resposta por stack/categoria — onde gastar proposta rende mais.
+
+    Cruza cada proposta enviada (status != rascunho) com o `stack` do projeto
+    (da análise) e mede quantas o cliente respondeu. Só mostra stacks com pelo
+    menos `min_enviadas` propostas, pra não tirar conclusão de amostra de 1.
+    """
+    async with get_session() as session:
+        linhas = await FreelaRepository(session).propostas_status_e_analise()
+
+    enviadas: dict[str, int] = {}
+    respondidas: dict[str, int] = {}
+    for status, analise in linhas:
+        if status == "rascunho":
+            continue
+        stacks = (analise or {}).get("stack") or []
+        respondeu = status in _RESPONDIDAS
+        for tag in stacks:
+            chave = str(tag).strip()
+            if not chave:
+                continue
+            enviadas[chave] = enviadas.get(chave, 0) + 1
+            if respondeu:
+                respondidas[chave] = respondidas.get(chave, 0) + 1
+
+    itens = [
+        TaxaPorStackItem(
+            stack=tag,
+            enviadas=env,
+            respondidas=respondidas.get(tag, 0),
+            taxa_resposta=_r2(respondidas.get(tag, 0) / env),
+        )
+        for tag, env in enviadas.items()
+        if env >= min_enviadas
+    ]
+    # Onde insistir primeiro: maior taxa, desempate por volume.
+    itens.sort(key=lambda i: (-i.taxa_resposta, -i.enviadas))
+    return TaxaPorStackResponse(itens=itens)

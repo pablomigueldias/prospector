@@ -246,6 +246,18 @@ class MetricasResponse(BaseModel):
     valor_hora_real: float | None = None             # líquido/hora das fechadas
 
 
+class TaxaPorStackItem(BaseModel):
+    """Taxa de resposta de uma stack/categoria — onde insistir."""
+    stack: str
+    enviadas: int
+    respondidas: int
+    taxa_resposta: float       # respondidas / enviadas
+
+
+class TaxaPorStackResponse(BaseModel):
+    itens: list[TaxaPorStackItem] = Field(default_factory=list)
+
+
 # ══════════════════════════════════════════════════════════════════
 # Motor da meta (matemática reversa + rampa — sem IA)
 # ══════════════════════════════════════════════════════════════════

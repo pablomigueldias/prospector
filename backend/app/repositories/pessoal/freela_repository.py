@@ -176,6 +176,16 @@ class FreelaRepository:
         result = await self.session.execute(stmt)
         return {status: int(qtd) for status, qtd in result.all()}
 
+    async def propostas_status_e_analise(
+        self,
+    ) -> list[tuple[str, dict | None]]:
+        """(status da proposta, analise_json do projeto) — pra taxa por stack."""
+        stmt = select(Proposta.status, Projeto.analise_json).join(
+            Projeto, Projeto.id == Proposta.projeto_id
+        )
+        result = await self.session.execute(stmt)
+        return [(row[0], row[1]) for row in result.all()]
+
     async def soma_liquido_fechado(self) -> tuple[float, int]:
         """(soma do líquido das fechadas, quantidade de fechadas)."""
         stmt = select(

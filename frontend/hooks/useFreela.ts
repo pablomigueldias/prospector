@@ -46,6 +46,11 @@ export function useFreelaClientes() {
   return { ...result, items: result.data ?? [] };
 }
 
+export function useFreelaTaxaPorStack() {
+  const result = useFetch(() => api.freelaTaxaPorStack(), []);
+  return { ...result, itens: result.data?.itens ?? [] };
+}
+
 export function useFreelaProposta(id: string | undefined) {
   const result = useFetch<FreelaProposta>(
     () => (id ? api.freelaPropostaDetalhe(id) : Promise.reject(new Error('sem id'))),

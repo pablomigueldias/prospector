@@ -63,6 +63,17 @@ export interface FreelaProjetoCreate {
   publicado_em?: string | null;
 }
 
+export interface FreelaTaxaPorStackItem {
+  stack: string;
+  enviadas: number;
+  respondidas: number;
+  taxa_resposta: number; // 0..1
+}
+
+export interface FreelaTaxaPorStackResponse {
+  itens: FreelaTaxaPorStackItem[];
+}
+
 export interface FreelaChecklistItem {
   criterio: string;
   ok: boolean;
