@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { CartaPdf } from '@/components/vagas/CartaPdf';
 import { api } from '@/lib/api';
 import type { CandidaturaAnalise, CandidaturaEntrega } from '@/lib/types';
 
@@ -14,10 +15,14 @@ type Fase = 'idle' | 'analisando' | 'checkpoint' | 'preparando' | 'pronto';
 export function CoordenadorCandidatura({
   vagaId,
   semPerfil,
+  empresa,
+  vagaTitulo,
   onMudou,
 }: {
   vagaId: string;
   semPerfil: boolean;
+  empresa?: string | null;
+  vagaTitulo?: string | null;
   onMudou: () => void;
 }) {
   const [fase, setFase] = useState<Fase>('idle');
@@ -156,14 +161,13 @@ export function CoordenadorCandidatura({
             </details>
           )}
           {entrega.carta && (
-            <details className="rounded-lg border border-line bg-surface p-3.5">
-              <summary className="font-semibold text-[13px] text-ink cursor-pointer">
-                Carta de apresentação
-              </summary>
-              <pre className="text-[12.5px] text-ink-soft whitespace-pre-wrap font-sans mt-2 mb-0 leading-relaxed">
-                {entrega.carta.corpo}
-              </pre>
-            </details>
+            <CartaPdf
+              carta={entrega.carta}
+              nome={entrega.curriculo?.nome ?? ''}
+              contato={entrega.curriculo?.contato ?? null}
+              empresa={empresa}
+              vagaTitulo={vagaTitulo}
+            />
           )}
           <p className="text-[12px] text-ink-mute m-0">
             CV e carta também ficaram salvos na vaga (rascunhos). Revise antes de enviar.

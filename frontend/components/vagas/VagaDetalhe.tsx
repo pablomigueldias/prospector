@@ -1,9 +1,17 @@
 import { useState } from 'react';
 
+import { CartaPdf } from '@/components/vagas/CartaPdf';
 import { CoordenadorCandidatura } from '@/components/vagas/CoordenadorCandidatura';
 import { CurriculoPdf } from '@/components/vagas/CurriculoPdf';
+import { usePerfil } from '@/hooks/usePerfil';
 import { useVaga, useVagaActions } from '@/hooks/useVagas';
-import { type CurriculoVaga, type GerarCandidaturaResponse, type Vaga, type VagaStatus } from '@/lib/types';
+import {
+  type ContatoPessoal,
+  type CurriculoVaga,
+  type GerarCandidaturaResponse,
+  type Vaga,
+  type VagaStatus,
+} from '@/lib/types';
 import { BlocoSalario, Campo, MatchPill, STATUS_LABEL, STATUS_ORDEM, Tags } from './_shared';
 
 // ── Detalhe (detail) ──────────────────────────────────────────────
@@ -20,6 +28,7 @@ export function VagaDetalhe({
   onExcluida: () => void;
 }) {
   const { vaga, loading, refetch } = useVaga(vagaId);
+  const { perfil } = usePerfil();
   const acoes = useVagaActions();
   const [candidatura, setCandidatura] = useState<GerarCandidaturaResponse | null>(
     null,
@@ -225,6 +234,8 @@ export function VagaDetalhe({
         <CoordenadorCandidatura
           vagaId={vagaId}
           semPerfil={semPerfil}
+          empresa={vaga.empresa}
+          vagaTitulo={vaga.titulo}
           onMudou={() => {
             void refetch();
             onMudou();
@@ -320,12 +331,32 @@ export function VagaDetalhe({
       )}
 
       {/* Rascunho gerado */}
-      {candidatura && <RascunhoCandidatura dados={candidatura} />}
+      {candidatura && (
+        <RascunhoCandidatura
+          dados={candidatura}
+          nome={curriculoMostrar?.nome ?? perfil?.nome ?? ''}
+          contato={curriculoMostrar?.contato ?? perfil?.contato ?? null}
+          empresa={vaga.empresa}
+          vagaTitulo={vaga.titulo}
+        />
+      )}
     </div>
   );
 }
 
-function RascunhoCandidatura({ dados }: { dados: GerarCandidaturaResponse }) {
+function RascunhoCandidatura({
+  dados,
+  nome,
+  contato,
+  empresa,
+  vagaTitulo,
+}: {
+  dados: GerarCandidaturaResponse;
+  nome: string;
+  contato?: ContatoPessoal | null;
+  empresa?: string | null;
+  vagaTitulo?: string | null;
+}) {
   return (
     <div className="card p-5">
       <h4 className="font-display font-semibold text-sm text-ink mb-3">
@@ -348,7 +379,15 @@ function RascunhoCandidatura({ dados }: { dados: GerarCandidaturaResponse }) {
       ))}
 
       {dados.carta && (
-        <BlocoTexto rotulo="Carta de apresentação" corpo={dados.carta.corpo} />
+        <div className="mt-3">
+          <CartaPdf
+            carta={dados.carta}
+            nome={nome}
+            contato={contato}
+            empresa={empresa}
+            vagaTitulo={vagaTitulo}
+          />
+        </div>
       )}
     </div>
   );

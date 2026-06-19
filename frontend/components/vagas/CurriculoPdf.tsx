@@ -1,6 +1,7 @@
 'use client';
 
 import type { CurriculoVaga } from '@/lib/types';
+import { esc, imprimirDocumento, slug, slugNome } from './_pdf';
 
 /**
  * Currículo ATS-friendly: coluna única, fonte web-safe, títulos de seção
@@ -11,40 +12,6 @@ import type { CurriculoVaga } from '@/lib/types';
  * 1) parsing limpo (sem tabela/coluna/ícone) e 2) palavras-chave EXATAS da vaga
  * — essas vêm do texto que a IA gera espelhando a descrição.
  */
-
-const esc = (s?: string | null): string =>
-  String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-/** Vira "Pablo Dias" → "pablo-dias" (sem acento, minúsculo, hífen). */
-const slug = (s?: string | null): string =>
-  String(s ?? '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60);
-
-/**
- * Nome do candidato pro arquivo: só primeiro + último nome, colados sem
- * separador ("Pablo Miguel Dias Ortiz" → "pabloortiz").
- */
-const slugNome = (s?: string | null): string => {
-  const partes = String(s ?? '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]+/g, ' ')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!partes.length) return '';
-  const nome = partes.length === 1 ? partes : [partes[0], partes[partes.length - 1]];
-  return nome.join('').slice(0, 40);
-};
 
 /**
  * Nome do arquivo que o navegador sugere no "Salvar como PDF" — ele usa o
@@ -207,54 +174,13 @@ function ajustarParaUmaPagina(doc: Document) {
   }
 }
 
-/**
- * Imprime o currículo via iframe oculto (sem popup, sem travar a página).
- * Dispara o diálogo UMA vez só e remove o iframe depois.
- */
+/** Imprime o currículo, encolhendo pra 1 página quando dá. */
 function imprimir(c: CurriculoVaga, vagaTitulo?: string | null) {
-  const iframe = document.createElement('iframe');
-  iframe.setAttribute('aria-hidden', 'true');
-  // precisa de largura A4 real (offscreen) pra medir a altura como no print
-  iframe.style.cssText =
-    'position:fixed;left:-9999px;top:0;width:210mm;height:297mm;border:0;';
-  document.body.appendChild(iframe);
-
-  const win = iframe.contentWindow;
-  const doc = win?.document;
-  if (!win || !doc) {
-    iframe.remove();
-    return;
-  }
-  doc.open();
-  doc.write(curriculoHtml(c, vagaTitulo));
-  doc.close();
-
-  // O "Salvar como PDF" sugere o nome a partir do <title> da PÁGINA principal
-  // (não do iframe). Troca temporariamente e restaura depois de imprimir.
-  const nomeArquivo = nomeArquivoPdf(c.nome, vagaTitulo);
-  const tituloOriginal = document.title;
-
-  let feito = false;
-  const imprimirUmaVez = () => {
-    if (feito) return;
-    feito = true;
-    try {
-      ajustarParaUmaPagina(doc);
-      document.title = nomeArquivo;
-      win.focus();
-      win.print();
-    } finally {
-      // restaura o título e tira o iframe depois que o diálogo fecha
-      setTimeout(() => {
-        document.title = tituloOriginal;
-        iframe.remove();
-      }, 1000);
-    }
-  };
-
-  iframe.onload = imprimirUmaVez;
-  // fallback se o onload não disparar após o document.write
-  setTimeout(imprimirUmaVez, 600);
+  imprimirDocumento(
+    curriculoHtml(c, vagaTitulo),
+    nomeArquivoPdf(c.nome, vagaTitulo),
+    ajustarParaUmaPagina,
+  );
 }
 
 export function CurriculoPdf({

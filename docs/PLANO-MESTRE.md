@@ -166,6 +166,7 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 - [ ] 🔴 **Follow-up / lembretes** (`candidatei_em`/`proximo_followup_em`; agendador varre e avisa no Telegram; gerar follow-up rascunho). *(migração)*
 - [ ] 🟡 **Prep de entrevista** (status=entrevista → perguntas técnicas+STAR+perguntas pra fazer+pontos fracos; analyzer `entrevista`).
 - [x] ✅ **Plano de ação pros gaps** (painel "O que estudar" + `plano_gaps` por vaga).
+- [x] ✅ **Carta de apresentação como documento (PDF)** — a carta que muitas vagas pedem agora baixa como PDF formatado (cabeçalho nome/contato + data + ref. da vaga + corpo), nome `carta-pabloortiz-{vaga}.pdf`. Componente `CartaPdf` reusa o motor de impressão do currículo (`components/vagas/_pdf.ts`); aparece no `VagaDetalhe` e no coordenador.
 - [ ] 🟢 **Deduplicação** ao cadastrar (mesmo link/empresa+título).
 - [ ] 🟢 **Kanban do pipeline** (arrastar card muda status).
 - [ ] 🟢 **Enviar candidatura com 1 clique** (opt-in, mailer, grava `enviado_em`, confirmação explícita).
