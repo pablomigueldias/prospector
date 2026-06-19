@@ -11,8 +11,12 @@ from app.collectors.website.client import fetch_html
 
 
 def texto_de_url(url: str) -> str | None:
-    """Busca a página e devolve o texto visível (sem scripts/estilos), ou None."""
-    html = fetch_html(url)
+    """Busca a página e devolve o texto visível (sem scripts/estilos), ou None.
+
+    Força o Playwright (navegador real): páginas de job board renderizam muito
+    conteúdo via JS, então o navegador pega o máximo possível do que é público.
+    """
+    html = fetch_html(url, force_playwright=True)
     if not html:
         return None
     soup = BeautifulSoup(html, "html.parser")

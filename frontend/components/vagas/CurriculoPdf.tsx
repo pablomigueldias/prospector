@@ -29,12 +29,30 @@ const slug = (s?: string | null): string =>
     .slice(0, 60);
 
 /**
+ * Nome do candidato pro arquivo: só primeiro + último nome, colados sem
+ * separador ("Pablo Miguel Dias Ortiz" → "pabloortiz").
+ */
+const slugNome = (s?: string | null): string => {
+  const partes = String(s ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!partes.length) return '';
+  const nome = partes.length === 1 ? partes : [partes[0], partes[partes.length - 1]];
+  return nome.join('').slice(0, 40);
+};
+
+/**
  * Nome do arquivo que o navegador sugere no "Salvar como PDF" — ele usa o
- * <title> do documento. Vira `curriculo-{nome}-{vaga}` (sem `.pdf`; o
+ * <title> do documento. Vira `curriculo-pabloortiz-{vaga}` (sem `.pdf`; o
  * navegador anexa a extensão).
  */
 function nomeArquivoPdf(nome: string, vaga?: string | null): string {
-  return ['curriculo', slug(nome), slug(vaga)].filter(Boolean).join('-');
+  return ['curriculo', slugNome(nome), slug(vaga)].filter(Boolean).join('-');
 }
 
 const linhaContato = (c: CurriculoVaga['contato']): string => {
