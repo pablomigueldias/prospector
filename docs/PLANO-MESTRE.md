@@ -162,7 +162,7 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 - [ ] 🟡 **Nota de confiança / anti-alucinação** no match (não inflar aderência sem prova no Perfil Mestre).
 
 ### 4.2 Backlog de conveniência (alta utilidade)
-- [ ] 🔴 **Importar vaga por URL** (auto-preencher via collector website + analyzer `vaga_extracao`; fallback: colar texto).
+- [x] ✅ **Importar vaga por URL** — colar o link no `NovaVagaForm` busca a página (`collectors/website/pagina.py`) e o extrator (`analyzers/vaga/extrator`) pré-preenche descrição/título/empresa/localização/modelo/senioridade; fallback "Auto-preencher do texto". *Obs.: campos atrás de login (ex.: orçamento na Workana) não vêm no fetch anônimo.*
 - [ ] 🔴 **Follow-up / lembretes** (`candidatei_em`/`proximo_followup_em`; agendador varre e avisa no Telegram; gerar follow-up rascunho). *(migração)*
 - [ ] 🟡 **Prep de entrevista** (status=entrevista → perguntas técnicas+STAR+perguntas pra fazer+pontos fracos; analyzer `entrevista`).
 - [x] ✅ **Plano de ação pros gaps** (painel "O que estudar" + `plano_gaps` por vaga).

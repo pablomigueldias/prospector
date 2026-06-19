@@ -85,6 +85,7 @@ export default function VagasScreen() {
       {mostrarForm && (
         <NovaVagaForm
           onSubmit={handleCriar}
+          onExtrair={acoes.extrair}
           loading={acoes.loading}
           erro={acoes.error?.message ?? null}
         />

@@ -4,7 +4,7 @@ Isolado dos schemas da Reative (prospector/copywriter/outreach).
 """
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # ══════════════════════════════════════════════════════════════════
 # Perfil Mestre (quem EU sou)
@@ -137,6 +137,31 @@ class VagaUpdate(BaseModel):
     senioridade: str | None = None
     notas: str | None = None
     status: str | None = None
+
+
+class ExtrairVagaRequest(BaseModel):
+    """Origem da extração: texto colado OU url da vaga (ao menos um)."""
+
+    texto: str | None = Field(None, description="Texto da vaga colado na mão")
+    url: str | None = Field(None, description="URL da vaga — busca e lê a página")
+
+    @model_validator(mode="after")
+    def _exige_origem(self):
+        if not (self.texto and self.texto.strip()) and not (self.url and self.url.strip()):
+            raise ValueError("Informe o texto colado ou a URL da vaga.")
+        return self
+
+
+class ExtrairVagaResponse(BaseModel):
+    """Campos pré-preenchidos a partir do texto/URL (revisar antes de salvar)."""
+
+    titulo: str | None = None
+    descricao: str | None = None  # texto-fonte (colado ou lido da URL)
+    link: str | None = None       # eco da URL quando importado por link
+    empresa: str | None = None
+    localizacao: str | None = None
+    modelo: str | None = None
+    senioridade: str | None = None
 
 
 class FaixaSalarial(BaseModel):

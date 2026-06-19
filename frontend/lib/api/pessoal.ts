@@ -4,6 +4,7 @@ import { request } from './client';
 import type {
   CertSyncResultado,
   EstudoVagas,
+  ExtrairVaga,
   PerfilMestre,
   Vaga,
   VagaCreate,
@@ -80,6 +81,14 @@ export const pessoalApi = {
       method: 'POST',
       body,
       timeoutMs: 15_000,
+    });
+  },
+
+  vagaExtrair(origem: { texto?: string; url?: string }): Promise<ExtrairVaga> {
+    return request<ExtrairVaga>('/api/pessoal/vagas/extrair', {
+      method: 'POST',
+      body: origem,
+      timeoutMs: 60_000,
     });
   },
 

@@ -6,6 +6,7 @@ import { ApiError } from '@/lib/types';
 import type {
   AnalisarVagaResponse,
   EstudoVagas,
+  ExtrairVaga,
   GerarCandidaturaResponse,
   GerarCurriculoResponse,
   Vaga,
@@ -72,6 +73,11 @@ export function useVagaActions() {
     (body: VagaCreate) => wrap<Vaga>(() => api.vagaCriar(body))(),
     [],
   );
+  const extrair = useCallback(
+    (origem: { texto?: string; url?: string }) =>
+      wrap<ExtrairVaga>(() => api.vagaExtrair(origem))(),
+    [],
+  );
   const atualizar = useCallback(
     (id: string, body: Partial<Vaga>) =>
       wrap<Vaga>(() => api.vagaAtualizar(id, body))(),
@@ -106,6 +112,7 @@ export function useVagaActions() {
     loading,
     error,
     criar,
+    extrair,
     atualizar,
     remover,
     analisar,

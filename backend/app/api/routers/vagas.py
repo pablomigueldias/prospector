@@ -6,6 +6,8 @@ from app.api.schemas.pessoal import (
     AnalisarVagaResponse,
     CandidaturaEmailItem,
     EstudoVagasResponse,
+    ExtrairVagaRequest,
+    ExtrairVagaResponse,
     GerarCandidaturaRequest,
     GerarCandidaturaResponse,
     GerarCurriculoResponse,
@@ -81,6 +83,15 @@ async def estudo() -> EstudoVagasResponse:
 async def criar(body: VagaCreate) -> VagaResponse:
     try:
         return await vaga_service.criar_vaga(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/extrair", response_model=ExtrairVagaResponse,
+             summary="Extrai campos do texto colado ou da URL (pré-preenche o form)")
+async def extrair(body: ExtrairVagaRequest) -> ExtrairVagaResponse:
+    try:
+        return await vaga_service.extrair_vaga(body.texto, body.url)
     except Exception as e:
         raise _handle(e)
 

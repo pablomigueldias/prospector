@@ -3,6 +3,7 @@ geração de candidatura (Fase 4). PARA no rascunho: nada aqui envia e-mail.
 """
 from __future__ import annotations
 
+import asyncio
 import re
 import unicodedata
 import uuid
@@ -21,12 +22,17 @@ from app.analyzers.vaga.parser import parse_resposta as parse_vaga
 from app.analyzers.vaga.prompt_builder import (
     construir_prompt as construir_prompt_vaga,
 )
+from app.analyzers.vaga.extrator.parser import parse_resposta as parse_extracao
+from app.analyzers.vaga.extrator.prompt_builder import (
+    construir_prompt as construir_prompt_extracao,
+)
 from app.api.schemas.pessoal import (
     AnalisarVagaResponse,
     AnaliseVaga,
     CandidaturaEmailItem,
     CurriculoVaga,
     EstudoVagasResponse,
+    ExtrairVagaResponse,
     GerarCandidaturaRequest,
     GerarCandidaturaResponse,
     GerarCurriculoResponse,
@@ -42,6 +48,7 @@ from app.api.schemas.pessoal import (
 from app.api.services._helpers import iso as _iso
 from app.api.services._helpers import parse_uuid
 from app.api.services.pessoal.perfil_service import get_perfil
+from app.collectors.website.pagina import texto_de_url
 from app.db.models.pessoal.vaga import Vaga
 from app.db.session import get_session
 from app.repositories.pessoal.vaga_repository import VagaRepository
@@ -94,6 +101,37 @@ async def criar_vaga(payload: VagaCreate) -> VagaResponse:
     async with get_session() as session:
         vaga = await VagaRepository(session).create(payload.model_dump())
         return _to_response(vaga)
+
+
+async def extrair_vaga(
+    texto: str | None = None, url: str | None = None
+) -> ExtrairVagaResponse:
+    """Campos pré-preenchidos a partir do texto colado OU da URL (não salva).
+
+    Com URL, busca a página (httpx/Playwright, em thread por ser bloqueante) e
+    usa o texto visível como fonte. Devolve `descricao` (texto-fonte) e `link`
+    pra o form já guardar a origem.
+    """
+    url = (url or "").strip() or None
+    texto = (texto or "").strip() or None
+    if not texto and not url:
+        raise VagaError("Cole o texto da vaga ou informe a URL.")
+
+    if not texto and url:
+        texto = await asyncio.to_thread(texto_de_url, url)
+        if not texto:
+            raise VagaError(
+                "Não consegui ler a página dessa URL. Cole o texto da vaga na mão."
+            )
+
+    prompt = construir_prompt_extracao(texto)
+    resposta = _chamar_llm(prompt, agente="vaga", operacao="extrair")
+    dados = parse_extracao(resposta)
+    if dados is None:
+        raise VagaError("A IA não conseguiu extrair os campos. Preencha na mão.")
+    dados.descricao = texto
+    dados.link = url
+    return dados
 
 
 async def listar_vagas(

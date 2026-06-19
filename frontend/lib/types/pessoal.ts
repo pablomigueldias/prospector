@@ -173,6 +173,16 @@ export interface VagaCreate {
   notas?: string | null;
 }
 
+export interface ExtrairVaga {
+  titulo?: string | null;
+  descricao?: string | null; // texto-fonte (colado ou lido da URL)
+  link?: string | null;      // eco da URL quando importado por link
+  empresa?: string | null;
+  localizacao?: string | null;
+  modelo?: string | null;
+  senioridade?: string | null;
+}
+
 export interface VagaListItem {
   id: string;
   titulo: string;
