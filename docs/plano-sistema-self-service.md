@@ -31,7 +31,7 @@ cockpit no `DashboardLayout` — é onde o login pousa e onde o logo do menu apo
 Reusa `useAgents`/`registry`, `ResumoNoite` (MAS-4) e `IconFromName`. Verificado:
 `tsc` + `next lint` verdes.
 
-### S2 — Observabilidade & Custos de IA
+### S2 — Observabilidade & Custos de IA ✅ FEITO (2026-06-18)
 **Dor:** você não vê o que os agentes gastam nem o que falha — isso mora só no banco
 (`ai_call`, `pipeline_events`).
 **Tela:** `/observabilidade` — custo/tokens por agente e por dia, latência, taxa de
@@ -39,6 +39,16 @@ erro, últimas chamadas. Gráficos com Recharts (ver `[[grafico-recharts]]`).
 **Backend:** endpoint de agregação sobre `ai_call` (provavelmente já há um router
 `observability` — estender). 
 **Done:** "quanto meu sistema gastou de IA esta semana e onde" numa tela.
+
+**Entregue:** `observability_service.resumo(dias)` agrega `ai_calls` —
+totais (chamadas/falhas/taxa_erro/tokens/custo/latência), **por agente**,
+**série diária** (pros gráficos) e **últimas 20 chamadas**. Estendido o router
+`observability` com `GET /api/observability/resumo?dias=N` (async, leitura via
+`get_session`). Tela `/observabilidade`: seletor 7/30/90d, KPIs, `ComposedChart`
+(barra custo + linha chamadas, cores oklch como o `RelatorioSection`), tabela por
+agente e lista das últimas chamadas (pontinho verde/vermelho). Link no Sidebar
+(substituiu o "Métricas" desabilitado). Verificado **live** no dev: $0.2552 / 80
+chamadas / 6 agentes / 7 dias. `tsc`/`lint`/`ruff` verdes.
 
 ### S3 — Configurações na UI (sem mexer em `.env`/`config.py`) ✅ FEITO (2026-06-18)
 **Dor:** ligar/desligar briefing, mudar a hora, trocar `llm_provider` (gemini/groq),

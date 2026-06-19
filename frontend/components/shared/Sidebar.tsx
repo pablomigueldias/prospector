@@ -122,7 +122,17 @@ export function Sidebar() {
               <span>Agendamentos</span>
             </Link>
           )}
-          <SidebarStaticItem icon={<IconChartBar />} label="Métricas" disabled />
+          {hasPermission('usuarios.gerenciar') && (
+            <Link
+              href="/observabilidade"
+              className="flex items-center gap-2.5 px-2.5 py-2.5 rounded text-[13.5px] font-medium text-ink-soft hover:bg-bg-alt hover:text-ink transition-colors"
+            >
+              <span className="text-base text-ink-mute w-4">
+                <IconChartBar />
+              </span>
+              <span>Observabilidade</span>
+            </Link>
+          )}
           <SidebarStaticItem icon={<IconSettings />} label="Conexões" disabled />
         </nav>
       </div>

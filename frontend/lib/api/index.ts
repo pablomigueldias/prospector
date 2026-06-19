@@ -7,6 +7,7 @@ import { coreApi } from './core';
 import { prospectorApi } from './prospector';
 import { configApi } from './config';
 import { agendamentosApi } from './agendamentos';
+import { observabilidadeApi } from './observabilidade';
 import { crmApi } from './crm';
 import { outreachApi } from './outreach';
 import { pessoalApi } from './pessoal';
@@ -21,6 +22,7 @@ export const api = {
   ...prospectorApi,
   ...configApi,
   ...agendamentosApi,
+  ...observabilidadeApi,
   ...crmApi,
   ...outreachApi,
   ...pessoalApi,
