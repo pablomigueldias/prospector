@@ -37,9 +37,18 @@ class Settings(BaseSettings):
     notion_token: str
     notion_db_empresas: str
     notion_db_contatos: str
+    # Bases do CRM espelhadas do Notion (descobertas via search). Defaults =
+    # IDs reais do workspace do Pablo; trocáveis por env.
+    notion_db_negocios: str = "35a6c23e-8c3c-80d0-a9bf-fd7740ca5b67"
+    notion_db_atividades: str = "35a6c23e-8c3c-8008-a842-d750e897cdf4"
+    notion_db_projetos: str = "35a6c23e-8c3c-8012-9054-eecead911b30"
 
     gemini_api_key: str = ""
     groq_api_key: str = ""
+
+    # Pasta pública do Drive com os certificados do Pablo (sync autônomo do
+    # Perfil Mestre). Só o ID da pasta. Trocar = trocar a fonte.
+    certificados_drive_folder_id: str = "1utrqB5rxd8OLAm5X9y0MuUjptlZuBN4U"
 
     # Storage S3-compatível (MinIO). Defaults batem com o compose de dev.
     s3_endpoint: str = "http://localhost:9000"
@@ -69,6 +78,8 @@ class Settings(BaseSettings):
     lembretes_hora: int = 8              # hora local (America/Sao_Paulo) do envio
     lembretes_dias_antes: int = 3        # avisa boletos vencendo em até N dias
     orcamento_alerta_pct: int = 80       # avisa categorias acima de X% do teto
+    briefing_enabled: bool = True        # MAS-4: "Resumo da Noite" no Telegram
+    briefing_hora: int = 18              # hora local do briefing noturno
     timezone: str = "America/Sao_Paulo"
 
     # Auth / sessão (portão de entrada). Cookie opaco httpOnly; o token vai
@@ -184,3 +195,48 @@ ESTADO_OPCOES = ["SP", "RJ", "MG", "RS", "PR", "SC", "BA", "DF"]
 DEFAULT_STATUS = "🔵 Prospect"
 DEFAULT_COMO_CONHECEU = "Outbound"
 DEFAULT_ORIGEM_CONTATO = "Network"
+
+
+# ══════════════════════════════════════════════════════════════════
+# Opções dos selects do CRM (espelham os selects do Notion).
+# Usadas pelos dropdowns do front via GET /api/crm/opcoes.
+# ══════════════════════════════════════════════════════════════════
+
+# ── Negócios ──
+ESTAGIO_NEGOCIO_OPCOES = [
+    "⚪ Lead novo",
+    "🔵 Primeiro contato",
+    "🟣 Qualificado",
+    "🟡 Briefing agendado",
+    "🟠 Briefing realizado",
+    "🔴 Proposta enviada",
+    "🔴 Em negociação",
+    "🟢 Ganho",
+    "⚪ Perdido",
+    "🟣 Standby",
+]
+PROBABILIDADE_OPCOES = ["10%", "25%", "50%", "75%", "90%"]
+ORIGEM_NEGOCIO_OPCOES = [
+    "LinkedIn", "Indicação", "Site", "Comunidade",
+    "Network", "Inbound", "Outbound", "Evento",
+]
+TIPO_SERVICO_OPCOES = [
+    "Landing page", "Site institucional", "Sistema web",
+    "Automação", "Bot", "Manutenção", "Consultoria",
+]
+
+# ── Atividades ──
+ATIVIDADE_STATUS_OPCOES = [
+    "🟡 Agendada", "🟢 Realizada", "🔴 Não compareceu", "⚪ Cancelada",
+]
+ATIVIDADE_TIPO_OPCOES = [
+    "📞 Call", "💬 WhatsApp", "✉️ E-mail",
+    "🤝 Reunião presencial", "💼 LinkedIn DM", "🎥 Videocall",
+]
+
+# ── Projetos ──
+PROJETO_STATUS_OPCOES = [
+    "🆕 Onboarding", "🛠️ Em desenvolvimento", "🚀 Em produção",
+    "👀 Em revisão", "⏸️ Pausado", "✅ Concluído",
+]
+FORMA_PAGAMENTO_OPCOES = ["À vista", "50/50", "40/30/30", "Mensal", "Outro"]
