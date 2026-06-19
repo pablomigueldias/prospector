@@ -19,6 +19,7 @@ import type {
   FreelaCapacidade,
   FreelaProjeto,
   FreelaProjetoCreate,
+  FreelaTaxaPorAnguloResponse,
   FreelaTaxaPorStackResponse,
   FreelaProjetoListResponse,
   FreelaProposta,
@@ -39,6 +40,9 @@ export const freelaApi = {
   },
   freelaMetricas(): Promise<FreelaMetricas> {
     return request<FreelaMetricas>(`${BASE}/metricas`, { timeoutMs: T });
+  },
+  freelaTaxaPorAngulo(): Promise<FreelaTaxaPorAnguloResponse> {
+    return request<FreelaTaxaPorAnguloResponse>(`${BASE}/metricas/por-angulo`, { timeoutMs: T });
   },
   freelaTaxaPorStack(): Promise<FreelaTaxaPorStackResponse> {
     return request<FreelaTaxaPorStackResponse>(`${BASE}/metricas/por-stack`, { timeoutMs: T });

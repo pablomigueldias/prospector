@@ -186,6 +186,12 @@ class FreelaRepository:
         result = await self.session.execute(stmt)
         return [(row[0], row[1]) for row in result.all()]
 
+    async def propostas_status_e_angulo(self) -> list[tuple[str, str | None]]:
+        """(status, angulo_abertura) de cada proposta — pra taxa por ângulo (A/B)."""
+        stmt = select(Proposta.status, Proposta.angulo_abertura)
+        result = await self.session.execute(stmt)
+        return [(row[0], row[1]) for row in result.all()]
+
     async def soma_horas_comprometidas(self) -> float:
         """Horas já comprometidas = soma das horas_estimadas das propostas fechadas."""
         stmt = select(

@@ -24,7 +24,7 @@
 | Módulo | Estado | Resumo |
 |---|---|---|
 | **Vagas** | ✅ bom | CRUD por JD, analisar (match/gaps/veredito), candidatura, currículo ATS, pipeline, funil, plano-de-gaps. *Pablo: "só falta lapidar o modelo de IA".* |
-| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento` com capacidade/anti-furada, "onde insistir"). **Falta:** A/B por ângulo, mais autonomia (cadeia coordenador — WIP `proposta_freela`), dnd no Kanban. |
+| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento` com capacidade/anti-furada, "onde insistir"). **Falta:** mais autonomia (cadeia coordenador — WIP `proposta_freela`), dnd no Kanban, polir §2.B/§2.D/§2.G. |
 | **CRM** | ✅ completo | 5 seções (Empresas/Contatos/Negócios/Atividades/Projetos) fora do Notion, CRUD, filtros, pipeline+forecast, ficha 360, dashboard, edição inline, drawer, opções gerenciáveis. |
 | **MAS (multi-agente)** | ✅ núcleo | Memória compartilhada (blackboard), coordenador (cadeia candidatura), outcomes, briefing noturno. Subiu a escada inteira do curso. |
 | **Self-service (Parte 1)** | ✅ núcleo | Cockpit (S1), Observabilidade (S2), Configurações na UI (S3), Agendamentos (S4), Export/Backup (S8). Falta S5–S7. |
@@ -109,7 +109,7 @@
 - [x] ✅ Painel adaptativo focado em resposta (Em conversa / Tempo até resposta).
 - [x] ✅ **Velocidade — "projeto fresco" em destaque** — coluna `publicado_em` (migração), selo 🆕 + edição inline da data, fila ordena por novo + pouco concorrido.
 - [x] ✅ **Detector de "bom 1º projeto"** — selo determinístico: pagamento verificado (pré-req) + 3 de 4 (fit alto, pouca concorrência, escopo enxuto, orçamento saudável); sobe no ranking.
-- [ ] 🟡 **A/B real por ângulo de abertura** — registrar qual ângulo (direto/prova/pergunta) foi usado e cruzar com quem respondeu.
+- [x] ✅ **A/B real por ângulo de abertura** — o redator gera 3 aberturas ROTULADAS (direto/prova/pergunta); clicar uma registra o ângulo na proposta (coluna `angulo_abertura`, migração); painel "Qual abertura converte" (`GET /metricas/por-angulo`) cruza ângulo × resposta do cliente.
 - [x] ✅ **Taxa de resposta por categoria/stack** — painel "Onde insistir" (`GET /metricas/por-stack`). ⚠️ depende de normalizar os stacks (hoje verbosos demais — ver [[freela-stack-verboso]]).
 
 ### 2.G — Alavancas de desempenho (§7–§10 do plano antigo)

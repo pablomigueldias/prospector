@@ -51,6 +51,11 @@ export function useFreelaTaxaPorStack() {
   return { ...result, itens: result.data?.itens ?? [] };
 }
 
+export function useFreelaTaxaPorAngulo() {
+  const result = useFetch(() => api.freelaTaxaPorAngulo(), []);
+  return { ...result, itens: result.data?.itens ?? [] };
+}
+
 export function useFreelaCapacidade() {
   return useFetch(() => api.freelaCapacidade(), []);
 }

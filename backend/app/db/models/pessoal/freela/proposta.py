@@ -51,6 +51,8 @@ class Proposta(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     projetos_destacados: Mapped[list | None] = mapped_column(JSONB)
     habilidades_destacadas: Mapped[list | None] = mapped_column(JSONB)
     prazo_proposto: Mapped[str | None] = mapped_column(String(100))
+    # Ângulo da 1ª linha (A/B): direto | prova | pergunta — pra medir o que converte
+    angulo_abertura: Mapped[str | None] = mapped_column(String(20))
 
     status: Mapped[str] = mapped_column(
         String(20), default="rascunho", server_default="rascunho", nullable=False

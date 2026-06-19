@@ -88,6 +88,7 @@ def _proposta_to_resp(p: Proposta) -> PropostaResponse:
         projetos_destacados=p.projetos_destacados or [],
         habilidades_destacadas=p.habilidades_destacadas or [],
         prazo_proposto=p.prazo_proposto,
+        angulo_abertura=p.angulo_abertura,
         status=p.status,
         enviada_em=_iso(p.enviada_em),
         data_resposta=_iso(p.data_resposta),

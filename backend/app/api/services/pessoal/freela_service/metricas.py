@@ -9,6 +9,8 @@ from app.api.schemas.freela import (
     KanbanResponse,
     MetricasResponse,
     PropostaKanbanItem,
+    TaxaPorAnguloItem,
+    TaxaPorAnguloResponse,
     TaxaPorStackItem,
     TaxaPorStackResponse,
 )
@@ -171,3 +173,34 @@ async def taxa_por_stack(min_enviadas: int = 2) -> TaxaPorStackResponse:
     # Onde insistir primeiro: maior taxa, desempate por volume.
     itens.sort(key=lambda i: (-i.taxa_resposta, -i.enviadas))
     return TaxaPorStackResponse(itens=itens)
+
+
+async def taxa_por_angulo() -> TaxaPorAnguloResponse:
+    """Taxa de resposta por ângulo de abertura (A/B) — qual 1ª linha converte.
+
+    Cruza cada proposta enviada (status != rascunho, com ângulo marcado) com o
+    fato de o cliente ter respondido. Sem amostra mínima aqui: são só 3 ângulos.
+    """
+    async with get_session() as session:
+        linhas = await FreelaRepository(session).propostas_status_e_angulo()
+
+    enviadas: dict[str, int] = {}
+    respondidas: dict[str, int] = {}
+    for status, angulo in linhas:
+        if status == "rascunho" or not angulo:
+            continue
+        enviadas[angulo] = enviadas.get(angulo, 0) + 1
+        if status in _RESPONDIDAS:
+            respondidas[angulo] = respondidas.get(angulo, 0) + 1
+
+    itens = [
+        TaxaPorAnguloItem(
+            angulo=ang,
+            enviadas=env,
+            respondidas=respondidas.get(ang, 0),
+            taxa_resposta=_r2(respondidas.get(ang, 0) / env),
+        )
+        for ang, env in enviadas.items()
+    ]
+    itens.sort(key=lambda i: (-i.taxa_resposta, -i.enviadas))
+    return TaxaPorAnguloResponse(itens=itens)

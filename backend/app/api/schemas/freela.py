@@ -181,6 +181,10 @@ class ProjetoListResponse(BaseModel):
 # Proposta
 # ══════════════════════════════════════════════════════════════════
 
+# Ângulo da 1ª linha da proposta (A/B) — qual abre melhor a conversa.
+ANGULOS_ABERTURA = ("direto", "prova", "pergunta")
+
+
 class PropostaBase(BaseModel):
     valor_cotado: float | None = None
     horas_estimadas: float | None = None
@@ -189,6 +193,7 @@ class PropostaBase(BaseModel):
     projetos_destacados: list[str] = Field(default_factory=list)
     habilidades_destacadas: list[str] = Field(default_factory=list)
     prazo_proposto: str | None = None
+    angulo_abertura: str | None = None    # direto | prova | pergunta (A/B)
 
 
 class PropostaCreate(PropostaBase):
@@ -271,6 +276,18 @@ class TaxaPorStackItem(BaseModel):
 
 class TaxaPorStackResponse(BaseModel):
     itens: list[TaxaPorStackItem] = Field(default_factory=list)
+
+
+class TaxaPorAnguloItem(BaseModel):
+    """Taxa de resposta por ângulo de abertura — qual 1ª linha converte mais."""
+    angulo: str                # direto | prova | pergunta
+    enviadas: int
+    respondidas: int
+    taxa_resposta: float       # respondidas / enviadas
+
+
+class TaxaPorAnguloResponse(BaseModel):
+    itens: list[TaxaPorAnguloItem] = Field(default_factory=list)
 
 
 class CapacidadeResponse(BaseModel):
@@ -421,6 +438,12 @@ class AnalisarProjetoResponse(BaseModel):
 # Redator + Seletor (Fase 5 — IA) → preenche a proposta
 # ══════════════════════════════════════════════════════════════════
 
+class VariacaoAbertura(BaseModel):
+    """Uma 1ª linha alternativa pra A/B, rotulada pelo ângulo que ela usa."""
+    angulo: str = "direto"   # direto | prova | pergunta
+    texto: str
+
+
 class RedacaoProposta(BaseModel):
     texto: str = ""                 # rascunho completo (estrutura Workana)
     prazo_sugerido: str | None = None
@@ -428,8 +451,8 @@ class RedacaoProposta(BaseModel):
     # Seletor: dos SEUS projetos/habilidades (max 3 / max 5)
     projetos_destacados: list[str] = Field(default_factory=list)
     habilidades_destacadas: list[str] = Field(default_factory=list)
-    # A/B: 2-3 primeiras linhas alternativas pra testar qual converte mais
-    variacoes_abertura: list[str] = Field(default_factory=list)
+    # A/B: 2-3 primeiras linhas alternativas (rotuladas) pra testar o que converte
+    variacoes_abertura: list[VariacaoAbertura] = Field(default_factory=list)
 
 
 class RedigirRequest(BaseModel):

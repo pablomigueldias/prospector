@@ -37,6 +37,7 @@ from app.api.schemas.freela import (
     CapacidadeResponse,
     RedigirRequest,
     RedigirResponse,
+    TaxaPorAnguloResponse,
     TaxaPorStackResponse,
 )
 from app.api.services.pessoal import freela_service
@@ -91,6 +92,15 @@ async def metricas() -> MetricasResponse:
 async def metricas_por_stack() -> TaxaPorStackResponse:
     try:
         return await freela_service.taxa_por_stack()
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/metricas/por-angulo", response_model=TaxaPorAnguloResponse,
+            summary="Taxa de resposta por ângulo de abertura (A/B)")
+async def metricas_por_angulo() -> TaxaPorAnguloResponse:
+    try:
+        return await freela_service.taxa_por_angulo()
     except Exception as e:
         raise _handle(e)
 

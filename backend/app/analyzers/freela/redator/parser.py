@@ -16,6 +16,15 @@ def parse_resposta(texto_cru: str) -> RedacaoProposta | None:
     if dados is None:
         return None
 
+    # Tolera variações como string solta (legado) → rotula como "direto".
+    vs = dados.get("variacoes_abertura")
+    if isinstance(vs, list):
+        dados["variacoes_abertura"] = [
+            {"angulo": "direto", "texto": v} if isinstance(v, str) else v
+            for v in vs
+            if v
+        ]
+
     try:
         redacao = RedacaoProposta(**dados)
     except ValidationError as e:

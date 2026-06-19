@@ -157,6 +157,7 @@ export interface FreelaProposta {
   projetos_destacados: string[];
   habilidades_destacadas: string[];
   prazo_proposto?: string | null;
+  angulo_abertura?: string | null; // direto | prova | pergunta (A/B)
   status: FreelaStatus;
   enviada_em?: string | null;
   data_resposta?: string | null;
@@ -307,13 +308,29 @@ export interface FreelaAnalisarResponse {
   analise: FreelaAnalise;
 }
 
+export interface FreelaVariacaoAbertura {
+  angulo: string; // direto | prova | pergunta
+  texto: string;
+}
+
 export interface FreelaRedacao {
   texto: string;
   prazo_sugerido?: string | null;
   tom?: string | null;
   projetos_destacados: string[];
   habilidades_destacadas: string[];
-  variacoes_abertura: string[];
+  variacoes_abertura: FreelaVariacaoAbertura[];
+}
+
+export interface FreelaTaxaPorAnguloItem {
+  angulo: string;
+  enviadas: number;
+  respondidas: number;
+  taxa_resposta: number; // 0..1
+}
+
+export interface FreelaTaxaPorAnguloResponse {
+  itens: FreelaTaxaPorAnguloItem[];
 }
 
 export interface FreelaRedigirResponse {

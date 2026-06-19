@@ -1,9 +1,22 @@
 import { useState } from 'react';
 
 import { useFreelaActions, useFreelaProposta } from '@/hooks/useFreela';
-import { type FreelaChecklist, type FreelaKanbanItem } from '@/lib/types';
+import {
+  type FreelaChecklist,
+  type FreelaKanbanItem,
+  type FreelaVariacaoAbertura,
+} from '@/lib/types';
 
 // ── Modal de detalhe/edição da proposta (+ redator IA) ────────────
+
+// Ângulo da 1ª linha (A/B) — rótulos pra UI.
+const ANGULOS: { id: string; label: string }[] = [
+  { id: 'direto', label: '🎯 Direto' },
+  { id: 'prova', label: '🏆 Prova' },
+  { id: 'pergunta', label: '❓ Pergunta' },
+];
+const anguloLabel = (id?: string | null) =>
+  ANGULOS.find((a) => a.id === id)?.label ?? id ?? '';
 
 export function PropostaModal({
   item,
@@ -24,7 +37,8 @@ export function PropostaModal({
   const [horas, setHoras] = useState<string | null>(null);
   const [instrucoes, setInstrucoes] = useState('');
   const [copiado, setCopiado] = useState(false);
-  const [variacoes, setVariacoes] = useState<string[]>([]);
+  const [variacoes, setVariacoes] = useState<FreelaVariacaoAbertura[]>([]);
+  const [angulo, setAngulo] = useState<string | null>(null);
   const [objecao, setObjecao] = useState('');
   const [negOpcoes, setNegOpcoes] = useState<string[]>([]);
   const [checklist, setChecklist] = useState<FreelaChecklist | null>(null);
@@ -35,6 +49,7 @@ export function PropostaModal({
   const valorEf = valor ?? (proposta?.valor_cotado != null ? String(proposta.valor_cotado) : '');
   const liquidoEf = liquido ?? (proposta?.valor_liquido_estimado != null ? String(proposta.valor_liquido_estimado) : '');
   const horasEf = horas ?? (proposta?.horas_estimadas != null ? String(proposta.horas_estimadas) : '');
+  const anguloEf = angulo ?? proposta?.angulo_abertura ?? null;
 
   async function redigir() {
     const r = await acoes.redigirProposta(item.id, instrucoes || null);
@@ -46,11 +61,12 @@ export function PropostaModal({
     }
   }
 
-  function usarAbertura(ab: string) {
+  function usarAbertura(ab: FreelaVariacaoAbertura) {
     const base = textoEf;
     const idx = base.indexOf('\n\n');
     const corpo = idx >= 0 ? base.slice(idx) : base ? `\n\n${base}` : '';
-    setTexto(`${ab.trim()}${corpo}`);
+    setTexto(`${ab.texto.trim()}${corpo}`);
+    setAngulo(ab.angulo); // registra o ângulo usado (A/B)
   }
 
   async function negociar() {
@@ -98,6 +114,7 @@ export function PropostaModal({
       valor_cotado: valorEf ? Number(valorEf) : null,
       valor_liquido_estimado: liquidoEf ? Number(liquidoEf) : null,
       horas_estimadas: horasEf ? Number(horasEf) : null,
+      angulo_abertura: anguloEf,
     });
     onMudou();
     onClose();
@@ -194,7 +211,7 @@ export function PropostaModal({
             {variacoes.length > 0 && (
               <div className="mb-3">
                 <div className="text-[12px] font-medium text-ink-soft mb-1.5">
-                  Aberturas alternativas (A/B) — clique pra usar
+                  Aberturas alternativas (A/B) — clique pra usar e registrar o ângulo
                 </div>
                 <div className="flex flex-col gap-1.5">
                   {variacoes.map((ab, i) => (
@@ -204,12 +221,34 @@ export function PropostaModal({
                       className="text-left text-[13px] text-ink-soft border border-line rounded p-2 hover:border-brand hover:bg-brand-soft/30"
                       onClick={() => usarAbertura(ab)}
                     >
-                      {ab}
+                      <span className="text-[11px] font-medium text-brand-ink mr-1.5">
+                        {anguloLabel(ab.angulo)}
+                      </span>
+                      {ab.texto}
                     </button>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* Ângulo de abertura usado (A/B) — alimenta a métrica por ângulo */}
+            <div className="flex items-center gap-2 mb-3 text-[12px]">
+              <span className="text-ink-soft">Ângulo da abertura:</span>
+              {ANGULOS.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  className={`px-2 py-0.5 rounded border ${
+                    anguloEf === a.id
+                      ? 'bg-brand-soft text-brand-ink border-brand/40'
+                      : 'border-line text-ink-mute hover:border-brand'
+                  }`}
+                  onClick={() => setAngulo(anguloEf === a.id ? null : a.id)}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
 
             <label className="text-[13px] text-ink-soft">
               Texto da proposta (revise antes de enviar na Workana)

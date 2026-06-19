@@ -11,6 +11,7 @@ import { NovoProjetoForm } from '@/components/freela/NovoProjetoForm';
 import { OndeInsistir } from '@/components/freela/OndeInsistir';
 import { PerdaDialog } from '@/components/freela/PerdaDialog';
 import { PlanoMetaPanel } from '@/components/freela/PlanoMetaPanel';
+import { QualAbertura } from '@/components/freela/QualAbertura';
 import { Precificador } from '@/components/freela/Precificador';
 import { ProjetoDrawer } from '@/components/freela/ProjetoDrawer';
 import { PropostaModal } from '@/components/freela/PropostaModal';
@@ -24,6 +25,7 @@ import {
   useFreelaProjetos,
   useFreelaCapacidade,
   useFreelaTaxaPorStack,
+  useFreelaTaxaPorAngulo,
 } from '@/hooks/useFreela';
 import { type FreelaKanbanItem, type FreelaProjetoListItem } from '@/lib/types';
 
@@ -44,6 +46,7 @@ export default function FreelaScreen() {
   const plataformas = useFreelaPlataformas();
   const clientes = useFreelaClientes();
   const taxaStack = useFreelaTaxaPorStack();
+  const taxaAngulo = useFreelaTaxaPorAngulo();
   const capacidade = useFreelaCapacidade();
   const acoes = useFreelaActions();
 
@@ -127,6 +130,8 @@ export default function FreelaScreen() {
       <CapacidadeCard cap={capacidade.data ?? undefined} loading={capacidade.loading} />
 
       <OndeInsistir itens={taxaStack.itens} loading={taxaStack.loading} />
+
+      <QualAbertura itens={taxaAngulo.itens} loading={taxaAngulo.loading} />
 
       {!coldStart && <MetaForecast m={m} loading={metricas.loading} />}
 
