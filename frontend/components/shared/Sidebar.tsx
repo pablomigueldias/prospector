@@ -111,6 +111,17 @@ export function Sidebar() {
               <span>Configurações</span>
             </Link>
           )}
+          {hasPermission('usuarios.gerenciar') && (
+            <Link
+              href="/agendamentos"
+              className="flex items-center gap-2.5 px-2.5 py-2.5 rounded text-[13.5px] font-medium text-ink-soft hover:bg-bg-alt hover:text-ink transition-colors"
+            >
+              <span className="text-base text-ink-mute w-4">
+                <IconSettings />
+              </span>
+              <span>Agendamentos</span>
+            </Link>
+          )}
           <SidebarStaticItem icon={<IconChartBar />} label="Métricas" disabled />
           <SidebarStaticItem icon={<IconSettings />} label="Conexões" disabled />
         </nav>

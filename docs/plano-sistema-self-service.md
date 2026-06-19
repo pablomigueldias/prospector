@@ -61,11 +61,21 @@ link no Sidebar (admin). Verificado e2e no DB de dev: atualizar→aplicar no
 `settings`, listar reflete override, validação rejeita fora-de-range. `tsc`/`lint`/
 `ruff` verdes. *(De quebra: corrigido o log `%sh` do agendador — loguru usa `{}`.)*
 
-### S4 — Agendamentos na UI
+### S4 — Agendamentos na UI ✅ FEITO (2026-06-18)
 **Dor:** os jobs (briefing 18h, lembretes 8h, follow-up) são fixos no `main.py`.
 **Tela:** `/agendamentos` — lista os jobs, liga/desliga, muda o horário e **"rodar
 agora"** (dispara o job on-demand). Lê/escreve via S3 (config_app).
 **Done:** controlar a automação sem tocar em código.
+
+**Entregue:** `agendamentos_service` com catálogo de jobs (Rotina diária =
+recorrências+lembretes+follow-up freela @ `lembretes_hora`/`scheduler_enabled`;
+Resumo da Noite @ `briefing_hora`/`briefing_enabled`) — `listar()` lê hora/estado
+do `settings` e `rodar(id)` dispara o job na hora (reusa as funções já testadas
+`rotina_diaria`/`rotina_briefing`). Router `/api/agendamentos` (GET + POST
+`/{id}/rodar`) gateado por `usuarios.gerenciar`. Tela `/agendamentos` (card por
+job: toggle, hora, "Rodar agora" com resultado em JSON) + link no Sidebar; o
+liga/desliga e a hora gravam via `/api/config` (S3) e avisam que valem no próximo
+restart. `tsc`/`lint`/`ruff` verdes; rotas no ar no dev (187 totais).
 
 ### S5 — Editor de Prompts (Prompt Studio)
 **Dor:** os prompts dos agentes estão no código (`analyzers/*/prompt_builder.py`).

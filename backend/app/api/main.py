@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routers import admin_usuarios as admin_usuarios_router
+from app.api.routers import agendamentos as agendamentos_router
 from app.api.routers import agents as agents_router
 from app.api.routers import auth as auth_router
 from app.api.routers import cartoes as cartoes_router
@@ -149,6 +150,7 @@ def healthcheck() -> dict:
 app.include_router(auth_router.router)
 app.include_router(admin_usuarios_router.router)
 app.include_router(config_router.router)
+app.include_router(agendamentos_router.router)
 
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)

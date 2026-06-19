@@ -6,6 +6,7 @@
 export * from './core';
 export * from './prospector';
 export * from './config';
+export * from './agendamentos';
 export * from './crm';
 export * from './auth';
 export * from './copywriter';
