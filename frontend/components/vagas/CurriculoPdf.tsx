@@ -229,17 +229,26 @@ function imprimir(c: CurriculoVaga, vagaTitulo?: string | null) {
   doc.write(curriculoHtml(c, vagaTitulo));
   doc.close();
 
+  // O "Salvar como PDF" sugere o nome a partir do <title> da PÁGINA principal
+  // (não do iframe). Troca temporariamente e restaura depois de imprimir.
+  const nomeArquivo = nomeArquivoPdf(c.nome, vagaTitulo);
+  const tituloOriginal = document.title;
+
   let feito = false;
   const imprimirUmaVez = () => {
     if (feito) return;
     feito = true;
     try {
       ajustarParaUmaPagina(doc);
+      document.title = nomeArquivo;
       win.focus();
       win.print();
     } finally {
-      // tira o iframe depois que o diálogo fecha
-      setTimeout(() => iframe.remove(), 1000);
+      // restaura o título e tira o iframe depois que o diálogo fecha
+      setTimeout(() => {
+        document.title = tituloOriginal;
+        iframe.remove();
+      }, 1000);
     }
   };
 
