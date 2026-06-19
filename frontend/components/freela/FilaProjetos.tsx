@@ -254,6 +254,16 @@ function ProjetoCard({
               />
             </span>
             <span>· {p.qtd_propostas} sua(s)</span>
+            {p.valor_esperado != null && (
+              <span
+                className="flex items-center gap-1 text-ink-soft"
+                title={`Custo de oportunidade: ticket × prob. resposta (${
+                  p.prob_resposta != null ? Math.round(p.prob_resposta * 100) : '—'
+                }%) × fit ÷ horas. Onde a próxima proposta rende mais.`}
+              >
+                · 💰 <strong className="tabular-nums">{formatBRL(p.valor_esperado)}/h</strong> esp.
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">

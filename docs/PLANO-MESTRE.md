@@ -24,7 +24,7 @@
 | Módulo | Estado | Resumo |
 |---|---|---|
 | **Vagas** | ✅ bom | CRUD por JD, analisar (match/gaps/veredito), candidatura, currículo ATS, pipeline, funil, plano-de-gaps. *Pablo: "só falta lapidar o modelo de IA".* |
-| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento` com capacidade/anti-furada, "onde insistir"). **Falta:** A/B por ângulo, custo de oportunidade, mais autonomia (cadeia coordenador — WIP `proposta_freela`), dnd no Kanban. |
+| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento` com capacidade/anti-furada, "onde insistir"). **Falta:** A/B por ângulo, mais autonomia (cadeia coordenador — WIP `proposta_freela`), dnd no Kanban. |
 | **CRM** | ✅ completo | 5 seções (Empresas/Contatos/Negócios/Atividades/Projetos) fora do Notion, CRUD, filtros, pipeline+forecast, ficha 360, dashboard, edição inline, drawer, opções gerenciáveis. |
 | **MAS (multi-agente)** | ✅ núcleo | Memória compartilhada (blackboard), coordenador (cadeia candidatura), outcomes, briefing noturno. Subiu a escada inteira do curso. |
 | **Self-service (Parte 1)** | ✅ núcleo | Cockpit (S1), Observabilidade (S2), Configurações na UI (S3), Agendamentos (S4), Export/Backup (S8). Falta S5–S7. |
@@ -85,7 +85,7 @@
   (`freela_capacidade_horas_semana`, editável na tela de Config), comprometidas = horas
   das fechadas, `GET /capacidade` + card; `momento` vira "espere — sem mão essa semana".
   *Backlog: comprometidas só conta `fechada` (não há tracking de entrega/prazo ainda).*
-- [ ] 🟡 **Custo de oportunidade — ranquear a fila por valor esperado** = `ticket × prob. resposta × fit ÷ horas`. Mostra onde a próxima proposta rende mais.
+- [x] ✅ **Custo de oportunidade — ranquear a fila por valor esperado** = `ticket × prob. resposta × fit ÷ horas` (R$/h esperado). `prob. resposta` reusa a taxa por stack (`contar_resposta_por_stack`) com piso no prior na fase cold start; selo "💰 R$/h esp." no card. Entra na ordenação como desempate após os sinais de cold start (recorrente → bom 1º → fresco → **valor esperado** → fit). *Default conservador: não vira o sort primário pra não atropelar o cold start.*
 
 ### 2.D — MOTOR DA META (R$10k/mês como bússola) — V.3
 > Premissas do Pablo: **R$10k líquido/mês**, **5h/dia** (~90h faturáveis/mês), meta **em rampa**. Matemática reversa: ~90h ⇒ exige **R$/h efetivo ~R$110–120** ⇒ *não dá pra bater empilhando projeto barato* — depende de ticket/nicho/gringo.

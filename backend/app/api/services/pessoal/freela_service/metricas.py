@@ -118,6 +118,34 @@ async def capacidade() -> CapacidadeResponse:
 _RESPONDIDAS = {"respondida", "negociando", "fechada"}
 
 
+def contar_resposta_por_stack(
+    linhas: list[tuple[str, dict | None]],
+) -> tuple[dict[str, int], dict[str, int], int, int]:
+    """(enviadas, respondidas) por stack + totais (enviadas, respondidas).
+
+    Base comum da taxa de resposta por stack e da prob. de resposta usada no
+    ranking de oportunidades. Ignora rascunhos. `linhas` = (status, analise_json).
+    """
+    enviadas: dict[str, int] = {}
+    respondidas: dict[str, int] = {}
+    tot_env = tot_resp = 0
+    for status, analise in linhas:
+        if status == "rascunho":
+            continue
+        respondeu = status in _RESPONDIDAS
+        tot_env += 1
+        if respondeu:
+            tot_resp += 1
+        for tag in (analise or {}).get("stack") or []:
+            chave = str(tag).strip()
+            if not chave:
+                continue
+            enviadas[chave] = enviadas.get(chave, 0) + 1
+            if respondeu:
+                respondidas[chave] = respondidas.get(chave, 0) + 1
+    return enviadas, respondidas, tot_env, tot_resp
+
+
 async def taxa_por_stack(min_enviadas: int = 2) -> TaxaPorStackResponse:
     """Taxa de resposta por stack/categoria — onde gastar proposta rende mais.
 
@@ -128,20 +156,7 @@ async def taxa_por_stack(min_enviadas: int = 2) -> TaxaPorStackResponse:
     async with get_session() as session:
         linhas = await FreelaRepository(session).propostas_status_e_analise()
 
-    enviadas: dict[str, int] = {}
-    respondidas: dict[str, int] = {}
-    for status, analise in linhas:
-        if status == "rascunho":
-            continue
-        stacks = (analise or {}).get("stack") or []
-        respondeu = status in _RESPONDIDAS
-        for tag in stacks:
-            chave = str(tag).strip()
-            if not chave:
-                continue
-            enviadas[chave] = enviadas.get(chave, 0) + 1
-            if respondeu:
-                respondidas[chave] = respondidas.get(chave, 0) + 1
+    enviadas, respondidas, _te, _tr = contar_resposta_por_stack(linhas)
 
     itens = [
         TaxaPorStackItem(

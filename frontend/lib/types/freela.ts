@@ -137,6 +137,8 @@ export interface FreelaProjetoListItem {
   dias_desde_publicacao?: number | null;
   momento?: string | null; // agora | espere | passe
   momento_motivo?: string | null;
+  valor_esperado?: number | null; // custo de oportunidade: R$/h esperado
+  prob_resposta?: number | null; // prob. de resposta usada no cálculo (0..1)
   created_at?: string | null;
 }
 

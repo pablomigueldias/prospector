@@ -22,6 +22,8 @@ from app.config import settings
 from app.db.session import get_session
 from app.repositories.pessoal.freela_repository import FreelaRepository
 
+from .metricas import contar_resposta_por_stack
+
 from ._base import FreelaError, _chamar_llm, _projeto_to_resp, _uuid, _uuid_opt
 
 
@@ -56,8 +58,14 @@ async def listar_projetos() -> ProjetoListResponse:
         repo = FreelaRepository(session)
         linhas = await repo.listar_projetos()
         comprometidas = await repo.soma_horas_comprometidas()
+        envs, resps, tot_env, tot_resp = contar_resposta_por_stack(
+            await repo.propostas_status_e_analise()
+        )
     hoje = date.today()
     horas_livres = max(0.0, settings.freela_capacidade_horas_semana - comprometidas)
+    # Prob. de resposta por stack (só com amostra mínima) + base global.
+    prob_stack = {k: resps.get(k, 0) / v for k, v in envs.items() if v >= 2}
+    prob_global = (tot_resp / tot_env) if tot_env else _PRIOR_RESPOSTA
     items = []
     for projeto, cliente_nome, qtd, pago_usd, pag_verificado in linhas:
         analise = projeto.analise_json or {}
@@ -69,6 +77,9 @@ async def listar_projetos() -> ProjetoListResponse:
             analise, bom, pago_usd > 0, dias_pub,
             projeto.n_propostas_concorrentes, horas_livres,
         )
+        ticket = _ticket(projeto.faixa_orcamento_min, projeto.faixa_orcamento_max)
+        prob = _prob_resposta(analise, prob_stack, prob_global)
+        valor_esp = _valor_esperado(analise, ticket, prob)
         items.append(
             ProjetoListItem(
                 id=str(projeto.id),
@@ -93,23 +104,63 @@ async def listar_projetos() -> ProjetoListResponse:
                 dias_desde_publicacao=dias_pub,
                 momento=momento,
                 momento_motivo=momento_motivo,
+                valor_esperado=valor_esp,
+                prob_resposta=round(prob, 2) if valor_esp is not None else None,
                 created_at=_iso(projeto.created_at),
             )
         )
     # Fila de oportunidades (cold start): cliente recorrente vale ouro (vem
     # primeiro), depois "bom 1º projeto", depois mais FRESCO (responder cedo é
-    # vantagem que independe de reputação) e, por fim, maior fit.
+    # vantagem). Por fim, maior VALOR ESPERADO (custo de oportunidade) — fit
+    # entra nele; fit puro fica de último desempate.
     items.sort(
         key=lambda i: (
             not i.cliente_recorrente,
             not i.bom_primeiro,
             i.dias_desde_publicacao is None,
             i.dias_desde_publicacao or 0,
-            i.fit_score is None,
+            i.valor_esperado is None,
+            -(i.valor_esperado or 0),
             -(i.fit_score or 0),
         )
     )
     return ProjetoListResponse(items=items, total=len(items))
+
+
+# Custo de oportunidade — ranquear por valor esperado da próxima proposta.
+_PRIOR_RESPOSTA = 0.15   # base de prob. de resposta na fase sem dados (cold start)
+_HORAS_PADRAO = 20       # estimativa de horas quando a análise não trouxe
+
+
+def _ticket(pmin, pmax) -> float | None:
+    """Ponto médio do orçamento (ou o único valor informado)."""
+    vals = [float(v) for v in (pmin, pmax) if v is not None]
+    return sum(vals) / len(vals) if vals else None
+
+
+def _prob_resposta(analise: dict, prob_stack: dict[str, float], prob_global: float) -> float:
+    """Prob. de resposta do projeto: média das stacks com histórico, senão a base
+    global. Piso no prior pra a fase cold start (0% de amostra pequena não deve
+    zerar o ranking inteiro)."""
+    tags = [str(t).strip() for t in (analise.get("stack") or []) if str(t).strip()]
+    rates = [prob_stack[t] for t in tags if t in prob_stack]
+    prob = (sum(rates) / len(rates)) if rates else prob_global
+    return max(prob, _PRIOR_RESPOSTA)
+
+
+def _valor_esperado(analise: dict, ticket: float | None, prob: float) -> float | None:
+    """`ticket × prob. resposta × fit ÷ horas` — R$/h esperado da próxima
+    proposta. Precisa de orçamento e análise (fit); horas caem no padrão se a
+    análise não estimou."""
+    if not analise or ticket is None:
+        return None
+    fit = analise.get("fit_score")
+    if not isinstance(fit, (int, float)):
+        return None
+    horas = (analise.get("estimativa") or {}).get("horas_estimadas")
+    if not isinstance(horas, (int, float)) or horas <= 0:
+        horas = _HORAS_PADRAO
+    return round(ticket * prob * (fit / 100) / horas, 2)
 
 
 # Limiares do detector de "bom 1º projeto" (fase cold start).

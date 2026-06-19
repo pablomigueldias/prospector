@@ -167,6 +167,8 @@ class ProjetoListItem(BaseModel):
     dias_desde_publicacao: int | None = None  # frescor (responder cedo é vantagem)
     momento: str | None = None            # veredito de timing: agora | espere | passe
     momento_motivo: str | None = None     # por que (1 linha)
+    valor_esperado: float | None = None   # custo de oportunidade: R$/h esperado (ticket×prob×fit÷horas)
+    prob_resposta: float | None = None    # prob. de resposta usada no cálculo (0..1)
     created_at: str | None = None
 
 
