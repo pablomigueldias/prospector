@@ -1,7 +1,12 @@
 import { useState } from 'react';
 
+import { InlineCell } from '@/components/crm/InlineCell';
 import { formatBRL } from '@/lib/format';
-import { type FreelaAnalise, type FreelaProjetoListItem } from '@/lib/types';
+import {
+  type FreelaAnalise,
+  type FreelaProjeto,
+  type FreelaProjetoListItem,
+} from '@/lib/types';
 
 // ── Fila de projetos ──────────────────────────────────────────────
 
@@ -10,6 +15,7 @@ export function FilaProjetos({
   loading,
   onCriarProposta,
   onAnalisar,
+  onAtualizar,
   onRemover,
 }: {
   items: FreelaProjetoListItem[];
@@ -22,6 +28,7 @@ export function FilaProjetos({
     prazo: string | null,
   ) => Promise<void> | void;
   onAnalisar: (id: string) => Promise<FreelaAnalise | null>;
+  onAtualizar: (id: string, patch: Partial<FreelaProjeto>) => Promise<void>;
   onRemover: (id: string) => void;
 }) {
   if (loading) {
@@ -48,6 +55,7 @@ export function FilaProjetos({
           p={p}
           onCriarProposta={onCriarProposta}
           onAnalisar={onAnalisar}
+          onAtualizar={onAtualizar}
           onRemover={onRemover}
         />
       ))}
@@ -97,6 +105,7 @@ function ProjetoCard({
   p,
   onCriarProposta,
   onAnalisar,
+  onAtualizar,
   onRemover,
 }: {
   p: FreelaProjetoListItem;
@@ -108,17 +117,13 @@ function ProjetoCard({
     prazo: string | null,
   ) => Promise<void> | void;
   onAnalisar: (id: string) => Promise<FreelaAnalise | null>;
+  onAtualizar: (id: string, patch: Partial<FreelaProjeto>) => Promise<void>;
   onRemover: (id: string) => void;
 }) {
   const [analise, setAnalise] = useState<FreelaAnalise | null>(null);
   const [analisando, setAnalisando] = useState(false);
   const [criando, setCriando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
-
-  const orcamento =
-    p.faixa_orcamento_min != null || p.faixa_orcamento_max != null
-      ? `${formatBRL(p.faixa_orcamento_min ?? 0)} – ${formatBRL(p.faixa_orcamento_max ?? 0)}`
-      : null;
 
   async function analisar() {
     setAnalisando(true);
@@ -164,7 +169,13 @@ function ProjetoCard({
     <div className="card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="font-medium text-ink text-[15px] truncate">{p.titulo}</div>
+          <InlineCell
+            campo="titulo"
+            valor={p.titulo}
+            kind="text"
+            className="font-medium text-ink text-[15px] max-w-full truncate"
+            onSave={(v) => onAtualizar(p.id, { titulo: String(v) })}
+          />
           <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-ink-mute">
             {p.cliente_nome && <span>{p.cliente_nome}</span>}
             {p.cliente_recorrente && (
@@ -175,10 +186,43 @@ function ProjetoCard({
                 ★ recorrente
               </span>
             )}
-            {orcamento && <span>· {orcamento}</span>}
-            {p.n_propostas_concorrentes != null && (
-              <span>· {p.n_propostas_concorrentes} propostas</span>
-            )}
+            <span className="flex items-center gap-1">
+              ·
+              <InlineCell
+                campo="faixa_orcamento_min"
+                valor={p.faixa_orcamento_min}
+                display={p.faixa_orcamento_min != null ? formatBRL(p.faixa_orcamento_min) : undefined}
+                kind="num"
+                vazioLabel="orç. mín"
+                onSave={(v) => onAtualizar(p.id, { faixa_orcamento_min: v ? Number(v) : null })}
+              />
+              –
+              <InlineCell
+                campo="faixa_orcamento_max"
+                valor={p.faixa_orcamento_max}
+                display={p.faixa_orcamento_max != null ? formatBRL(p.faixa_orcamento_max) : undefined}
+                kind="num"
+                vazioLabel="orç. máx"
+                onSave={(v) => onAtualizar(p.id, { faixa_orcamento_max: v ? Number(v) : null })}
+              />
+            </span>
+            <span className="flex items-center gap-1">
+              ·
+              <InlineCell
+                campo="n_propostas_concorrentes"
+                valor={p.n_propostas_concorrentes}
+                display={
+                  p.n_propostas_concorrentes != null
+                    ? `${p.n_propostas_concorrentes} propostas`
+                    : undefined
+                }
+                kind="num"
+                vazioLabel="concorrentes"
+                onSave={(v) =>
+                  onAtualizar(p.id, { n_propostas_concorrentes: v ? Number(v) : null })
+                }
+              />
+            </span>
             <span>· {p.qtd_propostas} sua(s)</span>
           </div>
         </div>

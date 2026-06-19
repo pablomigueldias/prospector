@@ -80,6 +80,11 @@ export function useFreelaActions() {
     (body: FreelaProjetoCreate) => run<FreelaProjeto>(() => api.freelaProjetoCriar(body)),
     [],
   );
+  const atualizarProjeto = useCallback(
+    (id: string, body: Partial<FreelaProjeto>) =>
+      run<FreelaProjeto>(() => api.freelaProjetoAtualizar(id, body)),
+    [],
+  );
   const removerProjeto = useCallback(
     (id: string) => run<void>(() => api.freelaProjetoRemover(id)),
     [],
@@ -156,6 +161,7 @@ export function useFreelaActions() {
     loading,
     error,
     criarProjeto,
+    atualizarProjeto,
     removerProjeto,
     extrairProjeto,
     analisarProjeto,

@@ -8,9 +8,14 @@ type Kind = 'text' | 'num' | 'date' | 'select' | 'bool';
 
 /**
  * Célula editável no lugar (click-to-edit). Mostra o valor; ao clicar vira um
- * input/select; salva via PATCH /crm/record ao confirmar (Enter/blur/change).
- * Esc cancela. Usada nas tabelas do CRM e no RecordModal — manuseio direto,
- * sem abrir formulário. `onSaved` recebe o registro já atualizado.
+ * input/select; salva ao confirmar (Enter/blur/change). Esc cancela. Manuseio
+ * direto, sem abrir formulário.
+ *
+ * Dois modos de salvar:
+ * - CRM (padrão): passe `tipo`+`id` → faz PATCH /crm/record; `onSaved` recebe o
+ *   registro atualizado.
+ * - Genérico: passe `onSave(novo)` → a célula chama ele e não toca no CRM. Usado
+ *   fora do CRM (ex.: fila de projetos do freela).
  */
 export function InlineCell({
   tipo,
@@ -24,9 +29,10 @@ export function InlineCell({
   vazioLabel = '—',
   className = '',
   onSaved,
+  onSave,
 }: {
-  tipo: RecordTipo;
-  id: string;
+  tipo?: RecordTipo;
+  id?: string;
   campo: string;
   valor?: string | number | boolean | null;
   display?: string;
@@ -36,6 +42,8 @@ export function InlineCell({
   vazioLabel?: string;
   className?: string;
   onSaved?: (rec: RecordDetalhe) => void;
+  /** Save genérico (fora do CRM). Quando dado, é usado no lugar do crmRecordPatch. */
+  onSave?: (novo: unknown) => Promise<void>;
 }) {
   const [editando, setEditando] = useState(false);
   const [rascunho, setRascunho] = useState('');
@@ -56,8 +64,12 @@ export function InlineCell({
     setSalvando(true);
     setErro(null);
     try {
-      const rec = await api.crmRecordPatch(tipo, id, { [campo]: novo });
-      onSaved?.(rec);
+      if (onSave) {
+        await onSave(novo);
+      } else if (tipo && id) {
+        const rec = await api.crmRecordPatch(tipo, id, { [campo]: novo });
+        onSaved?.(rec);
+      }
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Falha ao salvar');
     } finally {

@@ -178,6 +178,10 @@ export default function FreelaScreen() {
           if (r) void projetos.refetch();
           return r?.analise ?? null;
         }}
+        onAtualizar={async (id, patch) => {
+          const r = await acoes.atualizarProjeto(id, patch);
+          if (r) void projetos.refetch();
+        }}
         onRemover={async (id) => {
           if (confirm('Remover este projeto e suas propostas?')) {
             await acoes.removerProjeto(id);
