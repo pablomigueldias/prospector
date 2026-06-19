@@ -1,11 +1,13 @@
 import { useState } from 'react';
 
+import { OpcoesManager } from '@/components/crm/OpcoesManager';
 import { StatCard } from '@/components/shared/StatCard';
 import { ClientesPanel } from '@/components/freela/ClientesPanel';
 import { FilaProjetos } from '@/components/freela/FilaProjetos';
 import { Kanban } from '@/components/freela/Kanban';
 import { MetaForecast } from '@/components/freela/MetaForecast';
 import { NovoProjetoForm } from '@/components/freela/NovoProjetoForm';
+import { PerdaDialog } from '@/components/freela/PerdaDialog';
 import { PlanoMetaPanel } from '@/components/freela/PlanoMetaPanel';
 import { Precificador } from '@/components/freela/Precificador';
 import { PropostaModal } from '@/components/freela/PropostaModal';
@@ -40,6 +42,8 @@ export default function FreelaScreen() {
 
   const [mostrarForm, setMostrarForm] = useState(false);
   const [propostaAberta, setPropostaAberta] = useState<FreelaKanbanItem | null>(null);
+  const [perdaItem, setPerdaItem] = useState<FreelaKanbanItem | null>(null);
+  const [gerirOpcoes, setGerirOpcoes] = useState(false);
 
   function refetchTudo() {
     void kanban.refetch();
@@ -191,19 +195,30 @@ export default function FreelaScreen() {
       />
 
       {/* Kanban */}
-      <h2 className="font-display font-semibold text-lg tracking-tight text-ink mt-10 mb-4">
-        Kanban de propostas
-      </h2>
+      <div className="flex items-center justify-between mt-10 mb-4">
+        <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
+          Kanban de propostas
+        </h2>
+        <button
+          type="button"
+          className="btn-ghost text-[13px]"
+          onClick={() => setGerirOpcoes(true)}
+          title="Gerenciar listas (motivo de perda)"
+        >
+          ⚙ Opções
+        </button>
+      </div>
       <Kanban
         colunas={kanban.colunas}
         loading={kanban.loading}
         onAbrir={setPropostaAberta}
         onMover={async (id, status) => {
-          let motivo: string | null = null;
           if (status === 'perdida') {
-            motivo = window.prompt('Motivo da perda (opcional):') || null;
+            const it = kanban.colunas.flatMap((c) => c.items).find((i) => i.id === id);
+            if (it) setPerdaItem(it);
+            return;
           }
-          await acoes.mudarStatus(id, status, motivo);
+          await acoes.mudarStatus(id, status, null);
           refetchTudo();
         }}
         onRemover={async (id) => {
@@ -219,6 +234,27 @@ export default function FreelaScreen() {
           item={propostaAberta}
           onClose={() => setPropostaAberta(null)}
           onMudou={refetchTudo}
+        />
+      )}
+
+      {perdaItem && (
+        <PerdaDialog
+          item={perdaItem}
+          onCancel={() => setPerdaItem(null)}
+          onConfirm={async (motivo) => {
+            await acoes.mudarStatus(perdaItem.id, 'perdida', motivo);
+            setPerdaItem(null);
+            refetchTudo();
+          }}
+        />
+      )}
+
+      {gerirOpcoes && (
+        <OpcoesManager
+          onClose={() => setGerirOpcoes(false)}
+          grupos={[{ grupo: 'freela_motivo_perda', label: 'Motivo de perda' }]}
+          titulo="Opções do freela"
+          descricao="Listas gerenciáveis do freela. O motivo de perda alimenta o diálogo ao marcar uma proposta como perdida."
         />
       )}
     </div>

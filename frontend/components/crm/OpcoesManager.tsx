@@ -35,7 +35,18 @@ const PALETA: { token: string; classe: string }[] = [
   { token: 'gray', classe: 'bg-gray-300 border-gray-400' },
 ];
 
-export function OpcoesManager({ onClose }: { onClose: () => void }) {
+export function OpcoesManager({
+  onClose,
+  grupos = GRUPOS,
+  titulo = 'Configurar opções dos selects',
+  descricao = 'As opções abaixo alimentam os dropdowns coloridos do CRM. Renomear uma opção atualiza os registros que já a usam.',
+}: {
+  onClose: () => void;
+  /** Grupos a gerenciar. Default = os do CRM; outros domínios passam os seus. */
+  grupos?: { grupo: string; label: string }[];
+  titulo?: string;
+  descricao?: string;
+}) {
   const [versao, setVersao] = useState(0);
   const { data, loading } = useFetch(() => api.crmOpcoesGerenciar(), [versao]);
   const recarregar = () => setVersao((v) => v + 1);
@@ -44,16 +55,15 @@ export function OpcoesManager({ onClose }: { onClose: () => void }) {
     (data ?? []).filter((o) => o.grupo === g).sort((a, b) => a.ordem - b.ordem);
 
   return (
-    <SidePanel open onClose={onClose} title="Configurar opções dos selects">
+    <SidePanel open onClose={onClose} title={titulo}>
       <p className="text-[13px] text-ink-soft mt-0 mb-5 leading-relaxed">
-        As opções abaixo alimentam os dropdowns coloridos do CRM. Renomear uma
-        opção atualiza os registros que já a usam.
+        {descricao}
       </p>
       {loading && !data ? (
         <div className="animate-pulse h-40" />
       ) : (
         <div className="flex flex-col gap-7">
-          {GRUPOS.map(({ grupo, label }) => (
+          {grupos.map(({ grupo, label }) => (
             <Grupo
               key={grupo}
               grupo={grupo}
