@@ -1,4 +1,5 @@
 # ── Autenticação/Autorização (schema auth) — portão de entrada ─────
+from app.db.models.agente_evento import AgenteEvento
 from app.db.models.ai_call import AiCall
 from app.db.models.auth.auditoria import Auditoria
 from app.db.models.auth.papel import Papel
@@ -9,7 +10,9 @@ from app.db.models.auth.tentativa_login import TentativaLogin
 from app.db.models.auth.usuario import Usuario
 from app.db.models.auth.usuario_2fa import UsuarioTwoFA
 from app.db.models.auth.usuario_papel import UsuarioPapel
+from app.db.models.atividade import Atividade
 from app.db.models.contato import Contato
+from app.db.models.crm_opcao import CrmOpcao
 from app.db.models.email_outreach import EmailOutreach
 from app.db.models.empresa import Empresa
 from app.db.models.financas.bot_rascunho import BotRascunho
@@ -39,7 +42,9 @@ from app.db.models.pessoal.freela.proposta import Proposta as FreelaProposta
 # ── Área pessoal (tabelas pessoal_*) — isolada da Reative ──────────
 from app.db.models.pessoal.perfil_mestre import PerfilMestre
 from app.db.models.pessoal.vaga import Vaga
+from app.db.models.negocio import Negocio
 from app.db.models.pipeline_event import PipelineEvent
+from app.db.models.projeto import ProjetoCRM
 from app.db.models.socio import Socio
 
 __all__ = [
@@ -56,9 +61,14 @@ __all__ = [
     "Empresa",
     "Contato",
     "Socio",
+    "Negocio",
+    "Atividade",
+    "ProjetoCRM",
     "AiCall",
+    "AgenteEvento",
     "PipelineEvent",
     "EmailOutreach",
+    "CrmOpcao",
     # pessoal
     "PerfilMestre",
     "Vaga",

@@ -13,14 +13,17 @@ from app.api.routers import compras as compras_router
 from app.api.routers import comprovantes as comprovantes_router
 from app.api.routers import contas as contas_router
 from app.api.routers import copywriter as copywriter_router
+from app.api.routers import crm as crm_router
 from app.api.routers import dev_tools as dev_tools_router
 from app.api.routers import eventos as eventos_router
 from app.api.routers import freela as freela_router
 from app.api.routers import importador as importador_router
 from app.api.routers import leituras as leituras_router
+from app.api.routers import memoria as memoria_router
 from app.api.routers import nlu as nlu_router
 from app.api.routers import observability as observability_router
 from app.api.routers import orcamentos as orcamentos_router
+from app.api.routers import orchestrator as orchestrator_router
 from app.api.routers import outreach as outreach_router
 from app.api.routers import pagar_mes as pagar_mes_router
 from app.api.routers import perfil as perfil_router
@@ -58,8 +61,19 @@ async def lifespan(app: FastAPI):
             id="rotina_diaria",
             replace_existing=True,
         )
+        if settings.briefing_enabled:
+            from app.jobs.briefing import rotina_briefing
+            agendador.add_job(
+                rotina_briefing,
+                CronTrigger(hour=settings.briefing_hora, minute=0),
+                id="rotina_briefing",
+                replace_existing=True,
+            )
         agendador.start()
-        logger.info("⏰ Agendador ligado (rotina diária às %sh).", settings.lembretes_hora)
+        logger.info(
+            "⏰ Agendador ligado (rotina %sh · briefing %sh).",
+            settings.lembretes_hora, settings.briefing_hora,
+        )
     yield
     if agendador is not None:
         agendador.shutdown(wait=False)
@@ -126,6 +140,9 @@ app.include_router(admin_usuarios_router.router)
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)
 app.include_router(copywriter_router.router)
+app.include_router(crm_router.router)
+app.include_router(memoria_router.router)
+app.include_router(orchestrator_router.router)
 app.include_router(observability_router.router)
 app.include_router(outreach_router.router)
 

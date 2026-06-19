@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { CoordenadorCandidatura } from '@/components/vagas/CoordenadorCandidatura';
 import { CurriculoPdf } from '@/components/vagas/CurriculoPdf';
 import { useVaga, useVagaActions } from '@/hooks/useVagas';
 import { type CurriculoVaga, type GerarCandidaturaResponse, type Vaga, type VagaStatus } from '@/lib/types';
@@ -220,6 +221,15 @@ export function VagaDetalhe({
             </button>
           </div>
         </div>
+
+        <CoordenadorCandidatura
+          vagaId={vagaId}
+          semPerfil={semPerfil}
+          onMudou={() => {
+            void refetch();
+            onMudou();
+          }}
+        />
 
         {semPerfil && (
           <p className="text-[12px] text-ink-mute mt-3">
