@@ -5,7 +5,7 @@ Isolado dos demais schemas pessoais.
 """
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # ══════════════════════════════════════════════════════════════════
 # Plataforma (read-only; seedada)
@@ -82,13 +82,24 @@ class ProjetoCreate(ProjetoBase):
 
 
 class ExtrairProjetoRequest(BaseModel):
-    texto: str = Field(..., description="Texto do projeto colado da Workana")
+    """Origem da extração: texto colado OU url do projeto (ao menos um)."""
+
+    texto: str | None = Field(None, description="Texto do projeto colado da Workana")
+    url: str | None = Field(None, description="URL do projeto — busca e lê a página")
+
+    @model_validator(mode="after")
+    def _exige_origem(self):
+        if not (self.texto and self.texto.strip()) and not (self.url and self.url.strip()):
+            raise ValueError("Informe o texto colado ou a URL do projeto.")
+        return self
 
 
 class ExtrairProjetoResponse(BaseModel):
-    """Campos pré-preenchidos a partir do texto colado (revisar antes de salvar)."""
+    """Campos pré-preenchidos a partir do texto/URL (revisar antes de salvar)."""
 
     titulo: str | None = None
+    descricao: str | None = None  # texto-fonte (colado ou lido da URL)
+    url: str | None = None        # eco da URL quando importado por link
     faixa_orcamento_min: float | None = None
     faixa_orcamento_max: float | None = None
     n_propostas_concorrentes: int | None = None

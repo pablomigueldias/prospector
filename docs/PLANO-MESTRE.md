@@ -73,6 +73,7 @@
 - [x] ✅ **Veredito de preço** determinístico (orçamento × faixa de mercado → subcotado/justo/acima + R$/h efetivo).
 - [x] ✅ **Breakdown do escopo** (`tarefas`+horas, `perguntas_cliente`, `skills_faltando`).
 - [~] 🟡 **Extrair TODA a info da proposta.** Já puxa skills exigidas + nº de interessados. **Falta:** dados do **cliente** (país, pagamento verificado, nº de projetos, rating, idioma) auto-preenchendo um `Cliente`; **data de publicação** (frescor); **tipo de contrato** (fixo/hora) como colunas do projeto. *(precisa migração/fluxo de Cliente.)*
+- [x] ✅ **Importar projeto por URL** — colar o link no `NovoProjetoForm` busca a página (`collectors/website/pagina.py` → httpx/Playwright) e o extrator pré-preenche descrição/título/orçamento/propostas/habilidades; fallback colar texto. Guarda `url`+`descricao`.
 - [ ] 🟡 **Nota de confiança da análise** (`alta/média/baixa`) — quando o texto colado é pobre, a IA pede o que falta em vez de fingir certeza.
 
 ### 2.C — "É o MOMENTO pra mim?" — timing e custo de oportunidade — V.2

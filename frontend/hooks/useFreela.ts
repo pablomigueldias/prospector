@@ -99,7 +99,8 @@ export function useFreelaActions() {
     [],
   );
   const extrairProjeto = useCallback(
-    (texto: string) => run<FreelaExtrairProjeto>(() => api.freelaProjetoExtrair(texto)),
+    (origem: { texto?: string; url?: string }) =>
+      run<FreelaExtrairProjeto>(() => api.freelaProjetoExtrair(origem)),
     [],
   );
   const analisarProjeto = useCallback(

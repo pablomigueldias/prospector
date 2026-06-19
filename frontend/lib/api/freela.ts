@@ -89,10 +89,10 @@ export const freelaApi = {
   freelaProjetoCriar(body: FreelaProjetoCreate): Promise<FreelaProjeto> {
     return request<FreelaProjeto>(`${BASE}/projetos`, { method: 'POST', body, timeoutMs: T });
   },
-  freelaProjetoExtrair(texto: string): Promise<FreelaExtrairProjeto> {
+  freelaProjetoExtrair(origem: { texto?: string; url?: string }): Promise<FreelaExtrairProjeto> {
     return request<FreelaExtrairProjeto>(`${BASE}/projetos/extrair`, {
       method: 'POST',
-      body: { texto },
+      body: origem,
       timeoutMs: 60_000,
     });
   },

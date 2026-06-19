@@ -184,10 +184,10 @@ async def criar_projeto(body: ProjetoCreate) -> ProjetoResponse:
 
 
 @router.post("/projetos/extrair", response_model=ExtrairProjetoResponse,
-             summary="Extrai campos do texto colado (pré-preenche o form)")
+             summary="Extrai campos do texto colado ou da URL (pré-preenche o form)")
 async def extrair_projeto(body: ExtrairProjetoRequest) -> ExtrairProjetoResponse:
     try:
-        return await freela_service.extrair_projeto(body.texto)
+        return await freela_service.extrair_projeto(body.texto, body.url)
     except Exception as e:
         raise _handle(e)
 

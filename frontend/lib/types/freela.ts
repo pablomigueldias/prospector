@@ -97,6 +97,8 @@ export interface FreelaChecklist {
 
 export interface FreelaExtrairProjeto {
   titulo?: string | null;
+  descricao?: string | null; // texto-fonte (colado ou lido da URL)
+  url?: string | null;       // eco da URL quando importado por link
   faixa_orcamento_min?: number | null;
   faixa_orcamento_max?: number | null;
   n_propostas_concorrentes?: number | null;

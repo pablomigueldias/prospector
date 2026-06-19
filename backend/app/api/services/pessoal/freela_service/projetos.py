@@ -1,12 +1,14 @@
 """Projeto: CRUD (você cola o texto) + extração de campos por IA."""
 from __future__ import annotations
 
+import asyncio
 from datetime import date
 
 from app.analyzers.freela.extrator.parser import parse_resposta as parse_extracao
 from app.analyzers.freela.extrator.prompt_builder import (
     construir_prompt as construir_prompt_extracao,
 )
+from app.collectors.website.pagina import texto_de_url
 from app.api.schemas.freela import (
     ExtrairProjetoResponse,
     ProjetoCreate,
@@ -244,14 +246,32 @@ async def deletar_projeto(projeto_id: str) -> None:
             raise FreelaError("Projeto não encontrado.")
 
 
-async def extrair_projeto(texto: str) -> ExtrairProjetoResponse:
-    """Lê o texto colado da Workana e devolve campos pré-preenchidos (não salva)."""
-    if not texto.strip():
-        raise FreelaError("Cole o texto do projeto pra extrair.")
+async def extrair_projeto(
+    texto: str | None = None, url: str | None = None
+) -> ExtrairProjetoResponse:
+    """Campos pré-preenchidos a partir do texto colado OU da URL (não salva).
+
+    Com URL, busca a página (httpx/Playwright, em thread por ser bloqueante) e
+    usa o texto visível como fonte. Devolve `descricao` (texto-fonte) e `url`
+    pra o form já guardar a origem.
+    """
+    url = (url or "").strip() or None
+    texto = (texto or "").strip() or None
+    if not texto and not url:
+        raise FreelaError("Cole o texto do projeto ou informe a URL.")
+
+    if not texto and url:
+        texto = await asyncio.to_thread(texto_de_url, url)
+        if not texto:
+            raise FreelaError(
+                "Não consegui ler a página dessa URL. Cole o texto do projeto na mão."
+            )
 
     prompt = construir_prompt_extracao(texto)
     resposta = _chamar_llm(prompt, operacao="extrair")
     dados = parse_extracao(resposta)
     if dados is None:
         raise FreelaError("A IA não conseguiu extrair os campos. Preencha na mão.")
+    dados.descricao = texto
+    dados.url = url
     return dados

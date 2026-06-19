@@ -24,11 +24,13 @@ export function NovoProjetoForm({
     n_interessados?: number | null;
     habilidades?: string[];
     publicado_em?: string | null;
+    url?: string | null;
   }) => void;
-  onExtrair: (texto: string) => Promise<FreelaExtrairProjeto | null>;
+  onExtrair: (origem: { texto?: string; url?: string }) => Promise<FreelaExtrairProjeto | null>;
 }) {
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [url, setUrl] = useState('');
   const [clienteId, setClienteId] = useState('');
   const [min, setMin] = useState('');
   const [max, setMax] = useState('');
@@ -37,14 +39,13 @@ export function NovoProjetoForm({
   const [habilidades, setHabilidades] = useState('');
   const [pubEm, setPubEm] = useState('');
   const [extraindo, setExtraindo] = useState(false);
+  const [importando, setImportando] = useState(false);
 
-  async function autoPreencher() {
-    if (!descricao.trim()) return;
-    setExtraindo(true);
-    const r = await onExtrair(descricao.trim());
-    setExtraindo(false);
-    if (!r) return;
+  /** Preenche os campos com o que a IA extraiu (sem sobrescrever o que já está). */
+  function aplicar(r: FreelaExtrairProjeto) {
     if (r.titulo && !titulo.trim()) setTitulo(r.titulo);
+    if (r.descricao && !descricao.trim()) setDescricao(r.descricao);
+    if (r.url && !url.trim()) setUrl(r.url);
     if (r.faixa_orcamento_min != null) setMin(String(r.faixa_orcamento_min));
     if (r.faixa_orcamento_max != null) setMax(String(r.faixa_orcamento_max));
     if (r.n_propostas_concorrentes != null) setNProp(String(r.n_propostas_concorrentes));
@@ -52,9 +53,47 @@ export function NovoProjetoForm({
     if (r.habilidades?.length && !habilidades.trim()) setHabilidades(r.habilidades.join(', '));
   }
 
+  async function autoPreencher() {
+    if (!descricao.trim()) return;
+    setExtraindo(true);
+    const r = await onExtrair({ texto: descricao.trim() });
+    setExtraindo(false);
+    if (r) aplicar(r);
+  }
+
+  async function importarDaUrl() {
+    if (!url.trim()) return;
+    setImportando(true);
+    const r = await onExtrair({ url: url.trim() });
+    setImportando(false);
+    if (r) aplicar(r);
+  }
+
   return (
     <div className="card p-5 mb-4">
       <div className="grid gap-3">
+        <div>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[13px] text-ink-soft">
+              URL do projeto <span className="text-ink-faint">(cole o link e importe)</span>
+            </span>
+            <button
+              type="button"
+              className="btn-ghost text-[12px] px-2 py-1 disabled:opacity-40"
+              onClick={importarDaUrl}
+              disabled={importando || !url.trim()}
+              title="Busca a página, lê o texto e preenche descrição, título, orçamento, propostas, interessados e habilidades"
+            >
+              {importando ? 'Importando…' : '🔗 Importar da URL'}
+            </button>
+          </div>
+          <input
+            className="input"
+            value={url}
+            placeholder="https://www.workana.com/job/…"
+            onChange={(e) => setUrl(e.target.value)}
+          />
+        </div>
         <label className="text-[13px] text-ink-soft">
           Título do projeto
           <input className="input mt-1" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
@@ -142,6 +181,7 @@ export function NovoProjetoForm({
                   .map((s) => s.trim())
                   .filter(Boolean),
                 publicado_em: pubEm || null,
+                url: url.trim() || null,
               })
             }
           >
