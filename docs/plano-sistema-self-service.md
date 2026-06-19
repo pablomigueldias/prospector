@@ -107,10 +107,18 @@ de Vaga e Freela (editar campo no lugar, drawer de detalhe, linha do tempo do al
 **Como:** generalizar o `OpcoesManager` pra outros domínios (status de vaga, estágios
 de freela, tags). Mesmo backend (`crm_opcoes` vira `opcoes` genérico).
 
-### S8 — Export / Backup pela tela
+### S8 — Export / Backup pela tela ✅ FEITO (2026-06-18)
 **Dor:** dados só saem por script.
 **Como:** botões "Exportar CSV" (empresas, contatos, negócios, vagas, transações) e
 um "Backup agora" (dump JSON). Útil pra você levar dado pra fora quando quiser.
+
+**Entregue:** `export_service` genérico (lê as colunas do próprio modelo
+SQLAlchemy → linhas; serializa datetime/Decimal/UUID; JSONB vira JSON no CSV) pros
+5 recursos. Router `/api/export` (`/csv/{recurso}`, `/backup`, `/recursos`)
+gateado por `usuarios.gerenciar`. Tela `/exportar` com botões por recurso +
+"Backup agora" (download autenticado via fetch+blob com `credentials:'include'`) +
+link no Sidebar. Verificado contra o dev: empresas 36 / contatos 66 / vagas 13 /
+transações 140; CSV 119 KB. `tsc`/`lint`/`ruff` verdes.
 
 ---
 

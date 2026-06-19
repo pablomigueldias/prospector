@@ -18,6 +18,7 @@ from app.api.routers import copywriter as copywriter_router
 from app.api.routers import crm as crm_router
 from app.api.routers import dev_tools as dev_tools_router
 from app.api.routers import eventos as eventos_router
+from app.api.routers import export as export_router
 from app.api.routers import freela as freela_router
 from app.api.routers import importador as importador_router
 from app.api.routers import leituras as leituras_router
@@ -151,6 +152,7 @@ app.include_router(auth_router.router)
 app.include_router(admin_usuarios_router.router)
 app.include_router(config_router.router)
 app.include_router(agendamentos_router.router)
+app.include_router(export_router.router)
 
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)
