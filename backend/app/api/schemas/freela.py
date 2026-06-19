@@ -154,6 +154,8 @@ class ProjetoListItem(BaseModel):
     bom_primeiro_motivos: list[str] = Field(default_factory=list)
     publicado_em: str | None = None       # YYYY-MM-DD
     dias_desde_publicacao: int | None = None  # frescor (responder cedo é vantagem)
+    momento: str | None = None            # veredito de timing: agora | espere | passe
+    momento_motivo: str | None = None     # por que (1 linha)
     created_at: str | None = None
 
 

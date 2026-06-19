@@ -24,7 +24,7 @@
 | Módulo | Estado | Resumo |
 |---|---|---|
 | **Vagas** | ✅ bom | CRUD por JD, analisar (match/gaps/veredito), candidatura, currículo ATS, pipeline, funil, plano-de-gaps. *Pablo: "só falta lapidar o modelo de IA".* |
-| **Freela** | 🔴 **o grande buraco** | Tem muita peça (analisador, redator, precificador, motor da meta, painel), **mas falta gestão na tela, agente mais especializado e autonomia.** Prioridade #1. |
+| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento`, "onde insistir"). **Falta:** capacidade/agenda, A/B por ângulo, mais autonomia (cadeia coordenador — WIP `proposta_freela`), dnd no Kanban. |
 | **CRM** | ✅ completo | 5 seções (Empresas/Contatos/Negócios/Atividades/Projetos) fora do Notion, CRUD, filtros, pipeline+forecast, ficha 360, dashboard, edição inline, drawer, opções gerenciáveis. |
 | **MAS (multi-agente)** | ✅ núcleo | Memória compartilhada (blackboard), coordenador (cadeia candidatura), outcomes, briefing noturno. Subiu a escada inteira do curso. |
 | **Self-service (Parte 1)** | ✅ núcleo | Cockpit (S1), Observabilidade (S2), Configurações na UI (S3), Agendamentos (S4), Export/Backup (S8). Falta S5–S7. |
@@ -55,12 +55,13 @@
 ### 2.A — Gestão TOTAL na tela (manipular tudo, estilo CRM) 🔴 NOVO
 > O CRM já tem o padrão "tipo Notion" (edição inline, drawer lateral, CRUD completo).
 > O freela ainda usa telas/forms antigos. Trazer a mesma fluidez.
-- [ ] 🔴 **Reusar `InlineCell` + `SidePanel` + `RecordModal`** nas telas de
-  projeto/proposta/cliente do freela (editar campo no lugar, drawer de detalhe).
-- [ ] 🔴 **CRUD de cliente na tela** — hoje cria cliente só via API; a tela só
-  seleciona. Faltam criar/editar/excluir cliente direto.
-- [ ] 🟡 **Opções dinâmicas** (estágios de proposta, motivo de perda, tags) via o
-  `OpcoesManager`/`crm_opcoes` generalizado (cf. §5.1 S7).
+- [x] ✅ **Reusar `InlineCell` + `SidePanel`** — `InlineCell` generalizado (prop
+  `onSave`, CRM intocado) e aplicado na fila (título/orçamento/nº concorrentes);
+  cliente via `SidePanel`. *RecordModal não reusado: a proposta já tem `PropostaModal` rico.*
+- [x] ✅ **CRUD de cliente na tela** — seção "Clientes" + drawer criar/editar/excluir.
+- [~] 🟡 **Opções dinâmicas** — **motivo de perda** feito (`OpcoesManager` generalizado
+  com prop `grupos`, grupo `freela_motivo_perda`; diálogo no lugar do `window.prompt`).
+  **Falta:** estágios de proposta e tags.
 - [ ] 🟢 **Drag-and-drop no Kanban** (hoje move por `select`; pede dnd-kit).
 
 ### 2.B — Análise PROFUNDA (acabar com a "análise vaga") — V.1
@@ -73,7 +74,9 @@
 
 ### 2.C — "É o MOMENTO pra mim?" — timing e custo de oportunidade — V.2
 > Não *"o projeto é bom?"* e sim *"é bom **pra mim, agora**, dada minha fase e agenda?"*.
-- [ ] 🔴 **Veredito de timing pessoal** — campo `momento` (`agora/espere/passe`) combinando fase cold start + frescor/concorrência + capacidade livre. Ex.: *"fit alto, mas difícil e longo pra 1ª nota — comece por um quick win"*.
+- [~] 🟡 **Veredito de timing pessoal** — campo `momento` (`agora/espere/passe`) feito,
+  determinístico, combinando fit/risco + frescor + concorrência + "bom 1º projeto"
+  (selo na fila). **Falta:** entrar a **capacidade livre** na conta (depende do item abaixo).
 - [ ] 🔴 **Capacidade / agenda (anti-furada)** — guardar horas livres/semana × comprometidas; alertar *"você não tem mão pra isso sem atrasar o resto"* (atraso = nota ruim = mata a meta).
 - [ ] 🟡 **Custo de oportunidade — ranquear a fila por valor esperado** = `ticket × prob. resposta × fit ÷ horas`. Mostra onde a próxima proposta rende mais.
 
@@ -97,10 +100,10 @@
 - [x] ✅ Modo cold start no redator (prova por descrição, sem link externo, redução de risco).
 - [x] ✅ Checklist anti-genérico (gate 0–100 + varredura de contato/link p/ conformidade Workana).
 - [x] ✅ Painel adaptativo focado em resposta (Em conversa / Tempo até resposta).
-- [ ] 🔴 **Velocidade — "projeto fresco" em destaque** — guardar data de publicação, ordenar fila por "novo + pouco concorrido" (responder cedo é vantagem que independe de reputação).
-- [ ] 🔴 **Detector de "bom 1º projeto"** — selo p/ escopo pequeno + pagamento verificado + poucas propostas + dentro do núcleo + orçamento saudável.
+- [x] ✅ **Velocidade — "projeto fresco" em destaque** — coluna `publicado_em` (migração), selo 🆕 + edição inline da data, fila ordena por novo + pouco concorrido.
+- [x] ✅ **Detector de "bom 1º projeto"** — selo determinístico: pagamento verificado (pré-req) + 3 de 4 (fit alto, pouca concorrência, escopo enxuto, orçamento saudável); sobe no ranking.
 - [ ] 🟡 **A/B real por ângulo de abertura** — registrar qual ângulo (direto/prova/pergunta) foi usado e cruzar com quem respondeu.
-- [ ] 🟡 **Taxa de resposta por categoria/stack** — onde insistir (provável: React/FastAPI/IA).
+- [x] ✅ **Taxa de resposta por categoria/stack** — painel "Onde insistir" (`GET /metricas/por-stack`). ⚠️ depende de normalizar os stacks (hoje verbosos demais — ver [[freela-stack-verboso]]).
 
 ### 2.G — Alavancas de desempenho (§7–§10 do plano antigo)
 - [ ] 🟡 **Win-rate por categoria** (usa `analise_json.stack`) → "gaste proposta aqui".

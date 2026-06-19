@@ -127,6 +127,8 @@ export interface FreelaProjetoListItem {
   bom_primeiro_motivos: string[];
   publicado_em?: string | null;
   dias_desde_publicacao?: number | null;
+  momento?: string | null; // agora | espere | passe
+  momento_motivo?: string | null;
   created_at?: string | null;
 }
 

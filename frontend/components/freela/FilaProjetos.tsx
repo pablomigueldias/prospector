@@ -93,6 +93,13 @@ const QUADRANTE_META: Record<string, { label: string; cls: string; title: string
   },
 };
 
+// Veredito de timing pessoal ("é o momento pra mim, agora?") — backend.
+const MOMENTO_META: Record<string, { label: string; cls: string }> = {
+  agora: { label: '✅ é o momento', cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  espere: { label: '⏳ pode esperar', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+  passe: { label: '⏭️ passe', cls: 'bg-bg-alt text-ink-mute border-line' },
+};
+
 // Veredito de preço (orçamento do cliente × mercado, determinístico no backend).
 const PRECO_META: Record<string, { label: string; cls: string }> = {
   subcotado: { label: '🔴 subcotado', cls: 'bg-red-50 text-red-700 border-red-200' },
@@ -244,6 +251,14 @@ function ProjetoCard({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {p.momento && MOMENTO_META[p.momento] && (
+            <span
+              className={`text-[12px] font-medium px-2 py-0.5 rounded border ${MOMENTO_META[p.momento].cls}`}
+              title={p.momento_motivo ?? undefined}
+            >
+              {MOMENTO_META[p.momento].label}
+            </span>
+          )}
           {p.bom_primeiro && (
             <span
               className="text-[12px] font-medium px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200"

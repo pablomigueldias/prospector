@@ -59,6 +59,9 @@ async def listar_projetos() -> ProjetoListResponse:
             analise, projeto.n_propostas_concorrentes, pag_verificado
         )
         dias_pub = (hoje - projeto.publicado_em).days if projeto.publicado_em else None
+        momento, momento_motivo = _veredito_momento(
+            analise, bom, pago_usd > 0, dias_pub, projeto.n_propostas_concorrentes
+        )
         items.append(
             ProjetoListItem(
                 id=str(projeto.id),
@@ -81,6 +84,8 @@ async def listar_projetos() -> ProjetoListResponse:
                 bom_primeiro_motivos=motivos,
                 publicado_em=projeto.publicado_em.isoformat() if projeto.publicado_em else None,
                 dias_desde_publicacao=dias_pub,
+                momento=momento,
+                momento_motivo=momento_motivo,
                 created_at=_iso(projeto.created_at),
             )
         )
@@ -141,6 +146,51 @@ def _detectar_bom_primeiro(
         motivos.append("orçamento saudável")
 
     return sinais >= 3, motivos
+
+
+_CONCORRENTES_DEMAIS = 20
+
+
+def _veredito_momento(
+    analise: dict,
+    bom_primeiro: bool,
+    recorrente: bool,
+    dias_pub: int | None,
+    n_concorrentes: int | None,
+) -> tuple[str | None, str | None]:
+    """"É o momento pra mim, agora?" — agora / espere / passe.
+
+    Determinístico, sintetiza os sinais da fase cold start (fit, risco, frescor,
+    concorrência, "bom 1º projeto"). Sem análise não dá pra julgar → None.
+    """
+    if not analise:
+        return None, None
+
+    fit = analise.get("fit_score")
+    fit_num = fit if isinstance(fit, (int, float)) else None
+    risco = (analise.get("risco") or "").lower()
+    rec = (analise.get("recomendacao") or "").lower()
+    quad = analise.get("quadrante")
+    fresco = dias_pub is not None and dias_pub <= 3
+
+    # PASSE — sinais claros de que não vale gastar proposta.
+    if rec == "evite" or risco == "alto" or (fit_num is not None and fit_num < 40):
+        return "passe", "fit baixo ou risco alto — não gaste proposta aqui"
+
+    # AGORA — responder já (foco do cold start: cravar a 1ª nota).
+    if recorrente:
+        return "agora", "cliente recorrente — prioridade máxima"
+    if bom_primeiro:
+        return "agora", "bom 1º projeto — responda cedo"
+    if fresco and fit_num is not None and fit_num >= _FIT_MIN:
+        return "agora", "fresco + bom fit — responder cedo é vantagem"
+
+    # ESPERE — dá, mas não corre / falta clareza / há melhores na fila.
+    if quad == "escopo_vago":
+        return "espere", "escopo vago — pergunte ao cliente antes de cotar"
+    if n_concorrentes is not None and n_concorrentes > _CONCORRENTES_DEMAIS and not fresco:
+        return "espere", "muita concorrência e já não tão fresco"
+    return "espere", "ok, mas priorize os melhores da fila primeiro"
 
 
 async def get_projeto(projeto_id: str) -> ProjetoResponse:
