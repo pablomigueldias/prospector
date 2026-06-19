@@ -24,6 +24,7 @@ def _to_response(p: PerfilMestre) -> PerfilMestreResponse:
         projetos=p.projetos or [],
         experiencias=p.experiencias or [],
         formacao=p.formacao or [],
+        certificacoes=p.certificacoes or [],
         o_que_procuro=p.o_que_procuro,
         blocos_curriculo=p.blocos_curriculo or [],
         contato=p.contato,

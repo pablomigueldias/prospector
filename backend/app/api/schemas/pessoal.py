@@ -37,6 +37,27 @@ class Formacao(BaseModel):
     periodo: str | None = None
 
 
+class Certificacao(BaseModel):
+    nome: str
+    tema: str | None = None           # grupo, ex: "Frontend", "IA/ML", "Zoho/CRM"
+    instituicao: str | None = None    # emissor, se conhecido
+    ano: str | None = None            # data/ano de conclusão (YYYY ou YYYY-MM-DD)
+    carga_horaria: str | None = None  # ex: "40h"
+    prova: str | None = None          # o que ESTE certificado comprova
+    arquivo: str | None = None        # nome do PDF de origem (chave do sync Drive)
+
+
+class CertificadoExtraido(BaseModel):
+    """Saída crua do extrator multimodal (1 PDF de certificado → campos)."""
+    nome_curso: str | None = None
+    instituicao: str | None = None
+    carga_horaria: str | None = None
+    data_conclusao: str | None = None
+    aluno: str | None = None
+    tema: str | None = None
+    prova: str | None = None
+
+
 class BlocoCurriculo(BaseModel):
     titulo: str
     conteudo: str
@@ -68,6 +89,7 @@ class PerfilMestreBase(BaseModel):
     projetos: list[Projeto] = Field(default_factory=list)
     experiencias: list[Experiencia] = Field(default_factory=list)
     formacao: list[Formacao] = Field(default_factory=list)
+    certificacoes: list[Certificacao] = Field(default_factory=list)
     o_que_procuro: OQueProcuro | None = None
     blocos_curriculo: list[BlocoCurriculo] = Field(default_factory=list)
     contato: ContatoPessoal | None = None

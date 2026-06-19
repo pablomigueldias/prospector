@@ -9,7 +9,7 @@ from app.db.models.pessoal.perfil_mestre import PerfilMestre
 _CAMPOS = (
     "nome", "titulo", "resumo", "tom_escrita",
     "habilidades", "projetos", "experiencias", "formacao",
-    "o_que_procuro", "blocos_curriculo", "contato",
+    "certificacoes", "o_que_procuro", "blocos_curriculo", "contato",
 )
 
 

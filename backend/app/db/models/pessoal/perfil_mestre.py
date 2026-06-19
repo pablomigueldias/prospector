@@ -37,6 +37,8 @@ class PerfilMestre(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     experiencias: Mapped[list | None] = mapped_column(JSONB)
     # formacao: [{instituicao, curso, periodo}]
     formacao: Mapped[list | None] = mapped_column(JSONB)
+    # certificacoes: [{nome, tema, instituicao, ano, prova}]
+    certificacoes: Mapped[list | None] = mapped_column(JSONB)
     # o_que_procuro: {stack: [], modelo, tipo_empresa, pretensao, observacoes}
     o_que_procuro: Mapped[dict | None] = mapped_column(JSONB)
     # blocos_curriculo: [{titulo, conteudo, tags: []}] — reaproveitáveis

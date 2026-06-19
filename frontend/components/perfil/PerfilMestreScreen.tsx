@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 
 import { usePerfil, useSalvarPerfil } from '@/hooks/usePerfil';
+import { api } from '@/lib/api';
 import type {
   BlocoCurriculo,
+  Certificacao as CertificacaoT,
   ExperienciaPerfil as ExperienciaT,
   FormacaoPerfil as FormacaoT,
   Habilidade,
@@ -19,6 +21,7 @@ const PERFIL_VAZIO: PerfilMestre = {
   projetos: [],
   experiencias: [],
   formacao: [],
+  certificacoes: [],
   o_que_procuro: { stack: [], modelo: '', tipo_empresa: '', observacoes: '' },
   blocos_curriculo: [],
   contato: { email: '', linkedin: '', github: '', portfolio: '' },
@@ -30,6 +33,8 @@ export default function PerfilMestreScreen() {
 
   const [form, setForm] = useState<PerfilMestre>(PERFIL_VAZIO);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [sincronizando, setSincronizando] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (perfil) {
@@ -51,6 +56,26 @@ export default function PerfilMestreScreen() {
     if (r) {
       setAviso('Perfil salvo. Agora os agentes pessoais sabem quem você é.');
       refetch();
+    }
+  }
+
+  async function handleSincronizarCerts() {
+    setSyncMsg(null);
+    setSincronizando(true);
+    try {
+      const r = await api.perfilSincronizarCertificados();
+      setSyncMsg(
+        `Sincronizado: ${r.novos} novo(s), ${r.ja_existiam} já existia(m)` +
+          (r.falhas ? `, ${r.falhas} falha(s) — rode de novo` : '') +
+          `. Total: ${r.total_no_perfil}.`,
+      );
+      refetch();
+    } catch (err) {
+      setSyncMsg(
+        err instanceof Error ? `Falha: ${err.message}` : 'Falha ao sincronizar.',
+      );
+    } finally {
+      setSincronizando(false);
     }
   }
 
@@ -341,6 +366,76 @@ export default function PerfilMestreScreen() {
               value={item.periodo ?? ''}
               onChange={(e) => upd({ ...item, periodo: e.target.value })}
             />
+          </div>
+        )}
+      />
+
+      {/* Certificações — sync autônomo do Drive */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+        <p className="text-[13px] text-ink-soft m-0">
+          Jogue os PDFs na pasta do Drive e clique pra puxar — o sistema baixa,
+          lê cada certificado e preenche os campos sozinho.
+        </p>
+        <div className="flex items-center gap-3">
+          {syncMsg && <span className="text-[13px] text-ink-soft">{syncMsg}</span>}
+          <button
+            type="button"
+            className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={handleSincronizarCerts}
+            disabled={sincronizando}
+          >
+            {sincronizando ? 'Sincronizando…' : 'Sincronizar do Drive'}
+          </button>
+        </div>
+      </div>
+      <ListaSecao<CertificacaoT>
+        titulo="Certificações"
+        itens={form.certificacoes}
+        onChange={(v) => set('certificacoes', v)}
+        vazio={{ nome: '', tema: '', instituicao: '', ano: '', carga_horaria: '', prova: '' }}
+        rotuloAdd="Adicionar certificação"
+        render={(item, upd) => (
+          <div className="flex flex-col gap-3">
+            <div className="grid md:grid-cols-4 gap-3">
+              <input
+                className="input md:col-span-2"
+                placeholder="Nome do certificado"
+                value={item.nome}
+                onChange={(e) => upd({ ...item, nome: e.target.value })}
+              />
+              <input
+                className="input"
+                placeholder="Tema (ex: IA/ML)"
+                value={item.tema ?? ''}
+                onChange={(e) => upd({ ...item, tema: e.target.value })}
+              />
+              <input
+                className="input"
+                placeholder="Carga horária"
+                value={item.carga_horaria ?? ''}
+                onChange={(e) => upd({ ...item, carga_horaria: e.target.value })}
+              />
+            </div>
+            <div className="grid md:grid-cols-3 gap-3">
+              <input
+                className="input"
+                placeholder="Instituição / emissor"
+                value={item.instituicao ?? ''}
+                onChange={(e) => upd({ ...item, instituicao: e.target.value })}
+              />
+              <input
+                className="input"
+                placeholder="Data / ano"
+                value={item.ano ?? ''}
+                onChange={(e) => upd({ ...item, ano: e.target.value })}
+              />
+              <input
+                className="input"
+                placeholder="O que comprova"
+                value={item.prova ?? ''}
+                onChange={(e) => upd({ ...item, prova: e.target.value })}
+              />
+            </div>
           </div>
         )}
       />
