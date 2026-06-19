@@ -31,6 +31,7 @@ from app.api.schemas.pessoal import (
     AnaliseVaga,
     CandidaturaEmailItem,
     CurriculoVaga,
+    EmailCandidatura,
     EstudoVagasResponse,
     ExtrairVagaResponse,
     GerarCandidaturaRequest,
@@ -508,6 +509,7 @@ async def listar_rascunhos(vaga_id: str) -> list[CandidaturaEmailItem]:
                 corpo=r.corpo,
                 tom=r.tom,
                 status=r.status,
+                variantes=[EmailCandidatura(**v) for v in (r.variantes or [])],
                 created_at=_iso(r.created_at),
             )
             for r in rows

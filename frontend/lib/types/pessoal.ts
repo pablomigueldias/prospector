@@ -274,6 +274,7 @@ export interface CandidaturaEmailItem {
   corpo: string;
   tom?: string | null;
   status: string;
+  variantes?: EmailCandidatura[];
   created_at?: string | null;
 }
 

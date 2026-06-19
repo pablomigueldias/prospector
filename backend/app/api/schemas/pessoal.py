@@ -342,6 +342,7 @@ class CandidaturaEmailItem(BaseModel):
     corpo: str
     tom: str | None = None
     status: str
+    variantes: list[EmailCandidatura] = Field(default_factory=list)  # A/B salvas
     created_at: str | None = None
 
 

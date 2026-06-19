@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { ApiError } from '@/lib/types';
 import type {
   AnalisarVagaResponse,
+  CandidaturaEmailItem,
   EstudoVagas,
   ExtrairVaga,
   GerarCandidaturaResponse,
@@ -41,6 +42,14 @@ export function useVaga(id: string | undefined) {
     [id],
   );
   return { ...result, vaga: result.data };
+}
+
+export function useVagaRascunhos(id: string | undefined) {
+  const result = useFetch<CandidaturaEmailItem[]>(
+    () => (id ? api.vagaRascunhos(id) : Promise.reject(new Error('sem id'))),
+    [id],
+  );
+  return { ...result, rascunhos: result.data ?? [] };
 }
 
 function toApiError(err: unknown): ApiError {

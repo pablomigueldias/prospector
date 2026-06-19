@@ -4,8 +4,9 @@ import { CartaPdf } from '@/components/vagas/CartaPdf';
 import { CoordenadorCandidatura } from '@/components/vagas/CoordenadorCandidatura';
 import { CurriculoPdf } from '@/components/vagas/CurriculoPdf';
 import { usePerfil } from '@/hooks/usePerfil';
-import { useVaga, useVagaActions } from '@/hooks/useVagas';
+import { useVaga, useVagaActions, useVagaRascunhos } from '@/hooks/useVagas';
 import {
+  type CandidaturaEmailItem,
   type ContatoPessoal,
   type CurriculoVaga,
   type GerarCandidaturaResponse,
@@ -13,6 +14,28 @@ import {
   type VagaStatus,
 } from '@/lib/types';
 import { BlocoSalario, Campo, MatchPill, STATUS_LABEL, STATUS_ORDEM, Tags } from './_shared';
+
+/**
+ * Reconstrói o rascunho de candidatura a partir dos rascunhos salvos (a lista
+ * vem newest-first). Junta o e-mail (+ variantes A/B) e a carta pra a tela não
+ * "esquecer" o rascunho ao reabrir a vaga.
+ */
+function rascunhosParaCandidatura(
+  rascunhos: CandidaturaEmailItem[],
+): GerarCandidaturaResponse | null {
+  const email = rascunhos.find((r) => r.tipo === 'email');
+  const carta = rascunhos.find((r) => r.tipo === 'carta');
+  if (!email && !carta) return null;
+  return {
+    success: true,
+    email: email
+      ? { assunto: email.assunto, corpo: email.corpo, tom: email.tom }
+      : { corpo: '' },
+    variantes_email: email?.variantes ?? [],
+    carta: carta ? { corpo: carta.corpo, tom: carta.tom } : null,
+    rascunho_id: email?.id ?? null,
+  };
+}
 
 // ── Detalhe (detail) ──────────────────────────────────────────────
 
@@ -29,6 +52,7 @@ export function VagaDetalhe({
 }) {
   const { vaga, loading, refetch } = useVaga(vagaId);
   const { perfil } = usePerfil();
+  const { rascunhos, refetch: refetchRascunhos } = useVagaRascunhos(vagaId);
   const acoes = useVagaActions();
   const [candidatura, setCandidatura] = useState<GerarCandidaturaResponse | null>(
     null,
@@ -40,6 +64,9 @@ export function VagaDetalhe({
 
   // Currículo salvo na vaga (carrega ao reabrir); o recém-gerado tem prioridade.
   const curriculoMostrar = curriculo ?? vaga?.curriculo ?? null;
+  // Rascunho de candidatura: o recém-gerado tem prioridade; senão reconstrói dos
+  // rascunhos salvos (e-mail + variantes + carta) pra não sumir ao reabrir a vaga.
+  const candidaturaMostrar = candidatura ?? rascunhosParaCandidatura(rascunhos);
 
   async function handleAnalisar() {
     setAviso(null);
@@ -55,6 +82,7 @@ export function VagaDetalhe({
     const r = await acoes.gerarCandidatura(vagaId, gerarCarta);
     if (r) {
       setCandidatura(r);
+      void refetchRascunhos();
       setAviso('Rascunho gerado. Revise antes de enviar — a ferramenta não envia.');
       onMudou();
     }
@@ -331,9 +359,9 @@ export function VagaDetalhe({
       )}
 
       {/* Rascunho gerado */}
-      {candidatura && (
+      {candidaturaMostrar && (
         <RascunhoCandidatura
-          dados={candidatura}
+          dados={candidaturaMostrar}
           nome={curriculoMostrar?.nome ?? perfil?.nome ?? ''}
           contato={curriculoMostrar?.contato ?? perfil?.contato ?? null}
           empresa={vaga.empresa}
