@@ -16,6 +16,7 @@ from app.api.schemas.freela import (
     ProjetoUpdate,
 )
 from app.api.services._helpers import iso as _iso
+from app.config import settings
 from app.db.session import get_session
 from app.repositories.pessoal.freela_repository import FreelaRepository
 
@@ -50,8 +51,11 @@ async def criar_projeto(payload: ProjetoCreate) -> ProjetoResponse:
 
 async def listar_projetos() -> ProjetoListResponse:
     async with get_session() as session:
-        linhas = await FreelaRepository(session).listar_projetos()
+        repo = FreelaRepository(session)
+        linhas = await repo.listar_projetos()
+        comprometidas = await repo.soma_horas_comprometidas()
     hoje = date.today()
+    horas_livres = max(0.0, settings.freela_capacidade_horas_semana - comprometidas)
     items = []
     for projeto, cliente_nome, qtd, pago_usd, pag_verificado in linhas:
         analise = projeto.analise_json or {}
@@ -60,7 +64,8 @@ async def listar_projetos() -> ProjetoListResponse:
         )
         dias_pub = (hoje - projeto.publicado_em).days if projeto.publicado_em else None
         momento, momento_motivo = _veredito_momento(
-            analise, bom, pago_usd > 0, dias_pub, projeto.n_propostas_concorrentes
+            analise, bom, pago_usd > 0, dias_pub,
+            projeto.n_propostas_concorrentes, horas_livres,
         )
         items.append(
             ProjetoListItem(
@@ -157,11 +162,13 @@ def _veredito_momento(
     recorrente: bool,
     dias_pub: int | None,
     n_concorrentes: int | None,
+    horas_livres: float | None = None,
 ) -> tuple[str | None, str | None]:
     """"É o momento pra mim, agora?" — agora / espere / passe.
 
     Determinístico, sintetiza os sinais da fase cold start (fit, risco, frescor,
-    concorrência, "bom 1º projeto"). Sem análise não dá pra julgar → None.
+    concorrência, "bom 1º projeto") + a capacidade livre (anti-furada). Sem
+    análise não dá pra julgar → None.
     """
     if not analise:
         return None, None
@@ -172,10 +179,24 @@ def _veredito_momento(
     rec = (analise.get("recomendacao") or "").lower()
     quad = analise.get("quadrante")
     fresco = dias_pub is not None and dias_pub <= 3
+    horas_proj = (analise.get("estimativa") or {}).get("horas_estimadas")
+    sem_mao = (
+        horas_livres is not None
+        and isinstance(horas_proj, (int, float))
+        and horas_proj > horas_livres
+    )
 
     # PASSE — sinais claros de que não vale gastar proposta.
     if rec == "evite" or risco == "alto" or (fit_num is not None and fit_num < 40):
         return "passe", "fit baixo ou risco alto — não gaste proposta aqui"
+
+    # ANTI-FURADA: mesmo com bom fit, não dá pra pegar o que você não entrega.
+    # (cliente recorrente fura a fila — vale o esforço de remanejar.)
+    if sem_mao and not recorrente:
+        return "espere", (
+            f"sem mão essa semana ({horas_proj:.0f}h vs {horas_livres:.0f}h livres) "
+            "— pegaria e atrasaria o resto"
+        )
 
     # AGORA — responder já (foco do cold start: cravar a 1ª nota).
     if recorrente:

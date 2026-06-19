@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from app.api.schemas.freela import (
+    CapacidadeResponse,
     KanbanColuna,
     KanbanResponse,
     MetricasResponse,
@@ -11,6 +12,7 @@ from app.api.schemas.freela import (
     TaxaPorStackItem,
     TaxaPorStackResponse,
 )
+from app.config import settings
 from app.api.services._helpers import r2 as _r2
 from app.db.models.pessoal.freela.proposta import STATUS_PROPOSTA
 from app.db.session import get_session
@@ -96,6 +98,19 @@ async def metricas() -> MetricasResponse:
         forecast_liquido=forecast,
         tempo_medio_resposta_horas=tempo_resposta,
         valor_hora_real=valor_hora_real,
+    )
+
+
+async def capacidade() -> CapacidadeResponse:
+    """Anti-furada: capacidade da semana vs horas já comprometidas (fechadas)."""
+    horas_semana = int(settings.freela_capacidade_horas_semana)
+    async with get_session() as session:
+        comprometidas = await FreelaRepository(session).soma_horas_comprometidas()
+    livres = round(max(0.0, horas_semana - comprometidas), 1)
+    return CapacidadeResponse(
+        horas_semana=horas_semana,
+        horas_comprometidas=round(comprometidas, 1),
+        horas_livres=livres,
     )
 
 

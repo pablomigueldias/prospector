@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { OpcoesManager } from '@/components/crm/OpcoesManager';
 import { StatCard } from '@/components/shared/StatCard';
+import { CapacidadeCard } from '@/components/freela/CapacidadeCard';
 import { ClientesPanel } from '@/components/freela/ClientesPanel';
 import { FilaProjetos } from '@/components/freela/FilaProjetos';
 import { Kanban } from '@/components/freela/Kanban';
@@ -20,6 +21,7 @@ import {
   useFreelaMetricas,
   useFreelaPlataformas,
   useFreelaProjetos,
+  useFreelaCapacidade,
   useFreelaTaxaPorStack,
 } from '@/hooks/useFreela';
 import { type FreelaKanbanItem } from '@/lib/types';
@@ -41,6 +43,7 @@ export default function FreelaScreen() {
   const plataformas = useFreelaPlataformas();
   const clientes = useFreelaClientes();
   const taxaStack = useFreelaTaxaPorStack();
+  const capacidade = useFreelaCapacidade();
   const acoes = useFreelaActions();
 
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -118,6 +121,8 @@ export default function FreelaScreen() {
       </div>
 
       <PlanoMetaPanel refreshKey={m?.fechadas ?? 0} />
+
+      <CapacidadeCard cap={capacidade.data ?? undefined} loading={capacidade.loading} />
 
       <OndeInsistir itens={taxaStack.itens} loading={taxaStack.loading} />
 

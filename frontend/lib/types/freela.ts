@@ -63,6 +63,12 @@ export interface FreelaProjetoCreate {
   publicado_em?: string | null;
 }
 
+export interface FreelaCapacidade {
+  horas_semana: number;
+  horas_comprometidas: number;
+  horas_livres: number;
+}
+
 export interface FreelaTaxaPorStackItem {
   stack: string;
   enviadas: number;

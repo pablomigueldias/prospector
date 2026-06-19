@@ -51,6 +51,10 @@ export function useFreelaTaxaPorStack() {
   return { ...result, itens: result.data?.itens ?? [] };
 }
 
+export function useFreelaCapacidade() {
+  return useFetch(() => api.freelaCapacidade(), []);
+}
+
 export function useFreelaProposta(id: string | undefined) {
   const result = useFetch<FreelaProposta>(
     () => (id ? api.freelaPropostaDetalhe(id) : Promise.reject(new Error('sem id'))),

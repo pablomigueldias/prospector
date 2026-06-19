@@ -34,6 +34,7 @@ from app.api.schemas.freela import (
     PropostaResponse,
     PropostaStatusUpdate,
     PropostaUpdate,
+    CapacidadeResponse,
     RedigirRequest,
     RedigirResponse,
     TaxaPorStackResponse,
@@ -90,6 +91,15 @@ async def metricas() -> MetricasResponse:
 async def metricas_por_stack() -> TaxaPorStackResponse:
     try:
         return await freela_service.taxa_por_stack()
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/capacidade", response_model=CapacidadeResponse,
+            summary="Capacidade da semana vs horas comprometidas (anti-furada)")
+async def capacidade() -> CapacidadeResponse:
+    try:
+        return await freela_service.capacidade()
     except Exception as e:
         raise _handle(e)
 

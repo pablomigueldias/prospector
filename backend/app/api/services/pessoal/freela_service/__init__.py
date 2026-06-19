@@ -21,7 +21,7 @@ from .cadastro import (
 )
 from .checklist import avaliar_proposta
 from .meta import plano_meta
-from .metricas import kanban, metricas, taxa_por_stack
+from .metricas import capacidade, kanban, metricas, taxa_por_stack
 from .precificador import precificar
 from .projetos import (
     atualizar_projeto,
@@ -77,6 +77,7 @@ __all__ = [
     "kanban",
     "metricas",
     "taxa_por_stack",
+    "capacidade",
     # meta
     "plano_meta",
     # precificador

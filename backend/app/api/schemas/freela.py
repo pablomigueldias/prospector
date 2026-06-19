@@ -260,6 +260,13 @@ class TaxaPorStackResponse(BaseModel):
     itens: list[TaxaPorStackItem] = Field(default_factory=list)
 
 
+class CapacidadeResponse(BaseModel):
+    """Anti-furada: quanto da semana ainda cabe (vs já comprometido)."""
+    horas_semana: int                 # capacidade faturável/semana (config)
+    horas_comprometidas: float        # soma das horas das propostas fechadas
+    horas_livres: float               # o que sobra pra novos projetos
+
+
 # ══════════════════════════════════════════════════════════════════
 # Motor da meta (matemática reversa + rampa — sem IA)
 # ══════════════════════════════════════════════════════════════════

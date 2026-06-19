@@ -16,6 +16,7 @@ import type {
   FreelaPlataforma,
   FreelaPrecificarRequest,
   FreelaPrecificarResponse,
+  FreelaCapacidade,
   FreelaProjeto,
   FreelaProjetoCreate,
   FreelaTaxaPorStackResponse,
@@ -41,6 +42,9 @@ export const freelaApi = {
   },
   freelaTaxaPorStack(): Promise<FreelaTaxaPorStackResponse> {
     return request<FreelaTaxaPorStackResponse>(`${BASE}/metricas/por-stack`, { timeoutMs: T });
+  },
+  freelaCapacidade(): Promise<FreelaCapacidade> {
+    return request<FreelaCapacidade>(`${BASE}/capacidade`, { timeoutMs: T });
   },
   freelaPrecificar(body: FreelaPrecificarRequest): Promise<FreelaPrecificarResponse> {
     return request<FreelaPrecificarResponse>(`${BASE}/precificar`, {

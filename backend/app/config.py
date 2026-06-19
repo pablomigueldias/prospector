@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     # pro telegram_chat_id, dentro da rotina diária).
     freela_followup_enabled: bool = True
     freela_followup_dias: int = 3        # avisa propostas "enviada" há ≥ N dias
+    # Capacidade semanal faturável (anti-furada): horas livres/semana pra novos
+    # projetos. Default ~25h = 5h/dia × 5 dias (premissa da meta).
+    freela_capacidade_horas_semana: int = 25
 
     # Agendador in-process (APScheduler no container da API). Roda 1x/dia:
     # processa recorrências (gera previstas + marca atrasadas) e manda o

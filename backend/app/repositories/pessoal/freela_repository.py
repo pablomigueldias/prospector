@@ -186,6 +186,14 @@ class FreelaRepository:
         result = await self.session.execute(stmt)
         return [(row[0], row[1]) for row in result.all()]
 
+    async def soma_horas_comprometidas(self) -> float:
+        """Horas já comprometidas = soma das horas_estimadas das propostas fechadas."""
+        stmt = select(
+            func.coalesce(func.sum(Proposta.horas_estimadas), 0)
+        ).where(Proposta.status == "fechada")
+        soma = (await self.session.execute(stmt)).scalar_one()
+        return float(soma)
+
     async def soma_liquido_fechado(self) -> tuple[float, int]:
         """(soma do líquido das fechadas, quantidade de fechadas)."""
         stmt = select(

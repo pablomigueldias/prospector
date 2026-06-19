@@ -62,6 +62,10 @@ CATALOGO: tuple[ConfigItem, ...] = (
     ConfigItem("freela_followup_dias", "Freela",
                "Avisar propostas paradas há (dias)", "int", "",
                minimo=1, maximo=60),
+    ConfigItem("freela_capacidade_horas_semana", "Freela",
+               "Capacidade faturável (horas/semana)", "int",
+               "Horas livres/semana pra novos projetos (anti-furada).",
+               minimo=1, maximo=80),
     # ── LLM ──
     ConfigItem("llm_provider", "LLM", "Provedor de IA primário", "select",
                "Modelo primário (com fallback automático Gemini → Groq).",
