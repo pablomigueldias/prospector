@@ -1,11 +1,13 @@
 import { useState } from 'react';
 
 import { OpcoesManager } from '@/components/crm/OpcoesManager';
+import { VistaToggle } from '@/components/crm/_crmShared';
 import { StatCard } from '@/components/shared/StatCard';
 import { CapacidadeCard } from '@/components/freela/CapacidadeCard';
 import { ClientesPanel } from '@/components/freela/ClientesPanel';
 import { FilaProjetos } from '@/components/freela/FilaProjetos';
 import { Kanban } from '@/components/freela/Kanban';
+import { TabelaPropostas } from '@/components/freela/TabelaPropostas';
 import { MetaForecast } from '@/components/freela/MetaForecast';
 import { NovoProjetoForm } from '@/components/freela/NovoProjetoForm';
 import { OndeInsistir } from '@/components/freela/OndeInsistir';
@@ -55,11 +57,29 @@ export default function FreelaScreen() {
   const [perdaItem, setPerdaItem] = useState<FreelaKanbanItem | null>(null);
   const [projetoAberto, setProjetoAberto] = useState<FreelaProjetoListItem | null>(null);
   const [gerirOpcoes, setGerirOpcoes] = useState(false);
+  const [vistaPropostas, setVistaPropostas] = useState<'kanban' | 'tabela'>('kanban');
 
   function refetchTudo() {
     void kanban.refetch();
     void metricas.refetch();
     void projetos.refetch();
+  }
+
+  // Move/remove de proposta — compartilhado entre Kanban e Tabela.
+  async function moverProposta(id: string, status: FreelaKanbanItem['status']) {
+    if (status === 'perdida') {
+      const it = kanban.colunas.flatMap((c) => c.items).find((i) => i.id === id);
+      if (it) setPerdaItem(it);
+      return;
+    }
+    await acoes.mudarStatus(id, status, null);
+    refetchTudo();
+  }
+  async function removerProposta(id: string) {
+    if (confirm('Remover esta proposta?')) {
+      await acoes.removerProposta(id);
+      refetchTudo();
+    }
   }
 
   const m = metricas.data;
@@ -212,40 +232,47 @@ export default function FreelaScreen() {
         }}
       />
 
-      {/* Kanban */}
+      {/* Propostas — Kanban ou Tabela */}
       <div className="flex items-center justify-between mt-10 mb-4">
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
-          Kanban de propostas
+          Propostas
         </h2>
-        <button
-          type="button"
-          className="btn-ghost text-[13px]"
-          onClick={() => setGerirOpcoes(true)}
-          title="Gerenciar listas (motivo de perda)"
-        >
-          ⚙ Opções
-        </button>
+        <div className="flex items-center gap-2">
+          <VistaToggle
+            vista={vistaPropostas}
+            vistas={[
+              { id: 'kanban', label: 'Kanban' },
+              { id: 'tabela', label: 'Tabela' },
+            ]}
+            onChange={setVistaPropostas}
+          />
+          <button
+            type="button"
+            className="btn-ghost text-[13px]"
+            onClick={() => setGerirOpcoes(true)}
+            title="Gerenciar listas (motivo de perda)"
+          >
+            ⚙ Opções
+          </button>
+        </div>
       </div>
-      <Kanban
-        colunas={kanban.colunas}
-        loading={kanban.loading}
-        onAbrir={setPropostaAberta}
-        onMover={async (id, status) => {
-          if (status === 'perdida') {
-            const it = kanban.colunas.flatMap((c) => c.items).find((i) => i.id === id);
-            if (it) setPerdaItem(it);
-            return;
-          }
-          await acoes.mudarStatus(id, status, null);
-          refetchTudo();
-        }}
-        onRemover={async (id) => {
-          if (confirm('Remover esta proposta?')) {
-            await acoes.removerProposta(id);
-            refetchTudo();
-          }
-        }}
-      />
+      {vistaPropostas === 'kanban' ? (
+        <Kanban
+          colunas={kanban.colunas}
+          loading={kanban.loading}
+          onAbrir={setPropostaAberta}
+          onMover={moverProposta}
+          onRemover={removerProposta}
+        />
+      ) : (
+        <TabelaPropostas
+          colunas={kanban.colunas}
+          loading={kanban.loading}
+          onAbrir={setPropostaAberta}
+          onMover={moverProposta}
+          onRemover={removerProposta}
+        />
+      )}
 
       {propostaAberta && (
         <PropostaModal

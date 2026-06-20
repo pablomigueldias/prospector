@@ -24,7 +24,7 @@
 | Módulo | Estado | Resumo |
 |---|---|---|
 | **Vagas** | ✅ bom | CRUD por JD, analisar (match/gaps/veredito), candidatura, currículo ATS, pipeline, funil, plano-de-gaps. *Pablo: "só falta lapidar o modelo de IA".* |
-| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento` com capacidade/anti-furada, "onde insistir"). **Falta:** mais autonomia (cadeia coordenador — WIP `proposta_freela`), dnd no Kanban, polir §2.B/§2.D/§2.G. |
+| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento` com capacidade/anti-furada, "onde insistir"). **Falta:** mais autonomia (cadeia coordenador — WIP `proposta_freela`). |
 | **CRM** | ✅ completo | 5 seções (Empresas/Contatos/Negócios/Atividades/Projetos) fora do Notion, CRUD, filtros, pipeline+forecast, ficha 360, dashboard, edição inline, drawer, opções gerenciáveis. |
 | **MAS (multi-agente)** | ✅ núcleo | Memória compartilhada (blackboard), coordenador (cadeia candidatura), outcomes, briefing noturno. Subiu a escada inteira do curso. |
 | **Self-service (Parte 1)** | ✅ núcleo | Cockpit (S1), Observabilidade (S2), Configurações na UI (S3), Agendamentos (S4), Export/Backup (S8). Falta S5–S7. |
@@ -65,7 +65,7 @@
 - [~] 🟡 **Opções dinâmicas** — **motivo de perda** feito (`OpcoesManager` generalizado
   com prop `grupos`, grupo `freela_motivo_perda`; diálogo no lugar do `window.prompt`).
   **Falta:** estágios de proposta e tags.
-- [ ] 🟢 **Drag-and-drop no Kanban** (hoje move por `select`; pede dnd-kit).
+- [x] ✅ **Drag-and-drop no Kanban** — arrastar card entre colunas muda o status (HTML5 dnd nativo, sem lib, espelha o padrão do CRM `KanbanGenerico`/`NegociosSection`), com move otimista; o `select` continua como fallback. 'perdida' ainda abre o `PerdaDialog`. **+ Vista em Tabela** (`TabelaPropostas`) com filtro por status e busca por projeto/cliente, alternada por `VistaToggle` — padrão "igual em outros lugares".
 
 ### 2.B — Análise PROFUNDA (acabar com a "análise vaga") — V.1
 > *"É difícil? é rápido? o preço tá justo? o que vai dar trabalho?"* sem reinterpretar.
