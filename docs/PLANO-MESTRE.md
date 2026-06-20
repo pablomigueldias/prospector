@@ -100,9 +100,16 @@
 
 ### 2.E — Mais AUTONOMIA (encadear sozinho) 🔴 NOVO
 > Hoje cada passo é manual. Replicar a cadeia do coordenador (MAS-2) no freela.
-- [x] ✅ **Cadeia coordenador "Proposta de freela"** (`orchestrator/proposta_freela.py`): Fase 1 `analisar` → **[checkpoint humano: vale a proposta?]** → Fase 2 `preparar` (cota da análise → cria/reusa proposta → redator → checklist). Endpoints `POST /orchestrator/proposta-freela/{analisar,preparar}`; cada passo grava na memória compartilhada (`origem=coordenador`, `alvo_tipo=freela`). Front `CoordenadorProposta` no `ProjetoDrawer` (espelha o `CoordenadorCandidatura`). Smoke E2E: fit 95 → cotou R$9.500, checklist 95 "pronta", 3 variações A/B. *(Falha transitória do LLM no redator é tratada — volta ao checkpoint pra retry.)*
-- [ ] 🟡 **Timeline (MAS-1) na tela de proposta/projeto** — hoje só no RecordModal do CRM. Mostra o que os agentes já fizeram com aquele alvo.
+- [x] ✅ **Cadeia coordenador "Proposta de freela"** (`orchestrator/proposta_freela.py`) — ⏳ **FALTA O PABLO VALIDAR NA TELA** (2026-06-20): abrir um projeto na fila → `ProjetoDrawer` → "🤝 Coordenador — proposta completa" → Preparar proposta → checkpoint → Continuar. Implementação: Fase 1 `analisar` → **[checkpoint humano: vale a proposta?]** → Fase 2 `preparar` (cota da análise → cria/reusa proposta → redator → checklist). Endpoints `POST /orchestrator/proposta-freela/{analisar,preparar}`; cada passo grava na memória compartilhada (`origem=coordenador`, `alvo_tipo=freela`). Front `CoordenadorProposta` no `ProjetoDrawer` (espelha o `CoordenadorCandidatura`). Smoke E2E (backend, sem UI): fit 95 → cotou R$9.500, checklist 95 "pronta", 3 variações A/B. *(Falha transitória do LLM no redator é tratada — volta ao checkpoint pra retry.)*
+- [ ] 🟡 **Timeline (MAS-1) na tela de proposta/projeto** — hoje só no RecordModal do CRM. Mostra o que os agentes já fizeram com aquele alvo (o coordenador já grava os eventos; falta exibir).
 - [ ] 🟡 **Evento de proposta com payload estruturado** — tabela `pessoal_freela_evento` (`proposta_id`+`payload` JSONB) p/ timeline rica (hoje reusa `pipeline_events`, sem JSONB).
+
+> **📌 Próximas atualizações do Freela (fila, pós-validação da cadeia):**
+> 1. ⏳ **Validar a cadeia coordenador na tela** (acima) — única pendência de confirmação do que já foi entregue.
+> 2. 🟡 **Timeline na tela** do projeto/proposta (eventos já são gravados pelo coordenador — só exibir; precisa tabela `pessoal_freela_evento` p/ payload rico).
+> 3. 🟡 **Banco de propostas vencedoras — parte 2** (§2.G): quando houver fechadas, ligar o seam `exemplos_vencedores` no redator + curadoria + UI (base já existe).
+> 4. ⏸️ **Gringo/USD como peso** (§2.G) — ADIADO até o Pablo ir atrás de cliente em inglês; a parte "recorrente como peso" pode ir isolada.
+> 5. 🟢 **Polimentos** (§2.G): alerta de orçamento no precificar a partir da análise (hoje manual), multimoeda, histórico de precificações, relatório mensal (Recharts), adapter 99freelas.
 
 ### 2.F — Cold start / decidir onde gastar a proposta (§0 do plano antigo)
 > Fase atual: **muitas propostas, ainda 0 cliente** → métrica que importa é **taxa de resposta**. Workana Prime (sem limite de proposta).
