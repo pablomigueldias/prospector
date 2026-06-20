@@ -101,6 +101,15 @@ Registro do que **já foi entregue** no agente `vagas` (caçador de vagas). O qu
 
 ---
 
+## Sessão 2026-06-19/20 (movido do PLANO-MESTRE)
+
+- ✅ **Importar vaga por URL** — colar o link no `NovaVagaForm` busca a página (`collectors/website/pagina.py`) e o extrator (`analyzers/vaga/extrator`) pré-preenche descrição/título/empresa/localização/modelo/senioridade; fallback "Auto-preencher do texto". *(campos atrás de login não vêm no fetch anônimo.)*
+- ✅ **Plano de ação pros gaps** — painel "O que estudar" + `plano_gaps` por vaga.
+- ✅ **Corrigir o ranking "O que estudar"** (mostrava skills que o Pablo já tem + frases de requisito viradas "skill"). `estudo_gaps`: skills saem só do `stack`; requisitos viram evidência p/ obrigatoriedade (`_word_in`/`_norm_text`); casamento perfil×vaga robusto (`_formas_perfil` tira parêntese mas aproveita as tools de dentro, quebra compostos; `_COBRE` cobre sinônimos: PostgreSQL→SQL, TypeScript→JavaScript, LLMs→Claude/Gemini/agentes, engenharia de prompt→prompt engineering); `_norm_skill` strippa parênteses; `_eh_skill` descarta tag-frase. Resultado: SQL/Git/APIs/IA/Claude/LLMs/JS/Docker saíram dos gaps.
+- ✅ **Carta de apresentação como PDF** — baixa como PDF formatado (cabeçalho nome/contato + data + ref. + corpo), nome `carta-pabloortiz-{vaga}.pdf`; `CartaPdf` reusa o motor de impressão do currículo (`components/vagas/_pdf.ts`); aparece no `VagaDetalhe` e no coordenador.
+
+---
+
 ## Ainda NÃO feito (resumo — detalhe e prioridade em MELHORIAS_VAGAS.md)
 
 - #1 importar vaga por URL, #2 follow-up + Telegram, #6 prep de entrevista,
