@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { SidePanel } from '@/components/shared/SidePanel';
 import {
@@ -62,8 +62,28 @@ export function ClientesPanel({
   onMudou: () => void;
 }) {
   const [aberto, setAberto] = useState<Aberto>(null);
+  const [busca, setBusca] = useState('');
+  const [filtroPlataforma, setFiltroPlataforma] = useState('todas');
   const nomePlataforma = (id?: string | null) =>
     plataformas.find((p) => p.id === id)?.nome ?? '—';
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return clientes.filter((c) => {
+      if (filtroPlataforma === 'todas') {
+        /* sem filtro de plataforma */
+      } else if (filtroPlataforma === 'sem') {
+        if (c.plataforma_id) return false;
+      } else if (c.plataforma_id !== filtroPlataforma) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        c.nome.toLowerCase().includes(q) ||
+        (c.notas ?? '').toLowerCase().includes(q)
+      );
+    });
+  }, [clientes, busca, filtroPlataforma]);
 
   return (
     <section>
@@ -83,6 +103,31 @@ export function ClientesPanel({
           Nenhum cliente ainda. Cadastre um pra reaproveitar nos projetos e propostas.
         </div>
       ) : (
+        <>
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <input
+            className="input py-1.5 text-[13px] w-56"
+            placeholder="Buscar por nome ou nota…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          <select
+            className="input py-1.5 text-[13px] w-44"
+            value={filtroPlataforma}
+            onChange={(e) => setFiltroPlataforma(e.target.value)}
+          >
+            <option value="todas">Todas as plataformas</option>
+            {plataformas.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}
+              </option>
+            ))}
+            <option value="sem">Sem plataforma</option>
+          </select>
+          <span className="text-[12px] text-ink-mute">
+            {filtrados.length} de {clientes.length}
+          </span>
+        </div>
         <div className="card overflow-x-auto p-0">
           <table className="w-full border-collapse text-[13px]">
             <thead>
@@ -96,7 +141,7 @@ export function ClientesPanel({
               </tr>
             </thead>
             <tbody>
-              {clientes.map((c) => (
+              {filtrados.map((c) => (
                 <tr
                   key={c.id}
                   onClick={() => setAberto(c)}
@@ -122,9 +167,17 @@ export function ClientesPanel({
                   </td>
                 </tr>
               ))}
+              {filtrados.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-ink-mute">
+                    Nenhum cliente com esse filtro.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {aberto && (
