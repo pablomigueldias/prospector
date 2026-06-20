@@ -58,7 +58,7 @@ async def listar_projetos() -> ProjetoListResponse:
         repo = FreelaRepository(session)
         linhas = await repo.listar_projetos()
         comprometidas = await repo.soma_horas_comprometidas()
-        envs, resps, tot_env, tot_resp = contar_resposta_por_stack(
+        envs, resps, _fech, tot_env, tot_resp = contar_resposta_por_stack(
             await repo.propostas_status_e_analise()
         )
     hoje = date.today()

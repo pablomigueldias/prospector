@@ -113,7 +113,7 @@
 - [x] ✅ **Taxa de resposta por categoria/stack** — painel "Onde insistir" (`GET /metricas/por-stack`). ⚠️ depende de normalizar os stacks (hoje verbosos demais — ver [[freela-stack-verboso]]).
 
 ### 2.G — Alavancas de desempenho (§7–§10 do plano antigo)
-- [ ] 🟡 **Win-rate por categoria** (usa `analise_json.stack`) → "gaste proposta aqui".
+- [x] ✅ **Win-rate por categoria** — `contar_resposta_por_stack` agora conta também as fechadas; `taxa_por_stack` devolve `fechadas`+`win_rate` (fechadas/enviadas) por stack e ordena por win-rate → resposta → volume. Painel "Onde insistir" mostra as duas colunas (% resp. e % win). Reusa o pipeline da taxa de resposta (sem endpoint novo).
 - [ ] 🟡 **Banco de propostas vencedoras** — proposta que fecha vira "modelo" p/ o redator se inspirar.
 - [x] ✅ **Alerta de orçamento incompatível** no precificar — campos opcionais de faixa do cliente (mín/máx); o `valor_a_cotar` é comparado e devolve `orcamento_status` (acima/dentro/abaixo) + `alerta_orcamento`: 🔴 acima do teto (perde por preço) / 🟡 abaixo do piso (subcotando) / 🟢 dentro. Independente do alerta de hora/lance mínimo.
 - [ ] 🟡 **Gringo/USD & recorrente como peso** no motor da meta (multimoeda + radar recorrente já existem).

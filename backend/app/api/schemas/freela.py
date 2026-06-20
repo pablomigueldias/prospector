@@ -267,11 +267,13 @@ class MetricasResponse(BaseModel):
 
 
 class TaxaPorStackItem(BaseModel):
-    """Taxa de resposta de uma stack/categoria — onde insistir."""
+    """Taxa de resposta E de fechamento de uma stack/categoria — onde insistir."""
     stack: str
     enviadas: int
     respondidas: int
     taxa_resposta: float       # respondidas / enviadas
+    fechadas: int = 0
+    win_rate: float = 0.0      # fechadas / enviadas (taxa de fechamento)
 
 
 class TaxaPorStackResponse(BaseModel):

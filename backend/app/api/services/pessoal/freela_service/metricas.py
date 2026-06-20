@@ -122,19 +122,21 @@ _RESPONDIDAS = {"respondida", "negociando", "fechada"}
 
 def contar_resposta_por_stack(
     linhas: list[tuple[str, dict | None]],
-) -> tuple[dict[str, int], dict[str, int], int, int]:
-    """(enviadas, respondidas) por stack + totais (enviadas, respondidas).
+) -> tuple[dict[str, int], dict[str, int], dict[str, int], int, int]:
+    """(enviadas, respondidas, fechadas) por stack + totais (enviadas, respondidas).
 
-    Base comum da taxa de resposta por stack e da prob. de resposta usada no
-    ranking de oportunidades. Ignora rascunhos. `linhas` = (status, analise_json).
+    Base comum da taxa de resposta/fechamento por stack e da prob. de resposta
+    usada no ranking de oportunidades. Ignora rascunhos. `linhas` = (status, analise_json).
     """
     enviadas: dict[str, int] = {}
     respondidas: dict[str, int] = {}
+    fechadas: dict[str, int] = {}
     tot_env = tot_resp = 0
     for status, analise in linhas:
         if status == "rascunho":
             continue
         respondeu = status in _RESPONDIDAS
+        fechou = status == "fechada"
         tot_env += 1
         if respondeu:
             tot_resp += 1
@@ -145,20 +147,23 @@ def contar_resposta_por_stack(
             enviadas[chave] = enviadas.get(chave, 0) + 1
             if respondeu:
                 respondidas[chave] = respondidas.get(chave, 0) + 1
-    return enviadas, respondidas, tot_env, tot_resp
+            if fechou:
+                fechadas[chave] = fechadas.get(chave, 0) + 1
+    return enviadas, respondidas, fechadas, tot_env, tot_resp
 
 
 async def taxa_por_stack(min_enviadas: int = 2) -> TaxaPorStackResponse:
-    """Taxa de resposta por stack/categoria — onde gastar proposta rende mais.
+    """Taxa de resposta E de fechamento por stack/categoria — onde gastar proposta
+    rende mais.
 
     Cruza cada proposta enviada (status != rascunho) com o `stack` do projeto
-    (da análise) e mede quantas o cliente respondeu. Só mostra stacks com pelo
-    menos `min_enviadas` propostas, pra não tirar conclusão de amostra de 1.
+    (da análise) e mede quantas o cliente respondeu e quantas fecharam. Só mostra
+    stacks com pelo menos `min_enviadas` propostas, pra não tirar conclusão de 1.
     """
     async with get_session() as session:
         linhas = await FreelaRepository(session).propostas_status_e_analise()
 
-    enviadas, respondidas, _te, _tr = contar_resposta_por_stack(linhas)
+    enviadas, respondidas, fechadas, _te, _tr = contar_resposta_por_stack(linhas)
 
     itens = [
         TaxaPorStackItem(
@@ -166,12 +171,14 @@ async def taxa_por_stack(min_enviadas: int = 2) -> TaxaPorStackResponse:
             enviadas=env,
             respondidas=respondidas.get(tag, 0),
             taxa_resposta=_r2(respondidas.get(tag, 0) / env),
+            fechadas=fechadas.get(tag, 0),
+            win_rate=_r2(fechadas.get(tag, 0) / env),
         )
         for tag, env in enviadas.items()
         if env >= min_enviadas
     ]
-    # Onde insistir primeiro: maior taxa, desempate por volume.
-    itens.sort(key=lambda i: (-i.taxa_resposta, -i.enviadas))
+    # Onde insistir primeiro: maior win-rate, desempate por taxa de resposta e volume.
+    itens.sort(key=lambda i: (-i.win_rate, -i.taxa_resposta, -i.enviadas))
     return TaxaPorStackResponse(itens=itens)
 
 

@@ -74,6 +74,8 @@ export interface FreelaTaxaPorStackItem {
   enviadas: number;
   respondidas: number;
   taxa_resposta: number; // 0..1
+  fechadas: number;
+  win_rate: number; // 0..1 (fechadas / enviadas)
 }
 
 export interface FreelaTaxaPorStackResponse {

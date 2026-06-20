@@ -22,7 +22,8 @@ export function OndeInsistir({
         Onde insistir
       </h2>
       <p className="text-[13px] text-ink-soft mt-0 mb-4">
-        Taxa de resposta por stack — concentre a proposta onde o cliente mais volta.
+        Taxa de resposta e de fechamento por stack — concentre a proposta onde o
+        cliente mais volta e onde mais fecha.
       </p>
       <div className="flex flex-col gap-2.5">
         {itens.map((i) => (
@@ -36,12 +37,23 @@ export function OndeInsistir({
                 style={{ width: `${(i.taxa_resposta / max) * 100}%` }}
               />
             </div>
-            <span className="w-28 shrink-0 text-right tabular-nums text-ink-soft">
+            <span className="w-24 shrink-0 text-right tabular-nums text-ink-soft">
               {Math.round(i.taxa_resposta * 100)}%
               <span className="text-ink-faint">
                 {' '}
-                ({i.respondidas}/{i.enviadas})
+                resp.
               </span>
+            </span>
+            <span
+              className="w-24 shrink-0 text-right tabular-nums text-ink-soft"
+              title={`${i.fechadas} de ${i.enviadas} propostas fecharam`}
+            >
+              <span
+                className={i.win_rate > 0 ? 'text-emerald-700 font-medium' : 'text-ink-faint'}
+              >
+                {Math.round(i.win_rate * 100)}%
+              </span>
+              <span className="text-ink-faint"> win</span>
             </span>
           </div>
         ))}
