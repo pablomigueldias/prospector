@@ -58,6 +58,8 @@ export default function FreelaScreen() {
   const [projetoAberto, setProjetoAberto] = useState<FreelaProjetoListItem | null>(null);
   const [gerirOpcoes, setGerirOpcoes] = useState(false);
   const [vistaPropostas, setVistaPropostas] = useState<'kanban' | 'tabela'>('kanban');
+  const [vistaFila, setVistaFila] = useState<'oportunidades' | 'encerradas'>('oportunidades');
+  const [buscaFila, setBuscaFila] = useState('');
 
   function refetchTudo() {
     void kanban.refetch();
@@ -85,6 +87,24 @@ export default function FreelaScreen() {
   const m = metricas.data;
   // Cold start: ainda sem nenhuma fechada → o foco é RESPOSTA, não fechamento.
   const coldStart = (m?.fechadas ?? 0) === 0;
+
+  // Fila: separa oportunidades em jogo (sem proposta / ativa) das ENCERRADAS
+  // (fechada / não consegui), pra não misturar o fresco com o que já acabou.
+  const encerradas = projetos.items.filter(
+    (p) => p.situacao === 'fechada' || p.situacao === 'perdida',
+  );
+  const oportunidades = projetos.items.filter(
+    (p) => p.situacao === 'sem_proposta' || p.situacao === 'proposta_ativa',
+  );
+  const baseFila = vistaFila === 'encerradas' ? encerradas : oportunidades;
+  const q = buscaFila.trim().toLowerCase();
+  const filaFiltrada = q
+    ? baseFila.filter(
+        (p) =>
+          p.titulo.toLowerCase().includes(q) ||
+          (p.cliente_nome ?? '').toLowerCase().includes(q),
+      )
+    : baseFila;
 
   return (
     <div className="max-w-[1200px] mx-auto pb-16">
@@ -172,7 +192,7 @@ export default function FreelaScreen() {
       />
 
       {/* Fila de oportunidades */}
-      <div className="flex items-center justify-between mt-8 mb-4">
+      <div className="flex items-center justify-between mt-8 mb-3">
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
           Fila de oportunidades
         </h2>
@@ -183,6 +203,27 @@ export default function FreelaScreen() {
         >
           {mostrarForm ? 'Fechar' : '+ Colar projeto'}
         </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <VistaToggle
+          vista={vistaFila}
+          vistas={[
+            { id: 'oportunidades', label: `Oportunidades (${oportunidades.length})` },
+            { id: 'encerradas', label: `Encerradas (${encerradas.length})` },
+          ]}
+          onChange={setVistaFila}
+        />
+        <input
+          className="input py-1.5 text-[13px] w-56"
+          placeholder="Buscar por projeto ou cliente…"
+          value={buscaFila}
+          onChange={(e) => setBuscaFila(e.target.value)}
+        />
+        {q && (
+          <span className="text-[12px] text-ink-mute">
+            {filaFiltrada.length} de {baseFila.length}
+          </span>
+        )}
       </div>
 
       {mostrarForm && (
@@ -202,8 +243,15 @@ export default function FreelaScreen() {
       )}
 
       <FilaProjetos
-        items={projetos.items}
+        items={filaFiltrada}
         loading={projetos.loading}
+        vazioLabel={
+          q
+            ? 'Nenhum projeto com esse filtro.'
+            : vistaFila === 'encerradas'
+              ? 'Nenhuma proposta encerrada ainda (fechadas ou não conseguidas).'
+              : 'Nenhuma oportunidade em aberto. Clique em "Colar projeto".'
+        }
         onCriarProposta={async (projetoId, valorCotado, liquido, horas, prazo) => {
           const p = await acoes.criarProposta({
             projeto_id: projetoId,

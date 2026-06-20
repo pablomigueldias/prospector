@@ -131,6 +131,7 @@ export interface FreelaProjetoListItem {
   estimativa?: FreelaEstimativa | null;
   tem_analise: boolean;
   qtd_propostas: number;
+  situacao: string; // sem_proposta | proposta_ativa | fechada | perdida
   cliente_recorrente: boolean;
   cliente_pago_usd: number;
   bom_primeiro: boolean;

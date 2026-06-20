@@ -67,12 +67,28 @@ class FreelaRepository:
 
     async def listar_projetos(
         self,
-    ) -> list[tuple[Projeto, str | None, int, float, bool]]:
-        """Projetos + nome do cliente + nº de propostas + US$ já pago + pagamento verificado."""
+    ) -> list[tuple[Projeto, str | None, int, int, int, int, float, bool]]:
+        """Projetos + cliente + contagem de propostas (total/ativas/fechadas/perdidas)
+        + US$ já pago + pagamento verificado.
+
+        'ativas' = propostas que NÃO são terminais (nem fechada nem perdida) —
+        servem pra derivar a situação do projeto na fila (sem proposta / ativa /
+        fechada / encerrada sem sucesso).
+        """
+        terminais = ["fechada", "perdida"]
         propostas = (
             select(
                 Proposta.projeto_id,
                 func.count(Proposta.id).label("qtd"),
+                func.count(Proposta.id)
+                .filter(Proposta.status.notin_(terminais))
+                .label("ativas"),
+                func.count(Proposta.id)
+                .filter(Proposta.status == "fechada")
+                .label("fechadas"),
+                func.count(Proposta.id)
+                .filter(Proposta.status == "perdida")
+                .label("perdidas"),
             )
             .group_by(Proposta.projeto_id)
             .subquery()
@@ -82,6 +98,9 @@ class FreelaRepository:
                 Projeto,
                 Cliente.nome,
                 func.coalesce(propostas.c.qtd, 0),
+                func.coalesce(propostas.c.ativas, 0),
+                func.coalesce(propostas.c.fechadas, 0),
+                func.coalesce(propostas.c.perdidas, 0),
                 func.coalesce(Cliente.ja_me_pagou_usd, 0),
                 func.coalesce(Cliente.pagamento_verificado, False),
             )
@@ -91,7 +110,8 @@ class FreelaRepository:
         )
         result = await self.session.execute(stmt)
         return [
-            (row[0], row[1], int(row[2]), float(row[3]), bool(row[4]))
+            (row[0], row[1], int(row[2]), int(row[3]), int(row[4]),
+             int(row[5]), float(row[6]), bool(row[7]))
             for row in result.all()
         ]
 

@@ -67,8 +67,9 @@ async def listar_projetos() -> ProjetoListResponse:
     prob_stack = {k: resps.get(k, 0) / v for k, v in envs.items() if v >= 2}
     prob_global = (tot_resp / tot_env) if tot_env else _PRIOR_RESPOSTA
     items = []
-    for projeto, cliente_nome, qtd, pago_usd, pag_verificado in linhas:
+    for projeto, cliente_nome, qtd, ativas, fechadas, perdidas, pago_usd, pag_verificado in linhas:
         analise = projeto.analise_json or {}
+        situacao = _situacao_projeto(qtd, ativas, fechadas, perdidas)
         bom, motivos = _detectar_bom_primeiro(
             analise, projeto.n_propostas_concorrentes, pag_verificado
         )
@@ -96,6 +97,7 @@ async def listar_projetos() -> ProjetoListResponse:
                 estimativa=analise.get("estimativa"),
                 tem_analise=projeto.analise_json is not None,
                 qtd_propostas=qtd,
+                situacao=situacao,
                 cliente_recorrente=pago_usd > 0,
                 cliente_pago_usd=round(pago_usd, 2),
                 bom_primeiro=bom,
@@ -125,6 +127,24 @@ async def listar_projetos() -> ProjetoListResponse:
         )
     )
     return ProjetoListResponse(items=items, total=len(items))
+
+
+def _situacao_projeto(qtd: int, ativas: int, fechadas: int, perdidas: int) -> str:
+    """Situação do projeto na fila a partir das suas propostas.
+
+    `proposta_ativa` tem prioridade: enquanto houver proposta viva (não terminal),
+    o projeto segue em jogo nas Oportunidades, mesmo que já tenha perdido outra.
+    'fechada'/'perdida' (sem nenhuma ativa) vão pras Encerradas.
+    """
+    if qtd == 0:
+        return "sem_proposta"
+    if ativas > 0:
+        return "proposta_ativa"
+    if fechadas > 0:
+        return "fechada"
+    if perdidas > 0:
+        return "perdida"
+    return "sem_proposta"
 
 
 # Custo de oportunidade — ranquear por valor esperado da próxima proposta.

@@ -159,6 +159,7 @@ class ProjetoListItem(BaseModel):
     estimativa: EstimativaFreela | None = None  # esforço/preço pra pré-preencher
     tem_analise: bool = False
     qtd_propostas: int = 0
+    situacao: str = "sem_proposta"  # sem_proposta | proposta_ativa | fechada | perdida
     cliente_recorrente: bool = False      # cliente já me pagou (comissão menor)
     cliente_pago_usd: float = 0
     bom_primeiro: bool = False            # selo cold start: bom candidato a 1ª nota 5★

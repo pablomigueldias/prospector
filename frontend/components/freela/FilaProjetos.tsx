@@ -13,6 +13,7 @@ import {
 export function FilaProjetos({
   items,
   loading,
+  vazioLabel = 'Nenhum projeto na fila. Clique em "Colar projeto".',
   onCriarProposta,
   onAnalisar,
   onAtualizar,
@@ -21,6 +22,7 @@ export function FilaProjetos({
 }: {
   items: FreelaProjetoListItem[];
   loading: boolean;
+  vazioLabel?: string;
   onCriarProposta: (
     projetoId: string,
     valorCotado: number | null,
@@ -44,9 +46,7 @@ export function FilaProjetos({
   }
   if (items.length === 0) {
     return (
-      <div className="card p-6 text-center text-sm text-ink-mute">
-        Nenhum projeto na fila. Clique em &quot;Colar projeto&quot;.
-      </div>
+      <div className="card p-6 text-center text-sm text-ink-mute">{vazioLabel}</div>
     );
   }
   return (
@@ -70,6 +70,30 @@ const RECOMENDACAO_COR: Record<string, string> = {
   vale: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   talvez: 'bg-amber-50 text-amber-700 border-amber-200',
   evite: 'bg-red-50 text-red-700 border-red-200',
+};
+
+// Situação do projeto na fila (deriva das propostas, no backend).
+export const SITUACAO_META: Record<string, { label: string; cls: string; title: string }> = {
+  sem_proposta: {
+    label: '○ sem proposta',
+    cls: 'bg-bg-alt text-ink-soft border-line',
+    title: 'Oportunidade fresca — você ainda não criou proposta',
+  },
+  proposta_ativa: {
+    label: '● proposta ativa',
+    cls: 'bg-sky-50 text-sky-700 border-sky-200',
+    title: 'Já tem proposta no Kanban (em andamento)',
+  },
+  fechada: {
+    label: '✓ fechada',
+    cls: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    title: 'Você fechou esse projeto',
+  },
+  perdida: {
+    label: '✕ não consegui',
+    cls: 'bg-red-50 text-red-700 border-red-200',
+    title: 'Proposta encerrada sem sucesso',
+  },
 };
 
 // Quadrante dificuldade × esforço (vem do analise_json, calculado no backend).
@@ -267,6 +291,14 @@ function ProjetoCard({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {SITUACAO_META[p.situacao] && (
+            <span
+              className={`text-[12px] font-medium px-2 py-0.5 rounded border ${SITUACAO_META[p.situacao].cls}`}
+              title={SITUACAO_META[p.situacao].title}
+            >
+              {SITUACAO_META[p.situacao].label}
+            </span>
+          )}
           {p.momento && MOMENTO_META[p.momento] && (
             <span
               className={`text-[12px] font-medium px-2 py-0.5 rounded border ${MOMENTO_META[p.momento].cls}`}
