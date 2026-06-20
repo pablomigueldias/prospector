@@ -363,3 +363,33 @@ export interface FreelaNegociarResponse {
   proposta_id: string;
   opcoes: string[];
 }
+
+// Coordenador (cadeia "proposta de freela") — 2 fases com checkpoint humano.
+export interface FreelaPropostaAnalise {
+  projeto_id: string;
+  titulo?: string | null;
+  fit_score: number;
+  recomendacao?: string | null;
+  risco?: string | null;
+  quadrante?: string | null;
+  veredito?: string | null;
+  veredito_preco?: FreelaVeredictoPreco | null;
+  recomenda: boolean;
+  tarefas: FreelaTarefa[];
+  perguntas_cliente: string[];
+  skills_faltando: string[];
+  estimativa?: FreelaEstimativa | null;
+}
+
+export interface FreelaPropostaEntrega {
+  projeto_id: string;
+  proposta_id: string;
+  valor_cotado?: number | null;
+  horas_estimadas?: number | null;
+  prazo?: string | null;
+  texto: string;
+  variacoes_abertura: FreelaVariacaoAbertura[];
+  checklist_score: number;
+  checklist_selo?: string | null;
+  checklist_sugestoes: string[];
+}

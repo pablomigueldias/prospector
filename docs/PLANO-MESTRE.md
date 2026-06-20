@@ -24,7 +24,7 @@
 | Módulo | Estado | Resumo |
 |---|---|---|
 | **Vagas** | ✅ bom | CRUD por JD, analisar (match/gaps/veredito), candidatura, currículo ATS, pipeline, funil, plano-de-gaps. *Pablo: "só falta lapidar o modelo de IA".* |
-| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento` com capacidade/anti-furada, "onde insistir"). **Falta:** mais autonomia (cadeia coordenador — WIP `proposta_freela`). |
+| **Freela** | 🟡 **avançando** | Era o grande buraco. **Sessão 2026-06-19:** gestão na tela (CRUD cliente, edição inline na fila, motivo de perda dinâmico) + cold start (projeto fresco, "bom 1º projeto", veredito `momento` com capacidade/anti-furada, "onde insistir"). **Sessão 2026-06-20:** importar por URL, custo de oportunidade, A/B por ângulo, progresso da meta, win-rate, clareza da fila (selo de situação + abas), tela em abas, **cadeia coordenador** (P1 essencialmente fechado). |
 | **CRM** | ✅ completo | 5 seções (Empresas/Contatos/Negócios/Atividades/Projetos) fora do Notion, CRUD, filtros, pipeline+forecast, ficha 360, dashboard, edição inline, drawer, opções gerenciáveis. |
 | **MAS (multi-agente)** | ✅ núcleo | Memória compartilhada (blackboard), coordenador (cadeia candidatura), outcomes, briefing noturno. Subiu a escada inteira do curso. |
 | **Self-service (Parte 1)** | ✅ núcleo | Cockpit (S1), Observabilidade (S2), Configurações na UI (S3), Agendamentos (S4), Export/Backup (S8). Falta S5–S7. |
@@ -100,7 +100,7 @@
 
 ### 2.E — Mais AUTONOMIA (encadear sozinho) 🔴 NOVO
 > Hoje cada passo é manual. Replicar a cadeia do coordenador (MAS-2) no freela.
-- [ ] 🔴 **Cadeia coordenador "Proposta de freela"**: `freela_service.analise` → `precificador` → **[checkpoint humano]** → `propostas` (redator) → `checklist`. Grava eventos na memória (blackboard) por proposta. Espelha a cadeia de candidatura que já existe.
+- [x] ✅ **Cadeia coordenador "Proposta de freela"** (`orchestrator/proposta_freela.py`): Fase 1 `analisar` → **[checkpoint humano: vale a proposta?]** → Fase 2 `preparar` (cota da análise → cria/reusa proposta → redator → checklist). Endpoints `POST /orchestrator/proposta-freela/{analisar,preparar}`; cada passo grava na memória compartilhada (`origem=coordenador`, `alvo_tipo=freela`). Front `CoordenadorProposta` no `ProjetoDrawer` (espelha o `CoordenadorCandidatura`). Smoke E2E: fit 95 → cotou R$9.500, checklist 95 "pronta", 3 variações A/B. *(Falha transitória do LLM no redator é tratada — volta ao checkpoint pra retry.)*
 - [ ] 🟡 **Timeline (MAS-1) na tela de proposta/projeto** — hoje só no RecordModal do CRM. Mostra o que os agentes já fizeram com aquele alvo.
 - [ ] 🟡 **Evento de proposta com payload estruturado** — tabela `pessoal_freela_evento` (`proposta_id`+`payload` JSONB) p/ timeline rica (hoje reusa `pipeline_events`, sem JSONB).
 

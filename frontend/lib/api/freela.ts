@@ -23,7 +23,9 @@ import type {
   FreelaTaxaPorStackResponse,
   FreelaProjetoListResponse,
   FreelaProposta,
+  FreelaPropostaAnalise,
   FreelaPropostaCreate,
+  FreelaPropostaEntrega,
   FreelaStatus,
 } from '../types';
 
@@ -184,6 +186,22 @@ export const freelaApi = {
     return request<void>(`${BASE}/propostas/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       timeoutMs: T,
+    });
+  },
+
+  // ── Coordenador (cadeia "proposta de freela") ──────────────────
+  freelaCoordenadorAnalisar(projetoId: string): Promise<FreelaPropostaAnalise> {
+    return request<FreelaPropostaAnalise>('/api/orchestrator/proposta-freela/analisar', {
+      method: 'POST',
+      body: { projeto_id: projetoId },
+      timeoutMs: 120_000,
+    });
+  },
+  freelaCoordenadorPreparar(projetoId: string): Promise<FreelaPropostaEntrega> {
+    return request<FreelaPropostaEntrega>('/api/orchestrator/proposta-freela/preparar', {
+      method: 'POST',
+      body: { projeto_id: projetoId },
+      timeoutMs: 180_000,
     });
   },
 };

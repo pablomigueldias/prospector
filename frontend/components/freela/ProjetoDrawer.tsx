@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { CoordenadorProposta } from '@/components/freela/CoordenadorProposta';
 import { SidePanel } from '@/components/shared/SidePanel';
 import { useFetch } from '@/hooks/useFetch';
 import { api } from '@/lib/api';
@@ -137,6 +138,15 @@ export function ProjetoDrawer({
           </p>
         )}
       </Secao>
+
+      {/* Coordenador — cadeia proposta completa (análise → checkpoint → cotar+redigir+checklist) */}
+      <CoordenadorProposta
+        projetoId={projeto.id}
+        onMudou={() => {
+          void refetch();
+          onMudou();
+        }}
+      />
 
       {/* Editáveis */}
       {loading && !detalhe ? (
