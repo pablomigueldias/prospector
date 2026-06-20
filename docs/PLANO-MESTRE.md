@@ -66,6 +66,7 @@
   com prop `grupos`, grupo `freela_motivo_perda`; diálogo no lugar do `window.prompt`).
   **Falta:** estágios de proposta e tags.
 - [x] ✅ **Drag-and-drop no Kanban** — arrastar card entre colunas muda o status (HTML5 dnd nativo, sem lib, espelha o padrão do CRM `KanbanGenerico`/`NegociosSection`), com move otimista; o `select` continua como fallback. 'perdida' ainda abre o `PerdaDialog`. **+ Vista em Tabela** (`TabelaPropostas`) com filtro por status e busca por projeto/cliente, alternada por `VistaToggle` — padrão "igual em outros lugares".
+- [ ] 🔴 **Clareza da fila de oportunidades** (próxima — dor relatada pelo Pablo 2026-06-20): hoje a fila não mostra a **situação** de cada projeto (só `qtd_propostas`). Resolver: (1) **selo de situação** por card — `sem proposta` (fresca) / `proposta ativa` (já no Kanban) / `fechada` / `encerrada sem sucesso` (perdida); deriva do status das propostas do projeto (backend agrega por `projeto_id`). (2) **filtro/busca** na fila pra achar rápido o que acabou de adicionar e não "ficar procurando". (3) **Não misturar fresca × encerrada-sem-sucesso**: esconder/separar projetos cujas propostas estão `perdida`/`fechada` por padrão. *(sem migração — deriva de propostas existentes.)*
 
 ### 2.B — Análise PROFUNDA (acabar com a "análise vaga") — V.1
 > *"É difícil? é rápido? o preço tá justo? o que vai dar trabalho?"* sem reinterpretar.
