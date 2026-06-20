@@ -197,6 +197,7 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 - [ ] 🟡 **Timeline (MAS-1) nas telas de Vaga/Freela** (hoje só no RecordModal do CRM) — overlap §2.E/§4.2.
 - [ ] 🟢 **Normalizador de instituição** dos certificados (OCR às vezes erra: "IMPACTTA"→"IMPACTA").
 - [ ] 🟢 **Cron do sync de certificados** (1×/dia → zero clique).
+- [x] ✅ **Arquivar certificados no servidor (cache-first)** (pedido do Pablo 2026-06-20: sync demorava ~57s rebaixando tudo). Os PDFs agora são guardados em `data/certificados/` na 1ª vez; syncs seguintes leem do disco em vez do Drive → **57s → ~1s**. `SyncResultado` ganhou `arquivados`/`total_arquivados`; nome saneado p/ filesystem; pasta gitignorada. *(O dedupe por nome já evitava re-extração LLM; o gargalo era o download — resolvido.)*
 
 ### 5.3 CRM (essencialmente completo)
 - [x] ✅ Export CSV (entregue como S8).

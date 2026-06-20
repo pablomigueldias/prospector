@@ -4,10 +4,17 @@ Fluxo: lista a pasta → para cada PDF ainda NÃO ingerido (chave = nome do
 arquivo) → baixa → extrai via Gemini multimodal → vira uma `Certificacao` →
 faz merge no perfil ativo. Idempotente: rodar de novo só pega arquivos novos.
 
+Os PDFs ficam **arquivados no servidor** (`data/certificados/`) na 1ª vez que
+são baixados; nos syncs seguintes lê do disco em vez de rebaixar do Drive
+(cache-first). Assim os certificados não dependem do Drive e o sync fica rápido.
+
 É o coração da autonomia pedida: o Pablo joga um certificado na pasta e o
 sistema se atualiza sozinho (via botão na tela ou cron).
 """
 from __future__ import annotations
+
+import re
+from pathlib import Path
 
 from pydantic import BaseModel
 
@@ -23,10 +30,16 @@ from app.api.schemas.pessoal import (
 )
 from app.api.services.pessoal.perfil_service import get_perfil, salvar_perfil
 from app.collectors.drive import baixar_arquivo, listar_pasta_publica
-from app.config import settings
+from app.config import CERTIFICADOS_DIR, settings
 from app.utils.logger import get_logger
 
 logger = get_logger()
+
+
+def _caminho_local(nome: str) -> Path:
+    """Caminho do PDF arquivado no servidor (nome saneado, sem subpastas)."""
+    seguro = re.sub(r"[^\w.\- ]", "_", nome).strip() or "certificado.pdf"
+    return CERTIFICADOS_DIR / seguro
 
 
 class CertificadoSyncError(Exception):
@@ -47,6 +60,8 @@ class SyncResultado(BaseModel):
     falhas: int
     itens: list[SyncItem]
     total_no_perfil: int
+    arquivados: int = 0          # PDFs baixados pro servidor NESTE sync
+    total_arquivados: int = 0    # PDFs já guardados no servidor (data/certificados/)
 
 
 def _para_certificacao(ex: CertificadoExtraido, arquivo: str) -> Certificacao:
@@ -85,15 +100,41 @@ async def sincronizar(folder_id: str | None = None) -> SyncResultado:
     except Exception as e:  # noqa: BLE001 — vira erro de negócio amigável
         raise CertificadoSyncError(f"Falha ao listar a pasta do Drive: {e}")
 
+    CERTIFICADOS_DIR.mkdir(parents=True, exist_ok=True)
+
     itens: list[SyncItem] = []
     novas: list[Certificacao] = []
+    arquivados = 0
     for arq in arquivos:
         chave = arq.nome.strip().lower()
-        if chave in ja_tem:
+        destino = _caminho_local(arq.nome)
+        ja_no_perfil = chave in ja_tem
+
+        # Regime estável: já extraído E já arquivado → nada a fazer (sem Drive).
+        if ja_no_perfil and destino.exists():
             itens.append(SyncItem(arquivo=arq.nome, status="ja_existia"))
             continue
+
+        # Precisa dos bytes (pra arquivar e/ou extrair). Cache-first: se o PDF já
+        # está no servidor, lê do disco; senão baixa do Drive UMA vez e guarda.
         try:
-            conteudo = baixar_arquivo(arq.file_id)
+            if destino.exists():
+                conteudo = destino.read_bytes()
+            else:
+                conteudo = baixar_arquivo(arq.file_id)
+                destino.write_bytes(conteudo)
+                arquivados += 1
+        except Exception as e:  # noqa: BLE001 — registra e segue pros próximos
+            logger.warning("Falha ao obter %s: %s", arq.nome, e)
+            itens.append(SyncItem(arquivo=arq.nome, status="falha", detalhe=str(e)))
+            continue
+
+        # Já estava no perfil, só faltava arquivar → guardado agora, sem LLM.
+        if ja_no_perfil:
+            itens.append(SyncItem(arquivo=arq.nome, status="ja_existia"))
+            continue
+
+        try:
             cru = extrair_certificado_llm(conteudo, "application/pdf")
             extraido = parse_certificado(cru)
             if extraido is None:
@@ -122,6 +163,7 @@ async def sincronizar(folder_id: str | None = None) -> SyncResultado:
     else:
         total_perfil = len(atuais)
 
+    total_arquivados = sum(1 for p in CERTIFICADOS_DIR.glob("*") if p.is_file())
     return SyncResultado(
         total_na_pasta=len(arquivos),
         novos=sum(1 for i in itens if i.status == "novo"),
@@ -129,4 +171,6 @@ async def sincronizar(folder_id: str | None = None) -> SyncResultado:
         falhas=sum(1 for i in itens if i.status == "falha"),
         itens=itens,
         total_no_perfil=total_perfil,
+        arquivados=arquivados,
+        total_arquivados=total_arquivados,
     )

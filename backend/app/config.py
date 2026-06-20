@@ -7,6 +7,7 @@ DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 SENT_DIR = DATA_DIR / "sent"
+CERTIFICADOS_DIR = DATA_DIR / "certificados"   # arquivo local dos PDFs do Drive
 LOGS_DIR = BASE_DIR / "logs"
 UNMAPPED_FIELDS_FILE = DATA_DIR / "unmapped_fields.json"
 

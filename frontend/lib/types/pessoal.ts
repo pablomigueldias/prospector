@@ -51,6 +51,8 @@ export interface CertSyncResultado {
   falhas: number;
   itens: CertSyncItem[];
   total_no_perfil: number;
+  arquivados: number; // PDFs baixados pro servidor neste sync
+  total_arquivados: number; // PDFs já guardados no servidor
 }
 
 export interface BlocoCurriculo {

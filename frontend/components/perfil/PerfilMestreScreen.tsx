@@ -67,7 +67,9 @@ export default function PerfilMestreScreen() {
       setSyncMsg(
         `Sincronizado: ${r.novos} novo(s), ${r.ja_existiam} já existia(m)` +
           (r.falhas ? `, ${r.falhas} falha(s) — rode de novo` : '') +
-          `. Total: ${r.total_no_perfil}.`,
+          `. Total: ${r.total_no_perfil}` +
+          (r.arquivados ? `. ${r.arquivados} PDF(s) guardado(s) no servidor` : '') +
+          ` (${r.total_arquivados} arquivado(s)).`,
       );
       refetch();
     } catch (err) {
