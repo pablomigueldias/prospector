@@ -20,6 +20,8 @@ export function Precificador({
   const [jaPagou, setJaPagou] = useState('0');
   const [horas, setHoras] = useState('');
   const [valorHora, setValorHora] = useState('');
+  const [orcMin, setOrcMin] = useState('');
+  const [orcMax, setOrcMax] = useState('');
   const [res, setRes] = useState<FreelaPrecificarResponse | null>(null);
 
   async function calcular() {
@@ -30,6 +32,8 @@ export function Precificador({
       plataforma_id: plataformaId,
       horas_estimadas: horas ? Number(horas) : null,
       valor_hora_alvo: valorHora ? Number(valorHora) : null,
+      orcamento_min: orcMin ? Number(orcMin) : null,
+      orcamento_max: orcMax ? Number(orcMax) : null,
     });
     if (r) setRes(r);
   }
@@ -103,6 +107,26 @@ export function Precificador({
                 onChange={(e) => setValorHora(e.target.value)}
               />
             </label>
+            <label className="text-[13px] text-ink-soft">
+              Orçamento do cliente — mín (R$)
+              <input
+                className="input mt-1"
+                type="number"
+                value={orcMin}
+                placeholder="opcional"
+                onChange={(e) => setOrcMin(e.target.value)}
+              />
+            </label>
+            <label className="text-[13px] text-ink-soft">
+              Orçamento do cliente — máx (R$)
+              <input
+                className="input mt-1"
+                type="number"
+                value={orcMax}
+                placeholder="opcional"
+                onChange={(e) => setOrcMax(e.target.value)}
+              />
+            </label>
             <div className="flex items-end">
               <button
                 type="button"
@@ -127,6 +151,22 @@ export function Precificador({
               {res.alerta && (
                 <div className="col-span-2 md:col-span-4 text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2.5">
                   ⚠️ {res.alerta}
+                </div>
+              )}
+              {res.alerta_orcamento && (
+                <div
+                  className={`col-span-2 md:col-span-4 text-[13px] rounded p-2.5 border ${
+                    res.orcamento_status === 'acima'
+                      ? 'text-red-700 bg-red-50 border-red-200'
+                      : 'text-amber-700 bg-amber-50 border-amber-200'
+                  }`}
+                >
+                  {res.orcamento_status === 'acima' ? '🔴' : '🟡'} {res.alerta_orcamento}
+                </div>
+              )}
+              {res.orcamento_status === 'dentro' && (
+                <div className="col-span-2 md:col-span-4 text-[13px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2.5">
+                  🟢 Lance dentro da faixa de orçamento informada.
                 </div>
               )}
             </div>

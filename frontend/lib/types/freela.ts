@@ -263,6 +263,8 @@ export interface FreelaPrecificarRequest {
   plataforma_id?: string | null;
   horas_estimadas?: number | null;
   valor_hora_alvo?: number | null;
+  orcamento_min?: number | null;
+  orcamento_max?: number | null;
 }
 
 export interface FreelaPrecificarResponse {
@@ -273,6 +275,8 @@ export interface FreelaPrecificarResponse {
   abaixo_do_lance_minimo: boolean;
   liquido_por_hora?: number | null;
   alerta?: string | null;
+  orcamento_status?: string | null; // abaixo | dentro | acima
+  alerta_orcamento?: string | null;
 }
 
 export interface FreelaEstimativa {

@@ -115,7 +115,7 @@
 ### 2.G — Alavancas de desempenho (§7–§10 do plano antigo)
 - [ ] 🟡 **Win-rate por categoria** (usa `analise_json.stack`) → "gaste proposta aqui".
 - [ ] 🟡 **Banco de propostas vencedoras** — proposta que fecha vira "modelo" p/ o redator se inspirar.
-- [ ] 🟡 **Alerta de orçamento incompatível** no precificar (estoura/abaixo da faixa).
+- [x] ✅ **Alerta de orçamento incompatível** no precificar — campos opcionais de faixa do cliente (mín/máx); o `valor_a_cotar` é comparado e devolve `orcamento_status` (acima/dentro/abaixo) + `alerta_orcamento`: 🔴 acima do teto (perde por preço) / 🟡 abaixo do piso (subcotando) / 🟢 dentro. Independente do alerta de hora/lance mínimo.
 - [ ] 🟡 **Gringo/USD & recorrente como peso** no motor da meta (multimoeda + radar recorrente já existem).
 - [ ] 🟢 **Multimoeda USD↔BRL**, **motivo de perda estruturado**, **histórico de precificações**, **acompanhar prazo de entrega**, **relatório mensal do freela** (Recharts), **dedup do follow-up**, **adapter 99freelas**.
 

@@ -68,6 +68,28 @@ async def precificar(req: PrecificarRequest) -> PrecificarResponse:
     if abaixo_min and not alerta:
         alerta = f"Valor a cotar abaixo do lance mínimo (R$ {lance_min:.2f})."
 
+    # Orçamento incompatível: compara o LANCE (valor a cotar) com a faixa do
+    # cliente/mercado informada. Acima = risco de perder por preço; abaixo =
+    # provável subcotação (dá pra cobrar mais).
+    orcamento_status = None
+    alerta_orcamento = None
+    omin, omax = req.orcamento_min, req.orcamento_max
+    if omax is not None and valor_a_cotar > omax:
+        orcamento_status = "acima"
+        alerta_orcamento = (
+            f"Lance R$ {valor_a_cotar:.0f} acima do teto do orçamento "
+            f"(R$ {omax:.0f}) — risco de perder por preço. Reduza escopo/horas ou "
+            f"justifique o valor."
+        )
+    elif omin is not None and valor_a_cotar < omin:
+        orcamento_status = "abaixo"
+        alerta_orcamento = (
+            f"Lance R$ {valor_a_cotar:.0f} abaixo do piso do orçamento "
+            f"(R$ {omin:.0f}) — você pode estar subcotando; dá pra cobrar mais."
+        )
+    elif omin is not None or omax is not None:
+        orcamento_status = "dentro"
+
     return PrecificarResponse(
         pct_comissao=pct,
         valor_a_cotar=valor_a_cotar,
@@ -76,4 +98,6 @@ async def precificar(req: PrecificarRequest) -> PrecificarResponse:
         abaixo_do_lance_minimo=abaixo_min,
         liquido_por_hora=liquido_por_hora,
         alerta=alerta,
+        orcamento_status=orcamento_status,
+        alerta_orcamento=alerta_orcamento,
     )

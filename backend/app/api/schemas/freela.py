@@ -355,6 +355,8 @@ class PrecificarRequest(BaseModel):
     plataforma_id: str | None = None        # de onde vêm as faixas de comissão
     horas_estimadas: float | None = None
     valor_hora_alvo: float | None = None
+    orcamento_min: float | None = None      # faixa do cliente/mercado (pra alerta de incompatível)
+    orcamento_max: float | None = None
 
 
 class PrecificarResponse(BaseModel):
@@ -365,6 +367,8 @@ class PrecificarResponse(BaseModel):
     abaixo_do_lance_minimo: bool = False
     liquido_por_hora: float | None = None
     alerta: str | None = None  # ex: "abaixo do seu valor-hora alvo"
+    orcamento_status: str | None = None  # abaixo | dentro | acima (vs faixa informada)
+    alerta_orcamento: str | None = None  # lance estoura/fica abaixo da faixa
 
 
 # ══════════════════════════════════════════════════════════════════
