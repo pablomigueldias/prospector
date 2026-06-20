@@ -170,6 +170,24 @@ class FreelaRepository:
         )
         return list((await self.session.execute(stmt)).scalars().all())
 
+    async def propostas_vencedoras(
+        self, limit: int = 20
+    ) -> list[tuple[Proposta, str, dict | None]]:
+        """Propostas que FECHARAM + título do projeto + analise_json (stack/etc).
+
+        Base do "banco de propostas vencedoras": a fonte que uma futura análise
+        (redator se inspirando no que funcionou) vai consumir. Mais recentes 1º.
+        """
+        stmt = (
+            select(Proposta, Projeto.titulo, Projeto.analise_json)
+            .join(Projeto, Projeto.id == Proposta.projeto_id)
+            .where(Proposta.status == "fechada")
+            .order_by(Proposta.data_resposta.desc().nullslast())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return [(row[0], row[1], row[2]) for row in result.all()]
+
     async def contar_por_status(self) -> dict[str, int]:
         stmt = select(Proposta.status, func.count(Proposta.id)).group_by(
             Proposta.status

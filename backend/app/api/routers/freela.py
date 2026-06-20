@@ -37,6 +37,7 @@ from app.api.schemas.freela import (
     CapacidadeResponse,
     RedigirRequest,
     RedigirResponse,
+    PropostasVencedorasResponse,
     TaxaPorAnguloResponse,
     TaxaPorStackResponse,
 )
@@ -101,6 +102,15 @@ async def metricas_por_stack() -> TaxaPorStackResponse:
 async def metricas_por_angulo() -> TaxaPorAnguloResponse:
     try:
         return await freela_service.taxa_por_angulo()
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.get("/propostas/vencedoras", response_model=PropostasVencedorasResponse,
+            summary="Banco de propostas vencedoras (fechadas) — base p/ futura análise")
+async def propostas_vencedoras() -> PropostasVencedorasResponse:
+    try:
+        return await freela_service.propostas_vencedoras()
     except Exception as e:
         raise _handle(e)
 

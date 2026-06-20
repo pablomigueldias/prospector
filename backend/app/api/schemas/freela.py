@@ -243,6 +243,22 @@ class KanbanResponse(BaseModel):
     colunas: list[KanbanColuna]
 
 
+class PropostaVencedoraItem(BaseModel):
+    """Proposta que fechou — material do 'banco de vencedoras' (base p/ futura
+    análise: o redator se inspirar no que funcionou)."""
+    id: str
+    projeto_titulo: str
+    stack: list[str] = Field(default_factory=list)
+    valor_cotado: float | None = None
+    angulo_abertura: str | None = None
+    texto: str | None = None
+    data_resposta: str | None = None
+
+
+class PropostasVencedorasResponse(BaseModel):
+    itens: list[PropostaVencedoraItem] = Field(default_factory=list)
+
+
 # ══════════════════════════════════════════════════════════════════
 # Métricas do painel
 # ══════════════════════════════════════════════════════════════════

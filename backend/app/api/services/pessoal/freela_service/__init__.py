@@ -25,6 +25,7 @@ from .metricas import (
     capacidade,
     kanban,
     metricas,
+    propostas_vencedoras,
     taxa_por_angulo,
     taxa_por_stack,
 )
@@ -84,6 +85,7 @@ __all__ = [
     "metricas",
     "taxa_por_stack",
     "taxa_por_angulo",
+    "propostas_vencedoras",
     "capacidade",
     # meta
     "plano_meta",

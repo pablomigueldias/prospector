@@ -9,6 +9,8 @@ from app.api.schemas.freela import (
     KanbanResponse,
     MetricasResponse,
     PropostaKanbanItem,
+    PropostasVencedorasResponse,
+    PropostaVencedoraItem,
     TaxaPorAnguloItem,
     TaxaPorAnguloResponse,
     TaxaPorStackItem,
@@ -180,6 +182,27 @@ async def taxa_por_stack(min_enviadas: int = 2) -> TaxaPorStackResponse:
     # Onde insistir primeiro: maior win-rate, desempate por taxa de resposta e volume.
     itens.sort(key=lambda i: (-i.win_rate, -i.taxa_resposta, -i.enviadas))
     return TaxaPorStackResponse(itens=itens)
+
+
+async def propostas_vencedoras(limit: int = 20) -> PropostasVencedorasResponse:
+    """Banco de propostas vencedoras (status fechada). Base p/ futura análise — o
+    redator se inspirar no que já fechou. Hoje é só a listagem (fonte de dados)."""
+    async with get_session() as session:
+        linhas = await FreelaRepository(session).propostas_vencedoras(limit)
+
+    itens = [
+        PropostaVencedoraItem(
+            id=str(p.id),
+            projeto_titulo=titulo,
+            stack=[str(t).strip() for t in (analise or {}).get("stack") or [] if str(t).strip()],
+            valor_cotado=float(p.valor_cotado) if p.valor_cotado is not None else None,
+            angulo_abertura=p.angulo_abertura,
+            texto=p.texto_enviado,
+            data_resposta=_iso(p.data_resposta),
+        )
+        for p, titulo, analise in linhas
+    ]
+    return PropostasVencedorasResponse(itens=itens)
 
 
 async def taxa_por_angulo() -> TaxaPorAnguloResponse:
