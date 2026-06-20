@@ -205,7 +205,7 @@ async def metricas() -> VagasMetricas:
     )
 
 
-# Apelidos comuns → forma canônica (normalizada, sem ponto/acento).
+# Apelidos comuns → forma canônica (já normalizada: minúscula, sem ponto/acento).
 _SKILL_ALIAS = {
     "reactjs": "react",
     "nextjs": "next",
@@ -215,12 +215,54 @@ _SKILL_ALIAS = {
     "js": "javascript",
     "ts": "typescript",
     "tailwindcss": "tailwind",
-    "github actions": "ci/cd",
+    # dedup de variações que apareciam como linhas separadas no ranking
+    "github action": "github actions",
+    "apis": "api rest",
+    "apis rest": "api rest",
+    "api": "api rest",
+    "rest api": "api rest",
+    "bancos de dados relacionais": "bancos relacionais",
+    "banco de dados relacional": "bancos relacionais",
+    "bancos de dados nao relacionais": "bancos nao relacionais",
+    "banco de dados nao relacional": "bancos nao relacionais",
+    "apache airflow": "airflow",
 }
+
+# "Cobre": skill do perfil (forma canônica) que JÁ satisfaz outras pedidas pelas
+# vagas — evita falso-gap por sinônimo/idioma/derivação (quem usa PostgreSQL sabe
+# SQL; quem integra LLMs sabe usar Claude/Gemini; "engenharia de prompt"≈"prompt
+# engineering"). Chave = forma do perfil; valores = formas (de vaga) que ela cobre.
+_COBRE = {
+    "postgresql": {"sql", "bancos relacionais", "modelagem de dados", "bancos de dados"},
+    "sqlalchemy": {"sql", "orm"},
+    "typescript": {"javascript"},
+    "fastapi": {"api rest", "rest", "openapi", "swagger"},
+    "engenharia de prompt": {"prompt engineering", "prompt"},
+    "integracao com llms": {
+        "llm", "llms", "ia", "ia generativa", "inteligencia artificial",
+        "claude", "chatgpt", "gpt 4", "gemini", "anthropic", "openai", "copilot",
+        "ai agents", "agentes", "llm apis",
+    },
+    "machine learning": {"ml", "modelos preditivos", "classificacao", "regressao"},
+    "docker": {"docker compose", "containers", "conteineres"},
+    "git": {"github", "controle de versao", "versionamento", "gitlab"},
+    "web scraping": {"scraping", "automacao"},
+    "deploy em vps": {"linux", "ssh"},
+    "testes": {"pytest", "testes automatizados"},
+}
+
+# Termos que denunciam frase de requisito / soft-skill (não é tecnologia p/ estudar).
+_NAO_SKILL = (
+    "conhecimento", "experiencia", "experiência", "capacidade", "habilidade",
+    "ensino superior", "anos de", "anos com", "boa ", "boas ", "vivencia",
+    "comunicacao", "trabalho em equipe", "proativ", "ferramentas", "raciocinio",
+)
 
 
 def _norm_skill(s: str) -> str:
-    """Normaliza nome de skill pra agregar variações ('React.js'≈'react')."""
+    """Normaliza nome de skill pra agregar variações ('React.js'≈'react').
+    Tira o parêntese descritivo ('IA (Inteligência Artificial)'→'ia')."""
+    s = re.sub(r"\(.*?\)", " ", s)
     t = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
     t = t.lower().replace(".", "").strip()
     t = re.sub(r"[^a-z0-9+# ]", " ", t)   # mantém + e # (c++, c#); resto vira espaço
@@ -228,11 +270,54 @@ def _norm_skill(s: str) -> str:
     return _SKILL_ALIAS.get(t, t)
 
 
+_SEPS = re.compile(r"[/+,&]")
+
+
+def _formas_perfil(s: str) -> set[str]:
+    """Formas que uma skill do perfil cobre. Separa a cabeça do parêntese
+    ('Git (commits…)'→'git') mas TAMBÉM aproveita o que há dentro dele, que às
+    vezes são tools de verdade ('… (Playwright, BeautifulSoup)', '(JWT, RBAC)'),
+    e quebra compostos ('Docker / docker-compose', 'Gemini/Groq/Ollama')."""
+    sem_paren = re.sub(r"\(.*?\)", " ", s)
+    dentro = " , ".join(re.findall(r"\((.*?)\)", s))   # conteúdo dos parênteses
+    formas = {_norm_skill(s)}
+    for bloco in (sem_paren, dentro):
+        for parte in _SEPS.split(bloco):
+            formas.add(_norm_skill(parte))
+    formas.discard("")
+    return formas
+
+
+def _norm_text(s: str) -> str:
+    """Normaliza uma FRASE de requisito p/ busca (mantém o que está em parêntese,
+    ex.: '(ex.: Airflow ou similares)' continua tendo 'airflow')."""
+    t = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+    t = t.lower().replace(".", " ")
+    t = re.sub(r"[^a-z0-9+# ]", " ", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def _word_in(texto_norm: str, termo: str) -> bool:
+    """`termo` aparece como palavra inteira em `texto_norm` (ambos normalizados)."""
+    if not termo:
+        return False
+    return re.search(rf"(?<![a-z0-9]){re.escape(termo)}(?![a-z0-9])", texto_norm) is not None
+
+
+def _eh_skill(s: str) -> bool:
+    """Tag de stack que é tecnologia de fato (descarta frase/soft-skill vaga)."""
+    nk = _norm_skill(s)
+    if not nk or len(nk.split()) > 5:
+        return False
+    return not any(p in nk for p in _NAO_SKILL)
+
+
 async def estudo_gaps() -> EstudoVagasResponse:
     """Agrega as skills pedidas por TODAS as vagas analisadas e cruza com o perfil.
 
-    Resultado: o que a maioria das vagas pede e você ainda NÃO tem (lista de
-    estudo, ranqueada por demanda) + seus pontos fortes mais demandados.
+    Skills saem do `stack` (tags limpas); as frases de `requisitos_obrigatorios`
+    servem só pra marcar a obrigatoriedade de cada tag (busca por palavra inteira).
+    Resultado: o que a maioria pede e você ainda NÃO tem + seus pontos fortes.
     """
     perfil = await get_perfil()
     async with get_session() as session:
@@ -242,37 +327,43 @@ async def estudo_gaps() -> EstudoVagasResponse:
     if total == 0:
         return EstudoVagasResponse(total_vagas=0)
 
-    # Skills que você JÁ tem (perfil): habilidades + stacks de projetos + alvo.
+    # Skills que você JÁ tem (perfil): habilidades + stacks de projetos + alvo —
+    # com parênteses/compostos quebrados e expandido pelos sinônimos de _COBRE.
     tenho: set[str] = set()
     if perfil is not None:
         for h in perfil.habilidades:
-            tenho.add(_norm_skill(h.nome))
+            tenho |= _formas_perfil(h.nome)
         for pr in perfil.projetos:
             for s in pr.stack or []:
-                tenho.add(_norm_skill(s))
+                tenho |= _formas_perfil(s)
         if perfil.o_que_procuro:
             for s in perfil.o_que_procuro.stack or []:
-                tenho.add(_norm_skill(s))
+                tenho |= _formas_perfil(s)
+    for base, cobre in _COBRE.items():
+        if base in tenho:
+            tenho |= cobre
     tenho.discard("")
 
-    n_vagas: Counter = Counter()        # norm -> nº de vagas em que aparece
+    n_vagas: Counter = Counter()        # norm -> nº de vagas em que aparece (no stack)
     obrig: Counter = Counter()          # norm -> nº de vagas em que é OBRIGATÓRIA
     formas: dict[str, Counter] = {}     # norm -> contagem das formas originais (display)
 
     for v in vagas:
         a = v.analise_json or {}
-        obrigatorias = {_norm_skill(x) for x in (a.get("requisitos_obrigatorios") or [])}
-        # uma skill conta UMA vez por vaga (mesmo se repetir em campos diferentes)
+        obrig_txt = " / ".join(
+            _norm_text(x) for x in (a.get("requisitos_obrigatorios") or [])
+        )
+        # uma skill conta UMA vez por vaga
         na_vaga: dict[str, str] = {}
-        for campo in ("requisitos_obrigatorios", "desejaveis", "stack"):
-            for x in a.get(campo) or []:
+        for x in a.get("stack") or []:
+            if isinstance(x, str) and _eh_skill(x):
                 nk = _norm_skill(x)
                 if nk:
                     na_vaga.setdefault(nk, x)
         for nk, orig in na_vaga.items():
             n_vagas[nk] += 1
             formas.setdefault(nk, Counter())[orig] += 1
-            if nk in obrigatorias:
+            if _word_in(obrig_txt, nk):
                 obrig[nk] += 1
 
     def _mk(nk: str) -> SkillEstudo:
