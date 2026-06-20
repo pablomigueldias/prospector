@@ -31,6 +31,18 @@ import {
 } from '@/hooks/useFreela';
 import { type FreelaKanbanItem, type FreelaProjetoListItem } from '@/lib/types';
 
+type Secao = 'oportunidades' | 'propostas' | 'clientes' | 'painel';
+
+const SECOES: { id: Secao; label: string }[] = [
+  { id: 'oportunidades', label: 'Oportunidades' },
+  { id: 'propostas', label: 'Propostas' },
+  { id: 'clientes', label: 'Clientes' },
+  { id: 'painel', label: 'Painel' },
+];
+
+// Quantos cards da fila mostrar de uma vez (evita scroll infinito).
+const LIMITE_FILA = 50;
+
 /** Horas médias → "—" / "8h" / "2d 3h". */
 function formatHoras(h?: number | null): string {
   if (h == null) return '—';
@@ -60,6 +72,7 @@ export default function FreelaScreen() {
   const [vistaPropostas, setVistaPropostas] = useState<'kanban' | 'tabela'>('kanban');
   const [vistaFila, setVistaFila] = useState<'oportunidades' | 'encerradas'>('oportunidades');
   const [buscaFila, setBuscaFila] = useState('');
+  const [secao, setSecao] = useState<Secao>('oportunidades');
 
   function refetchTudo() {
     void kanban.refetch();
@@ -120,6 +133,26 @@ export default function FreelaScreen() {
         </p>
       </header>
 
+      {/* Navegação das seções */}
+      <div className="flex gap-1 border-b border-line mb-6 overflow-x-auto">
+        {SECOES.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => setSecao(s.id)}
+            className={`px-4 py-2.5 text-[13.5px] font-medium border-b-2 -mb-px whitespace-nowrap transition-colors ${
+              secao === s.id
+                ? 'border-brand text-brand'
+                : 'border-transparent text-ink-soft hover:text-ink'
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {secao === 'painel' && (
+        <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-7">
         <StatCard
           label="Propostas"
@@ -179,7 +212,10 @@ export default function FreelaScreen() {
         plataformaId={plataformas.items[0]?.id ?? null}
         clientes={clientes.items.map((c) => ({ id: c.id, nome: c.nome }))}
       />
+        </>
+      )}
 
+      {secao === 'clientes' && (
       <ClientesPanel
         clientes={clientes.items}
         loading={clientes.loading}
@@ -190,7 +226,10 @@ export default function FreelaScreen() {
         onRemover={acoes.removerCliente}
         onMudou={() => clientes.refetch()}
       />
+      )}
 
+      {secao === 'oportunidades' && (
+        <>
       {/* Fila de oportunidades */}
       <div className="flex items-center justify-between mt-8 mb-3">
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
@@ -243,7 +282,7 @@ export default function FreelaScreen() {
       )}
 
       <FilaProjetos
-        items={filaFiltrada}
+        items={filaFiltrada.slice(0, LIMITE_FILA)}
         loading={projetos.loading}
         vazioLabel={
           q
@@ -279,7 +318,17 @@ export default function FreelaScreen() {
           }
         }}
       />
+      {filaFiltrada.length > LIMITE_FILA && (
+        <p className="text-[12px] text-ink-mute mt-3 text-center">
+          Mostrando os {LIMITE_FILA} primeiros de {filaFiltrada.length}. Use a busca pra
+          achar um projeto específico.
+        </p>
+      )}
+        </>
+      )}
 
+      {secao === 'propostas' && (
+        <>
       {/* Propostas — Kanban ou Tabela */}
       <div className="flex items-center justify-between mt-10 mb-4">
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
@@ -320,6 +369,8 @@ export default function FreelaScreen() {
           onMover={moverProposta}
           onRemover={removerProposta}
         />
+      )}
+        </>
       )}
 
       {propostaAberta && (
