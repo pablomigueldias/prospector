@@ -411,6 +411,8 @@ class TarefaEstimada(BaseModel):
 
 class AnaliseFreela(BaseModel):
     fit_score: int = 0                 # 0-100: é a sua praia?
+    confianca_analise: str | None = None  # alta | media | baixa (texto pobre → baixa)
+    confianca_motivo: str | None = None   # 1 linha: o que falta no texto pra cravar
     recomendacao: str | None = None  # vale / talvez / evite
     risco: str | None = None         # baixo / medio / alto (scam radar)
     complexidade_tecnica: str | None = None  # trivial | media | alta | incerta

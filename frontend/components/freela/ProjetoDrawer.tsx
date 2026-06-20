@@ -27,6 +27,12 @@ const PRECO: Record<string, string> = {
   acima: '💎 paga acima',
   sem_orcamento: '❔ sem orçamento',
 };
+// Confiança da análise: o quanto o texto colado deixou cravar (anti-alucinação).
+const CONFIANCA: Record<string, { label: string; cls: string }> = {
+  alta: { label: '🟢 Confiança alta', cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  media: { label: '🟡 Confiança média', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+  baixa: { label: '🔴 Confiança baixa', cls: 'bg-red-50 text-red-700 border-red-200' },
+};
 
 function Pill({ children, cls = 'bg-bg-alt text-ink-soft border-line' }: { children: React.ReactNode; cls?: string }) {
   return <span className={`text-[12px] font-medium px-2 py-0.5 rounded border ${cls}`}>{children}</span>;
@@ -153,6 +159,16 @@ export function ProjetoDrawer({
       {/* Análise detalhada */}
       {analise && (
         <Secao titulo="Análise">
+          {analise.confianca_analise && CONFIANCA[analise.confianca_analise] && (
+            <div
+              className={`text-[12px] rounded border px-2.5 py-1.5 mb-2 ${CONFIANCA[analise.confianca_analise].cls}`}
+            >
+              <strong>{CONFIANCA[analise.confianca_analise].label}</strong>
+              {analise.confianca_analise !== 'alta' && analise.confianca_motivo && (
+                <> — {analise.confianca_motivo}</>
+              )}
+            </div>
+          )}
           {analise.veredito && <p className="text-[13px] text-ink-soft mt-0 mb-2">{analise.veredito}</p>}
           {analise.tarefas?.length > 0 && (
             <Bloco titulo="🧩 Escopo em tarefas">

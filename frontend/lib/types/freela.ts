@@ -285,6 +285,8 @@ export interface FreelaVeredictoPreco {
 
 export interface FreelaAnalise {
   fit_score: number;
+  confianca_analise?: string | null; // alta | media | baixa (texto pobre → baixa)
+  confianca_motivo?: string | null; // o que falta no texto pra cravar
   recomendacao?: string | null; // vale | talvez | evite
   risco?: string | null; // baixo | medio | alto
   complexidade_tecnica?: string | null; // trivial | media | alta | incerta
