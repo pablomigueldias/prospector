@@ -2,12 +2,18 @@
 propostas necessárias, gargalo) + rampa por reputação. Sem IA."""
 from __future__ import annotations
 
+import calendar
+from datetime import UTC, datetime
+
 from app.api.schemas.freela import (
     FaseRampa,
     PlanoMetaRequest,
     PlanoMetaResponse,
+    ProgressoMes,
 )
 from app.api.services._helpers import r2 as _r2
+from app.db.session import get_session
+from app.repositories.pessoal.freela_repository import FreelaRepository
 
 from ._base import FreelaError
 from .metricas import metricas
@@ -28,6 +34,61 @@ _RAMPA_META = [
 _CONVERSAO_FRACA = 0.15
 # Semanas por mês (média) pra transformar propostas/mês em propostas/semana.
 _SEMANAS_MES = 4.3
+
+
+async def _progresso_mes(meta_liquida: float) -> ProgressoMes:
+    """Realizado no mês corrente vs ritmo linear necessário pra bater a meta.
+
+    Compara o líquido já fechado no mês com a meta proporcional ao dia de hoje
+    (ritmo linear). Margem de 10% pros lados pra não acusar "atrás" no dia 2.
+    """
+    agora = datetime.now(UTC)
+    inicio_mes = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    dias_no_mes = calendar.monthrange(agora.year, agora.month)[1]
+
+    async with get_session() as session:
+        realizado, fechadas_mes = await FreelaRepository(
+            session
+        ).soma_liquido_fechado_desde(inicio_mes)
+
+    fracao = agora.day / dias_no_mes
+    meta_ate_hoje = _r2(meta_liquida * fracao)
+
+    if fechadas_mes == 0:
+        status = "sem_dados"
+        resumo = (
+            f"Nenhuma fechada ainda neste mês. Pra bater R$ {meta_liquida:.0f}, "
+            f"o ritmo pede ~R$ {meta_ate_hoje:.0f} até hoje (dia {agora.day})."
+        )
+    elif realizado >= meta_ate_hoje * 1.1:
+        status = "na_frente"
+        resumo = (
+            f"Na frente: R$ {realizado:.0f} fechado vs ~R$ {meta_ate_hoje:.0f} "
+            f"esperado até o dia {agora.day}. Segue assim."
+        )
+    elif realizado < meta_ate_hoje * 0.9:
+        status = "atras"
+        resumo = (
+            f"Atrás do ritmo: R$ {realizado:.0f} fechado vs ~R$ {meta_ate_hoje:.0f} "
+            f"esperado até hoje. Faltam R$ {max(0, meta_liquida - realizado):.0f} no mês."
+        )
+    else:
+        status = "no_caminho"
+        resumo = (
+            f"No caminho: R$ {realizado:.0f} fechado, ~R$ {meta_ate_hoje:.0f} "
+            f"era o esperado até o dia {agora.day}."
+        )
+
+    return ProgressoMes(
+        realizado=_r2(realizado),
+        meta_ate_hoje=meta_ate_hoje,
+        fechadas_mes=fechadas_mes,
+        dia=agora.day,
+        dias_no_mes=dias_no_mes,
+        pct_meta=_r2(realizado / meta_liquida) if meta_liquida else 0.0,
+        status=status,
+        resumo=resumo,
+    )
 
 
 def _fase_rampa(fechadas: int) -> dict:
@@ -102,6 +163,7 @@ async def plano_meta(req: PlanoMetaRequest) -> PlanoMetaResponse:
         )
 
     fase = _fase_rampa(m.fechadas)
+    progresso = await _progresso_mes(req.meta_liquida)
 
     return PlanoMetaResponse(
         meta_liquida=_r2(req.meta_liquida),
@@ -117,4 +179,5 @@ async def plano_meta(req: PlanoMetaRequest) -> PlanoMetaResponse:
         gargalo=gargalo,
         diagnostico=diagnostico,
         fase=FaseRampa(**fase),
+        progresso_mes=progresso,
     )

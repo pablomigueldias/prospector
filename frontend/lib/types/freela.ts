@@ -228,6 +228,17 @@ export interface FreelaFaseRampa {
   foco: string;
 }
 
+export interface FreelaProgressoMes {
+  realizado: number;
+  meta_ate_hoje: number;
+  fechadas_mes: number;
+  dia: number;
+  dias_no_mes: number;
+  pct_meta: number; // 0..1+
+  status: string; // na_frente | no_caminho | atras | sem_dados
+  resumo: string;
+}
+
 export interface FreelaPlanoMeta {
   meta_liquida: number;
   horas_faturaveis_mes: number;
@@ -242,6 +253,7 @@ export interface FreelaPlanoMeta {
   gargalo: string; // ticket | conversao | volume | no_caminho | sem_dados
   diagnostico: string;
   fase: FreelaFaseRampa;
+  progresso_mes?: FreelaProgressoMes | null;
 }
 
 export interface FreelaPrecificarRequest {

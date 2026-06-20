@@ -94,7 +94,7 @@
 - [x] ✅ **Matemática reversa** (`POST /freela/meta/plano` → valor-hora alvo, projetos/mês, propostas/semana, gargalo).
 - [x] ✅ **Valor-hora alvo vs real** (pinta vermelho quando abaixo).
 - [x] ✅ **Estratégia por fase** (rampa F1–F4 pela reputação).
-- [~] 🟡 **Painel da meta com "plano da semana".** Já mostra o ritmo necessário. **Falta:** progresso real vs ritmo (no caminho/atrás/na frente) no mês corrente.
+- [x] ✅ **Painel da meta com progresso do mês.** `plano_meta` agora devolve `progresso_mes` (líquido fechado no mês via `soma_liquido_fechado_desde`, usando `data_resposta` como data de fechamento) vs ritmo linear esperado até hoje → status `na_frente`/`no_caminho`/`atras`/`sem_dados`. Barra de progresso no `PlanoMetaPanel` com marcador do ritmo esperado + resumo. *Margem de 10% pros lados pra não acusar "atrás" cedo no mês.*
 
 ### 2.E — Mais AUTONOMIA (encadear sozinho) 🔴 NOVO
 > Hoje cada passo é manual. Replicar a cadeia do coordenador (MAS-2) no freela.

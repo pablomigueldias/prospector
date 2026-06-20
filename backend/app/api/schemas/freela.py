@@ -315,6 +315,18 @@ class FaseRampa(BaseModel):
     foco: str
 
 
+class ProgressoMes(BaseModel):
+    """Progresso real do mês corrente vs ritmo linear necessário pra bater a meta."""
+    realizado: float       # líquido fechado no mês (proposta fechada com data_resposta no mês)
+    meta_ate_hoje: float   # ritmo linear esperado até hoje (meta × fração do mês decorrida)
+    fechadas_mes: int      # nº de propostas fechadas no mês
+    dia: int               # dia do mês corrente
+    dias_no_mes: int
+    pct_meta: float        # realizado ÷ meta (0..1+)
+    status: str            # na_frente | no_caminho | atras | sem_dados
+    resumo: str            # 1 linha pro card
+
+
 class PlanoMetaResponse(BaseModel):
     meta_liquida: float
     horas_faturaveis_mes: float
@@ -329,6 +341,7 @@ class PlanoMetaResponse(BaseModel):
     gargalo: str                          # ticket | conversao | volume | no_caminho | sem_dados
     diagnostico: str
     fase: FaseRampa
+    progresso_mes: ProgressoMes | None = None  # realizado no mês vs ritmo necessário
 
 
 # ══════════════════════════════════════════════════════════════════

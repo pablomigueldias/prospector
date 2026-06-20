@@ -18,6 +18,14 @@ const GARGALO_META: Record<string, { label: string; cls: string }> = {
   sem_dados: { label: '🌱 Sem dados ainda', cls: 'bg-bg-alt text-ink-soft border-line' },
 };
 
+// Progresso do mês corrente vs ritmo necessário.
+const STATUS_MES: Record<string, { label: string; barra: string; texto: string }> = {
+  na_frente: { label: '🚀 Na frente', barra: 'bg-emerald-500', texto: 'text-emerald-700' },
+  no_caminho: { label: '✅ No caminho', barra: 'bg-emerald-500', texto: 'text-emerald-700' },
+  atras: { label: '⚠️ Atrás do ritmo', barra: 'bg-red-500', texto: 'text-red-700' },
+  sem_dados: { label: '🌱 Sem fechadas no mês', barra: 'bg-line', texto: 'text-ink-soft' },
+};
+
 function numFromLS(key: string, def: number): number {
   if (typeof window === 'undefined') return def;
   const v = Number(localStorage.getItem(key));
@@ -107,6 +115,39 @@ export function PlanoMetaPanel({ refreshKey }: { refreshKey: number }) {
           />
         </label>
       </div>
+
+      {plano?.progresso_mes && (() => {
+        const pm = plano.progresso_mes;
+        const st = STATUS_MES[pm.status] ?? STATUS_MES.sem_dados;
+        const pctReal = Math.min(100, pm.pct_meta * 100);
+        const pctRitmo = Math.min(100, (pm.meta_ate_hoje / plano.meta_liquida) * 100);
+        return (
+          <div className="rounded-lg border border-line bg-surface p-3 mb-3">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-[12px] font-medium text-ink-soft">
+                Progresso do mês (dia {pm.dia}/{pm.dias_no_mes})
+              </span>
+              <span className={`text-[12px] font-semibold ${st.texto}`}>{st.label}</span>
+            </div>
+            {/* barra: realizado preenchido + marcador do ritmo esperado até hoje */}
+            <div className="relative h-2.5 rounded-full bg-bg-alt overflow-hidden">
+              <div className={`h-full ${st.barra}`} style={{ width: `${pctReal}%` }} />
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-ink/60"
+                style={{ left: `${pctRitmo}%` }}
+                title={`Ritmo esperado até hoje: ${formatBRL(pm.meta_ate_hoje)}`}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-ink-faint mt-1">
+              <span className="tabular-nums">
+                {formatBRL(pm.realizado)} de {formatBRL(plano.meta_liquida)} ({Math.round(pctReal)}%)
+              </span>
+              <span className="tabular-nums">ritmo: {formatBRL(pm.meta_ate_hoje)}</span>
+            </div>
+            <p className="text-[12px] text-ink-soft m-0 mt-1.5">{pm.resumo}</p>
+          </div>
+        );
+      })()}
 
       {plano && (
         <>

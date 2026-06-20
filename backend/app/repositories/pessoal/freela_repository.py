@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -206,6 +207,23 @@ class FreelaRepository:
             func.coalesce(func.sum(Proposta.valor_liquido_estimado), 0),
             func.count(Proposta.id),
         ).where(Proposta.status == "fechada")
+        soma, qtd = (await self.session.execute(stmt)).one()
+        return float(soma), int(qtd)
+
+    async def soma_liquido_fechado_desde(self, inicio: datetime) -> tuple[float, int]:
+        """(líquido, qtd) das fechadas com `data_resposta` a partir de `inicio`.
+
+        Usa a data da resposta como proxy da data de fechamento (é quando a
+        proposta virou `fechada`). Fechadas sem `data_resposta` não entram no mês.
+        """
+        stmt = select(
+            func.coalesce(func.sum(Proposta.valor_liquido_estimado), 0),
+            func.count(Proposta.id),
+        ).where(
+            Proposta.status == "fechada",
+            Proposta.data_resposta.isnot(None),
+            Proposta.data_resposta >= inicio,
+        )
         soma, qtd = (await self.session.execute(stmt)).one()
         return float(soma), int(qtd)
 
