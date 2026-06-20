@@ -62,9 +62,11 @@ export function ClientesPanel({
   onMudou: () => void;
 }) {
   const [aberto, setAberto] = useState<Aberto>(null);
+  const nomePlataforma = (id?: string | null) =>
+    plataformas.find((p) => p.id === id)?.nome ?? '—';
 
   return (
-    <section className="mt-8">
+    <section>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-semibold text-lg tracking-tight text-ink m-0">
           Clientes
@@ -81,35 +83,47 @@ export function ClientesPanel({
           Nenhum cliente ainda. Cadastre um pra reaproveitar nos projetos e propostas.
         </div>
       ) : (
-        <div className="card divide-y divide-line">
-          {clientes.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setAberto(c)}
-              className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-bg-alt transition-colors"
-            >
-              <span className="font-medium text-ink truncate grow">{c.nome}</span>
-              {c.pagamento_verificado && (
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-brand-soft text-brand border border-brand/30 whitespace-nowrap">
-                  ✓ pagamento
-                </span>
-              )}
-              {c.rating != null && (
-                <span className="text-[12px] text-ink-soft whitespace-nowrap">★ {c.rating}</span>
-              )}
-              {(c.projetos_pagos ?? 0) > 0 && (
-                <span className="text-[12px] text-ink-mute whitespace-nowrap">
-                  {c.projetos_pagos} pagos
-                </span>
-              )}
-              {c.ja_me_pagou_usd > 0 && (
-                <span className="text-[12px] text-ink-soft whitespace-nowrap">
-                  US$ {c.ja_me_pagou_usd}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="card overflow-x-auto p-0">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="border-b border-line text-left text-ink-mute">
+                <th className="font-medium px-4 py-2.5">Cliente</th>
+                <th className="font-medium px-4 py-2.5">Plataforma</th>
+                <th className="font-medium px-4 py-2.5 text-right">Rating</th>
+                <th className="font-medium px-4 py-2.5 text-right">Pagos</th>
+                <th className="font-medium px-4 py-2.5 text-right">Já me pagou</th>
+                <th className="font-medium px-4 py-2.5">Pagamento</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clientes.map((c) => (
+                <tr
+                  key={c.id}
+                  onClick={() => setAberto(c)}
+                  className="border-b border-line/60 last:border-0 hover:bg-bg-alt cursor-pointer"
+                >
+                  <td className="px-4 py-2.5 font-medium text-ink">{c.nome}</td>
+                  <td className="px-4 py-2.5 text-ink-soft">{nomePlataforma(c.plataforma_id)}</td>
+                  <td className="px-4 py-2.5 text-right text-ink-soft">
+                    {c.rating != null ? `★ ${c.rating}` : '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-right text-ink-soft">{c.projetos_pagos ?? 0}</td>
+                  <td className="px-4 py-2.5 text-right text-ink-soft">
+                    {c.ja_me_pagou_usd > 0 ? `US$ ${c.ja_me_pagou_usd}` : '—'}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {c.pagamento_verificado ? (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-brand-soft text-brand border border-brand/30 whitespace-nowrap">
+                        ✓ verificado
+                      </span>
+                    ) : (
+                      <span className="text-ink-faint">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
