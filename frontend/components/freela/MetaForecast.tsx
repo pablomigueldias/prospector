@@ -71,7 +71,7 @@ export function MetaForecast({ m, loading }: { m: FreelaMetricas | null; loading
                 {falta > 0 ? (
                   <>Faltam <strong>{formatBRL(falta)}</strong> (fechado + previsto = {formatBRL(projetado)}).</>
                 ) : (
-                  <>🎉 Meta coberta pelo fechado + previsto ({formatBRL(projetado)}).</>
+                  <> Meta coberta pelo fechado + previsto ({formatBRL(projetado)}).</>
                 )}
               </div>
             </>
