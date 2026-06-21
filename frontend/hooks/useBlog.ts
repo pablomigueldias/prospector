@@ -15,6 +15,7 @@ import type {
   BlogPostUpdate,
   BlogRedacao,
   BlogStatus,
+  CapaSugestoesResponse,
   ChecklistSeo,
   ChecklistSeoRequest,
   GerarImagemRequest,
@@ -112,6 +113,11 @@ export function useBlogActions() {
     (id: string) => wrap<BlogPostAdmin>(() => api.blogEscreverPauta(id))(),
     [],
   );
+  const sugerirCapas = useCallback(
+    (id: string) =>
+      wrap<CapaSugestoesResponse>(() => api.blogSugerirCapas(id))(),
+    [],
+  );
   const gerarImagem = useCallback(
     (id: string, body: GerarImagemRequest) =>
       wrap<BlogPostAdmin>(() => api.blogGerarImagem(id, body))(),
@@ -137,6 +143,7 @@ export function useBlogActions() {
     atualizarPauta,
     removerPauta,
     escreverPauta,
+    sugerirCapas,
     gerarImagem,
     uploadImagem,
   };

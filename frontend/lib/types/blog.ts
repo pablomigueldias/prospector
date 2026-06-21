@@ -90,6 +90,17 @@ export interface GerarImagemRequest {
   aspect_ratio?: string;
 }
 
+export interface CapaSugestao {
+  conceito: string;
+  descricao?: string | null;
+  prompt: string;
+  aspect_ratio: string;
+}
+
+export interface CapaSugestoesResponse {
+  sugestoes: CapaSugestao[];
+}
+
 export interface ChecklistSeoRequest {
   title?: string | null;
   slug?: string | null;

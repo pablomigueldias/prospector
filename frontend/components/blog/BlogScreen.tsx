@@ -8,6 +8,7 @@ import type {
   BlogPostAdmin,
   BlogPostCreate,
   BlogStatus,
+  CapaSugestao,
   ChecklistSeo,
 } from '@/lib/types';
 
@@ -808,6 +809,8 @@ function ImagensPanel({
 }) {
   const [prompt, setPrompt] = useState('');
   const [gerando, setGerando] = useState(false);
+  const [sugestoes, setSugestoes] = useState<CapaSugestao[] | null>(null);
+  const [sugerindo, setSugerindo] = useState(false);
 
   if (!editando) {
     return (
@@ -819,12 +822,26 @@ function ImagensPanel({
   }
   const id = editando.id;
 
-  async function gerar() {
-    if (!prompt.trim()) return;
+  async function sugerir() {
+    setSugerindo(true);
+    const r = await acoes.sugerirCapas(id);
+    setSugerindo(false);
+    if (r) setSugestoes(r.sugestoes);
+  }
+
+  async function gerarComPrompt(p: string, aspect = '16:9') {
+    if (!p.trim()) return;
     setGerando(true);
-    const p = await acoes.gerarImagem(id, { prompt, papel: 'cover' });
+    const post = await acoes.gerarImagem(id, {
+      prompt: p,
+      papel: 'cover',
+      aspect_ratio: aspect,
+    });
     setGerando(false);
-    if (p) onAtualizado(p);
+    if (post) {
+      onAtualizado(post);
+      setSugestoes(null);
+    }
   }
 
   async function enviar(file?: File | null) {
@@ -847,19 +864,13 @@ function ImagensPanel({
         <div className="text-[12px] text-ink-mute">Sem capa ainda.</div>
       )}
       <div className="flex gap-2 items-center flex-wrap">
-        <input
-          className="input flex-1 min-w-[200px]"
-          placeholder="Descreva a capa pra IA gerar (Imagen)"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
         <button
           type="button"
-          onClick={gerar}
-          disabled={gerando || !prompt.trim()}
+          onClick={sugerir}
+          disabled={sugerindo || gerando}
           className="btn btn-ghost text-[13px]"
         >
-          {gerando ? 'Gerando…' : '✨ Gerar capa'}
+          {sugerindo ? 'Pensando…' : '💡 Sugerir 3 capas'}
         </button>
         <label className="btn btn-ghost text-[13px] cursor-pointer">
           Enviar imagem
@@ -870,6 +881,49 @@ function ImagensPanel({
             onChange={(e) => enviar(e.target.files?.[0])}
           />
         </label>
+      </div>
+
+      {sugestoes && (
+        <div className="grid sm:grid-cols-3 gap-2">
+          {sugestoes.map((s, i) => (
+            <div
+              key={i}
+              className="border border-line rounded-md p-2.5 flex flex-col gap-1.5 bg-bg-alt/30"
+            >
+              <div className="text-[12px] font-medium text-ink">{s.conceito}</div>
+              {s.descricao && (
+                <p className="text-[11px] text-ink-mute m-0 flex-1">
+                  {s.descricao}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => gerarComPrompt(s.prompt, s.aspect_ratio)}
+                disabled={gerando}
+                className="btn btn-primary text-[12px] mt-1"
+              >
+                {gerando ? 'Gerando…' : 'Gerar esta'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-2 items-center flex-wrap">
+        <input
+          className="input flex-1 min-w-[200px]"
+          placeholder="…ou descreva a capa você mesmo"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={() => gerarComPrompt(prompt)}
+          disabled={gerando || !prompt.trim()}
+          className="btn btn-ghost text-[13px]"
+        >
+          {gerando ? 'Gerando…' : '✨ Gerar'}
+        </button>
       </div>
       <p className="text-[11px] text-ink-mute m-0">
         A IA gera um rascunho; você pode baixar, ajustar fora e reenviar a versão

@@ -14,6 +14,7 @@ import type {
   BlogPostUpdate,
   BlogRedacao,
   BlogStatus,
+  CapaSugestoesResponse,
   ChecklistSeo,
   ChecklistSeoRequest,
   GerarImagemRequest,
@@ -103,6 +104,13 @@ export const blogApi = {
   },
 
   // ── Imagens (B-IMG) ─────────────────────────────────────────────
+  blogSugerirCapas(id: string): Promise<CapaSugestoesResponse> {
+    return request<CapaSugestoesResponse>(`${BASE}/posts/${id}/imagem/sugestoes`, {
+      method: 'POST',
+      timeoutMs: 60_000,
+    });
+  },
+
   blogGerarImagem(id: string, body: GerarImagemRequest): Promise<BlogPostAdmin> {
     return request<BlogPostAdmin>(`${BASE}/posts/${id}/imagem`, {
       method: 'POST',

@@ -269,6 +269,17 @@ class GerarImagemRequest(BaseModel):
     aspect_ratio: str = "16:9"    # 16:9 | 1:1 | 4:3 | 9:16
 
 
+class CapaSugestao(BaseModel):
+    conceito: str
+    descricao: str | None = None
+    prompt: str
+    aspect_ratio: str = "16:9"
+
+
+class CapaSugestoesResponse(BaseModel):
+    sugestoes: list[CapaSugestao]
+
+
 class BlogPautaUpdate(BaseModel):
     titulo: str | None = None
     resumo: str | None = None

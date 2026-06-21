@@ -18,6 +18,7 @@ from app.api.schemas.blog import (
     BlogPostUpdate,
     BlogRedacao,
     BlogStatusUpdate,
+    CapaSugestoesResponse,
     ChecklistSeoRequest,
     ChecklistSeoResponse,
     GerarImagemRequest,
@@ -133,6 +134,14 @@ async def criar(payload: BlogPostCreate) -> BlogPostAdmin:
 async def atualizar(post_id: str, payload: BlogPostUpdate) -> BlogPostAdmin:
     try:
         return await blog_service.admin.atualizar(post_id, payload)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/posts/{post_id}/imagem/sugestoes", response_model=CapaSugestoesResponse, summary="IA: sugere 3 conceitos de capa")
+async def sugerir_capas(post_id: str) -> CapaSugestoesResponse:
+    try:
+        return await blog_service.imagens.sugerir_capas(post_id)
     except Exception as e:
         raise _handle(e)
 

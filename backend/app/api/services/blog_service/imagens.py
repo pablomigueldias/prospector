@@ -9,14 +9,16 @@ from __future__ import annotations
 import asyncio
 import uuid
 
+from app.analyzers.blog.capa.parser import parse_resposta as parse_capas
+from app.analyzers.blog.capa.prompt_builder import construir_prompt as construir_capas
 from app.analyzers.gemini import image_client
-from app.api.schemas.blog import BlogPostAdmin
+from app.api.schemas.blog import BlogPostAdmin, CapaSugestao, CapaSugestoesResponse
 from app.config import settings
 from app.db.session import get_session
 from app.repositories.blog_repository import BlogRepository
 from app.utils.s3_storage import get_storage
 
-from ._base import BlogError, _uuid, to_admin
+from ._base import BlogError, _chamar_llm, _uuid, to_admin
 
 _EXT = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
 _PAPEIS = {"cover", "secao"}
@@ -56,6 +58,25 @@ async def _aplicar_no_post(
                 dados["cover_alt"] = alt
         atualizado = await repo.update(pid, dados)
         return to_admin(atualizado)
+
+
+async def sugerir_capas(post_id: str) -> CapaSugestoesResponse:
+    """3 conceitos de capa sob medida pro post (IA) — o Pablo escolhe e gera."""
+    pid = _uuid(post_id, "post_id")
+    async with get_session() as session:
+        post = await BlogRepository(session).get(pid)
+        if post is None:
+            raise BlogError("Post não encontrado.")
+        ctx = (post.title, post.excerpt, post.keyword_alvo, post.category)
+
+    prompt = construir_capas(
+        title=ctx[0], excerpt=ctx[1], keyword_alvo=ctx[2], category=ctx[3]
+    )
+    cru = _chamar_llm(prompt, operacao="sugerir_capas")
+    sugestoes = parse_capas(cru)
+    if not sugestoes:
+        raise BlogError("A IA não retornou sugestões de capa. Tente de novo.")
+    return CapaSugestoesResponse(sugestoes=[CapaSugestao(**s) for s in sugestoes])
 
 
 async def gerar(
