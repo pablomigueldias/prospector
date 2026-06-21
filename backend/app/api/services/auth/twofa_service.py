@@ -18,7 +18,6 @@ import base64
 import hashlib
 import io
 import secrets
-from typing import List, Optional
 
 import pyotp
 import qrcode
@@ -69,7 +68,7 @@ def _hash_backup(codigo: str) -> str:
     return hashlib.sha256(_normalizar_backup(codigo).encode()).hexdigest()
 
 
-def _gerar_backup_codes() -> List[str]:
+def _gerar_backup_codes() -> list[str]:
     """10 códigos no formato XXXX-XXXX (base32 sem caracteres ambíguos)."""
     alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # sem I,O,0,1
     codes = []
@@ -113,7 +112,7 @@ async def gerar_setup(session: AsyncSession, usuario: Usuario) -> dict:
 
 async def confirmar_ativacao(
     session: AsyncSession, usuario: Usuario, codigo: str
-) -> List[str]:
+) -> list[str]:
     """Valida o 1º código TOTP, ativa o 2FA e devolve os backup codes (uma vez)."""
     row = await session.get(UsuarioTwoFA, usuario.id)
     if row is None or usuario.twofa_ativado:
@@ -163,5 +162,5 @@ async def desativar(session: AsyncSession, usuario: Usuario) -> None:
     await session.flush()
 
 
-def backup_codes_restantes(row: Optional[UsuarioTwoFA]) -> int:
+def backup_codes_restantes(row: UsuarioTwoFA | None) -> int:
     return len(row.backup_codes_hash) if row and row.backup_codes_hash else 0

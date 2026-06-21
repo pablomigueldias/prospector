@@ -7,14 +7,13 @@ from app.analyzers.gemini.client import (
 from app.analyzers.gemini.parser import AnaliseGemini, formatar_para_notas, parse_resposta
 from app.analyzers.gemini.prompt_builder import construir_prompt
 from app.analyzers.llm_provider import gerar_texto
-from app.models.lead import Lead
+from app.domain.lead import Lead
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
 
-def analisar_lead(lead: Lead) -> Optional[AnaliseGemini]:
+def analisar_lead(lead: Lead) -> AnaliseGemini | None:
 
     prompt = construir_prompt(lead)
     logger.debug(f"Prompt ({len(prompt)} chars) montado")
@@ -41,7 +40,7 @@ def enriquecer_lead_com_analise(lead: Lead) -> Lead:
     if analise is None:
         logger.warning("Lead segue sem análise da IA (vide logs)")
         return lead
-    
+
     lead.empresa.score = analise.score
     lead.empresa.score = analise.score
     lead.empresa.analise_json = {

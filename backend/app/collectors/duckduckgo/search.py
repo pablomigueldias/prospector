@@ -1,21 +1,21 @@
 import re
-from typing import List, Optional
 
 from app.collectors._common.buscadores import (
     ResultadoBusca,
+)
+from app.collectors._common.buscadores import (
     buscar as _buscar_multi,
 )
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 
-def buscar(query: str, max_resultados: int = 10) -> List[ResultadoBusca]:
+def buscar(query: str, max_resultados: int = 10) -> list[ResultadoBusca]:
     return _buscar_multi(query, max_resultados)
 
 
-def _limpar_url_instagram(url: str) -> Optional[str]:
+def _limpar_url_instagram(url: str) -> str | None:
     match = re.search(r"instagram\.com/([A-Za-z0-9_\.]+)", url, re.IGNORECASE)
     if not match:
         return None
@@ -27,7 +27,7 @@ def _limpar_url_instagram(url: str) -> Optional[str]:
     return f"https://instagram.com/{handle}"
 
 
-def _limpar_url_facebook(url: str) -> Optional[str]:
+def _limpar_url_facebook(url: str) -> str | None:
     match = re.search(r"facebook\.com/([A-Za-z0-9\.\-_]+)", url, re.IGNORECASE)
     if not match:
         return None
@@ -41,7 +41,7 @@ def _limpar_url_facebook(url: str) -> Optional[str]:
     return f"https://facebook.com/{slug}"
 
 
-def _limpar_url_linkedin(url: str) -> Optional[str]:
+def _limpar_url_linkedin(url: str) -> str | None:
     match = re.search(
         r"linkedin\.com/(company|in|school)/([A-Za-z0-9\-_]+)",
         url, re.IGNORECASE,
@@ -52,7 +52,7 @@ def _limpar_url_linkedin(url: str) -> Optional[str]:
     return f"https://linkedin.com/{tipo}/{slug}"
 
 
-def buscar_redes_sociais(nome: str, cidade: Optional[str] = None) -> dict:
+def buscar_redes_sociais(nome: str, cidade: str | None = None) -> dict:
     if not nome:
         return {}
 
@@ -118,11 +118,11 @@ def buscar_redes_sociais(nome: str, cidade: Optional[str] = None) -> dict:
     return achados
 
 
-def buscar_cnpj_por_nome(nome: str, cidade: Optional[str] = None) -> List[str]:
+def buscar_cnpj_por_nome(nome: str, cidade: str | None = None) -> list[str]:
     if not nome:
         return []
 
-    candidatos: List[str] = []
+    candidatos: list[str] = []
 
     base = f'"{nome}"'
     if cidade:

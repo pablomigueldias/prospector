@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
+from datetime import datetime
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,11 +17,11 @@ class FreelaRepository:
         self.session = session
 
     # ── Plataforma ───────────────────────────────────────────────
-    async def listar_plataformas(self) -> List[Plataforma]:
+    async def listar_plataformas(self) -> list[Plataforma]:
         stmt = select(Plataforma).order_by(Plataforma.nome)
         return list((await self.session.execute(stmt)).scalars().all())
 
-    async def get_plataforma(self, pid: uuid.UUID) -> Optional[Plataforma]:
+    async def get_plataforma(self, pid: uuid.UUID) -> Plataforma | None:
         return await self.session.get(Plataforma, pid)
 
     # ── Cliente ──────────────────────────────────────────────────
@@ -32,14 +32,14 @@ class FreelaRepository:
         await self.session.refresh(cliente)
         return cliente
 
-    async def get_cliente(self, cid: uuid.UUID) -> Optional[Cliente]:
+    async def get_cliente(self, cid: uuid.UUID) -> Cliente | None:
         return await self.session.get(Cliente, cid)
 
-    async def listar_clientes(self) -> List[Cliente]:
+    async def listar_clientes(self) -> list[Cliente]:
         stmt = select(Cliente).order_by(Cliente.nome)
         return list((await self.session.execute(stmt)).scalars().all())
 
-    async def update_cliente(self, cid: uuid.UUID, dados: dict) -> Optional[Cliente]:
+    async def update_cliente(self, cid: uuid.UUID, dados: dict) -> Cliente | None:
         cliente = await self.get_cliente(cid)
         if cliente is None:
             return None
@@ -62,17 +62,33 @@ class FreelaRepository:
         await self.session.refresh(projeto)
         return projeto
 
-    async def get_projeto(self, pid: uuid.UUID) -> Optional[Projeto]:
+    async def get_projeto(self, pid: uuid.UUID) -> Projeto | None:
         return await self.session.get(Projeto, pid)
 
     async def listar_projetos(
         self,
-    ) -> List[tuple[Projeto, Optional[str], int, float]]:
-        """Projetos + nome do cliente + nº de propostas + US$ já pago pelo cliente."""
+    ) -> list[tuple[Projeto, str | None, int, int, int, int, float, bool]]:
+        """Projetos + cliente + contagem de propostas (total/ativas/fechadas/perdidas)
+        + US$ já pago + pagamento verificado.
+
+        'ativas' = propostas que NÃO são terminais (nem fechada nem perdida) —
+        servem pra derivar a situação do projeto na fila (sem proposta / ativa /
+        fechada / encerrada sem sucesso).
+        """
+        terminais = ["fechada", "perdida"]
         propostas = (
             select(
                 Proposta.projeto_id,
                 func.count(Proposta.id).label("qtd"),
+                func.count(Proposta.id)
+                .filter(Proposta.status.notin_(terminais))
+                .label("ativas"),
+                func.count(Proposta.id)
+                .filter(Proposta.status == "fechada")
+                .label("fechadas"),
+                func.count(Proposta.id)
+                .filter(Proposta.status == "perdida")
+                .label("perdidas"),
             )
             .group_by(Proposta.projeto_id)
             .subquery()
@@ -82,16 +98,24 @@ class FreelaRepository:
                 Projeto,
                 Cliente.nome,
                 func.coalesce(propostas.c.qtd, 0),
+                func.coalesce(propostas.c.ativas, 0),
+                func.coalesce(propostas.c.fechadas, 0),
+                func.coalesce(propostas.c.perdidas, 0),
                 func.coalesce(Cliente.ja_me_pagou_usd, 0),
+                func.coalesce(Cliente.pagamento_verificado, False),
             )
             .outerjoin(Cliente, Cliente.id == Projeto.cliente_id)
             .outerjoin(propostas, propostas.c.projeto_id == Projeto.id)
             .order_by(Projeto.created_at.desc())
         )
         result = await self.session.execute(stmt)
-        return [(row[0], row[1], int(row[2]), float(row[3])) for row in result.all()]
+        return [
+            (row[0], row[1], int(row[2]), int(row[3]), int(row[4]),
+             int(row[5]), float(row[6]), bool(row[7]))
+            for row in result.all()
+        ]
 
-    async def update_projeto(self, pid: uuid.UUID, dados: dict) -> Optional[Projeto]:
+    async def update_projeto(self, pid: uuid.UUID, dados: dict) -> Projeto | None:
         projeto = await self.get_projeto(pid)
         if projeto is None:
             return None
@@ -103,7 +127,7 @@ class FreelaRepository:
 
     async def salvar_analise_projeto(
         self, pid: uuid.UUID, analise: dict
-    ) -> Optional[Projeto]:
+    ) -> Projeto | None:
         projeto = await self.get_projeto(pid)
         if projeto is None:
             return None
@@ -125,10 +149,10 @@ class FreelaRepository:
         await self.session.refresh(proposta)
         return proposta
 
-    async def get_proposta(self, pid: uuid.UUID) -> Optional[Proposta]:
+    async def get_proposta(self, pid: uuid.UUID) -> Proposta | None:
         return await self.session.get(Proposta, pid)
 
-    async def update_proposta(self, pid: uuid.UUID, dados: dict) -> Optional[Proposta]:
+    async def update_proposta(self, pid: uuid.UUID, dados: dict) -> Proposta | None:
         proposta = await self.get_proposta(pid)
         if proposta is None:
             return None
@@ -145,7 +169,7 @@ class FreelaRepository:
 
     async def listar_propostas_kanban(
         self,
-    ) -> List[tuple[Proposta, str, Optional[str]]]:
+    ) -> list[tuple[Proposta, str, str | None]]:
         """Todas as propostas + título do projeto + nome do cliente (pro board)."""
         stmt = (
             select(Proposta, Projeto.titulo, Cliente.nome)
@@ -158,7 +182,7 @@ class FreelaRepository:
 
     async def listar_propostas_do_projeto(
         self, projeto_id: uuid.UUID
-    ) -> List[Proposta]:
+    ) -> list[Proposta]:
         stmt = (
             select(Proposta)
             .where(Proposta.projeto_id == projeto_id)
@@ -166,12 +190,54 @@ class FreelaRepository:
         )
         return list((await self.session.execute(stmt)).scalars().all())
 
+    async def propostas_vencedoras(
+        self, limit: int = 20
+    ) -> list[tuple[Proposta, str, dict | None]]:
+        """Propostas que FECHARAM + título do projeto + analise_json (stack/etc).
+
+        Base do "banco de propostas vencedoras": a fonte que uma futura análise
+        (redator se inspirando no que funcionou) vai consumir. Mais recentes 1º.
+        """
+        stmt = (
+            select(Proposta, Projeto.titulo, Projeto.analise_json)
+            .join(Projeto, Projeto.id == Proposta.projeto_id)
+            .where(Proposta.status == "fechada")
+            .order_by(Proposta.data_resposta.desc().nullslast())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return [(row[0], row[1], row[2]) for row in result.all()]
+
     async def contar_por_status(self) -> dict[str, int]:
         stmt = select(Proposta.status, func.count(Proposta.id)).group_by(
             Proposta.status
         )
         result = await self.session.execute(stmt)
         return {status: int(qtd) for status, qtd in result.all()}
+
+    async def propostas_status_e_analise(
+        self,
+    ) -> list[tuple[str, dict | None]]:
+        """(status da proposta, analise_json do projeto) — pra taxa por stack."""
+        stmt = select(Proposta.status, Projeto.analise_json).join(
+            Projeto, Projeto.id == Proposta.projeto_id
+        )
+        result = await self.session.execute(stmt)
+        return [(row[0], row[1]) for row in result.all()]
+
+    async def propostas_status_e_angulo(self) -> list[tuple[str, str | None]]:
+        """(status, angulo_abertura) de cada proposta — pra taxa por ângulo (A/B)."""
+        stmt = select(Proposta.status, Proposta.angulo_abertura)
+        result = await self.session.execute(stmt)
+        return [(row[0], row[1]) for row in result.all()]
+
+    async def soma_horas_comprometidas(self) -> float:
+        """Horas já comprometidas = soma das horas_estimadas das propostas fechadas."""
+        stmt = select(
+            func.coalesce(func.sum(Proposta.horas_estimadas), 0)
+        ).where(Proposta.status == "fechada")
+        soma = (await self.session.execute(stmt)).scalar_one()
+        return float(soma)
 
     async def soma_liquido_fechado(self) -> tuple[float, int]:
         """(soma do líquido das fechadas, quantidade de fechadas)."""
@@ -182,7 +248,24 @@ class FreelaRepository:
         soma, qtd = (await self.session.execute(stmt)).one()
         return float(soma), int(qtd)
 
-    async def tempo_medio_resposta_horas(self) -> Optional[float]:
+    async def soma_liquido_fechado_desde(self, inicio: datetime) -> tuple[float, int]:
+        """(líquido, qtd) das fechadas com `data_resposta` a partir de `inicio`.
+
+        Usa a data da resposta como proxy da data de fechamento (é quando a
+        proposta virou `fechada`). Fechadas sem `data_resposta` não entram no mês.
+        """
+        stmt = select(
+            func.coalesce(func.sum(Proposta.valor_liquido_estimado), 0),
+            func.count(Proposta.id),
+        ).where(
+            Proposta.status == "fechada",
+            Proposta.data_resposta.isnot(None),
+            Proposta.data_resposta >= inicio,
+        )
+        soma, qtd = (await self.session.execute(stmt)).one()
+        return float(soma), int(qtd)
+
+    async def tempo_medio_resposta_horas(self) -> float | None:
         """Média de horas entre enviar e o cliente responder (onde houver ambos)."""
         stmt = select(
             func.avg(
@@ -195,7 +278,7 @@ class FreelaRepository:
         v = (await self.session.execute(stmt)).scalar()
         return round(float(v) / 3600, 1) if v is not None else None
 
-    async def valor_hora_real_fechadas(self) -> Optional[float]:
+    async def valor_hora_real_fechadas(self) -> float | None:
         """Média do líquido/hora das propostas fechadas com horas estimadas."""
         stmt = select(
             func.avg(Proposta.valor_liquido_estimado / Proposta.horas_estimadas)

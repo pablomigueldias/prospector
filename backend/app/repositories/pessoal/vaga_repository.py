@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
+from datetime import UTC
 
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,21 +21,27 @@ class VagaRepository:
         await self.session.refresh(vaga)
         return vaga
 
-    async def get(self, vaga_id: uuid.UUID) -> Optional[Vaga]:
+    async def get(self, vaga_id: uuid.UUID) -> Vaga | None:
         return await self.session.get(Vaga, vaga_id)
+
+    async def listar_com_analise(self) -> list[Vaga]:
+        """Todas as vagas que já têm análise (pra agregar a demanda de skills)."""
+        stmt = select(Vaga).where(Vaga.analise_json.isnot(None))
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
     async def listar(
         self,
-        status: Optional[str] = None,
+        status: str | None = None,
         *,
-        busca: Optional[str] = None,
-        match_min: Optional[int] = None,
-        modelo: Optional[str] = None,
-        fonte: Optional[str] = None,
-        tem_rascunho: Optional[bool] = None,
+        busca: str | None = None,
+        match_min: int | None = None,
+        modelo: str | None = None,
+        fonte: str | None = None,
+        tem_rascunho: bool | None = None,
         ordenar_por: str = "match",
         limit: int = 100,
-    ) -> List[tuple[Vaga, int]]:
+    ) -> list[tuple[Vaga, int]]:
         """Lista vagas + contagem de rascunhos, com busca/filtros/ordenação."""
         rascunhos = (
             select(
@@ -113,7 +119,7 @@ class VagaRepository:
             ),
         }
 
-    async def update(self, vaga_id: uuid.UUID, dados: dict) -> Optional[Vaga]:
+    async def update(self, vaga_id: uuid.UUID, dados: dict) -> Vaga | None:
         vaga = await self.get(vaga_id)
         if vaga is None:
             return None
@@ -130,7 +136,7 @@ class VagaRepository:
         analise: dict,
         match: dict,
         match_score: int,
-    ) -> Optional[Vaga]:
+    ) -> Vaga | None:
         vaga = await self.get(vaga_id)
         if vaga is None:
             return None
@@ -143,14 +149,14 @@ class VagaRepository:
 
     async def salvar_curriculo(
         self, vaga_id: uuid.UUID, curriculo: dict
-    ) -> Optional[Vaga]:
-        from datetime import datetime, timezone
+    ) -> Vaga | None:
+        from datetime import datetime
 
         vaga = await self.get(vaga_id)
         if vaga is None:
             return None
         vaga.curriculo_json = curriculo
-        vaga.curriculo_gerado_em = datetime.now(timezone.utc).replace(tzinfo=None)
+        vaga.curriculo_gerado_em = datetime.now(UTC).replace(tzinfo=None)
         await self.session.commit()
         await self.session.refresh(vaga)
         return vaga
@@ -170,7 +176,7 @@ class VagaRepository:
         await self.session.refresh(email)
         return email
 
-    async def listar_emails(self, vaga_id: uuid.UUID) -> List[CandidaturaEmail]:
+    async def listar_emails(self, vaga_id: uuid.UUID) -> list[CandidaturaEmail]:
         stmt = (
             select(CandidaturaEmail)
             .where(CandidaturaEmail.vaga_id == vaga_id)

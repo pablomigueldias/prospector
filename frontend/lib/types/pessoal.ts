@@ -27,6 +27,34 @@ export interface FormacaoPerfil {
   periodo?: string | null;
 }
 
+export interface Certificacao {
+  nome: string;
+  tema?: string | null;
+  instituicao?: string | null;
+  ano?: string | null;
+  carga_horaria?: string | null;
+  prova?: string | null;
+  arquivo?: string | null;
+}
+
+export interface CertSyncItem {
+  arquivo: string;
+  status: 'novo' | 'ja_existia' | 'falha';
+  nome?: string | null;
+  detalhe?: string | null;
+}
+
+export interface CertSyncResultado {
+  total_na_pasta: number;
+  novos: number;
+  ja_existiam: number;
+  falhas: number;
+  itens: CertSyncItem[];
+  total_no_perfil: number;
+  arquivados: number; // PDFs baixados pro servidor neste sync
+  total_arquivados: number; // PDFs já guardados no servidor
+}
+
 export interface BlocoCurriculo {
   titulo: string;
   conteudo: string;
@@ -60,6 +88,7 @@ export interface PerfilMestre {
   projetos: ProjetoPerfil[];
   experiencias: ExperienciaPerfil[];
   formacao: FormacaoPerfil[];
+  certificacoes: Certificacao[];
   o_que_procuro?: OQueProcuro | null;
   blocos_curriculo: BlocoCurriculo[];
   contato?: ContatoPessoal | null;
@@ -95,11 +124,17 @@ export interface AnaliseVaga {
   salario?: FaixaSalarial | null;
 }
 
+export interface PlanoGap {
+  gap: string;
+  acao: string;
+}
+
 export interface MatchVaga {
   aderencia: number;
   tenho: string[];
   gaps: string[];
   destaques: string[];
+  plano_gaps?: PlanoGap[];
   veredito?: string | null;
 }
 
@@ -138,6 +173,16 @@ export interface VagaCreate {
   modelo?: string | null;
   senioridade?: string | null;
   notas?: string | null;
+}
+
+export interface ExtrairVaga {
+  titulo?: string | null;
+  descricao?: string | null; // texto-fonte (colado ou lido da URL)
+  link?: string | null;      // eco da URL quando importado por link
+  empresa?: string | null;
+  localizacao?: string | null;
+  modelo?: string | null;
+  senioridade?: string | null;
 }
 
 export interface VagaListItem {
@@ -182,6 +227,20 @@ export interface VagasMetricas {
   match_medio_candidaturas: number | null;
 }
 
+export interface SkillEstudo {
+  skill: string;
+  n_vagas: number;
+  pct_vagas: number;
+  obrigatoria_em: number;
+  tenho: boolean;
+}
+
+export interface EstudoVagas {
+  total_vagas: number;
+  para_estudar: SkillEstudo[];
+  pontos_fortes: SkillEstudo[];
+}
+
 export interface AnalisarVagaResponse {
   success: boolean;
   analise: AnaliseVaga;
@@ -217,6 +276,7 @@ export interface CandidaturaEmailItem {
   corpo: string;
   tom?: string | null;
   status: string;
+  variantes?: EmailCandidatura[];
   created_at?: string | null;
 }
 
@@ -256,4 +316,43 @@ export interface GerarCurriculoResponse {
   vaga_id: string;
   curriculo: CurriculoVaga;
   gerado_em?: string | null;
+}
+
+// Coordenador (MAS-2) — cadeia "candidatura completa".
+export interface CandidaturaAnalise {
+  vaga_id: string;
+  titulo?: string | null;
+  empresa?: string | null;
+  aderencia: number;
+  match_score: number;
+  veredito?: string | null;
+  recomenda: boolean;
+  gaps: string[];
+  destaques: string[];
+  resumo?: string | null;
+}
+
+export interface CandidaturaEntrega {
+  vaga_id: string;
+  curriculo?: CurriculoVaga | null;
+  email?: EmailCandidatura | null;
+  carta?: CartaCandidatura | null;
+  checklist: string[];
+  rascunho_id?: string | null;
+}
+
+// Briefing noturno (MAS-4).
+export interface BriefingItem {
+  total: number;
+  exemplos: string[];
+}
+
+export interface Briefing {
+  data: string;
+  vagas_triar: BriefingItem;
+  freela_followups: BriefingItem;
+  atividades_pendentes: number;
+  atividades_atrasadas: number;
+  micro_acao?: string | null;
+  texto: string;
 }

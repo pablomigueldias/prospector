@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Index, Numeric, String, Text,Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Index, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 if TYPE_CHECKING:
     from app.db.models.contato import Contato
@@ -20,27 +19,27 @@ class Empresa(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     # ── Identidade ───────────────────────────────────────────────
     nome: Mapped[str] = mapped_column(String(500), nullable=False)
-    razao_social: Mapped[Optional[str]] = mapped_column(String(500))
+    razao_social: Mapped[str | None] = mapped_column(String(500))
 
 
-    cnpj: Mapped[Optional[str]] = mapped_column(String(14), unique=True)
+    cnpj: Mapped[str | None] = mapped_column(String(14), unique=True)
 
     # ── Localização ──────────────────────────────────────────────
-    cidade: Mapped[Optional[str]] = mapped_column(String(200))
-    estado: Mapped[Optional[str]] = mapped_column(String(2))
-    local: Mapped[Optional[str]] = mapped_column(Text)  # endereço completo
+    cidade: Mapped[str | None] = mapped_column(String(200))
+    estado: Mapped[str | None] = mapped_column(String(2))
+    local: Mapped[str | None] = mapped_column(Text)  # endereço completo
 
     # ── Presença digital ─────────────────────────────────────────
-    site: Mapped[Optional[str]] = mapped_column(String(500))
-    instagram: Mapped[Optional[str]] = mapped_column(String(300))
-    facebook: Mapped[Optional[str]] = mapped_column(String(300))
+    site: Mapped[str | None] = mapped_column(String(500))
+    instagram: Mapped[str | None] = mapped_column(String(300))
+    facebook: Mapped[str | None] = mapped_column(String(300))
 
     # ── Classificação ────────────────────────────────────────────
-    capital_social: Mapped[Optional[float]] = mapped_column(Numeric(15, 2))
-    setor: Mapped[Optional[str]] = mapped_column(String(100))
-    tamanho: Mapped[Optional[str]] = mapped_column(String(50))
-    score: Mapped[Optional[int]] = mapped_column(Integer)
-    analise_json: Mapped[Optional[dict]] = mapped_column(JSONB)
+    capital_social: Mapped[float | None] = mapped_column(Numeric(15, 2))
+    setor: Mapped[str | None] = mapped_column(String(100))
+    tamanho: Mapped[str | None] = mapped_column(String(50))
+    score: Mapped[int | None] = mapped_column(Integer)
+    analise_json: Mapped[dict | None] = mapped_column(JSONB)
 
     # ── Pipeline (status, origem) ────────────────────────────────
     como_conheceu: Mapped[str] = mapped_column(
@@ -50,19 +49,19 @@ class Empresa(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         String(50), default="🔵 Prospect", server_default="🔵 Prospect"
     )
 
-    notas: Mapped[Optional[str]] = mapped_column(Text)
+    notas: Mapped[str | None] = mapped_column(Text)
 
     # ── Sincronização com Notion ─────────────────────────────────
-    notion_page_id: Mapped[Optional[str]] = mapped_column(String(50))
-    notion_synced_at: Mapped[Optional[datetime]] = mapped_column()
+    notion_page_id: Mapped[str | None] = mapped_column(String(50))
+    notion_synced_at: Mapped[datetime | None] = mapped_column()
 
 
-    socios: Mapped[List["Socio"]] = relationship(
+    socios: Mapped[list[Socio]] = relationship(
         back_populates="empresa",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    contatos: Mapped[List["Contato"]] = relationship(
+    contatos: Mapped[list[Contato]] = relationship(
         back_populates="empresa",
         cascade="all, delete-orphan",
         lazy="selectin",

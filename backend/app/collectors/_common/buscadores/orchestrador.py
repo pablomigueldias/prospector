@@ -1,11 +1,9 @@
 import time
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from dataclasses import dataclass
 
 from app.collectors._common.buscadores.base import (
     BuscadorBase,
     BuscadorBloqueado,
-    BuscadorError,
     BuscadorIndisponivel,
     ResultadoBusca,
 )
@@ -14,11 +12,10 @@ from app.collectors._common.buscadores.brave import BraveBuscador
 from app.collectors._common.buscadores.duckduckgo import DuckDuckGoBuscador
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 
-TTL_BLOQUEIO = 3600 
+TTL_BLOQUEIO = 3600
 
 
 @dataclass
@@ -31,19 +28,19 @@ class EstadoBuscador:
 
 class OrchestradorBuscadores:
 
-    def __init__(self, ordem: Optional[List[BuscadorBase]] = None):
+    def __init__(self, ordem: list[BuscadorBase] | None = None):
 
-        self.buscadores: List[BuscadorBase] = ordem or [
+        self.buscadores: list[BuscadorBase] = ordem or [
             DuckDuckGoBuscador(),
             BraveBuscador(),
             BingBuscador(),
         ]
-        self.estado: Dict[str, EstadoBuscador] = {
+        self.estado: dict[str, EstadoBuscador] = {
             b.nome: EstadoBuscador() for b in self.buscadores
         }
 
-    def buscar(self, query: str, max_resultados: int = 10) -> List[ResultadoBusca]:
-   
+    def buscar(self, query: str, max_resultados: int = 10) -> list[ResultadoBusca]:
+
         if not query.strip():
             return []
 
@@ -61,7 +58,7 @@ class OrchestradorBuscadores:
                 est.sucessos_totais += 1
                 if resultados:
                     return resultados
-     
+
                 logger.info(f"   📭 {buscador.nome} sem resultados pra essa query")
                 return []
 
@@ -87,17 +84,17 @@ class OrchestradorBuscadores:
         logger.error("   ❌ TODOS os buscadores falharam pra essa query")
         return []
 
-    def _ordem_dinamica(self) -> List[BuscadorBase]:
- 
+    def _ordem_dinamica(self) -> list[BuscadorBase]:
+
         agora = time.time()
 
         def chave(b: BuscadorBase) -> tuple:
             est = self.estado[b.nome]
             bloqueado = est.bloqueado_ate > agora
             return (
-                bloqueado,                             
-                -est.sucessos_totais,                   
-                est.falhas_consecutivas,            
+                bloqueado,
+                -est.sucessos_totais,
+                est.falhas_consecutivas,
             )
 
         return sorted(self.buscadores, key=chave)
@@ -115,7 +112,7 @@ class OrchestradorBuscadores:
         return "\n".join(linhas)
 
 
-_orchestrador_global: Optional[OrchestradorBuscadores] = None
+_orchestrador_global: OrchestradorBuscadores | None = None
 
 
 def get_orchestrador() -> OrchestradorBuscadores:
@@ -126,5 +123,5 @@ def get_orchestrador() -> OrchestradorBuscadores:
     return _orchestrador_global
 
 
-def buscar(query: str, max_resultados: int = 10) -> List[ResultadoBusca]:
+def buscar(query: str, max_resultados: int = 10) -> list[ResultadoBusca]:
     return get_orchestrador().buscar(query, max_resultados)

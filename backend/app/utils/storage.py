@@ -1,14 +1,13 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from slugify import slugify
 
 from app.config import PROCESSED_DIR, RAW_DIR, SENT_DIR, UNMAPPED_FIELDS_FILE
-from app.models.lead import Lead
+from app.domain.lead import Lead
 from app.utils.logger import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -47,7 +46,7 @@ def load_lead(filepath: Path) -> Lead:
     return Lead.model_validate(data)
 
 
-def list_leads(stage: str = "processed") -> List[Path]:
+def list_leads(stage: str = "processed") -> list[Path]:
     _ensure_dirs()
     stage_map = {"raw": RAW_DIR, "processed": PROCESSED_DIR, "sent": SENT_DIR}
     target_dir = stage_map.get(stage)
@@ -69,7 +68,7 @@ def log_unmapped_field(field_name: str, value: str, empresa_nome: str) -> None:
     _ensure_dirs()
 
     if UNMAPPED_FIELDS_FILE.exists():
-        data: Dict[str, List[Dict[str, Any]]] = json.loads(
+        data: dict[str, list[dict[str, Any]]] = json.loads(
             UNMAPPED_FIELDS_FILE.read_text(encoding='utf-8')
         )
     else:

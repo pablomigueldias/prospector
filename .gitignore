@@ -45,6 +45,7 @@ backend/data/cache/
 backend/data/sessao/
 backend/data/debug/
 backend/data/emails/
+backend/data/certificados/
 backend/data/unmapped_fields.json
 
 !backend/data/

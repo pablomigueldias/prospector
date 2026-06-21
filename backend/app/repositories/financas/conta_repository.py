@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,12 +19,12 @@ class ContaRepository:
         await self.session.refresh(conta)
         return conta
 
-    async def get(self, conta_id: uuid.UUID) -> Optional[Conta]:
+    async def get(self, conta_id: uuid.UUID) -> Conta | None:
         return await self.session.get(Conta, conta_id)
 
     async def listar(
         self, usuario_id: uuid.UUID, *, apenas_ativas: bool = False
-    ) -> List[Conta]:
+    ) -> list[Conta]:
         stmt = (
             select(Conta)
             .where(Conta.usuario_id == usuario_id)
@@ -36,7 +35,7 @@ class ContaRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def update(self, conta_id: uuid.UUID, dados: dict) -> Optional[Conta]:
+    async def update(self, conta_id: uuid.UUID, dados: dict) -> Conta | None:
         conta = await self.get(conta_id)
         if conta is None:
             return None

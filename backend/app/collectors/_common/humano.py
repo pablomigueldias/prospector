@@ -1,7 +1,5 @@
-import math
 import random
 import time
-from typing import Optional
 
 
 def delay_humano_curto() -> float:

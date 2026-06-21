@@ -1,10 +1,8 @@
 import sys
-from typing import Optional
 
 from loguru import logger
 
 from app.config import LOGS_DIR, settings
-
 
 logger.remove()
 
@@ -31,5 +29,5 @@ logger.add(
 )
 
 
-def get_logger(name: Optional[str] = None):
+def get_logger(name: str | None = None):
     return logger

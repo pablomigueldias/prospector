@@ -307,7 +307,7 @@ def cmd_prospectar_full(
     from app.collectors.brasilapi import buscar_lead_por_cnpj
     from app.collectors.website import enriquecer_lead_com_site
     from app.exporters.notion import NotionExporter
-    from app.services.manual_overrides import aplicar_overrides_manuais
+    from app.prospector_engine.manual_overrides import aplicar_overrides_manuais
     from app.utils.logger import get_logger
     from app.utils.storage import save_lead
 
@@ -525,7 +525,7 @@ def cmd_investigar(args: list):
     """
     from app.analyzers.gemini import enriquecer_lead_com_analise
     from app.exporters.notion import NotionExporter
-    from app.services.investigador import (
+    from app.prospector_engine.investigador import (
         InputInvestigacao,
         investigar_e_montar_lead,
     )

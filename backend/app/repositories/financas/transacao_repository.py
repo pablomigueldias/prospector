@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +23,7 @@ class TransacaoRepository:
         ajusta o saldo da conta no mesmo commit)."""
         self.session.add(transacao)
 
-    async def get(self, transacao_id: uuid.UUID) -> Optional[Transacao]:
+    async def get(self, transacao_id: uuid.UUID) -> Transacao | None:
         stmt = (
             select(Transacao)
             .options(
@@ -39,11 +38,11 @@ class TransacaoRepository:
         self,
         usuario_id: uuid.UUID,
         *,
-        linha_digitavel: Optional[str] = None,
-        beneficiario: Optional[str] = None,
-        vencimento: Optional[date] = None,
-        valor: Optional[Decimal] = None,
-    ) -> Optional[Transacao]:
+        linha_digitavel: str | None = None,
+        beneficiario: str | None = None,
+        vencimento: date | None = None,
+        valor: Decimal | None = None,
+    ) -> Transacao | None:
         """Acha um boleto já lançado que pareça o mesmo. Prioriza a linha
         digitável (chave forte); senão, cai no trio beneficiário+vencimento+
         valor de um boleto importado. Retorna a transação existente ou None."""
@@ -67,8 +66,8 @@ class TransacaoRepository:
         return await self.session.scalar(stmt)
 
     async def ultima_categoria_por_descricao(
-        self, usuario_id: uuid.UUID, descricao: Optional[str]
-    ) -> Optional[uuid.UUID]:
+        self, usuario_id: uuid.UUID, descricao: str | None
+    ) -> uuid.UUID | None:
         """Categoria usada na transação mais recente com essa descrição
         (beneficiário). Serve pra auto-categorizar boletos recorrentes."""
         if not descricao or not descricao.strip():
@@ -86,8 +85,8 @@ class TransacaoRepository:
         return await self.session.scalar(stmt)
 
     async def ultima_conta_por_descricao(
-        self, usuario_id: uuid.UUID, descricao: Optional[str]
-    ) -> Optional[uuid.UUID]:
+        self, usuario_id: uuid.UUID, descricao: str | None
+    ) -> uuid.UUID | None:
         """Conta usada pra pagar a transação paga mais recente com essa
         descrição (beneficiário). Sugere a conta no pagamento de um boleto."""
         if not descricao or not descricao.strip():
@@ -109,8 +108,8 @@ class TransacaoRepository:
         return await self.session.scalar(stmt)
 
     async def recorrencia_para_descricao(
-        self, usuario_id: uuid.UUID, descricao: Optional[str]
-    ) -> Optional[uuid.UUID]:
+        self, usuario_id: uuid.UUID, descricao: str | None
+    ) -> uuid.UUID | None:
         """Qual recorrência (conta fixa) casa com esse beneficiário/descrição.
 
         Aprende como as outras features 'por beneficiário': primeiro pela
@@ -150,17 +149,17 @@ class TransacaoRepository:
         self,
         usuario_id: uuid.UUID,
         *,
-        inicio: Optional[date] = None,
-        proximo_mes: Optional[date] = None,
-        conta_id: Optional[uuid.UUID] = None,
-        categoria_id: Optional[uuid.UUID] = None,
-        tipo: Optional[str] = None,
-        status: Optional[List[str]] = None,
-        busca: Optional[str] = None,
+        inicio: date | None = None,
+        proximo_mes: date | None = None,
+        conta_id: uuid.UUID | None = None,
+        categoria_id: uuid.UUID | None = None,
+        tipo: str | None = None,
+        status: list[str] | None = None,
+        busca: str | None = None,
         por_vencimento: bool = False,
         limit: int = 50,
         offset: int = 0,
-    ) -> Tuple[List[Transacao], int]:
+    ) -> tuple[list[Transacao], int]:
         """Transações do usuário aplicando os filtros, mais novas primeiro.
         Retorna ``(itens, total)`` — total ignora limit/offset (paginação).
 
@@ -210,7 +209,7 @@ class TransacaoRepository:
 
     async def previstas_por_tipo(
         self, usuario_id: uuid.UUID, ate: date
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Soma por tipo das transações NÃO pagas (prevista/atrasada) com data
         efetiva (vencimento, ou competência se não tiver) anterior a ``ate``.
         Usado na projeção de fim de mês — inclui as vencidas que ainda devem."""
@@ -233,7 +232,7 @@ class TransacaoRepository:
     # ── Agregados do resumo do mês (filtro por data_competencia) ──────
     async def total_por_tipo(
         self, usuario_id: uuid.UUID, inicio: date, proximo_mes: date
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         stmt = (
             select(
                 Transacao.tipo,
@@ -252,8 +251,8 @@ class TransacaoRepository:
 
     def _filtros_relatorio(
         self,
-        conta_id: Optional[uuid.UUID],
-        categoria_id: Optional[uuid.UUID],
+        conta_id: uuid.UUID | None,
+        categoria_id: uuid.UUID | None,
     ) -> list:
         """Condições extras opcionais do relatório (recorte por conta/categoria).
         Conta usa EXISTS sobre os pagamentos (sem fanout de linhas em splits);
@@ -279,9 +278,9 @@ class TransacaoRepository:
         inicio: date,
         proximo_mes: date,
         *,
-        conta_id: Optional[uuid.UUID] = None,
-        categoria_id: Optional[uuid.UUID] = None,
-    ) -> List[Tuple[int, int, str, Decimal]]:
+        conta_id: uuid.UUID | None = None,
+        categoria_id: uuid.UUID | None = None,
+    ) -> list[tuple[int, int, str, Decimal]]:
         """(ano, mes, tipo, total) por mês de competência no intervalo, pra
         montar a série do relatório. Meses sem lançamento não aparecem (o
         service preenche zero). Aceita recorte por conta/categoria."""
@@ -314,9 +313,9 @@ class TransacaoRepository:
         inicio: date,
         proximo_mes: date,
         *,
-        conta_id: Optional[uuid.UUID] = None,
-        categoria_id: Optional[uuid.UUID] = None,
-    ) -> List[Tuple[Optional[uuid.UUID], Optional[str], Decimal]]:
+        conta_id: uuid.UUID | None = None,
+        categoria_id: uuid.UUID | None = None,
+    ) -> list[tuple[uuid.UUID | None, str | None, Decimal]]:
         """(categoria_id, categoria_nome, total) das despesas do mês,
         maior total primeiro. categoria_id null = sem categoria. Aceita
         recorte por conta/categoria."""

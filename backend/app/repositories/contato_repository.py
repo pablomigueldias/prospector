@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db.models.contato import Contato
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -19,10 +18,10 @@ class ContatoRepository:
 
     # ── Reads ─────────────────────────────────────────────────────
 
-    async def get_by_id(self, contato_id: uuid.UUID) -> Optional[Contato]:
+    async def get_by_id(self, contato_id: uuid.UUID) -> Contato | None:
         return await self.session.get(Contato, contato_id)
 
-    async def list_by_empresa(self, empresa_id: uuid.UUID) -> List[Contato]:
+    async def list_by_empresa(self, empresa_id: uuid.UUID) -> list[Contato]:
         stmt = (
             select(Contato)
             .where(Contato.empresa_id == empresa_id)
@@ -31,9 +30,60 @@ class ContatoRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    def _filtro_lista(
+        self, *, busca: str | None, empresa_id: uuid.UUID | None,
+        decisor: bool | None, origem: str | None,
+    ):
+        conds = []
+        if empresa_id:
+            conds.append(Contato.empresa_id == empresa_id)
+        if decisor is not None:
+            conds.append(Contato.decisor.is_(decisor))
+        if origem:
+            conds.append(Contato.origem_contato == origem)
+        if busca and busca.strip():
+            termo = f"%{busca.strip()}%"
+            conds.append(or_(
+                Contato.nome.ilike(termo),
+                Contato.cargo.ilike(termo),
+                Contato.email.ilike(termo),
+            ))
+        return conds
+
+    async def listar(
+        self, *, busca: str | None = None, empresa_id: uuid.UUID | None = None,
+        decisor: bool | None = None, origem: str | None = None,
+        limit: int = 100, offset: int = 0,
+    ) -> list[Contato]:
+        conds = self._filtro_lista(
+            busca=busca, empresa_id=empresa_id, decisor=decisor, origem=origem
+        )
+        stmt = (
+            select(Contato)
+            .where(*conds)
+            .options(selectinload(Contato.empresa))
+            .order_by(Contato.nome)
+            .limit(limit).offset(offset)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def contar(
+        self, *, busca: str | None = None, empresa_id: uuid.UUID | None = None,
+        decisor: bool | None = None, origem: str | None = None,
+    ) -> int:
+        conds = self._filtro_lista(
+            busca=busca, empresa_id=empresa_id, decisor=decisor, origem=origem
+        )
+        stmt = select(func.count(Contato.id)).where(*conds)
+        return await self.session.scalar(stmt) or 0
+
+    async def excluir(self, contato: Contato) -> None:
+        await self.session.delete(contato)
+
     async def find_by_empresa_and_email(
         self, empresa_id: uuid.UUID, email: str
-    ) -> Optional[Contato]:
+    ) -> Contato | None:
         if not email:
             return None
         stmt = select(Contato).where(
@@ -45,7 +95,7 @@ class ContatoRepository:
 
     async def find_by_empresa_and_nome(
         self, empresa_id: uuid.UUID, nome: str
-    ) -> Optional[Contato]:
+    ) -> Contato | None:
         if not nome:
             return None
         stmt = select(Contato).where(
@@ -62,7 +112,7 @@ class ContatoRepository:
         return contato
 
     async def upsert(self, contato: Contato) -> Contato:
-        existing: Optional[Contato] = None
+        existing: Contato | None = None
 
         if contato.email:
             existing = await self.find_by_empresa_and_email(

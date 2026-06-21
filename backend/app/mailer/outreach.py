@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import time
 from datetime import datetime
-from typing import Optional
 
 from app.api.schemas.copywriter import CopywriterRequest
-from app.api.services.copywriter_service import gerar_email, CopywriterError
+from app.api.services.copywriter_service import CopywriterError, gerar_email
 from app.db.lead_persistence import bridge_session
 from app.db.models.contato import Contato
 from app.db.models.email_outreach import EmailOutreach
+from app.mailer.client import MailerError, salvar_rascunho
 from app.repositories.email_outreach_repository import EmailOutreachRepository
-from app.mailer.client import salvar_rascunho, MailerError
 from app.utils.logger import get_logger
 
 logger = get_logger()
@@ -20,8 +19,8 @@ PAUSA_ENTRE_RASCUNHOS_SEG = 8.0
 
 
 async def _carregar_contato_com_empresa(session, contato_id):
-    from sqlalchemy.orm import selectinload
     from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
     stmt = (
         select(Contato)
         .where(Contato.id == contato_id)
@@ -47,7 +46,7 @@ def _montar_request(contato: Contato) -> CopywriterRequest:
         lead_arquivo=None,
     )
 
-def _montar_contexto_analise(empresa) -> Optional[str]:
+def _montar_contexto_analise(empresa) -> str | None:
     analise = getattr(empresa, "analise_json", None)
     if not analise:
         return None
@@ -78,7 +77,7 @@ def _montar_contexto_analise(empresa) -> Optional[str]:
     return "\n".join(linhas) if linhas else None
 
 def _montar_request_followup(original: EmailOutreach) -> CopywriterRequest:
-    
+
     contexto = (
         "Este é um FOLLOW-UP (segundo contato). A pessoa recebeu o e-mail "
         "abaixo e não respondeu. Escreva uma mensagem curta e leve "
@@ -103,7 +102,7 @@ def _montar_request_followup(original: EmailOutreach) -> CopywriterRequest:
 
 
 async def gerar_rascunhos_pendentes(
-    limit: Optional[int] = None,
+    limit: int | None = None,
     pausa: float = PAUSA_ENTRE_RASCUNHOS_SEG,
 ) -> dict:
     resumo = {"gerados": 0, "falhas": 0, "pulados": 0}
@@ -193,7 +192,7 @@ async def gerar_rascunhos_pendentes(
 async def gerar_followups_pendentes(
     dias: int = 3,
     max_followups: int = 2,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     pausa: float = PAUSA_ENTRE_RASCUNHOS_SEG,
 ) -> dict:
     resumo = {"gerados": 0, "falhas": 0}

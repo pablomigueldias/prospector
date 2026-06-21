@@ -1,19 +1,16 @@
 """Resumo do mês, projeção e relatório — schemas do domínio financas."""
 from __future__ import annotations
 
-from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel
 
 # ══════════════════════════════════════════════════════════════════
 # Resumo do mês
 # ══════════════════════════════════════════════════════════════════
 
 class CategoriaResumoItem(BaseModel):
-    categoria_id: Optional[str] = None
+    categoria_id: str | None = None
     categoria_nome: str            # "Sem categoria" quando null
     total: Decimal
 
@@ -24,7 +21,7 @@ class ResumoMesResponse(BaseModel):
     total_receitas: Decimal
     total_despesas: Decimal
     saldo: Decimal                 # receitas − despesas (sobra/déficit)
-    por_categoria: List[CategoriaResumoItem]   # despesas, maior → menor
+    por_categoria: list[CategoriaResumoItem]   # despesas, maior → menor
 
 
 class ProjecaoMesResponse(BaseModel):
@@ -50,8 +47,8 @@ class RelatorioMesItem(BaseModel):
 class RelatorioResponse(BaseModel):
     """Relatório do período (N meses até o mês âncora): série mês a mês,
     top categorias e totais consolidados."""
-    meses: List[RelatorioMesItem]
-    por_categoria: List[CategoriaResumoItem]   # despesas do período, maior → menor
+    meses: list[RelatorioMesItem]
+    por_categoria: list[CategoriaResumoItem]   # despesas do período, maior → menor
     total_receitas: Decimal
     total_despesas: Decimal
     saldo: Decimal

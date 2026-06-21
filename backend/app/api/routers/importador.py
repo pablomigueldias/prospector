@@ -1,4 +1,3 @@
-from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
@@ -34,7 +33,7 @@ def _handle(e: Exception) -> HTTPException:
              dependencies=[Depends(exige_editar)])
 async def importar_boleto(
     file: UploadFile = File(...),
-    categoria_id: Optional[str] = Form(None),
+    categoria_id: str | None = Form(None),
     usuario_id: str = Depends(financas_usuario_id),
 ) -> ImportarBoletoResponse:
     try:

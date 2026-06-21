@@ -8,13 +8,6 @@ Os helpers privados e os imports compartilhados moram em `_base.py`.
 from __future__ import annotations
 
 from ._base import TransacaoError
-from .lancar import (
-    lancar_despesa,
-    lancar_despesa_auto_split,
-    lancar_despesa_dividida,
-    lancar_receita,
-)
-from .transferir import transferir
 from .consultas import (
     get_transacao,
     listar_transacoes,
@@ -23,8 +16,15 @@ from .consultas import (
     ultima_transacao,
 )
 from .editar import editar_prevista, editar_transacao
-from .pagar import pagar_transacao
 from .excluir import excluir_transacao
+from .lancar import (
+    lancar_despesa,
+    lancar_despesa_auto_split,
+    lancar_despesa_dividida,
+    lancar_receita,
+)
+from .pagar import pagar_transacao
+from .transferir import transferir
 
 __all__ = [
     "TransacaoError",

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Optional
 
 from pydantic import ValidationError
 
@@ -42,7 +41,7 @@ def _limpar_texto(texto: str) -> str:
 # Camada 3: reparo de JSON truncado
 # --------------------------------------------------------------------------
 
-def _reparar_json_truncado(texto: str) -> Optional[str]:
+def _reparar_json_truncado(texto: str) -> str | None:
     """Tenta fechar um JSON cortado no meio.
 
     Quando a LLM atinge o limite de tokens, a resposta termina
@@ -103,7 +102,7 @@ def _reparar_json_truncado(texto: str) -> Optional[str]:
 # Validação contra o schema Pydantic
 # --------------------------------------------------------------------------
 
-def _validar(dados: dict) -> Optional[CopywriterResponse]:
+def _validar(dados: dict) -> CopywriterResponse | None:
     """Valida o dict contra CopywriterResponse.
 
     Aceita duas formas que a LLM costuma devolver:
@@ -127,7 +126,7 @@ def _validar(dados: dict) -> Optional[CopywriterResponse]:
 # Função pública
 # --------------------------------------------------------------------------
 
-def parse_resposta(texto_cru: str) -> Optional[CopywriterResponse]:
+def parse_resposta(texto_cru: str) -> CopywriterResponse | None:
     """Converte o texto cru da LLM em CopywriterResponse, ou None.
 
     None significa "não consegui extrair um e-mail utilizável" —

@@ -1,8 +1,6 @@
 """Parser da resposta do gerador de candidatura."""
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import ValidationError
 
 from app.analyzers._json_extract import extrair_json
@@ -16,7 +14,7 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 
-def parse_resposta(texto_cru: str) -> Optional[GerarCandidaturaResponse]:
+def parse_resposta(texto_cru: str) -> GerarCandidaturaResponse | None:
     """Converte o texto cru da LLM em GerarCandidaturaResponse, ou None."""
     dados = extrair_json(texto_cru)
     if dados is None:

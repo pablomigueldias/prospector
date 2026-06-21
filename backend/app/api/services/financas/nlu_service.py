@@ -7,14 +7,11 @@ from __future__ import annotations
 import asyncio
 import uuid
 from datetime import date
-from typing import List, Optional, Tuple
 
 from app.analyzers.nlu import extrator
 from app.analyzers.nlu.parser import parse_nlu
 from app.analyzers.nlu.prompt_builder import construir_prompt
 from app.api.schemas.financas import InterpretacaoResponse
-from app.db.models.financas.categoria import Categoria
-from app.db.models.financas.conta import Conta
 from app.db.session import get_session
 from app.repositories.financas.categoria_repository import CategoriaRepository
 from app.repositories.financas.conta_repository import ContaRepository
@@ -31,7 +28,7 @@ def _uuid(valor: str, *, campo: str = "id") -> uuid.UUID:
         raise NLUError(f"{campo} inválido: {valor!r}")
 
 
-def _casar(guess: Optional[str], itens: List) -> Tuple[Optional[str], Optional[str]]:
+def _casar(guess: str | None, itens: list) -> tuple[str | None, str | None]:
     """Casa o nome chutado pelo LLM com a lista (id, nome): exato (case-insensitive)
     e depois por substring. Devolve (id, nome) ou (None, None)."""
     if not guess:

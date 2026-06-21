@@ -1,6 +1,5 @@
 import re
 import time
-from typing import List
 from urllib.parse import unquote
 
 import httpx
@@ -18,7 +17,6 @@ from app.collectors._common.humano import delay_humano_curto
 from app.collectors._common.sessao import cliente_com_perfil
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 ENDPOINT = "https://html.duckduckgo.com/html/"
@@ -28,7 +26,7 @@ PERFIL = "ddg"
 class DuckDuckGoBuscador(BuscadorBase):
     nome = "ddg"
 
-    def buscar(self, query: str, max_resultados: int = 10) -> List[ResultadoBusca]:
+    def buscar(self, query: str, max_resultados: int = 10) -> list[ResultadoBusca]:
         if not query.strip():
             return []
 
@@ -86,9 +84,9 @@ class DuckDuckGoBuscador(BuscadorBase):
                 raise
         raise BuscadorBloqueado(f"DDG insistiu em 202: {ultima_excecao}")
 
-    def _parse(self, html: str, max_resultados: int) -> List[ResultadoBusca]:
+    def _parse(self, html: str, max_resultados: int) -> list[ResultadoBusca]:
         soup = BeautifulSoup(html, "lxml")
-        resultados: List[ResultadoBusca] = []
+        resultados: list[ResultadoBusca] = []
 
         for div in soup.select("div.result")[:max_resultados]:
             a = div.select_one("a.result__a")

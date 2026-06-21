@@ -3,10 +3,8 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel
 
 # ══════════════════════════════════════════════════════════════════
 # NLU do Telegram (texto livre → estrutura)
@@ -17,9 +15,9 @@ class NLUResult(BaseModel):
     tipo: str                              # despesa/receita
     valor: Decimal
     descricao: str
-    categoria: Optional[str] = None        # nome (o service resolve pro id)
-    conta: Optional[str] = None            # nome (o service resolve pro id)
-    data: Optional[date] = None
+    categoria: str | None = None        # nome (o service resolve pro id)
+    conta: str | None = None            # nome (o service resolve pro id)
+    data: date | None = None
 
 
 class InterpretarTextoRequest(BaseModel):
@@ -33,10 +31,10 @@ class InterpretacaoResponse(BaseModel):
     valor: Decimal
     descricao: str
     data: date
-    conta_id: Optional[str] = None
-    conta_nome: Optional[str] = None
-    categoria_id: Optional[str] = None
-    categoria_nome: Optional[str] = None
+    conta_id: str | None = None
+    conta_nome: str | None = None
+    categoria_id: str | None = None
+    categoria_nome: str | None = None
     texto_original: str
 
 

@@ -17,12 +17,10 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 from app.api.schemas.prospector import LeadHistoryItem
 from app.utils.logger import get_logger
 from app.utils.storage import list_leads, load_lead
-
 
 logger = get_logger()
 
@@ -30,7 +28,7 @@ logger = get_logger()
 _TIMESTAMP_RE = re.compile(r"^(\d{8}_\d{6})_")
 
 
-def ler_historico(limit: int = 20) -> List[LeadHistoryItem]:
+def ler_historico(limit: int = 20) -> list[LeadHistoryItem]:
     """
     Devolve os últimos `limit` leads enviados, do mais recente pro mais antigo.
     """
@@ -39,7 +37,7 @@ def ler_historico(limit: int = 20) -> List[LeadHistoryItem]:
     # com timestamp, isso é cronológico. Pegamos os últimos N e invertemos.
     arquivos = arquivos[-limit:][::-1]
 
-    items: List[LeadHistoryItem] = []
+    items: list[LeadHistoryItem] = []
     for arq in arquivos:
         try:
             item = _arquivo_para_item(arq)
@@ -51,7 +49,7 @@ def ler_historico(limit: int = 20) -> List[LeadHistoryItem]:
     return items
 
 
-def _arquivo_para_item(arq: Path) -> Optional[LeadHistoryItem]:
+def _arquivo_para_item(arq: Path) -> LeadHistoryItem | None:
     """Converte um arquivo JSON de lead salvo em LeadHistoryItem resumido."""
     lead = load_lead(arq)
     emp = lead.empresa
@@ -69,7 +67,7 @@ def _arquivo_para_item(arq: Path) -> Optional[LeadHistoryItem]:
     )
 
 
-def _extrair_timestamp(filename: str) -> Optional[str]:
+def _extrair_timestamp(filename: str) -> str | None:
     """
     Extrai o timestamp do nome do arquivo (`20251112_143052_nome.json`)
     e devolve em formato ISO 8601 pro frontend.

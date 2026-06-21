@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -9,16 +8,16 @@ from pydantic import BaseModel, Field, field_validator
 class ProspectorManualRequest(BaseModel):
 
     cnpj: str = Field(..., description="CNPJ com ou sem máscara")
-    site: Optional[str] = Field(None, description="URL do site (opcional)")
+    site: str | None = Field(None, description="URL do site (opcional)")
 
-    instagram: Optional[str] = Field(None, description="@handle ou URL")
-    facebook: Optional[str] = Field(None, description="handle ou URL")
-    linkedin: Optional[str] = Field(
+    instagram: str | None = Field(None, description="@handle ou URL")
+    facebook: str | None = Field(None, description="handle ou URL")
+    linkedin: str | None = Field(
         None, description="LinkedIn do decisor (pessoa, não empresa)"
     )
-    email: Optional[str] = None
-    telefone: Optional[str] = None
-    whatsapp: Optional[str] = None
+    email: str | None = None
+    telefone: str | None = None
+    whatsapp: str | None = None
 
     @field_validator("cnpj")
     @classmethod
@@ -34,7 +33,7 @@ class ProspectorManualRequest(BaseModel):
 
     @field_validator("site")
     @classmethod
-    def _site_opcional_mas_se_vier_valido(cls, v: Optional[str]) -> Optional[str]:
+    def _site_opcional_mas_se_vier_valido(cls, v: str | None) -> str | None:
         if v is None:
             return None
         v = v.strip()
@@ -47,40 +46,40 @@ class ProspectorManualRequest(BaseModel):
 
 
 class ContatoOut(BaseModel):
-    nome: Optional[str] = None
-    cargo: Optional[str] = None
-    email: Optional[str] = None
-    telefone: Optional[str] = None
-    whatsapp: Optional[str] = None
-    linkedin: Optional[str] = None
+    nome: str | None = None
+    cargo: str | None = None
+    email: str | None = None
+    telefone: str | None = None
+    whatsapp: str | None = None
+    linkedin: str | None = None
     decisor: bool = False
 
 
 class EmpresaOut(BaseModel):
-    nome: Optional[str] = None
-    razao_social: Optional[str] = None
-    cnpj: Optional[str] = None
-    cidade: Optional[str] = None
-    estado: Optional[str] = None
-    setor: Optional[str] = None
-    tamanho: Optional[str] = None
-    capital_social: Optional[float] = None
-    site: Optional[str] = None
-    instagram: Optional[str] = None
-    facebook: Optional[str] = None
-    notas: Optional[str] = None
-    notion_page_id: Optional[str] = None
+    nome: str | None = None
+    razao_social: str | None = None
+    cnpj: str | None = None
+    cidade: str | None = None
+    estado: str | None = None
+    setor: str | None = None
+    tamanho: str | None = None
+    capital_social: float | None = None
+    site: str | None = None
+    instagram: str | None = None
+    facebook: str | None = None
+    notas: str | None = None
+    notion_page_id: str | None = None
 
 
 class LeadOut(BaseModel):
     empresa: EmpresaOut
-    contatos: List[ContatoOut] = Field(default_factory=list)
+    contatos: list[ContatoOut] = Field(default_factory=list)
 
 
 class ProspectorPreviewResponse(BaseModel):
 
     success: bool = True
-    fonte_cnpj: Optional[str] = Field(
+    fonte_cnpj: str | None = Field(
         None, description="Qual fonte resolveu o CNPJ: 'brasilapi' ou 'opencnpj'"
     )
     lead: LeadOut
@@ -89,33 +88,33 @@ class ProspectorPreviewResponse(BaseModel):
 class ProspectorRunResponse(BaseModel):
 
     success: bool = True
-    fonte_cnpj: Optional[str] = None
+    fonte_cnpj: str | None = None
     lead: LeadOut
-    notion_empresa_id: Optional[str] = None
-    notion_contatos_ids: List[str] = Field(default_factory=list)
+    notion_empresa_id: str | None = None
+    notion_contatos_ids: list[str] = Field(default_factory=list)
 
 
 class LeadHistoryItem(BaseModel):
 
     empresa_nome: str
-    cnpj: Optional[str] = None
-    cidade: Optional[str] = None
-    estado: Optional[str] = None
-    setor: Optional[str] = None
+    cnpj: str | None = None
+    cidade: str | None = None
+    estado: str | None = None
+    setor: str | None = None
     qtd_contatos: int = 0
-    notion_empresa_id: Optional[str] = None
-    enviado_em: Optional[str] = Field(
+    notion_empresa_id: str | None = None
+    enviado_em: str | None = Field(
         None, description="ISO 8601 — extraído do nome do arquivo"
     )
     arquivo: str = Field(..., description="Nome do arquivo de backup local")
 
 
 class LeadHistoryResponse(BaseModel):
-    items: List[LeadHistoryItem]
+    items: list[LeadHistoryItem]
     total: int
 
 
 class ApiError(BaseModel):
     success: bool = False
     error: str
-    detail: Optional[str] = None
+    detail: str | None = None

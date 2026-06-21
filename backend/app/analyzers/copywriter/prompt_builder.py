@@ -1,6 +1,4 @@
-from typing import Optional
 from app.api.schemas.copywriter import CopywriterRequest
-
 
 # --------------------------------------------------------------------------
 # Schemas de saída — um por canal

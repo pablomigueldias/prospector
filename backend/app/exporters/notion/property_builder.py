@@ -1,5 +1,4 @@
-from typing import Any, Optional
-
+from typing import Any
 
 NOT_WRITABLE_TYPES = frozenset({
     "place",            # localização (feature do Notion sem suporte na API)
@@ -15,7 +14,7 @@ NOT_WRITABLE_TYPES = frozenset({
 })
 
 
-def build_value(notion_type: str, value: Any) -> Optional[dict]:
+def build_value(notion_type: str, value: Any) -> dict | None:
     if value is None or value == "":
         return _empty_value(notion_type)
 
@@ -25,7 +24,7 @@ def build_value(notion_type: str, value: Any) -> Optional[dict]:
     return builder(value)
 
 
-def _empty_value(notion_type: str) -> Optional[dict]:
+def _empty_value(notion_type: str) -> dict | None:
     if notion_type in NOT_WRITABLE_TYPES:
         return None
     return _EMPTY_VALUES.get(notion_type)

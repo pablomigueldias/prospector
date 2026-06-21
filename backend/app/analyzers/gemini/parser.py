@@ -1,11 +1,9 @@
 import json
-import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -25,10 +23,10 @@ class AnaliseGemini(BaseModel):
     score_justificativa: str = ""
     porte_estimado: str = ""
     perfil_negocio: str = ""
-    dores_provaveis: List[Dor] = Field(default_factory=list)
-    ganchos_venda: List[Gancho] = Field(default_factory=list)
-    perguntas_call: List[str] = Field(default_factory=list)
-    alertas: List[str] = Field(default_factory=list)
+    dores_provaveis: list[Dor] = Field(default_factory=list)
+    ganchos_venda: list[Gancho] = Field(default_factory=list)
+    perguntas_call: list[str] = Field(default_factory=list)
+    alertas: list[str] = Field(default_factory=list)
     resumo_executivo: str = ""
 
     @field_validator("score", mode="before")
@@ -57,19 +55,19 @@ def _limpar_json_cru(texto: str) -> str:
     return texto.strip()
 
 
-def _reparar_json_truncado(texto: str) -> Optional[str]:
- 
+def _reparar_json_truncado(texto: str) -> str | None:
+
     safe_cuts = []
     for i, c in enumerate(texto):
         if c in '},]':
             safe_cuts.append(i + 1)
     for cut in reversed(safe_cuts[-50:]):
         candidato = texto[:cut]
-       
+
         if candidato.rstrip().endswith(","):
             candidato = candidato.rstrip()[:-1]
 
-       
+
         reparado = _fechar_delimitadores(candidato)
         if reparado is None:
             continue
@@ -82,9 +80,9 @@ def _reparar_json_truncado(texto: str) -> Optional[str]:
     return None
 
 
-def _fechar_delimitadores(texto: str) -> Optional[str]:
+def _fechar_delimitadores(texto: str) -> str | None:
 
-    pilha: List[str] = [] 
+    pilha: list[str] = []
     em_string = False
     escape_next = False
 
@@ -114,7 +112,7 @@ def _fechar_delimitadores(texto: str) -> Optional[str]:
             if pilha and pilha[-1] == "}":
                 pilha.pop()
             else:
-                return None 
+                return None
         elif c == "]":
             if pilha and pilha[-1] == "]":
                 pilha.pop()
@@ -127,9 +125,10 @@ def _fechar_delimitadores(texto: str) -> Optional[str]:
 
 
 def _salvar_debug(texto_cru: str, motivo: str) -> None:
-  
+
     try:
         from datetime import datetime
+
         from app.config import DATA_DIR
 
         debug_dir = DATA_DIR / "debug" / "gemini"
@@ -142,8 +141,8 @@ def _salvar_debug(texto_cru: str, motivo: str) -> None:
         logger.debug(f"Não consegui salvar debug: {e}")
 
 
-def parse_resposta(texto_cru: str) -> Optional[AnaliseGemini]:
- 
+def parse_resposta(texto_cru: str) -> AnaliseGemini | None:
+
     texto_limpo = _limpar_json_cru(texto_cru)
 
 
@@ -190,18 +189,18 @@ def _emoji_score(score: int) -> str:
 
 
 def formatar_para_notas(analise: AnaliseGemini) -> str:
- 
-    linhas: List[str] = []
+
+    linhas: list[str] = []
 
     emoji = _emoji_score(analise.score)
-    linhas.append(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    linhas.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     linhas.append(f"ANÁLISE IA  |  {emoji} Score: {analise.score}/100")
-    linhas.append(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    linhas.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     if analise.score_justificativa:
         linhas.append(analise.score_justificativa)
     linhas.append("")
 
-  
+
     if analise.resumo_executivo:
         linhas.append("RESUMO")
         linhas.append(analise.resumo_executivo)

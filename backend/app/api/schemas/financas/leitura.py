@@ -3,10 +3,8 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
-
 
 # ══════════════════════════════════════════════════════════════════
 # Leituras de consumo (água/gás/luz)
@@ -17,12 +15,12 @@ class LeituraConsumoCreate(BaseModel):
     tipo: str = Field(..., description="agua/gas/luz")
     mes_referencia: date
     leitura_atual: Decimal
-    leitura_anterior: Optional[Decimal] = None
-    consumo: Optional[Decimal] = Field(
+    leitura_anterior: Decimal | None = None
+    consumo: Decimal | None = Field(
         None, description="Se omitido, calcula atual − anterior"
     )
-    valor: Optional[Decimal] = None
-    transacao_id: Optional[str] = None
+    valor: Decimal | None = None
+    transacao_id: str | None = None
 
 
 class LeituraConsumoResponse(BaseModel):
@@ -31,16 +29,16 @@ class LeituraConsumoResponse(BaseModel):
     tipo: str
     mes_referencia: date
     leitura_atual: Decimal
-    leitura_anterior: Optional[Decimal] = None
-    consumo: Optional[Decimal] = None
-    valor: Optional[Decimal] = None
-    transacao_id: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    leitura_anterior: Decimal | None = None
+    consumo: Decimal | None = None
+    valor: Decimal | None = None
+    transacao_id: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class LeituraConsumoListResponse(BaseModel):
-    items: List[LeituraConsumoResponse]
+    items: list[LeituraConsumoResponse]
     total: int
 
 

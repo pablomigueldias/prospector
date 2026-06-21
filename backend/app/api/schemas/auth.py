@@ -1,15 +1,13 @@
 """Schemas (Pydantic) do módulo auth."""
 from __future__ import annotations
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
 class LoginRequest(BaseModel):
     email: str = Field(..., description="Email do usuário")
     senha: str = Field(..., description="Senha em texto (vai por HTTPS)")
-    codigo_2fa: Optional[str] = Field(
+    codigo_2fa: str | None = Field(
         None, description="Código TOTP ou backup code (2ª etapa, se 2FA ativo)"
     )
 
@@ -25,9 +23,9 @@ class UsuarioResponse(BaseModel):
     nome: str
     ativo: bool
     twofa_ativado: bool
-    ultimo_login: Optional[str] = None
+    ultimo_login: str | None = None
     # Preenchido quando o RBAC entrar (Step A5). Por ora vem vazio.
-    permissoes: List[str] = Field(default_factory=list)
+    permissoes: list[str] = Field(default_factory=list)
 
 
 class MensagemResponse(BaseModel):
@@ -48,7 +46,7 @@ class TwoFACodigoRequest(BaseModel):
 
 class TwoFAAtivarResponse(BaseModel):
     ok: bool = True
-    backup_codes: List[str] = Field(
+    backup_codes: list[str] = Field(
         ..., description="Códigos de backup — guarde agora; não aparecem de novo"
     )
 
@@ -61,7 +59,7 @@ class TwoFADesativarRequest(BaseModel):
 # ── Admin de usuários ──────────────────────────────────────────────
 class PapelItem(BaseModel):
     nome: str
-    descricao: Optional[str] = None
+    descricao: str | None = None
 
 
 class UsuarioAdminItem(BaseModel):
@@ -70,13 +68,13 @@ class UsuarioAdminItem(BaseModel):
     nome: str
     ativo: bool
     twofa_ativado: bool
-    papeis: List[str]
-    ultimo_login: Optional[str] = None
-    created_at: Optional[str] = None
+    papeis: list[str]
+    ultimo_login: str | None = None
+    created_at: str | None = None
 
 
 class UsuarioAdminListResponse(BaseModel):
-    items: List[UsuarioAdminItem]
+    items: list[UsuarioAdminItem]
     total: int
 
 
@@ -84,10 +82,10 @@ class UsuarioAdminCreate(BaseModel):
     email: str
     nome: str
     senha: str = Field(..., description="Senha inicial (validada por força)")
-    papeis: List[str] = Field(default_factory=lambda: ["padrao"])
+    papeis: list[str] = Field(default_factory=lambda: ["padrao"])
 
 
 class UsuarioAdminUpdate(BaseModel):
-    nome: Optional[str] = None
-    ativo: Optional[bool] = None
-    papeis: Optional[List[str]] = None
+    nome: str | None = None
+    ativo: bool | None = None
+    papeis: list[str] | None = None

@@ -47,3 +47,24 @@
 		reverse_proxy web:3000
 	}
 }
+
+# ────────────────────────────────────────────────────────────────────────────
+#  CDN das imagens do blog — só o bucket PÚBLICO `blog` do MinIO é roteado.
+#  Buckets privados (comprovantes/boletos/notas) NÃO são acessíveis por aqui.
+#  Requer: DNS A de {$CDN_DOMAIN} → IP do VPS. Sem CDN_DOMAIN setado, o compose
+#  passa `cdn.localhost` (cert interno, inofensivo) — não quebra o deploy.
+# ────────────────────────────────────────────────────────────────────────────
+{$CDN_DOMAIN} {
+	encode gzip zstd
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Access-Control-Allow-Origin "*"
+		Cache-Control "public, max-age=31536000, immutable"
+		-Server
+	}
+	handle /blog/* {
+		reverse_proxy minio:9000
+	}
+	respond 404
+}

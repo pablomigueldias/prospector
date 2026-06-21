@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import asyncpg
 from sqlalchemy import text
@@ -51,7 +51,7 @@ async def stream_eventos(usuario_id: str) -> AsyncIterator[str]:
         while True:
             try:
                 payload = await asyncio.wait_for(fila.get(), timeout=HEARTBEAT_S)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 yield ": keepalive\n\n"  # mantém a conexão viva
                 continue
             try:

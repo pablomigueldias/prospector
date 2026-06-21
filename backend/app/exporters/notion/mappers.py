@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.config import (
     COMO_CONHECEU_OPCOES,
@@ -11,21 +11,20 @@ from app.config import (
     STATUS_OPCOES,
     TAMANHO_OPCOES,
 )
+from app.domain.lead import Contato, Empresa
 from app.exporters.notion.property_builder import NOT_WRITABLE_TYPES, build_value
-from app.models.lead import Contato, Empresa
 from app.utils.logger import get_logger
 from app.utils.storage import log_unmapped_field
-
 
 logger = get_logger()
 
 
 def validate_select(
     field_name: str,
-    value: Optional[str],
+    value: str | None,
     valid_options: list,
     empresa_nome: str,
-) -> Optional[str]:
+) -> str | None:
     if value is None or value == "":
         return None
     if value in valid_options:
@@ -34,7 +33,7 @@ def validate_select(
     return None
 
 
-def empresa_to_values(empresa: Empresa) -> Dict[str, Any]:
+def empresa_to_values(empresa: Empresa) -> dict[str, Any]:
     nome = empresa.nome
 
     setor = validate_select("setor", empresa.setor, SETOR_OPCOES, nome)
@@ -75,7 +74,7 @@ def empresa_to_values(empresa: Empresa) -> Dict[str, Any]:
     }
 
 
-def contato_to_values(contato: Contato, empresa_nome: str) -> Dict[str, Any]:
+def contato_to_values(contato: Contato, empresa_nome: str) -> dict[str, Any]:
     origem = validate_select(
         "origem_contato",
         contato.origem_contato or DEFAULT_ORIGEM_CONTATO,
@@ -83,7 +82,7 @@ def contato_to_values(contato: Contato, empresa_nome: str) -> Dict[str, Any]:
         empresa_nome,
     )
 
-    values: Dict[str, Any] = {
+    values: dict[str, Any] = {
         "Nome": contato.nome,
         "Cargo": contato.cargo,
         "Decisor?": "Sim" if contato.decisor else "Não",
@@ -101,14 +100,14 @@ def contato_to_values(contato: Contato, empresa_nome: str) -> Dict[str, Any]:
 
 
 def apply_schema(
-    values: Dict[str, Any],
-    schema: Dict[str, str],
+    values: dict[str, Any],
+    schema: dict[str, str],
     context: str,
-) -> Dict[str, dict]:
-    
-    properties: Dict[str, dict] = {}
-    skipped_unsupported: List[str] = []
-    skipped_missing: List[str] = []
+) -> dict[str, dict]:
+
+    properties: dict[str, dict] = {}
+    skipped_unsupported: list[str] = []
+    skipped_missing: list[str] = []
 
     for field_name, value in values.items():
         notion_type = schema.get(field_name)

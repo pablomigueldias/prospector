@@ -1,4 +1,3 @@
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -6,6 +5,9 @@ from app.api.dependencies.auth import require_permission
 from app.api.schemas.pessoal import (
     AnalisarVagaResponse,
     CandidaturaEmailItem,
+    EstudoVagasResponse,
+    ExtrairVagaRequest,
+    ExtrairVagaResponse,
     GerarCandidaturaRequest,
     GerarCandidaturaResponse,
     GerarCurriculoResponse,
@@ -36,12 +38,12 @@ def _handle(e: Exception) -> HTTPException:
 
 @router.get("", response_model=VagaListResponse, summary="Lista as vagas")
 async def listar(
-    status: Optional[str] = None,
-    busca: Optional[str] = None,
-    match_min: Optional[int] = None,
-    modelo: Optional[str] = None,
-    fonte: Optional[str] = None,
-    tem_rascunho: Optional[bool] = None,
+    status: str | None = None,
+    busca: str | None = None,
+    match_min: int | None = None,
+    modelo: str | None = None,
+    fonte: str | None = None,
+    tem_rascunho: bool | None = None,
     ordenar_por: str = "match",
 ) -> VagaListResponse:
     try:
@@ -67,11 +69,29 @@ async def metricas() -> VagasMetricas:
         raise _handle(e)
 
 
+@router.get("/estudo", response_model=EstudoVagasResponse,
+            summary="O que a maioria das vagas pede e você ainda não tem (lista de estudo)")
+async def estudo() -> EstudoVagasResponse:
+    try:
+        return await vaga_service.estudo_gaps()
+    except Exception as e:
+        raise _handle(e)
+
+
 @router.post("", response_model=VagaResponse, status_code=201,
              summary="Registra uma vaga (cola a descrição)")
 async def criar(body: VagaCreate) -> VagaResponse:
     try:
         return await vaga_service.criar_vaga(body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/extrair", response_model=ExtrairVagaResponse,
+             summary="Extrai campos do texto colado ou da URL (pré-preenche o form)")
+async def extrair(body: ExtrairVagaRequest) -> ExtrairVagaResponse:
+    try:
+        return await vaga_service.extrair_vaga(body.texto, body.url)
     except Exception as e:
         raise _handle(e)
 
@@ -130,9 +150,9 @@ async def gerar_curriculo(vaga_id: str) -> GerarCurriculoResponse:
         raise _handle(e)
 
 
-@router.get("/{vaga_id}/rascunhos", response_model=List[CandidaturaEmailItem],
+@router.get("/{vaga_id}/rascunhos", response_model=list[CandidaturaEmailItem],
             summary="Rascunhos já gerados pra esta vaga")
-async def rascunhos(vaga_id: str) -> List[CandidaturaEmailItem]:
+async def rascunhos(vaga_id: str) -> list[CandidaturaEmailItem]:
     try:
         return await vaga_service.listar_rascunhos(vaga_id)
     except Exception as e:

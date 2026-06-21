@@ -9,6 +9,8 @@ import type {
   FreelaCliente,
   FreelaClienteCreate,
   FreelaExtrairProjeto,
+  FreelaPlanoMeta,
+  FreelaPlanoMetaRequest,
   FreelaPrecificarRequest,
   FreelaPrecificarResponse,
   FreelaProjeto,
@@ -42,6 +44,20 @@ export function useFreelaPlataformas() {
 export function useFreelaClientes() {
   const result = useFetch(() => api.freelaClientes(), []);
   return { ...result, items: result.data ?? [] };
+}
+
+export function useFreelaTaxaPorStack() {
+  const result = useFetch(() => api.freelaTaxaPorStack(), []);
+  return { ...result, itens: result.data?.itens ?? [] };
+}
+
+export function useFreelaTaxaPorAngulo() {
+  const result = useFetch(() => api.freelaTaxaPorAngulo(), []);
+  return { ...result, itens: result.data?.itens ?? [] };
+}
+
+export function useFreelaCapacidade() {
+  return useFetch(() => api.freelaCapacidade(), []);
 }
 
 export function useFreelaProposta(id: string | undefined) {
@@ -78,12 +94,18 @@ export function useFreelaActions() {
     (body: FreelaProjetoCreate) => run<FreelaProjeto>(() => api.freelaProjetoCriar(body)),
     [],
   );
+  const atualizarProjeto = useCallback(
+    (id: string, body: Partial<FreelaProjeto>) =>
+      run<FreelaProjeto>(() => api.freelaProjetoAtualizar(id, body)),
+    [],
+  );
   const removerProjeto = useCallback(
     (id: string) => run<void>(() => api.freelaProjetoRemover(id)),
     [],
   );
   const extrairProjeto = useCallback(
-    (texto: string) => run<FreelaExtrairProjeto>(() => api.freelaProjetoExtrair(texto)),
+    (origem: { texto?: string; url?: string }) =>
+      run<FreelaExtrairProjeto>(() => api.freelaProjetoExtrair(origem)),
     [],
   );
   const analisarProjeto = useCallback(
@@ -131,9 +153,22 @@ export function useFreelaActions() {
     (body: FreelaClienteCreate) => run<FreelaCliente>(() => api.freelaClienteCriar(body)),
     [],
   );
+  const atualizarCliente = useCallback(
+    (id: string, body: Partial<FreelaCliente>) =>
+      run<FreelaCliente>(() => api.freelaClienteAtualizar(id, body)),
+    [],
+  );
+  const removerCliente = useCallback(
+    (id: string) => run<void>(() => api.freelaClienteRemover(id)),
+    [],
+  );
   const precificar = useCallback(
     (body: FreelaPrecificarRequest) =>
       run<FreelaPrecificarResponse>(() => api.freelaPrecificar(body)),
+    [],
+  );
+  const planoMeta = useCallback(
+    (body: FreelaPlanoMetaRequest) => run<FreelaPlanoMeta>(() => api.freelaPlanoMeta(body)),
     [],
   );
 
@@ -141,6 +176,7 @@ export function useFreelaActions() {
     loading,
     error,
     criarProjeto,
+    atualizarProjeto,
     removerProjeto,
     extrairProjeto,
     analisarProjeto,
@@ -153,6 +189,9 @@ export function useFreelaActions() {
     avaliarProposta,
     corrigirProposta,
     criarCliente,
+    atualizarCliente,
+    removerCliente,
     precificar,
+    planoMeta,
   };
 }

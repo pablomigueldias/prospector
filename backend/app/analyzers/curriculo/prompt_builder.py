@@ -11,14 +11,11 @@ contato, formação) NÃO saem daqui — o serviço injeta direto do perfil.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 from app.analyzers._perfil_texto import (
     blocos_curriculo_para_texto,
     perfil_para_texto,
 )
 from app.api.schemas.pessoal import PerfilMestreResponse
-
 
 OUTPUT_SCHEMA = """
 {
@@ -92,10 +89,10 @@ def construir_prompt(
     perfil: PerfilMestreResponse,
     descricao_vaga: str,
     *,
-    titulo_vaga: Optional[str] = None,
-    empresa: Optional[str] = None,
-    analise_json: Optional[dict] = None,
-    match_json: Optional[dict] = None,
+    titulo_vaga: str | None = None,
+    empresa: str | None = None,
+    analise_json: dict | None = None,
+    match_json: dict | None = None,
 ) -> str:
     cab = []
     if titulo_vaga:

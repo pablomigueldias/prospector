@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-import contextlib
-import io
-import logging
-from typing import Optional, Tuple
-
 from app.analyzers.gemini import enriquecer_lead_com_analise
 from app.collectors.brasilapi import (
     _consultar_com_fallback,
@@ -13,18 +8,17 @@ from app.collectors.brasilapi import (
 from app.collectors.brasilapi import buscar_lead_por_cnpj as _orchestrate
 from app.collectors.brasilapi.client import _digits_only, _validate_cnpj_digits
 from app.collectors.website import enriquecer_lead_com_site
+from app.domain.lead import Lead
 from app.exporters.notion import NotionExporter
-from app.models.lead import Lead
-from app.services.manual_overrides import aplicar_overrides_manuais
+from app.prospector_engine.manual_overrides import aplicar_overrides_manuais
 from app.utils.logger import get_logger
 from app.utils.storage import save_lead
 
-
 logger = get_logger()
 class ProspectorError(Exception):
-  
 
-    def __init__(self, message: str, *, status_code: int = 400, detail: Optional[str] = None):
+
+    def __init__(self, message: str, *, status_code: int = 400, detail: str | None = None):
         super().__init__(message)
         self.message = message
         self.status_code = status_code
@@ -59,15 +53,15 @@ class CnpjInvalido(ProspectorError):
 def preview_lead(
     cnpj: str,
     *,
-    site: Optional[str] = None,
-    instagram: Optional[str] = None,
-    facebook: Optional[str] = None,
-    linkedin: Optional[str] = None,
-    email: Optional[str] = None,
-    telefone: Optional[str] = None,
-    whatsapp: Optional[str] = None,
+    site: str | None = None,
+    instagram: str | None = None,
+    facebook: str | None = None,
+    linkedin: str | None = None,
+    email: str | None = None,
+    telefone: str | None = None,
+    whatsapp: str | None = None,
     run_ai: bool = False,
-) -> Tuple[Lead, Optional[str]]:
+) -> tuple[Lead, str | None]:
     digits = _digits_only(cnpj)
 
     if not _validate_cnpj_digits(digits):
@@ -118,14 +112,14 @@ def preview_lead(
 def executar_pipeline_completo(
     cnpj: str,
     *,
-    site: Optional[str] = None,
-    instagram: Optional[str] = None,
-    facebook: Optional[str] = None,
-    linkedin: Optional[str] = None,
-    email: Optional[str] = None,
-    telefone: Optional[str] = None,
-    whatsapp: Optional[str] = None,
-) -> Tuple[Lead, Optional[str]]:
+    site: str | None = None,
+    instagram: str | None = None,
+    facebook: str | None = None,
+    linkedin: str | None = None,
+    email: str | None = None,
+    telefone: str | None = None,
+    whatsapp: str | None = None,
+) -> tuple[Lead, str | None]:
 
     digits = _digits_only(cnpj)
 

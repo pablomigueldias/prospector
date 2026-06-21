@@ -8,18 +8,15 @@ princípios inegociáveis valem aqui:
 """
 from __future__ import annotations
 
-from typing import Optional
-
+from app.analyzers._perfil_texto import (
+    blocos_curriculo_para_texto,
+    perfil_para_texto,
+)
 from app.api.schemas.pessoal import (
     AnaliseVaga,
     MatchVaga,
     PerfilMestreResponse,
 )
-from app.analyzers._perfil_texto import (
-    blocos_curriculo_para_texto,
-    perfil_para_texto,
-)
-
 
 OUTPUT_SCHEMA_COM_CARTA = """
 {
@@ -89,9 +86,9 @@ Responda APENAS com JSON. Sem markdown, sem texto antes ou depois.
 
 def _bloco_vaga(
     titulo: str,
-    empresa: Optional[str],
-    analise: Optional[AnaliseVaga],
-    match: Optional[MatchVaga],
+    empresa: str | None,
+    analise: AnaliseVaga | None,
+    match: MatchVaga | None,
 ) -> str:
     linhas = ["VAGA-ALVO:", f"- Título: {titulo}"]
     if empresa:
@@ -130,11 +127,11 @@ def construir_prompt(
     perfil: PerfilMestreResponse,
     *,
     titulo: str,
-    empresa: Optional[str] = None,
-    analise: Optional[AnaliseVaga] = None,
-    match: Optional[MatchVaga] = None,
+    empresa: str | None = None,
+    analise: AnaliseVaga | None = None,
+    match: MatchVaga | None = None,
     gerar_carta: bool = True,
-    instrucoes_extra: Optional[str] = None,
+    instrucoes_extra: str | None = None,
 ) -> str:
     partes = [
         INSTRUCOES.strip(),

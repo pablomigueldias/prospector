@@ -1,4 +1,3 @@
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -111,13 +110,13 @@ async def transferir(
 @router.get("", response_model=TransacaoListResponse,
             summary="Lista filtrável das transações do usuário logado")
 async def listar(
-    ano: Optional[int] = Query(None, description="Filtra pelo mês de competência (com mes)"),
-    mes: Optional[int] = Query(None, ge=1, le=12),
-    conta_id: Optional[str] = Query(None, description="Só transações que tocam essa conta"),
-    categoria_id: Optional[str] = None,
-    tipo: Optional[str] = Query(None, description="despesa | receita"),
-    status: Optional[List[str]] = Query(None, description="prevista/paga/atrasada (repetível)"),
-    busca: Optional[str] = Query(None, description="Texto na descrição"),
+    ano: int | None = Query(None, description="Filtra pelo mês de competência (com mes)"),
+    mes: int | None = Query(None, ge=1, le=12),
+    conta_id: str | None = Query(None, description="Só transações que tocam essa conta"),
+    categoria_id: str | None = None,
+    tipo: str | None = Query(None, description="despesa | receita"),
+    status: list[str] | None = Query(None, description="prevista/paga/atrasada (repetível)"),
+    busca: str | None = Query(None, description="Texto na descrição"),
     por_vencimento: bool = Query(False, description="Ordena por vencimento (vencidas primeiro)"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -199,7 +198,7 @@ async def sugestao_conta(
              dependencies=[Depends(exige_editar)])
 async def tornar_recorrente(
     transacao_id: str,
-    dia_vencimento: Optional[int] = None,
+    dia_vencimento: int | None = None,
     usuario_id: str = Depends(financas_usuario_id),
 ) -> RecorrenciaResponse:
     try:

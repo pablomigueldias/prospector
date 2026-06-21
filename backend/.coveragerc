@@ -1,0 +1,25 @@
+# Cobertura de testes do backend.  ./venv/bin/coverage run ... && coverage report
+#
+# ATENÇÃO à arquitetura de testes: a suíte (test_smoke_suite.py) roda smokes que
+# batem no servidor via HTTP — o código do service roda no processo do SERVIDOR,
+# não no do pytest. Logo `pytest --cov` sozinho NÃO mede o service layer.
+# Pra cobertura real, duas opções:
+#   (a) testes in-process (como tests/test_freela_plano_meta.py) — medem direto;
+#   (b) subir o servidor sob cobertura:
+#         ./venv/bin/coverage run -p run.py serve   (em outro terminal)
+#       rodar os smokes, parar o servidor, e then `coverage combine && report`.
+[run]
+source = app
+branch = true
+parallel = true
+omit =
+    app/*/migrations/*
+    alembic/*
+    */__init__.py
+
+[report]
+skip_empty = true
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError

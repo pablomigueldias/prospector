@@ -1,7 +1,7 @@
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, Optional
 
 import httpx
 from httpx import Cookies
@@ -9,7 +9,6 @@ from httpx import Cookies
 from app.collectors._common.stealth import Identidade, sortear_identidade
 from app.config import settings
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -90,7 +89,7 @@ def _carregar_ou_criar_identidade(perfil: str) -> Identidade:
     return ident
 
 
-def _transport(usar_tor: bool) -> Optional[dict]:
+def _transport(usar_tor: bool) -> dict | None:
 
     if not usar_tor:
         return {}
@@ -102,9 +101,9 @@ def _transport(usar_tor: bool) -> Optional[dict]:
 @contextmanager
 def cliente_com_perfil(
     perfil: str,
-    usar_tor: Optional[bool] = None,
+    usar_tor: bool | None = None,
     timeout: float = 25.0,
-    extras_headers: Optional[dict] = None,
+    extras_headers: dict | None = None,
 ) -> Iterator[httpx.Client]:
 
     if usar_tor is None:

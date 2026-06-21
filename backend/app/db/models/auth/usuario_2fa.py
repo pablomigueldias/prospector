@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import List, Optional
 
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -33,10 +32,10 @@ class UsuarioTwoFA(Base, TimestampMixin):
     )
 
     totp_secret_cifrado: Mapped[str] = mapped_column(String(255), nullable=False)
-    backup_codes_hash: Mapped[List[str]] = mapped_column(
+    backup_codes_hash: Mapped[list[str]] = mapped_column(
         ARRAY(String), nullable=False, default=list
     )
-    ativado_em: Mapped[Optional[datetime]] = mapped_column(
+    ativado_em: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 

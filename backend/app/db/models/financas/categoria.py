@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
 
 from sqlalchemy import Boolean, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -24,7 +23,7 @@ class Categoria(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     nome: Mapped[str] = mapped_column(String(200), nullable=False)
 
-    categoria_pai_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    categoria_pai_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.categorias.id", ondelete="CASCADE"),
         nullable=True,
@@ -35,12 +34,12 @@ class Categoria(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     # ── Auto-relacionamento (pai ↔ filhos) ───────────────────────────
-    pai: Mapped[Optional["Categoria"]] = relationship(
+    pai: Mapped[Categoria | None] = relationship(
         "Categoria",
         remote_side="Categoria.id",
         back_populates="filhos",
     )
-    filhos: Mapped[List["Categoria"]] = relationship(
+    filhos: Mapped[list[Categoria]] = relationship(
         "Categoria",
         back_populates="pai",
         cascade="all, delete-orphan",

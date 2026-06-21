@@ -2,6 +2,9 @@
 
 import { request } from './client';
 import type {
+  CertSyncResultado,
+  EstudoVagas,
+  ExtrairVaga,
   PerfilMestre,
   Vaga,
   VagaCreate,
@@ -12,6 +15,9 @@ import type {
   GerarCandidaturaResponse,
   GerarCurriculoResponse,
   CandidaturaEmailItem,
+  CandidaturaAnalise,
+  CandidaturaEntrega,
+  Briefing,
 } from '../types';
 
 export const pessoalApi = {
@@ -30,6 +36,14 @@ export const pessoalApi = {
       body,
       timeoutMs: 15_000,
     });
+  },
+
+  /** POST /api/pessoal/perfil/certificados/sincronizar — puxa do Drive */
+  perfilSincronizarCertificados(): Promise<CertSyncResultado> {
+    return request<CertSyncResultado>(
+      '/api/pessoal/perfil/certificados/sincronizar',
+      { method: 'POST', timeoutMs: 180_000 },
+    );
   },
 
   // ── Vagas ───────────────────────────────────────────────────────
@@ -56,11 +70,25 @@ export const pessoalApi = {
     });
   },
 
+  vagasEstudo(): Promise<EstudoVagas> {
+    return request<EstudoVagas>('/api/pessoal/vagas/estudo', {
+      timeoutMs: 12_000,
+    });
+  },
+
   vagaCriar(body: VagaCreate): Promise<Vaga> {
     return request<Vaga>('/api/pessoal/vagas', {
       method: 'POST',
       body,
       timeoutMs: 15_000,
+    });
+  },
+
+  vagaExtrair(origem: { texto?: string; url?: string }): Promise<ExtrairVaga> {
+    return request<ExtrairVaga>('/api/pessoal/vagas/extrair', {
+      method: 'POST',
+      body: origem,
+      timeoutMs: 60_000,
     });
   },
 
@@ -114,5 +142,24 @@ export const pessoalApi = {
       `/api/pessoal/vagas/${encodeURIComponent(id)}/rascunhos`,
       { timeoutMs: 10_000 },
     );
+  },
+
+  // Coordenador (MAS-2) — cadeia candidatura completa.
+  candidaturaAnalisar(vagaId: string): Promise<CandidaturaAnalise> {
+    return request<CandidaturaAnalise>(
+      '/api/orchestrator/candidatura/analisar',
+      { method: 'POST', body: { vaga_id: vagaId }, timeoutMs: 120_000 },
+    );
+  },
+  candidaturaPreparar(vagaId: string): Promise<CandidaturaEntrega> {
+    return request<CandidaturaEntrega>(
+      '/api/orchestrator/candidatura/preparar',
+      { method: 'POST', body: { vaga_id: vagaId }, timeoutMs: 180_000 },
+    );
+  },
+  briefingGerar(): Promise<Briefing> {
+    return request<Briefing>('/api/orchestrator/briefing', {
+      timeoutMs: 60_000,
+    });
   },
 };

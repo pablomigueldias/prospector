@@ -3,7 +3,7 @@
 Registro do que **já foi entregue** no agente `vagas` (caçador de vagas). O que
 **falta** está em `docs/MELHORIAS_VAGAS.md`.
 
-Última atualização: **2026-06-15** (currículo persistido).
+Última atualização: **2026-06-16** (painel "O que estudar" — gaps agregados).
 
 > **Princípios que NÃO mudam:** (1) *para no rascunho* — a ferramenta nunca envia
 > nada sem você mandar; (2) *anti-mentira* — a IA reorganiza a verdade do Perfil
@@ -75,6 +75,38 @@ Registro do que **já foi entregue** no agente `vagas` (caçador de vagas). O qu
 > **Verificado:** roundtrip no banco (salvar → ler `curriculo_json`/
 > `curriculo_gerado_em` → `tem_curriculo` na lista) verde; migration aplica e
 > reverte; `tsc --noEmit` limpo.
+
+## Painel "O que estudar" — gaps agregados de TODAS as vagas
+
+> Pedido do Pablo (2026-06-16): "uma área que analisa todas as vagas e mostra o
+> que eu não tenho e o que a maioria pede, pra eu estudar depois". Visão
+> **agregada** (complementa o item #7 do backlog, que é o plano POR vaga). **Sem
+> migração** — usa o `analise_json`/`match_json` que já existem.
+
+- ✅ **Agregação backend** — 2026-06-16. `GET /api/pessoal/vagas/estudo` →
+  `EstudoVagasResponse`: varre todas as vagas com análise, conta cada skill
+  (requisitos_obrigatorios + desejáveis + stack, **uma vez por vaga**), cruza com
+  o Perfil Mestre (habilidades + stacks dos projetos + alvo) e devolve
+  **`para_estudar`** (demandadas que você NÃO tem, ranqueadas por nº de vagas e
+  obrigatoriedade) + **`pontos_fortes`** (demandadas que você já tem, pra destacar
+  no CV). Normaliza variações ("React.js"≈"react", "Postgres"≈"postgresql") com
+  `_norm_skill` + alias. `repo.listar_com_analise()`.
+- ✅ **Tela** — 2026-06-16. `PainelEstudo` em `VagasScreen.tsx` abaixo das
+  métricas: barra por demanda, "em N de M vagas (X%)", badge "obrig. K", "ver
+  todas", e os pontos fortes como chips. Recarrega junto ao analisar/criar vaga.
+
+> **Verificado:** agregação testada com vagas+perfil simulados (AWS/Inglês no topo
+> de "pra estudar"; React/Python/Docker em "pontos fortes"; variações casaram);
+> rota viva (401 sem auth, antes de `/{vaga_id}`); `tsc --noEmit` verde.
+
+---
+
+## Sessão 2026-06-19/20 (movido do PLANO-MESTRE)
+
+- ✅ **Importar vaga por URL** — colar o link no `NovaVagaForm` busca a página (`collectors/website/pagina.py`) e o extrator (`analyzers/vaga/extrator`) pré-preenche descrição/título/empresa/localização/modelo/senioridade; fallback "Auto-preencher do texto". *(campos atrás de login não vêm no fetch anônimo.)*
+- ✅ **Plano de ação pros gaps** — painel "O que estudar" + `plano_gaps` por vaga.
+- ✅ **Corrigir o ranking "O que estudar"** (mostrava skills que o Pablo já tem + frases de requisito viradas "skill"). `estudo_gaps`: skills saem só do `stack`; requisitos viram evidência p/ obrigatoriedade (`_word_in`/`_norm_text`); casamento perfil×vaga robusto (`_formas_perfil` tira parêntese mas aproveita as tools de dentro, quebra compostos; `_COBRE` cobre sinônimos: PostgreSQL→SQL, TypeScript→JavaScript, LLMs→Claude/Gemini/agentes, engenharia de prompt→prompt engineering); `_norm_skill` strippa parênteses; `_eh_skill` descarta tag-frase. Resultado: SQL/Git/APIs/IA/Claude/LLMs/JS/Docker saíram dos gaps.
+- ✅ **Carta de apresentação como PDF** — baixa como PDF formatado (cabeçalho nome/contato + data + ref. + corpo), nome `carta-pabloortiz-{vaga}.pdf`; `CartaPdf` reusa o motor de impressão do currículo (`components/vagas/_pdf.ts`); aparece no `VagaDetalhe` e no coordenador.
 
 ---
 

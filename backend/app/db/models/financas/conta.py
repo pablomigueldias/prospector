@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import Boolean, Index, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -9,7 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import expression
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-
 
 # Tipos de conta — "onde o dinheiro mora". String (não enum nativo) seguindo
 # a convenção do projeto (ver Empresa.status). cartao_credito é tratado à
@@ -47,7 +45,7 @@ class Conta(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         Numeric(12, 2), nullable=False, default=0, server_default="0"
     )
     # Objetivo de valor (ex.: reserva "viagem: R$ 5.000"). Nulo = sem meta.
-    meta: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    meta: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     ativa: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=expression.true()
     )

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import Index,Integer,String,Text
+from sqlalchemy import Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from app.db.base import Base, UUIDPrimaryKeyMixin
+
 
 class PipelineEvent(Base, UUIDPrimaryKeyMixin):
 
@@ -17,9 +17,9 @@ class PipelineEvent(Base, UUIDPrimaryKeyMixin):
     status: Mapped[str] = mapped_column(
         String(20), default='ok', server_default='ok', nullable=False
     )
-    detalhe: Mapped[Optional[str]] = mapped_column(Text)
-    empresa_cnpj: Mapped[Optional[str]] = mapped_column(String(20))
-    duracao_ms: Mapped[Optional[int]] = mapped_column(Integer)
+    detalhe: Mapped[str | None] = mapped_column(Text)
+    empresa_cnpj: Mapped[str | None] = mapped_column(String(20))
+    duracao_ms: Mapped[int | None] = mapped_column(Integer)
 
     created_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), nullable=False

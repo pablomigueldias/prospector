@@ -5,6 +5,9 @@ import { api } from '@/lib/api';
 import { ApiError } from '@/lib/types';
 import type {
   AnalisarVagaResponse,
+  CandidaturaEmailItem,
+  EstudoVagas,
+  ExtrairVaga,
   GerarCandidaturaResponse,
   GerarCurriculoResponse,
   Vaga,
@@ -27,6 +30,11 @@ export function useVagasMetricas() {
   return { ...result, metricas: result.data };
 }
 
+export function useVagasEstudo() {
+  const result = useFetch<EstudoVagas>(() => api.vagasEstudo(), []);
+  return { ...result, estudo: result.data };
+}
+
 export function useVaga(id: string | undefined) {
   const result = useFetch<Vaga>(
     () =>
@@ -34,6 +42,14 @@ export function useVaga(id: string | undefined) {
     [id],
   );
   return { ...result, vaga: result.data };
+}
+
+export function useVagaRascunhos(id: string | undefined) {
+  const result = useFetch<CandidaturaEmailItem[]>(
+    () => (id ? api.vagaRascunhos(id) : Promise.reject(new Error('sem id'))),
+    [id],
+  );
+  return { ...result, rascunhos: result.data ?? [] };
 }
 
 function toApiError(err: unknown): ApiError {
@@ -64,6 +80,11 @@ export function useVagaActions() {
 
   const criar = useCallback(
     (body: VagaCreate) => wrap<Vaga>(() => api.vagaCriar(body))(),
+    [],
+  );
+  const extrair = useCallback(
+    (origem: { texto?: string; url?: string }) =>
+      wrap<ExtrairVaga>(() => api.vagaExtrair(origem))(),
     [],
   );
   const atualizar = useCallback(
@@ -100,6 +121,7 @@ export function useVagaActions() {
     loading,
     error,
     criar,
+    extrair,
     atualizar,
     remover,
     analisar,

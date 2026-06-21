@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Index, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -27,7 +27,7 @@ class TransacaoItem(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("financas.transacoes.id", ondelete="CASCADE"),
         nullable=False,
     )
-    categoria_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    categoria_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.categorias.id", ondelete="SET NULL"),
         nullable=True,
@@ -36,7 +36,7 @@ class TransacaoItem(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     descricao: Mapped[str] = mapped_column(String(500), nullable=False)
     valor: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
 
-    transacao: Mapped["Transacao"] = relationship(back_populates="itens")
+    transacao: Mapped[Transacao] = relationship(back_populates="itens")
 
     __table_args__ = (
         Index("ix_fin_transacao_itens_transacao_id", "transacao_id"),

@@ -11,14 +11,21 @@ import type {
   FreelaNegociarResponse,
   FreelaRedigirResponse,
   FreelaMetricas,
+  FreelaPlanoMeta,
+  FreelaPlanoMetaRequest,
   FreelaPlataforma,
   FreelaPrecificarRequest,
   FreelaPrecificarResponse,
+  FreelaCapacidade,
   FreelaProjeto,
   FreelaProjetoCreate,
+  FreelaTaxaPorAnguloResponse,
+  FreelaTaxaPorStackResponse,
   FreelaProjetoListResponse,
   FreelaProposta,
+  FreelaPropostaAnalise,
   FreelaPropostaCreate,
+  FreelaPropostaEntrega,
   FreelaStatus,
 } from '../types';
 
@@ -36,8 +43,24 @@ export const freelaApi = {
   freelaMetricas(): Promise<FreelaMetricas> {
     return request<FreelaMetricas>(`${BASE}/metricas`, { timeoutMs: T });
   },
+  freelaTaxaPorAngulo(): Promise<FreelaTaxaPorAnguloResponse> {
+    return request<FreelaTaxaPorAnguloResponse>(`${BASE}/metricas/por-angulo`, { timeoutMs: T });
+  },
+  freelaTaxaPorStack(): Promise<FreelaTaxaPorStackResponse> {
+    return request<FreelaTaxaPorStackResponse>(`${BASE}/metricas/por-stack`, { timeoutMs: T });
+  },
+  freelaCapacidade(): Promise<FreelaCapacidade> {
+    return request<FreelaCapacidade>(`${BASE}/capacidade`, { timeoutMs: T });
+  },
   freelaPrecificar(body: FreelaPrecificarRequest): Promise<FreelaPrecificarResponse> {
     return request<FreelaPrecificarResponse>(`${BASE}/precificar`, {
+      method: 'POST',
+      body,
+      timeoutMs: T,
+    });
+  },
+  freelaPlanoMeta(body: FreelaPlanoMetaRequest): Promise<FreelaPlanoMeta> {
+    return request<FreelaPlanoMeta>(`${BASE}/meta/plano`, {
       method: 'POST',
       body,
       timeoutMs: T,
@@ -72,10 +95,10 @@ export const freelaApi = {
   freelaProjetoCriar(body: FreelaProjetoCreate): Promise<FreelaProjeto> {
     return request<FreelaProjeto>(`${BASE}/projetos`, { method: 'POST', body, timeoutMs: T });
   },
-  freelaProjetoExtrair(texto: string): Promise<FreelaExtrairProjeto> {
+  freelaProjetoExtrair(origem: { texto?: string; url?: string }): Promise<FreelaExtrairProjeto> {
     return request<FreelaExtrairProjeto>(`${BASE}/projetos/extrair`, {
       method: 'POST',
-      body: { texto },
+      body: origem,
       timeoutMs: 60_000,
     });
   },
@@ -163,6 +186,22 @@ export const freelaApi = {
     return request<void>(`${BASE}/propostas/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       timeoutMs: T,
+    });
+  },
+
+  // ── Coordenador (cadeia "proposta de freela") ──────────────────
+  freelaCoordenadorAnalisar(projetoId: string): Promise<FreelaPropostaAnalise> {
+    return request<FreelaPropostaAnalise>('/api/orchestrator/proposta-freela/analisar', {
+      method: 'POST',
+      body: { projeto_id: projetoId },
+      timeoutMs: 120_000,
+    });
+  },
+  freelaCoordenadorPreparar(projetoId: string): Promise<FreelaPropostaEntrega> {
+    return request<FreelaPropostaEntrega>('/api/orchestrator/proposta-freela/preparar', {
+      method: 'POST',
+      body: { projeto_id: projetoId },
+      timeoutMs: 180_000,
     });
   },
 };

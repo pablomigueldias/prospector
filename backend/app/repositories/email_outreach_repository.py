@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.empresa import Empresa
 from app.db.models.contato import Contato
 from app.db.models.email_outreach import EmailOutreach
+from app.db.models.empresa import Empresa
 from app.utils.logger import get_logger
 
 logger = get_logger()
@@ -19,7 +18,7 @@ class EmailOutreachRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def contatos_pendentes(self, limit: Optional[int] = None) -> List[Contato]:
+    async def contatos_pendentes(self, limit: int | None = None) -> list[Contato]:
 
         ja_contatados = select(EmailOutreach.contato_id).where(
             EmailOutreach.contato_id.is_not(None)
@@ -49,8 +48,8 @@ class EmailOutreachRepository:
         self,
         dias: int = 3,
         max_followups: int = 2,
-        limit: Optional[int] = None,
-    ) -> List[EmailOutreach]:
+        limit: int | None = None,
+    ) -> list[EmailOutreach]:
 
         cutoff = datetime.now() - timedelta(days=dias)
 

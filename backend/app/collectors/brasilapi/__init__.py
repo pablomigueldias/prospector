@@ -12,15 +12,14 @@ from app.collectors.brasilapi.client import (
 from app.collectors.brasilapi.mappers import map_to_lead
 from app.collectors.brasilapi.normalizers import normalizar_opencnpj_para_brasilapi
 from app.collectors.brasilapi.opencnpj_client import buscar_cnpj_opencnpj
-from app.models.lead import Lead
+from app.domain.lead import Lead
 from app.utils.logger import get_logger
 from app.utils.storage import save_lead
-
 
 logger = get_logger()
 
 
-def buscar_lead_por_cnpj(cnpj: str, salvar_raw: bool = True) -> Optional[Lead]:
+def buscar_lead_por_cnpj(cnpj: str, salvar_raw: bool = True) -> Lead | None:
     digits = _digits_only(cnpj)
     if not _validate_cnpj_digits(digits):
         logger.error(f"❌ CNPJ inválido (DV): {cnpj}")
@@ -37,7 +36,7 @@ def buscar_lead_por_cnpj(cnpj: str, salvar_raw: bool = True) -> Optional[Lead]:
         _anexar_extras_nas_notas(lead, extras)
 
     logger.success(
-        f"Lead montado via {fonte.upper()}: {lead.empresa.nome} " 
+        f"Lead montado via {fonte.upper()}: {lead.empresa.nome} "
         f"({len(lead.contatos)} contato(s))"
     )
 
@@ -54,7 +53,7 @@ def buscar_lead_por_cnpj(cnpj: str, salvar_raw: bool = True) -> Optional[Lead]:
 
 def _consultar_com_fallback(
     cnpj_digits: str,
-) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+) -> tuple[dict[str, Any] | None, str | None]:
     try:
         data = buscar_cnpj(cnpj_digits)
         return data, "brasilapi"
@@ -95,7 +94,7 @@ def _consultar_com_fallback(
         return None, None
 
 
-def _anexar_extras_nas_notas(lead: Lead, extras: Dict[str, Any]) -> None:
+def _anexar_extras_nas_notas(lead: Lead, extras: dict[str, Any]) -> None:
     blocos = []
 
     email = extras.get("email_receita")

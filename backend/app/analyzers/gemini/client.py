@@ -11,7 +11,6 @@ from tenacity import (
 from app.config import settings
 from app.utils.logger import get_logger
 
-
 logger = get_logger()
 
 MODEL = "gemini-2.5-flash"
@@ -43,13 +42,21 @@ class GeminiIndisponivel(GeminiError):
     ),
     reraise=True,
 )
-def _request_gemini(prompt: str, response_json: bool) -> tuple[str, dict]:
+def _request_gemini(
+    prompt: str, response_json: bool, *, model: str | None = None
+) -> tuple[str, dict]:
 
     if not settings.gemini_api_key:
         raise GeminiSemChave(
             "GEMINI_API_KEY não está no .env. "
             "Pegue uma chave gratuita em https://aistudio.google.com/apikey"
         )
+
+    modelo = model or MODEL
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{modelo}:generateContent"
+    )
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -71,10 +78,10 @@ def _request_gemini(prompt: str, response_json: bool) -> tuple[str, dict]:
         "x-goog-api-key": settings.gemini_api_key,
     }
 
-    logger.info(f" Consultando Gemini ({MODEL})...")
+    logger.info(f" Consultando Gemini ({modelo})...")
     try:
         with httpx.Client(timeout=TIMEOUT_SECONDS) as client:
-            response = client.post(BASE_URL, json=payload, headers=headers)
+            response = client.post(url, json=payload, headers=headers)
     except httpx.TimeoutException:
         logger.warning("Timeout no Gemini")
         raise
@@ -89,7 +96,7 @@ def _request_gemini(prompt: str, response_json: bool) -> tuple[str, dict]:
         logger.error(f"Gemini rejeitou ({response.status_code}): {msg}")
         if response.status_code == 404:
             raise GeminiError(
-                f"Modelo '{MODEL}' não encontrado. Pode ter sido deprecated. "
+                f"Modelo '{modelo}' não encontrado. Pode ter sido deprecated. "
                 f"Verifique em https://ai.google.dev/gemini-api/docs/models"
             )
         if "api key" in msg.lower() or response.status_code in (401, 403):
@@ -151,17 +158,19 @@ def gerar_conteudo(
     agente: str = "desconhecido",
     operacao: str | None = None,
     empresa_cnpj: str | None = None,
+    model: str | None = None,
 ) -> str:
-   
+
     from app.db.observability import AiCallRecord, register_ai_call
 
+    modelo = model or MODEL
     inicio = time.perf_counter()
     try:
-        texto, meta = _request_gemini(prompt, response_json)
-        
+        texto, meta = _request_gemini(prompt, response_json, model=modelo)
+
     except Exception as e:
         register_ai_call(AiCallRecord(
-            agente=agente, operacao=operacao, provider="gemini", modelo=MODEL,
+            agente=agente, operacao=operacao, provider="gemini", modelo=modelo,
             prompt=prompt, resposta=None,
             latencia_ms=int((time.perf_counter() - inicio) * 1000),
             sucesso=False, erro=f"{type(e).__name__}: {e}"[:500],
@@ -170,7 +179,7 @@ def gerar_conteudo(
         raise
 
     register_ai_call(AiCallRecord(
-        agente=agente, operacao=operacao, provider="gemini", modelo=MODEL,
+        agente=agente, operacao=operacao, provider="gemini", modelo=modelo,
         prompt=prompt, resposta=texto,
         tokens_input=meta.get("tokens_input"),
         tokens_output=meta.get("tokens_output"),

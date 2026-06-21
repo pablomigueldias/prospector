@@ -4,39 +4,45 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.routers import admin_usuarios as admin_usuarios_router
+from app.api.routers import agendamentos as agendamentos_router
+from app.api.routers import agents as agents_router
+from app.api.routers import auth as auth_router
+from app.api.routers import blog as blog_router
+from app.api.routers import blog_public as blog_public_router
+from app.api.routers import cartoes as cartoes_router
+from app.api.routers import categorias as categorias_router
+from app.api.routers import compras as compras_router
+from app.api.routers import comprovantes as comprovantes_router
+from app.api.routers import config as config_router
+from app.api.routers import contas as contas_router
+from app.api.routers import copywriter as copywriter_router
+from app.api.routers import crm as crm_router
+from app.api.routers import dev_tools as dev_tools_router
+from app.api.routers import eventos as eventos_router
+from app.api.routers import export as export_router
+from app.api.routers import freela as freela_router
+from app.api.routers import importador as importador_router
+from app.api.routers import leituras as leituras_router
+from app.api.routers import memoria as memoria_router
+from app.api.routers import nlu as nlu_router
+from app.api.routers import observability as observability_router
+from app.api.routers import orcamentos as orcamentos_router
+from app.api.routers import orchestrator as orchestrator_router
+from app.api.routers import outreach as outreach_router
+from app.api.routers import pagar_mes as pagar_mes_router
+from app.api.routers import perfil as perfil_router
+from app.api.routers import pix as pix_router
+from app.api.routers import prospector as prospector_router
+from app.api.routers import recorrencias as recorrencias_router
+from app.api.routers import resumo as resumo_router
+from app.api.routers import telegram as telegram_router
+from app.api.routers import transacoes as transacoes_router
+from app.api.routers import vagas as vagas_router
 from app.api.services.auth.cookie import cookie_name
 from app.api.services.auth.csrf import valido as csrf_valido
-
-from app.api.routers import auth as auth_router
-from app.api.routers import admin_usuarios as admin_usuarios_router
-from app.api.routers import agents as agents_router
-from app.api.routers import prospector as prospector_router
-from app.api.routers import copywriter as copywriter_router
-from app.api.routers import observability as observability_router
-from app.api.routers import dev_tools as dev_tools_router
-from app.api.routers import outreach as outreach_router
-from app.api.routers import perfil as perfil_router
-from app.api.routers import vagas as vagas_router
-from app.api.routers import freela as freela_router
-from app.api.routers import contas as contas_router
-from app.api.routers import categorias as categorias_router
-from app.api.routers import transacoes as transacoes_router
-from app.api.routers import resumo as resumo_router
-from app.api.routers import cartoes as cartoes_router
-from app.api.routers import compras as compras_router
-from app.api.routers import recorrencias as recorrencias_router
-from app.api.routers import orcamentos as orcamentos_router
-from app.api.routers import pagar_mes as pagar_mes_router
-from app.api.routers import leituras as leituras_router
-from app.api.routers import comprovantes as comprovantes_router
-from app.api.routers import importador as importador_router
-from app.api.routers import nlu as nlu_router
-from app.api.routers import pix as pix_router
-from app.api.routers import telegram as telegram_router
-from app.api.routers import eventos as eventos_router
 from app.config import settings
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -44,6 +50,17 @@ logger = get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 API da Reativa subindo...")
+    # S3 — aplica os overrides de config (UI) sobre o `settings` ANTES de tudo,
+    # pra valer inclusive no agendamento dos jobs abaixo.
+    try:
+        from app.api.services import config_service
+        from app.db.session import SessionLocal
+        async with SessionLocal() as _session:
+            n_over = await config_service.aplicar(_session)
+        if n_over:
+            logger.info(f"⚙️  Config: {n_over} override(s) aplicado(s) da UI.")
+    except Exception as e:  # noqa: BLE001 — config nunca derruba o boot
+        logger.warning(f"Config override pulado ({type(e).__name__}: {e}).")
     agendador = None
     if settings.scheduler_enabled:
         # Agendador in-process: 1x/dia processa recorrências e manda o lembrete
@@ -60,8 +77,31 @@ async def lifespan(app: FastAPI):
             id="rotina_diaria",
             replace_existing=True,
         )
+        if settings.briefing_enabled:
+            from app.jobs.briefing import rotina_briefing
+            agendador.add_job(
+                rotina_briefing,
+                CronTrigger(hour=settings.briefing_hora, minute=0),
+                id="rotina_briefing",
+                replace_existing=True,
+            )
+        if settings.blog_pautas_cron_enabled:
+            from app.jobs.blog_pautas import rotina_pautas
+            agendador.add_job(
+                rotina_pautas,
+                CronTrigger(
+                    day_of_week=settings.blog_pautas_dia_semana,
+                    hour=settings.blog_pautas_hora,
+                    minute=0,
+                ),
+                id="blog_pautas",
+                replace_existing=True,
+            )
         agendador.start()
-        logger.info("⏰ Agendador ligado (rotina diária às %sh).", settings.lembretes_hora)
+        logger.info(
+            f"⏰ Agendador ligado (rotina {settings.lembretes_hora}h · "
+            f"briefing {settings.briefing_hora}h)."
+        )
     yield
     if agendador is not None:
         agendador.shutdown(wait=False)
@@ -124,12 +164,22 @@ def healthcheck() -> dict:
 # ── Autenticação (portão de entrada) ──────────────────────────────
 app.include_router(auth_router.router)
 app.include_router(admin_usuarios_router.router)
+app.include_router(config_router.router)
+app.include_router(agendamentos_router.router)
+app.include_router(export_router.router)
 
 app.include_router(agents_router.router)
 app.include_router(prospector_router.router)
 app.include_router(copywriter_router.router)
+app.include_router(crm_router.router)
+app.include_router(memoria_router.router)
+app.include_router(orchestrator_router.router)
 app.include_router(observability_router.router)
 app.include_router(outreach_router.router)
+
+# ── Blog headless (site Reative) — pública (sem auth) + admin (auth) ─
+app.include_router(blog_public_router.router)
+app.include_router(blog_router.router)
 
 # ── Área pessoal (separada da Reative) ────────────────────────────
 app.include_router(perfil_router.router)

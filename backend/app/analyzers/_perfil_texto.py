@@ -48,6 +48,15 @@ def perfil_para_texto(perfil: PerfilMestreResponse) -> str:
             periodo = f" ({f.periodo})" if f.periodo else ""
             linhas.append(f"- {curso}{inst}{periodo}")
 
+    if perfil.certificacoes:
+        linhas.append("\nCertificações (o que cada uma comprova):")
+        for c in perfil.certificacoes:
+            tema = f" [{c.tema}]" if c.tema else ""
+            inst = f" — {c.instituicao}" if c.instituicao else ""
+            ano = f" ({c.ano})" if c.ano else ""
+            prova = f" — comprova: {c.prova}" if c.prova else ""
+            linhas.append(f"- {c.nome}{tema}{inst}{ano}{prova}")
+
     if perfil.o_que_procuro:
         q = perfil.o_que_procuro
         partes = []

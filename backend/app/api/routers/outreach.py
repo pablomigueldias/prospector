@@ -2,10 +2,10 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.schemas.outreach import (
     EmailHistoryResponse,
-    GerarRascunhosRequest,
-    GerarRascunhosResponse,
     GerarFollowupsRequest,
     GerarFollowupsResponse,
+    GerarRascunhosRequest,
+    GerarRascunhosResponse,
     SyncResponse,
 )
 from app.api.services import outreach_service
@@ -21,7 +21,7 @@ async def gerar(body: GerarRascunhosRequest) -> GerarRascunhosResponse:
         return GerarRascunhosResponse(**r)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
-    
+
 @router.post("/followups", response_model=GerarFollowupsResponse,
              summary="Gera rascunhos de follow-up pros e-mails sem resposta")
 async def followups(body: GerarFollowupsRequest) -> GerarFollowupsResponse:

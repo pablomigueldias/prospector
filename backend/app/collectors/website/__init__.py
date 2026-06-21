@@ -2,7 +2,7 @@ from typing import Dict, List, Optional
 
 from app.collectors.website.crawler import coletar_do_site
 from app.collectors.website.extractors import formatar_telefone, normalizar_url
-from app.models.lead import Contato, Empresa, Lead
+from app.domain.lead import Contato, Empresa, Lead
 from app.utils.logger import get_logger
 
 DDD_POR_ESTADO = {
@@ -44,12 +44,12 @@ def _ordenar_por_ddd(numeros,estado):
     ddds_esperados = DDD_POR_ESTADO.get(estado.upper())
     if not ddds_esperados:
         return numeros
-    
+
     da_regiao = [n for n in numeros if n[:2] in ddds_esperados]
     de_fora = [n for n in numeros if n[:2] not in ddds_esperados]
     return da_regiao + de_fora
 
-def _tem_contato(contatos: Dict[str, object]) -> bool:
+def _tem_contato(contatos: dict[str, object]) -> bool:
     """True se achou pelo menos um meio de contato real."""
     return bool(
         contatos.get("emails")
@@ -83,7 +83,7 @@ def enriquecer_lead_com_site(
 
 def _aplicar_na_empresa(
     empresa: Empresa,
-    contatos: Dict[str, object],
+    contatos: dict[str, object],
     url_site: str,
     salvar_url: bool,
 ) -> None:
@@ -98,12 +98,12 @@ def _aplicar_na_empresa(
         empresa.facebook = contatos["facebook"]  # type: ignore
 
 
-def _aplicar_nos_contatos(lead: Lead, contatos: Dict[str, object]) -> None:
+def _aplicar_nos_contatos(lead: Lead, contatos: dict[str, object]) -> None:
 
-    emails: List[str] = contatos.get("emails", [])  # type: ignore
-    whatsapps: List[str] = contatos.get("whatsapps", [])  # type: ignore
-    telefones: List[str] = contatos.get("telefones", [])  # type: ignore
-    linkedin: Optional[str] = contatos.get("linkedin")  # type: ignore
+    emails: list[str] = contatos.get("emails", [])  # type: ignore
+    whatsapps: list[str] = contatos.get("whatsapps", [])  # type: ignore
+    telefones: list[str] = contatos.get("telefones", [])  # type: ignore
+    linkedin: str | None = contatos.get("linkedin")  # type: ignore
 
     estado = lead.empresa.estado
     whatsapps = _ordenar_por_ddd(whatsapps, estado)
@@ -146,21 +146,21 @@ def _aplicar_nos_contatos(lead: Lead, contatos: Dict[str, object]) -> None:
 
 
 def _adicionar_extras_nas_notas(
-    empresa: Empresa, contatos: Dict[str, object]
+    empresa: Empresa, contatos: dict[str, object]
 ) -> None:
 
-    extras: List[str] = []
+    extras: list[str] = []
 
-    emails: List[str] = contatos.get("emails", [])  # type: ignore
+    emails: list[str] = contatos.get("emails", [])  # type: ignore
     if len(emails) > 1:
         extras.append(f"📧 Outros emails encontrados: {', '.join(emails[1:5])}")
 
-    whatsapps: List[str] = contatos.get("whatsapps", [])  # type: ignore
+    whatsapps: list[str] = contatos.get("whatsapps", [])  # type: ignore
     if len(whatsapps) > 1:
         formatados = [formatar_telefone(w) for w in whatsapps[1:4]]
         extras.append(f"📱 Outros WhatsApps: {', '.join(formatados)}")
 
-    telefones: List[str] = contatos.get("telefones", [])  # type: ignore
+    telefones: list[str] = contatos.get("telefones", [])  # type: ignore
     if len(telefones) > 1:
         formatados = [formatar_telefone(t) for t in telefones[1:4]]
         extras.append(f"☎️  Outros telefones: {', '.join(formatados)}")

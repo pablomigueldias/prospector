@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import NullPool
-from app.config import settings
 
+from app.config import settings
 
 bridge_engine = create_async_engine(
     settings.database_url,

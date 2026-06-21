@@ -14,16 +14,14 @@ from app.api.schemas.auth import (
     TwoFASetupResponse,
     UsuarioResponse,
 )
-from app.api.services.auth import senha_service
-from app.api.services.auth.senha_service import SenhaFraca
 from app.api.services.auth import (
     auditoria_service,
     login_service,
+    senha_service,
     sessao_service,
     twofa_service,
     usuario_service,
 )
-from app.api.services.auth.twofa_service import TwoFAError
 from app.api.services.auth import permissoes as permissoes_service
 from app.api.services.auth.cookie import clear_session_cookie, cookie_name, set_session_cookie
 from app.api.services.auth.csrf import set_csrf_cookie
@@ -32,6 +30,8 @@ from app.api.services.auth.login_service import (
     CredenciaisInvalidas,
     DoisFatoresRequerido,
 )
+from app.api.services.auth.senha_service import SenhaFraca
+from app.api.services.auth.twofa_service import TwoFAError
 from app.db.models.auth.usuario import Usuario
 from app.db.session import get_session
 

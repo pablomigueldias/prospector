@@ -3,7 +3,8 @@
 Registro do que **já foi entregue** no agente `freela`, por fase (espelha o
 plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`.
 
-Última atualização: **2026-06-15** (cold start + conformidade Workana).
+Última atualização: **2026-06-16** (§V 1ª e 2ª levas: análise profunda + motor da
+meta + breakdown/perguntas/gap).
 
 > O agente é um **copiloto**: a IA nunca toca na Workana nem envia proposta.
 > Ele organiza (CRM), precifica e (nas fases de IA) rascunha — você revisa e
@@ -206,6 +207,128 @@ plano do `docs/Workana.md`). O que **falta** está em `docs/MELHORIAS_FREELA.md`
 > **Verificado:** app importa e rota `/projetos/extrair` registrada; coerção do
 > extrator testada ("R$ 1.500"→1500, "64 propostas"→64); `cold_start` liga/
 > desliga o bloco do redator; `tsc --noEmit` e `npm run build` verdes.
+
+## §V (1ª leva) — Análise profunda + motor da meta (R$10k)
+
+> Nova direção do `MELHORIAS_FREELA.md` §V: a análise estava "vaga" e não havia
+> nada que amarrasse o trabalho à meta de renda. Esta leva entrega o par de maior
+> impacto. **Sem migração** (V.1 mora no `analise_json` JSONB; V.3 usa localStorage
+> + constantes).
+
+- ✅ **Quadrante dificuldade × esforço (V.1)** — 2026-06-16. O analisador passou a
+  devolver `complexidade_tecnica` (trivial/média/alta/incerta) e `clareza_escopo`
+  (claro/parcial/vago); o service deriva `quadrante` (`quick_win` / `dificil_longo`
+  / `escopo_vago` / `padrao`) com limiares (`_HORAS_LONGO=40`, `_HORAS_QUICK=16`).
+  Selo na fila (`ProjetoCard`) e na análise. Responde *"é difícil ou rápido?"*.
+- ✅ **Veredito de preço determinístico (V.1)** — 2026-06-16. `_veredito_preco`
+  cruza o orçamento do cliente (`faixa_orcamento_min/max`) com a faixa de mercado
+  da IA (`valor_mercado_min/max`) → `subcotado / justo / acima / sem_orcamento` +
+  `gap_texto` + `rh_orcamento` (R$/h efetivo). **Calculado no código, não pela IA**
+  (não inventa números). Schema `VereditoPreco`; selo na fila + linha 💰 na análise.
+- ✅ **Motor da meta — matemática reversa (V.3)** — 2026-06-16. `POST
+  /freela/meta/plano` (`PlanoMetaRequest{meta_liquida, horas_dia, dias_mes,
+  pct_faturavel}` → `PlanoMetaResponse`): reusa `metricas()` e calcula **valor-hora
+  alvo** (meta ÷ horas faturáveis), **projetos/mês**, **propostas/semana**,
+  **projeção líquida** no ritmo atual e **gargalo** (`ticket / conversao / volume /
+  no_caminho / sem_dados`) com diagnóstico em texto.
+- ✅ **Rampa F1–F4 por reputação (V.3)** — 2026-06-16. `_RAMPA_META` (F1 cold start
+  R$1,5–2k → F4 R$10k); fase escolhida pelo nº de fechadas (0 / ≤2 / ≤5 / 6+).
+  Painel `PlanoMetaPanel` (visível também no cold start, pois F1 É o cold start)
+  com inputs de capacidade (localStorage), valor-hora alvo vs real, propostas/
+  semana, badge da fase e gargalo.
+
+> **Verificado:** `tests/test_freela_plano_meta.py` (6 casos: matemática reversa
+> R$10k/5h-dia → ~R$110/h alvo; cold start = F1/sem_dados; valor-hora baixo →
+> ticket; conversão fraca → conversao; saudável → volume; inputs inválidos →
+> FreelaError) **verde**; backend importa; `tsc --noEmit` verde. Inputs do Pablo:
+> meta R$10k líquido, 5h/dia, rampa (em MELHORIAS_FREELA.md §V).
+
+## §V (2ª leva) — Breakdown de tarefas + perguntas + gap de skill
+
+> Continua a "análise profunda" (§V.1): acaba com o "horas mágico" e diz o que
+> perguntar antes de cotar. **Sem migração.**
+
+- ✅ **Breakdown de tarefas (V.1)** — 2026-06-16. O analisador devolve `tarefas`
+  (`[{nome, horas}]`, com a soma ≈ `horas_estimadas`); a tela lista as entregas com
+  horas e **total**. Schema `TarefaEstimada` (coerção "6h"→6).
+- ✅ **Perguntas ao cliente (V.1)** — 2026-06-16. `perguntas_cliente`: as
+  ambiguidades que mudam preço/prazo, pra esclarecer antes de cravar a cotação.
+- ✅ **Gap de skill (V.1)** — 2026-06-16. `skills_faltando`: o que o projeto exige
+  e NÃO está claro no perfil (oposto de `ganchos`); badges âmbar na análise.
+- ✅ **Extrator mais rico (V.1, parcial)** — 2026-06-16. `POST /projetos/extrair`
+  passou a puxar `habilidades` (skills exigidas) e `n_interessados`; o form ganhou
+  campo "Habilidades exigidas" pré-preenchido. *(Falta: dados do cliente
+  país/pagamento/rating + data de publicação + tipo de contrato — pedem migração/
+  fluxo de Cliente; ver MELHORIAS_FREELA §V.1.)*
+
+> **Verificado:** schema aceita os campos e coage horas/interessados de texto
+> ("6h"→6, "12 interessados"→12); backend importa; `tsc --noEmit` verde.
+
+## Correção — redator inventava métricas (anti-mentira)
+
+> Bug pego em proposta real (2026-06-16): o redator cravou "taxa de sucesso de
+> 90%" e "redução de 40%" que NÃO existem no perfil. Causa-raiz: `experiencias`
+> do Perfil Mestre quase vazio → sem fato real, a IA "completa" com número bonito.
+
+- ✅ **Redator não inventa número (prompt)** — 2026-06-16. Regra "NÚMEROS SÃO
+  SAGRADOS": só usa %/estatística que está LITERALMENTE no perfil; sem número
+  medido, impacto é qualitativo. Ajuste também no modo COLD START.
+- ✅ **Guard determinístico no checklist** — 2026-06-16. `_scan_metricas_inventadas`
+  compara números/percentuais do rascunho com o perfil; o que não está lá vira
+  item + sugestão e **limita o selo a < "pronta"** (cap 79). Ignora "100%"
+  (retórico). Testado: "90%/40%" fora do perfil → flag; "40%" no perfil → limpo.
+
+> **Raiz ainda aberta:** preencher `experiencias` do Perfil Mestre com resultados
+> REAIS (mesmo qualitativos) — é o item §0A do backlog e o que de fato eleva todas
+> as propostas. Sem isso, o redator tem pouco fato pra ancorar.
+
+---
+
+## Sessão 2026-06-19/20 — P1 Freela essencialmente fechado (movido do PLANO-MESTRE)
+
+> Tudo abaixo saiu nas sessões de 19–20/06. O freela virou **agente especializado +
+> gestão total na tela + autonomia**. Pendências (manutenção) ficaram no PLANO-MESTRE §2.
+
+**2.A — Gestão total na tela (estilo CRM)**
+- ✅ **Reusar `InlineCell` + `SidePanel`** — `InlineCell` generalizado (prop `onSave`, CRM intocado) na fila (orçamento/nº concorrentes/publicado); **`ProjetoDrawer`** (SidePanel): clicar no projeto abre o detalhe 360 com o porquê da decisão (momento, fit, risco, quadrante, preço, frescor, concorrência, bom 1º projeto), todos os campos editáveis + análise (tarefas/perguntas/skills/red flags/ganchos).
+- ✅ **CRUD de cliente na tela** — seção "Clientes" + drawer criar/editar/excluir.
+- ✅ **Drag-and-drop no Kanban** — arrastar card entre colunas muda o status (HTML5 dnd nativo, espelha `KanbanGenerico`/`NegociosSection`), move otimista, `select` como fallback, 'perdida' abre `PerdaDialog`. **+ Vista em Tabela** (`TabelaPropostas`) com filtro por status + busca, via `VistaToggle`.
+- ✅ **Clareza da fila de oportunidades** — selo de situação por card (`○ sem proposta`/`● proposta ativa`/`✓ fechada`/`✕ não consegui`, `_situacao_projeto` via `COUNT … FILTER`); busca por projeto/cliente; vista separada `Oportunidades | Encerradas`.
+- ✅ **Freela em abas (estilo CRM)** — `secao` + nav igual ao `CrmScreen`: Oportunidades/Propostas/Clientes/Painel; fila limitada aos 50 primeiros (`LIMITE_FILA`); modais no root.
+
+**2.B — Análise profunda**
+- ✅ Quadrante **dificuldade × esforço** (`complexidade_tecnica`/`clareza_escopo` → quick_win/dificil_longo/escopo_vago/padrao), selo na fila e na análise.
+- ✅ **Veredito de preço** determinístico (orçamento × faixa de mercado → subcotado/justo/acima + R$/h efetivo).
+- ✅ **Breakdown do escopo** (`tarefas`+horas, `perguntas_cliente`, `skills_faltando`).
+- ✅ **Importar projeto por URL** — colar o link no `NovoProjetoForm` busca a página (`collectors/website/pagina.py`) e o extrator pré-preenche descrição/título/orçamento/propostas/habilidades; fallback colar texto.
+- ✅ **Nota de confiança da análise** (`alta/média/baixa`) — avalia o quanto o TEXTO COLADO deixa cravar; texto pobre → `confianca_analise=baixa` + `confianca_motivo`; aviso colorido no ProjetoDrawer; parser tolera legado.
+
+**2.C — "É o momento pra mim?"**
+- ✅ **Veredito de timing pessoal** — campo `momento` (`agora/espere/passe`) determinístico: fit/risco + frescor + concorrência + "bom 1º projeto" + capacidade livre. Selo na fila.
+- ✅ **Capacidade / agenda (anti-furada)** — capacidade/semana via `config_app`, comprometidas = horas das fechadas, `GET /capacidade` + card; `momento` vira "espere — sem mão essa semana".
+- ✅ **Custo de oportunidade — ranquear a fila por valor esperado** = `ticket × prob. resposta × fit ÷ horas`; selo "💰 R$/h esp.", desempate após sinais de cold start.
+
+**2.D — Motor da meta (R$10k/mês)**
+- ✅ **Matemática reversa** (`POST /freela/meta/plano` → valor-hora alvo, projetos/mês, propostas/semana, gargalo).
+- ✅ **Valor-hora alvo vs real** (pinta vermelho quando abaixo).
+- ✅ **Estratégia por fase** (rampa F1–F4 pela reputação).
+- ✅ **Painel da meta com progresso do mês** — `plano_meta` devolve `progresso_mes` (líquido fechado no mês via `soma_liquido_fechado_desde`) vs ritmo linear → `na_frente`/`no_caminho`/`atras`/`sem_dados`; barra com marcador do ritmo (margem 10%).
+
+**2.E — Autonomia**
+- ✅ **Cadeia coordenador "Proposta de freela"** (`orchestrator/proposta_freela.py`): Fase 1 `analisar` → [checkpoint humano] → Fase 2 `preparar` (cota → cria/reusa proposta → redator → checklist); grava na memória compartilhada (`origem=coordenador`, `alvo_tipo=freela`); front `CoordenadorProposta` no `ProjetoDrawer`. Smoke E2E: fit 95 → R$9.500, checklist 95 "pronta", 3 variações. *(validação na tela pelo Pablo segue pendente no §2.)*
+
+**2.F — Cold start**
+- ✅ Modo cold start no redator (prova por descrição, sem link externo, redução de risco).
+- ✅ Checklist anti-genérico (gate 0–100 + varredura de contato/link p/ conformidade Workana).
+- ✅ Painel adaptativo focado em resposta (Em conversa / Tempo até resposta).
+- ✅ **Velocidade — "projeto fresco"** — coluna `publicado_em` (migração), selo 🆕 + edição inline da data, fila ordena por novo + pouco concorrido.
+- ✅ **Detector de "bom 1º projeto"** — selo determinístico: pagamento verificado + 3 de 4 (fit alto, pouca concorrência, escopo enxuto, orçamento saudável).
+- ✅ **A/B real por ângulo de abertura** — redator gera 3 aberturas rotuladas (direto/prova/pergunta); clicar registra `angulo_abertura` (migração); painel "Qual abertura converte" (`GET /metricas/por-angulo`).
+- ✅ **Taxa de resposta por categoria/stack** — painel "Onde insistir" (`GET /metricas/por-stack`).
+
+**2.G — Alavancas**
+- ✅ **Win-rate por categoria** — `contar_resposta_por_stack` conta também fechadas; `taxa_por_stack` devolve `fechadas`+`win_rate`; painel "Onde insistir" mostra % resp. e % win.
+- ✅ **Alerta de orçamento incompatível** no precificar — faixa do cliente (mín/máx) opcional; `orcamento_status` (acima/dentro/abaixo) + `alerta_orcamento` (🔴 acima do teto / 🟡 abaixo do piso / 🟢 dentro).
 
 ---
 

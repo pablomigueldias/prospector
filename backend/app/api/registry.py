@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -13,14 +12,14 @@ class Agent:
     status: str  # "active" | "soon" | "experimental"
     order: int
     category: str = "Reative Systems"
-    capabilities: Dict[str, bool] = field(default_factory=dict)
-    roadmap_label: Optional[str] = None  # ex: "Roadmap Q3"
+    capabilities: dict[str, bool] = field(default_factory=dict)
+    roadmap_label: str | None = None  # ex: "Roadmap Q3"
 
     def to_dict(self) -> dict:
         return asdict(self)
 
 
-_AGENTS: List[Agent] = [
+_AGENTS: list[Agent] = [
     Agent(
         slug="prospector",
         name="Prospector",
@@ -36,6 +35,18 @@ _AGENTS: List[Agent] = [
             "investigate": False,  # ainda em revisão
             "csv_import": False,
         },
+    ),
+    Agent(
+        slug="crm",
+        name="CRM",
+        description=(
+            "Suas empresas, contatos e pipeline — dentro do sistema, "
+            "sem depender do Notion."
+        ),
+        icon="ti-users",
+        status="active",
+        order=12,  # entre prospector (10) e copywriter (15)
+        capabilities={"empresas": True, "kanban": True, "contatos": True},
     ),
     Agent(
         slug="copywriter",
@@ -60,6 +71,22 @@ _AGENTS: List[Agent] = [
         status="active",
         order=18,
         capabilities={"gera_rascunho": True, "sincroniza": True},
+    ),
+    Agent(
+        slug="blog",
+        name="Blog",
+        description=(
+            "Cérebro de conteúdo do site: cria, revisa e publica posts "
+            "otimizados pra SEO. Você aprova o rascunho; o site pega via API."
+        ),
+        icon="ti-news",
+        status="active",
+        order=19,  # depois de outreach (18), antes de cobrança (20)
+        capabilities={
+            "crud_posts": True,
+            "publica": True,
+            "headless_api": True,
+        },
     ),
     Agent(
         slug="cobranca",
@@ -173,11 +200,11 @@ _AGENTS: List[Agent] = [
 ]
 
 
-def list_agents() -> List[Agent]:
+def list_agents() -> list[Agent]:
     return sorted(_AGENTS, key=lambda a: a.order)
 
 
-def get_agent(slug: str) -> Optional[Agent]:
+def get_agent(slug: str) -> Agent | None:
     for agent in _AGENTS:
         if agent.slug == slug:
             return agent

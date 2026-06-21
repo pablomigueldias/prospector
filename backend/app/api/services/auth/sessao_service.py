@@ -9,8 +9,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +20,7 @@ from app.db.models.auth.usuario import Usuario
 
 
 def _agora() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def hash_token(token: str) -> str:
@@ -37,8 +36,8 @@ async def criar_sessao(
     session: AsyncSession,
     usuario_id: uuid.UUID,
     *,
-    ip: Optional[str] = None,
-    user_agent: Optional[str] = None,
+    ip: str | None = None,
+    user_agent: str | None = None,
 ) -> str:
     """Cria uma sessão nova e devolve o token EM TEXTO (vai pro cookie).
     Só o hash fica no banco. Não faz commit — quem chama controla a transação."""
@@ -57,7 +56,7 @@ async def criar_sessao(
 
 async def validar_token(
     session: AsyncSession, token: str
-) -> Optional[Usuario]:
+) -> Usuario | None:
     """Devolve o Usuario dono de uma sessão válida, ou None.
 
     Inválido = não existe / revogada / passou da expiração absoluta / ficou
@@ -91,7 +90,7 @@ async def validar_token(
     return usuario
 
 
-async def revogar_token(session: AsyncSession, token: str) -> Optional[uuid.UUID]:
+async def revogar_token(session: AsyncSession, token: str) -> uuid.UUID | None:
     """Revoga a sessão do token (logout). Devolve o usuario_id revogado, ou None."""
     sessao = await session.scalar(
         select(Sessao).where(Sessao.token_hash == hash_token(token))
@@ -104,7 +103,7 @@ async def revogar_token(session: AsyncSession, token: str) -> Optional[uuid.UUID
 
 
 async def revogar_outras(
-    session: AsyncSession, usuario_id: uuid.UUID, token_atual: Optional[str]
+    session: AsyncSession, usuario_id: uuid.UUID, token_atual: str | None
 ) -> int:
     """Revoga todas as sessões do usuário MENOS a do token atual (troca de senha)."""
     stmt = update(Sessao).where(

@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -57,7 +56,7 @@ async def criar(
 @router.get("/status", response_model=RecorrenciaStatusResponse,
             summary="Situação de cada recorrência no mês (paga/prevista/lançada)")
 async def status(
-    competencia: Optional[str] = None,
+    competencia: str | None = None,
     usuario_id: str = Depends(financas_usuario_id),
 ) -> RecorrenciaStatusResponse:
     try:
@@ -108,7 +107,7 @@ async def remover(recorrencia_id: str) -> None:
 @router.post("/processar", response_model=ProcessarRecorrenciasResponse,
              summary="Gera as previstas do mês e marca atrasadas (job diário)")
 async def processar(
-    usuario_id: Optional[str] = None, ref: Optional[date] = None
+    usuario_id: str | None = None, ref: date | None = None
 ) -> ProcessarRecorrenciasResponse:
     import uuid
 

@@ -2,8 +2,6 @@
 
 import random
 from dataclasses import dataclass
-from typing import Optional
-
 
 USER_AGENTS = [
 
@@ -46,7 +44,7 @@ class Identidade:
     engine: str    # "chrome", "firefox", "safari", "edge"
     aceita_idioma: str = "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
 
-    def headers_base(self, accept: Optional[str] = None) -> dict:
+    def headers_base(self, accept: str | None = None) -> dict:
         h = {
             "User-Agent": self.user_agent,
             "Accept": accept or "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -107,7 +105,7 @@ def _classificar_ua(ua: str) -> tuple:
     return plat, engine
 
 
-def sortear_identidade(seed: Optional[str] = None) -> Identidade:
+def sortear_identidade(seed: str | None = None) -> Identidade:
     if seed:
         rng = random.Random(seed)
         ua = rng.choice(USER_AGENTS)

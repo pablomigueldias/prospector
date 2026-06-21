@@ -1,9 +1,8 @@
 """Service do Perfil Mestre — o 'quem EU sou' dos agentes pessoais."""
 from __future__ import annotations
 
-from typing import Optional
-
 from app.api.schemas.pessoal import PerfilMestreResponse, PerfilMestreUpsert
+from app.api.services._helpers import iso as _iso
 from app.db.models.pessoal.perfil_mestre import PerfilMestre
 from app.db.session import get_session
 from app.repositories.pessoal.perfil_repository import PerfilRepository
@@ -11,10 +10,6 @@ from app.repositories.pessoal.perfil_repository import PerfilRepository
 
 class PerfilError(Exception):
     """Erro de negócio do Perfil Mestre — vira HTTP 400 no router."""
-
-
-def _iso(dt) -> Optional[str]:
-    return dt.isoformat(timespec="seconds") if dt else None
 
 
 def _to_response(p: PerfilMestre) -> PerfilMestreResponse:
@@ -29,6 +24,7 @@ def _to_response(p: PerfilMestre) -> PerfilMestreResponse:
         projetos=p.projetos or [],
         experiencias=p.experiencias or [],
         formacao=p.formacao or [],
+        certificacoes=p.certificacoes or [],
         o_que_procuro=p.o_que_procuro,
         blocos_curriculo=p.blocos_curriculo or [],
         contato=p.contato,
@@ -37,7 +33,7 @@ def _to_response(p: PerfilMestre) -> PerfilMestreResponse:
     )
 
 
-async def get_perfil() -> Optional[PerfilMestreResponse]:
+async def get_perfil() -> PerfilMestreResponse | None:
     async with get_session() as session:
         perfil = await PerfilRepository(session).get_ativo()
         return _to_response(perfil) if perfil else None

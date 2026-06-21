@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { PagarModal, type PagamentoAlvo } from '@/components/PagarModal';
+import { PagarModal, type PagamentoAlvo } from '@/components/financas/PagarModal';
 import { useCategorias, useTransacoes } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';

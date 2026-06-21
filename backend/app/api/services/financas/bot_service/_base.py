@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date
-from typing import Optional
 
 from app.config import settings
 from app.integrations import telegram as tg
@@ -56,11 +55,11 @@ def mapa_chat_usuario() -> dict[str, str]:
     return mapa
 
 
-async def _responder(chat_id: str, texto: str, reply_markup: Optional[dict] = None) -> None:
+async def _responder(chat_id: str, texto: str, reply_markup: dict | None = None) -> None:
     await asyncio.to_thread(tg.send_message, chat_id, texto, reply_markup)
 
 
-def _consulta_intent(texto: str) -> Optional[str]:
+def _consulta_intent(texto: str) -> str | None:
     """Distingue uma PERGUNTA de um lançamento. 'gastei 50 no mercado' não é
     consulta; 'quanto gastei?' / 'qual meu saldo?' são."""
     t = texto.lower()

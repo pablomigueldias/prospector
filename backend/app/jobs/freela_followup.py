@@ -8,8 +8,7 @@ penaliza contato fora). A ferramenta não envia nada pro cliente; só te cutuca.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
@@ -24,14 +23,14 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 
-async def lembrete_followup(ref: Optional[datetime] = None) -> dict:
+async def lembrete_followup(ref: datetime | None = None) -> dict:
     if not settings.freela_followup_enabled:
         return {"enviados": 0, "motivo": "desligado"}
     chat_id = settings.telegram_chat_id
     if not chat_id or not settings.telegram_bot_token:
         return {"enviados": 0, "motivo": "sem telegram configurado"}
 
-    agora = ref or datetime.now(timezone.utc)
+    agora = ref or datetime.now(UTC)
     dias = max(1, settings.freela_followup_dias)
 
     async with get_session() as session:
@@ -52,7 +51,7 @@ async def lembrete_followup(ref: Optional[datetime] = None) -> dict:
     for proposta, titulo, cliente_nome in linhas:
         enviada = proposta.enviada_em
         if enviada.tzinfo is None:
-            enviada = enviada.replace(tzinfo=timezone.utc)
+            enviada = enviada.replace(tzinfo=UTC)
         d = (agora - enviada).days
         if d >= dias:
             quem = f" — {cliente_nome}" if cliente_nome else ""

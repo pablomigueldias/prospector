@@ -1,8 +1,6 @@
 """Parser da resposta do redator de proposta freela."""
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import ValidationError
 
 from app.analyzers._json_extract import extrair_json
@@ -12,11 +10,20 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 
-def parse_resposta(texto_cru: str) -> Optional[RedacaoProposta]:
+def parse_resposta(texto_cru: str) -> RedacaoProposta | None:
     """Converte o texto cru da LLM em RedacaoProposta, ou None se inválido."""
     dados = extrair_json(texto_cru)
     if dados is None:
         return None
+
+    # Tolera variações como string solta (legado) → rotula como "direto".
+    vs = dados.get("variacoes_abertura")
+    if isinstance(vs, list):
+        dados["variacoes_abertura"] = [
+            {"angulo": "direto", "texto": v} if isinstance(v, str) else v
+            for v in vs
+            if v
+        ]
 
     try:
         redacao = RedacaoProposta(**dados)

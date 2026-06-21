@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -40,25 +40,25 @@ class Transacao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     valor_total: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
 
     data_competencia: Mapped[date] = mapped_column(Date, nullable=False)
-    data_pagamento: Mapped[Optional[date]] = mapped_column(Date)
+    data_pagamento: Mapped[date | None] = mapped_column(Date)
     # Vencimento (usado pelas previstas de recorrência pra marcar atraso).
-    data_vencimento: Mapped[Optional[date]] = mapped_column(Date)
+    data_vencimento: Mapped[date | None] = mapped_column(Date)
 
     # Encargos por atraso, quando o boleto informa (ex.: multa 2% + juros 1% a.m.).
     # Guardamos os percentuais pra projetar multa+juros até a data do pagamento.
-    multa_percentual: Mapped[Optional[float]] = mapped_column(Numeric(6, 4))
-    juros_mensal_percentual: Mapped[Optional[float]] = mapped_column(Numeric(6, 4))
+    multa_percentual: Mapped[float | None] = mapped_column(Numeric(6, 4))
+    juros_mensal_percentual: Mapped[float | None] = mapped_column(Numeric(6, 4))
     # Quanto de multa+juros foi de fato somado ao pagar (registro/transparência).
-    encargos_pagos: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+    encargos_pagos: Mapped[float | None] = mapped_column(Numeric(12, 2))
 
     # Linha digitável do boleto (só dígitos) — copiar/colar pra pagar no banco
     # e chave pra detectar boleto duplicado na importação.
-    linha_digitavel: Mapped[Optional[str]] = mapped_column(String(64))
+    linha_digitavel: Mapped[str | None] = mapped_column(String(64))
 
     # Desconto por antecipação (ex.: "desconto de R$X até DD/MM"): abate do
     # total se o pagamento for feito até a data.
-    desconto_valor: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
-    desconto_ate: Mapped[Optional[date]] = mapped_column(Date)
+    desconto_valor: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    desconto_ate: Mapped[date | None] = mapped_column(Date)
 
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="prevista", server_default="prevista"
@@ -67,14 +67,14 @@ class Transacao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         String(30), nullable=False, default="manual", server_default="manual"
     )
 
-    categoria_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    categoria_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("financas.categorias.id", ondelete="SET NULL"),
         nullable=True,
     )
 
     # De qual recorrência esta transação nasceu (previstas geradas pelo job).
-    recorrencia_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    recorrencia_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey(
             "financas.recorrencias.id",
@@ -84,15 +84,15 @@ class Transacao(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=True,
     )
 
-    notas: Mapped[Optional[str]] = mapped_column(Text)
+    notas: Mapped[str | None] = mapped_column(Text)
 
     # ── Quebra em subverbas e formas de pagamento ─────────────────────
-    itens: Mapped[List["TransacaoItem"]] = relationship(
+    itens: Mapped[list[TransacaoItem]] = relationship(
         back_populates="transacao",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    pagamentos: Mapped[List["TransacaoPagamento"]] = relationship(
+    pagamentos: Mapped[list[TransacaoPagamento]] = relationship(
         back_populates="transacao",
         cascade="all, delete-orphan",
         lazy="selectin",

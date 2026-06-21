@@ -1,15 +1,13 @@
 """Parser da resposta do assistente de negociação freela."""
 from __future__ import annotations
 
-from typing import List, Optional
-
 from app.analyzers._json_extract import extrair_json
 from app.utils.logger import get_logger
 
 logger = get_logger()
 
 
-def parse_resposta(texto_cru: str) -> Optional[List[str]]:
+def parse_resposta(texto_cru: str) -> list[str] | None:
     """Extrai a lista de opções de resposta (até 3), ou None se inválido."""
     dados = extrair_json(texto_cru)
     if not isinstance(dados, dict):

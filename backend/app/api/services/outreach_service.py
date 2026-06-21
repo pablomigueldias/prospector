@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from typing import List
-
 from app.db.sync_bridge import bridge_session
-from app.mailer.outreach import gerar_rascunhos_pendentes,gerar_followups_pendentes
+from app.mailer.outreach import gerar_followups_pendentes, gerar_rascunhos_pendentes
 from app.mailer.sync import _sincronizar_async
 from app.repositories.email_outreach_repository import EmailOutreachRepository
 
 
 async def gerar(limit, pausa) -> dict:
     return await gerar_rascunhos_pendentes(limit=limit, pausa=pausa)
-    
+
 async def gerar_followups(dias, max_followups, limit, pausa) -> dict:
     return await gerar_followups_pendentes(
         dias=dias, max_followups=max_followups, limit=limit, pausa=pausa
@@ -24,7 +22,7 @@ def _iso(dt):
     return dt.isoformat(timespec="seconds") if dt else None
 
 
-async def historico(limit: int = 50) -> List[dict]:
+async def historico(limit: int = 50) -> list[dict]:
     async with bridge_session() as session:
         repo = EmailOutreachRepository(session)
         rows = await repo.listar_recentes(limit=limit)

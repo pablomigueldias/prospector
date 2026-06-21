@@ -6,7 +6,6 @@ As permissões são strings nomeadas ligadas a papéis (RBAC). O catálogo abaix
 from __future__ import annotations
 
 import uuid
-from typing import List
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.auth.papel_permissao import PapelPermissao
 from app.db.models.auth.permissao import Permissao
 from app.db.models.auth.usuario_papel import UsuarioPapel
-
 
 # (codigo, descricao) — catálogo canônico.
 CATALOGO: list[tuple[str, str]] = [
@@ -24,6 +22,7 @@ CATALOGO: list[tuple[str, str]] = [
     ("comprovantes.ver", "Ver comprovantes"),
     ("relatorios.ver", "Ver relatórios"),
     ("usuarios.gerenciar", "Criar e editar usuários (admin)"),
+    ("blog.editar", "Criar, editar e publicar posts do blog"),
 ]
 
 # Subconjunto seguro pro papel "padrao" (ex.: Sandra): SEM pessoal.ver nem
@@ -39,7 +38,7 @@ NOME_ADMIN = "admin"
 NOME_PADRAO = "padrao"
 
 
-async def listar_codigos(session: AsyncSession, usuario_id: uuid.UUID) -> List[str]:
+async def listar_codigos(session: AsyncSession, usuario_id: uuid.UUID) -> list[str]:
     """Todas as permissões (códigos) do usuário, via papéis. Lista ordenada."""
     stmt = (
         select(Permissao.codigo)

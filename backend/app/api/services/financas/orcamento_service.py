@@ -8,7 +8,6 @@ from __future__ import annotations
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Optional, Tuple
 
 from sqlalchemy import select
 
@@ -41,7 +40,7 @@ def _uuid(valor: str, *, campo: str = "id") -> uuid.UUID:
         raise OrcamentoError(f"{campo} inválido: {valor!r}")
 
 
-def _parse_competencia(s: Optional[str]) -> Tuple[int, int]:
+def _parse_competencia(s: str | None) -> tuple[int, int]:
     if not s:
         hoje = date.today()
         return hoje.year, hoje.month
@@ -55,7 +54,7 @@ def _parse_competencia(s: Optional[str]) -> Tuple[int, int]:
         raise OrcamentoError(f"Competência inválida: {s!r} (use YYYY-MM).")
 
 
-def _to_response(o: Orcamento, nome: Optional[str] = None) -> OrcamentoResponse:
+def _to_response(o: Orcamento, nome: str | None = None) -> OrcamentoResponse:
     return OrcamentoResponse(
         id=str(o.id),
         usuario_id=str(o.usuario_id),
@@ -134,7 +133,7 @@ async def listar_orcamentos(usuario_id: str) -> OrcamentoListResponse:
 
 
 async def status_do_mes(
-    usuario_id: str, competencia: Optional[str] = None
+    usuario_id: str, competencia: str | None = None
 ) -> OrcamentoStatusResponse:
     """Por orçamento ativo, quanto já foi consumido no mês (das despesas da
     categoria) + restante e percentual."""

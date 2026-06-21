@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { useState, type FormEvent } from 'react';
 
-import { DashboardLayout } from '@/components/DashboardLayout';
+import { DashboardLayout } from '@/components/shared/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { ApiError } from '@/lib/types';

@@ -1,5 +1,4 @@
 import re
-from typing import Dict, List, Optional, Set
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
@@ -58,9 +57,9 @@ EMAIL_BLACKLIST_DOMAINS = {
 EMAIL_BLACKLIST_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico"}
 
 
-def extrair_emails(texto: str) -> List[str]:
+def extrair_emails(texto: str) -> list[str]:
 
-    candidatos: Set[str] = set()
+    candidatos: set[str] = set()
     for match in EMAIL_RE.finditer(texto):
         email = match.group(0).lower().strip(".-")
         if _email_eh_valido(email):
@@ -91,7 +90,7 @@ def _email_eh_valido(email: str) -> bool:
     return True
 
 
-def _ordenar_emails_por_prioridade(emails: Set[str]) -> List[str]:
+def _ordenar_emails_por_prioridade(emails: set[str]) -> list[str]:
     ordem_prioridade = ["contato", "comercial", "vendas", "info",
                         "atendimento", "sac", "hello", "hi"]
 
@@ -134,8 +133,8 @@ def _eh_telefone_fixo_valido(numero_limpo: str) -> bool:
     return primeiro_digito in "2345"
 
 
-def extrair_whatsapps(html: str, texto: str) -> List[str]:
-    numeros: Set[str] = set()
+def extrair_whatsapps(html: str, texto: str) -> list[str]:
+    numeros: set[str] = set()
     texto_limpo = _limpar_texto_antes_extrair(texto)
 
     for match in WHATSAPP_LINK_RE.finditer(html):
@@ -157,8 +156,8 @@ def extrair_whatsapps(html: str, texto: str) -> List[str]:
     return sorted(numeros)
 
 
-def extrair_telefones_fixos(texto: str) -> List[str]:
-    fixos: Set[str] = set()
+def extrair_telefones_fixos(texto: str) -> list[str]:
+    fixos: set[str] = set()
     texto_limpo = _limpar_texto_antes_extrair(texto)
 
     for match in TELEFONE_RE.finditer(texto_limpo):
@@ -182,7 +181,7 @@ def _limpar_numero(numero: str) -> str:
     if len(digits) >= 12 and digits.startswith("55"):
         digits = digits[2:]
     if len(digits) < 10 or len(digits) > 11:
-        return "" 
+        return ""
     return digits
 
 DDDS_VALIDOS_BR = frozenset({
@@ -235,7 +234,7 @@ def formatar_telefone(numero_limpo: str) -> str:
         return f"({numero_limpo[:2]}) {numero_limpo[2:6]}-{numero_limpo[6:]}"
     return numero_limpo
 
-def extrair_instagram(html: str) -> Optional[str]:
+def extrair_instagram(html: str) -> str | None:
     for match in INSTAGRAM_LINK_RE.finditer(html):
         username = match.group(1)
         if username and username not in {"p", "reel", "explore", "stories", "tv", "accounts"}:
@@ -243,7 +242,7 @@ def extrair_instagram(html: str) -> Optional[str]:
     return None
 
 
-def extrair_facebook(html: str) -> Optional[str]:
+def extrair_facebook(html: str) -> str | None:
     for match in FACEBOOK_LINK_RE.finditer(html):
         slug = match.group(1)
         if slug and slug not in {"profile.php", "people", "pages", "watch", "marketplace"}:
@@ -251,7 +250,7 @@ def extrair_facebook(html: str) -> Optional[str]:
     return None
 
 
-def extrair_linkedin(html: str) -> Optional[str]:
+def extrair_linkedin(html: str) -> str | None:
     match = LINKEDIN_LINK_RE.search(html)
     if match:
         full = match.group(0)
@@ -285,7 +284,7 @@ def _normalizar_html_para_texto(html: str) -> str:
     return texto
 
 
-def extrair_contatos(html: str) -> Dict[str, object]:
+def extrair_contatos(html: str) -> dict[str, object]:
     soup = BeautifulSoup(html, "lxml")
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
@@ -310,7 +309,7 @@ def parece_spa(html: str) -> bool:
     body = soup.find("body")
     if not body:
         return True
-    
+
     for tag in body(["script", "style", "noscript"]):
         tag.decompose()
     texto_visivel = body.get_text(strip=True)

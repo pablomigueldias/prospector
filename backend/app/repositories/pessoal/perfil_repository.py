@@ -1,18 +1,15 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.pessoal.perfil_mestre import PerfilMestre
 
-
 # Campos do PerfilMestre que vêm do payload (o resto é gerado/automático).
 _CAMPOS = (
     "nome", "titulo", "resumo", "tom_escrita",
     "habilidades", "projetos", "experiencias", "formacao",
-    "o_que_procuro", "blocos_curriculo", "contato",
+    "certificacoes", "o_que_procuro", "blocos_curriculo", "contato",
 )
 
 
@@ -20,7 +17,7 @@ class PerfilRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_ativo(self) -> Optional[PerfilMestre]:
+    async def get_ativo(self) -> PerfilMestre | None:
         stmt = (
             select(PerfilMestre)
             .where(PerfilMestre.ativo.is_(True))

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import (
 
 from app.config import settings
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -47,6 +46,6 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 
 
 async def dispose_engine() -> None:
-    
+
     logger.info(" Fechando engine do Postgres...")
     await engine.dispose()

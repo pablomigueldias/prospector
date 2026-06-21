@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import Boolean, Index, Numeric, String, Text, Integer
+from sqlalchemy import Boolean, Index, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -18,35 +17,35 @@ class AiCall(Base, UUIDPrimaryKeyMixin):
         String(50), default='desconhecido', server_default='desconecido'
     )
 
-    operacao: Mapped[Optional[str]] = mapped_column(String(100))
+    operacao: Mapped[str | None] = mapped_column(String(100))
 
     provider: Mapped[str] = mapped_column(String(50))
     modelo: Mapped[str] = mapped_column(String(100))
 
     # Payload
 
-    prompt: Mapped[Optional[str]] = mapped_column(Text)
-    resposta: Mapped[Optional[str]] = mapped_column(Text)
-    prompt_chars: Mapped[Optional[int]] = mapped_column(Integer)
-    resposta_chars: Mapped[Optional[int]] = mapped_column(Integer)
+    prompt: Mapped[str | None] = mapped_column(Text)
+    resposta: Mapped[str | None] = mapped_column(Text)
+    prompt_chars: Mapped[int | None] = mapped_column(Integer)
+    resposta_chars: Mapped[int | None] = mapped_column(Integer)
 
     # Custo
 
-    tokens_input: Mapped[Optional[int]] = mapped_column(Integer)
-    tokens_output: Mapped[Optional[int]] = mapped_column(Integer)
-    tokens_total: Mapped[Optional[int]] = mapped_column(Integer)
-    custo_usd: Mapped[Optional[float]] = mapped_column(Numeric(12, 6))
+    tokens_input: Mapped[int | None] = mapped_column(Integer)
+    tokens_output: Mapped[int | None] = mapped_column(Integer)
+    tokens_total: Mapped[int | None] = mapped_column(Integer)
+    custo_usd: Mapped[float | None] = mapped_column(Numeric(12, 6))
 
     # Resultados
 
-    latencia_ms: Mapped[Optional[int]] = mapped_column(Integer)
+    latencia_ms: Mapped[int | None] = mapped_column(Integer)
     sucesso: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default='true', nullable=False
     )
-    finish_reason: Mapped[Optional[str]] = mapped_column(String(50))
-    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    finish_reason: Mapped[str | None] = mapped_column(String(50))
+    error_message: Mapped[str | None] = mapped_column(Text)
 
-    empresa_cnpj: Mapped[Optional[str]] = mapped_column(String(20))
+    empresa_cnpj: Mapped[str | None] = mapped_column(String(20))
 
     created_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), nullable=False

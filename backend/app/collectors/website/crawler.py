@@ -1,4 +1,3 @@
-from typing import Dict, List, Optional, Set
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
@@ -14,7 +13,6 @@ from app.collectors.website.extractors import (
     normalizar_url,
 )
 from app.utils.logger import get_logger
-
 
 logger = get_logger()
 
@@ -45,14 +43,14 @@ def _eh_landing_page_completa(html: str) -> bool:
     for a in soup.find_all("a", href=True):
         href = a.get("href", "").lower()
         if any(p in href for p in ("/contato", "/contact", "/sobre", "/about")):
-            return False 
+            return False
     return True
 
 
-def _descobrir_links_contato(html: str, dominio_base: str) -> List[str]:
+def _descobrir_links_contato(html: str, dominio_base: str) -> list[str]:
 
     soup = BeautifulSoup(html, "lxml")
-    links: List[str] = []
+    links: list[str] = []
     for a in soup.find_all("a", href=True):
         href = a.get("href", "")
         href_lower = href.lower()
@@ -69,11 +67,11 @@ def _descobrir_links_contato(html: str, dominio_base: str) -> List[str]:
 
 
 def _mesclar_contatos(
-    acc: Dict[str, object], novo: Dict[str, object]
-) -> Dict[str, object]:
- 
+    acc: dict[str, object], novo: dict[str, object]
+) -> dict[str, object]:
+
     for chave in ("emails", "whatsapps", "telefones"):
-        atual: List[str] = list(acc.get(chave, []))  # type: ignore
+        atual: list[str] = list(acc.get(chave, []))  # type: ignore
         for item in novo.get(chave, []):  # type: ignore
             if item not in atual:
                 atual.append(item)
@@ -86,7 +84,7 @@ def _mesclar_contatos(
     return acc
 
 
-def _fetch_com_cache(url: str, force_playwright: bool = False) -> Optional[str]:
+def _fetch_com_cache(url: str, force_playwright: bool = False) -> str | None:
     if not force_playwright:
         cached = cache.get(url)
         if cached:
@@ -102,7 +100,7 @@ def coletar_do_site(
     url_base: str,
     max_paginas_extras: int = MAX_PAGINAS_EXTRAS,
     force_playwright: bool = False,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     url_base = normalizar_url(url_base)
     parsed = urlparse(url_base)
     dominio_base = f"{parsed.scheme}://{parsed.netloc}"
@@ -111,7 +109,7 @@ def coletar_do_site(
     if force_playwright:
         logger.info("   🎭 Modo Playwright forçado (renderiza JS)")
 
-    contatos_agregados: Dict[str, object] = {
+    contatos_agregados: dict[str, object] = {
         "emails": [],
         "whatsapps": [],
         "telefones": [],
@@ -119,7 +117,7 @@ def coletar_do_site(
         "facebook": None,
         "linkedin": None,
     }
-    urls_visitadas: Set[str] = set()
+    urls_visitadas: set[str] = set()
 
     try:
         html_home = _fetch_com_cache(url_base, force_playwright=force_playwright)
@@ -143,7 +141,7 @@ def coletar_do_site(
         logger.info("   📄 Detectada landing page completa — não vou buscar subpáginas")
         return contatos_agregados
 
-    links_descobertos: List[str] = []
+    links_descobertos: list[str] = []
     if html_home:
         links_descobertos = _descobrir_links_contato(html_home, dominio_base)
         if links_descobertos:
@@ -151,7 +149,7 @@ def coletar_do_site(
                 f"   🔗 {len(links_descobertos)} link(s) de contato descoberto(s) na home"
             )
 
-    candidatas: List[str] = []
+    candidatas: list[str] = []
     for link in links_descobertos:
         if link not in urls_visitadas and link not in candidatas:
             candidatas.append(link)

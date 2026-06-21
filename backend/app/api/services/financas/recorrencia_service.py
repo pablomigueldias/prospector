@@ -4,7 +4,6 @@ from __future__ import annotations
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional, Tuple
 
 from sqlalchemy import func, select
 
@@ -31,7 +30,7 @@ from app.db.session import get_session
 TIPOS_RECORRENCIA = ("despesa", "receita")
 
 
-def _parse_competencia(s: Optional[str]) -> Tuple[int, int]:
+def _parse_competencia(s: str | None) -> tuple[int, int]:
     if not s:
         hoje = date.today()
         return hoje.year, hoje.month
@@ -133,7 +132,7 @@ async def criar_recorrencia(payload: RecorrenciaCreate) -> RecorrenciaResponse:
 
 
 async def tornar_recorrente(
-    transacao_id: str, usuario_id_sessao: str, dia_vencimento: Optional[int] = None
+    transacao_id: str, usuario_id_sessao: str, dia_vencimento: int | None = None
 ) -> RecorrenciaResponse:
     """Cria uma conta fixa (recorrência) a partir de uma transação/boleto e
     liga a transação atual à recorrência, pra o cron não gerar uma 2ª prevista
@@ -285,7 +284,7 @@ async def _ocorrencia_no_mes(session, r: Recorrencia, mes_ref: date):
 
 
 async def status_do_mes(
-    usuario_id: str, competencia: Optional[str] = None
+    usuario_id: str, competencia: str | None = None
 ) -> RecorrenciaStatusResponse:
     """Por recorrência, a situação no mês (paga/prevista/atrasada/lançada no
     cartão/nenhuma) + o vínculo com o lançamento."""

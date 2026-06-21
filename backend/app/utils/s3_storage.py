@@ -4,6 +4,8 @@ boto3 é síncrono; os serviços async chamam via asyncio.to_thread.
 """
 from __future__ import annotations
 
+import json
+
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
@@ -32,6 +34,27 @@ class S3Storage:
             self.client.create_bucket(Bucket=bucket)
             logger.info(f"Bucket criado: {bucket}")
 
+    def ensure_public_bucket(self, bucket: str) -> None:
+        """Garante o bucket COM política de leitura pública (GetObject anônimo).
+        Necessário pra imagens do blog terem URL permanente que o site/navegador
+        abrem sem assinatura. Idempotente."""
+        self.ensure_bucket(bucket)
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"AWS": ["*"]},
+                    "Action": ["s3:GetObject"],
+                    "Resource": [f"arn:aws:s3:::{bucket}/*"],
+                }
+            ],
+        }
+        try:
+            self.client.put_bucket_policy(Bucket=bucket, Policy=json.dumps(policy))
+        except ClientError as e:  # alguns backends restringem; não derruba o upload
+            logger.warning(f"Não consegui setar política pública em {bucket}: {e}")
+
     def upload_bytes(
         self, bucket: str, key: str, data: bytes, content_type: str | None = None
     ) -> None:
@@ -43,6 +66,18 @@ class S3Storage:
         return self.client.generate_presigned_url(
             "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=expires
         )
+
+    def public_url(self, bucket: str, key: str) -> str:
+        """URL PERMANENTE (não-assinada) do objeto — pro blog público.
+
+        Diferente de ``presigned_url`` (que expira em 1h e não serve pra um post
+        que fica no ar), monta ``{base}/{bucket}/{key}`` a partir de
+        ``settings.s3_public_url`` (ex.: o MinIO atrás do Caddy). Sem
+        ``s3_public_url`` configurado, cai no ``s3_endpoint`` — válido em dev,
+        mas em produção o bucket precisa ser de **leitura pública**.
+        """
+        base = (settings.s3_public_url or settings.s3_endpoint).rstrip("/")
+        return f"{base}/{bucket}/{key.lstrip('/')}"
 
 
 _storage: S3Storage | None = None

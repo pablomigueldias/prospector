@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -18,8 +17,8 @@ class TentativaLogin(Base, UUIDPrimaryKeyMixin):
 
     __tablename__ = "tentativas_login"
 
-    email: Mapped[Optional[str]] = mapped_column(String(320), nullable=True)
-    ip: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
     sucesso: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(

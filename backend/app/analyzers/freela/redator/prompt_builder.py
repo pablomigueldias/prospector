@@ -6,11 +6,8 @@ Espelha o redator de candidatura — mesma regra anti-mentira.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 from app.analyzers._perfil_texto import perfil_para_texto
 from app.api.schemas.pessoal import PerfilMestreResponse
-
 
 OUTPUT_SCHEMA = """
 {
@@ -19,7 +16,11 @@ OUTPUT_SCHEMA = """
   "tom": "<tecnico | institucional>",
   "projetos_destacados": ["<nome EXATO de projeto do perfil, max 3>", "..."],
   "habilidades_destacadas": ["<habilidade EXATA do perfil, max 5>", "..."],
-  "variacoes_abertura": ["<1ª frase/abertura alternativa, ângulo diferente>", "<outra>", "<outra>"]
+  "variacoes_abertura": [
+    {"angulo": "direto", "texto": "<abertura que vai direto ao problema/resultado>"},
+    {"angulo": "prova", "texto": "<abertura que abre com uma prova/resultado real>"},
+    {"angulo": "pergunta", "texto": "<abertura que faz uma pergunta certeira ao cliente>"}
+  ]
 }
 """
 
@@ -27,8 +28,10 @@ COLD_START = """
 MODO COLD START (o freelancer ainda NÃO tem avaliações nesta plataforma):
 Sem nota, o cliente desconfia — a proposta tem que COMPENSAR isso. Faça:
 1) PROVA por descrição: em vez de só citar projetos, descreva 1 resultado real
-   do perfil no formato problema → o que fez → impacto. Pode remeter a "meus
-   projetos no meu perfil/portfólio aqui na Workana" — NUNCA cole link externo.
+   do perfil no formato problema → o que fez → impacto. O impacto é QUALITATIVO
+   quando não há número medido no perfil — NÃO invente percentual/estatística pra
+   preencher. Pode remeter a "meus projetos no meu perfil/portfólio aqui na
+   Workana" — NUNCA cole link externo.
 2) REDUÇÃO DE RISCO pro cliente (escolha o que couber): entrega em etapas/marcos
    com aprovação a cada uma; "você só aprova e paga ao ver funcionando"; ou um
    primeiro marco pequeno como teste. Tirar o risco do cliente vale mais que nota.
@@ -53,17 +56,26 @@ MESTRE do freelancer. Produza:
 - "projetos_destacados" e "habilidades_destacadas" (o SELETOR): escolha os que
   MAXIMIZAM relevância PRA ESTE projeto — até 3 projetos e até 5 habilidades,
   com os NOMES EXATOS como aparecem no perfil.
-- "variacoes_abertura": 2-3 PRIMEIRAS LINHAS alternativas pra proposta, cada uma
-  com um ângulo diferente (ex.: uma direta-ao-problema, uma com prova/resultado,
-  uma com pergunta). É pra você testar qual converte mais (A/B). Curtas.
+- "variacoes_abertura": 3 PRIMEIRAS LINHAS alternativas pra proposta, uma de cada
+  ângulo, ROTULADAS: "direto" (vai direto ao problema/resultado), "prova" (abre
+  com uma prova/resultado real do perfil) e "pergunta" (faz uma pergunta certeira
+  ao cliente). É pra testar qual converte mais (A/B). Curtas.
 
 REGRAS (inegociáveis):
 - ANTI-MENTIRA: use SOMENTE experiência/projetos/skills que ESTÃO no perfil.
   Reorganize a verdade, nunca invente. Se o perfil não cobre algo que o projeto
   pede, não finja que cobre.
+- NÚMEROS SÃO SAGRADOS: NUNCA invente métricas, percentuais ou estatísticas
+  ("taxa de sucesso de 90%", "redução de 40%", "3x mais rápido", "+200 clientes",
+  "milhares de usuários"). Só use um número se ele estiver LITERALMENTE no perfil.
+  Sem número medido, descreva o impacto QUALITATIVAMENTE ("gerava textos
+  utilizáveis e acelerou a criação de campanhas") — jamais crave um percentual só
+  pra impressionar. Um número fabricado que o cliente cobra depois destrói a
+  confiança e a avaliação.
 - PROVA OBRIGATÓRIA: inclua SEMPRE pelo menos 1 prova concreta — um resultado
   REAL de um projeto do perfil no formato problema → o que você fez → impacto.
-  Adjetivo ("robusto", "escalável", "experiente") NÃO é prova; resultado é.
+  Adjetivo ("robusto", "escalável", "experiente") NÃO é prova; resultado é. O
+  impacto pode ser qualitativo — NÃO precisa (nem pode) inventar número pra ele.
 - PRAZO: deixe o prazo explícito no texto.
 - Não force contato fora da plataforma (a Workana penaliza).
 - NUNCA inclua no texto da proposta: e-mail, telefone, WhatsApp, ou links
@@ -81,12 +93,12 @@ def construir_prompt(
     descricao_projeto: str,
     perfil: PerfilMestreResponse,
     *,
-    titulo: Optional[str] = None,
-    analise: Optional[dict] = None,
-    instrucoes_extra: Optional[str] = None,
+    titulo: str | None = None,
+    analise: dict | None = None,
+    instrucoes_extra: str | None = None,
     cold_start: bool = False,
-    texto_atual: Optional[str] = None,
-    correcoes: Optional[list] = None,
+    texto_atual: str | None = None,
+    correcoes: list | None = None,
 ) -> str:
     cab = []
     if titulo:

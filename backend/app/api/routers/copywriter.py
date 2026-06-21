@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
+
 from app.api.schemas.copywriter import CopywriterRequest, CopywriterResponse
-from app.api.services.copywriter_service import gerar_email, CopywriterError
+from app.api.services.copywriter_service import CopywriterError, gerar_email
 
 router = APIRouter(prefix="/api/agents/copywriter", tags=["copywriter"])
 

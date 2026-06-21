@@ -1,8 +1,6 @@
 """Parser da resposta do gerador de currículo."""
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import ValidationError
 
 from app.analyzers._json_extract import extrair_json
@@ -21,8 +19,8 @@ class CurriculoLLM:
 
     def __init__(
         self,
-        titulo: Optional[str],
-        resumo: Optional[str],
+        titulo: str | None,
+        resumo: str | None,
         competencias: list,
         experiencias: list,
         projetos: list,
@@ -34,7 +32,7 @@ class CurriculoLLM:
         self.projetos = projetos
 
 
-def parse_resposta(texto_cru: str) -> Optional[CurriculoLLM]:
+def parse_resposta(texto_cru: str) -> CurriculoLLM | None:
     dados = extrair_json(texto_cru)
     if not isinstance(dados, dict):
         return None

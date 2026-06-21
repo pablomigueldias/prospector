@@ -6,20 +6,24 @@ ESCASSA: dizer onde vale gastar bala. Espelha o analisador de vaga.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 from app.analyzers._perfil_texto import perfil_para_texto
 from app.api.schemas.pessoal import PerfilMestreResponse
-
 
 OUTPUT_SCHEMA = """
 {
   "fit_score": <inteiro 0-100: quão "a sua praia" é este projeto>,
+  "confianca_analise": "<alta | media | baixa — quanto o TEXTO COLADO permite analisar com segurança (não é o fit): baixa se for curto/genérico/sem escopo>",
+  "confianca_motivo": "<1 frase: o que falta no texto pra ter certeza (ex.: 'só 2 linhas, sem escopo nem stack') — vazio se a confiança for alta>",
   "recomendacao": "<vale | talvez | evite>",
   "risco": "<baixo | medio | alto — risco de golpe/dor de cabeça: alto se cliente sem pagamento verificado + pede contato fora + oferta boa demais + escopo vago>",
+  "complexidade_tecnica": "<trivial | media | alta | incerta — quão DIFÍCIL é tecnicamente (não confundir com tempo): trivial=CRUD/landing, alta=arquitetura/integrações complexas/IA, incerta=não dá pra saber pelo texto>",
+  "clareza_escopo": "<claro | parcial | vago — o cliente descreveu o que quer a ponto de cotar com segurança? vago = risco de scope creep>",
   "veredito": "<1 frase honesta: vale gastar uma proposta aqui? por quê?>",
   "requisitos": ["<o que o projeto realmente pede>", "..."],
   "stack": ["<tecnologia citada/implícita>", "..."],
+  "tarefas": [{"nome": "<entrega concreta do escopo>", "horas": <inteiro de horas pra ESSA entrega>}, "..."],
+  "perguntas_cliente": ["<dúvida que muda o preço/prazo e precisa ser esclarecida antes de cotar>", "..."],
+  "skills_faltando": ["<skill/experiência que o projeto exige e que NÃO aparece clara no perfil do freela (gap)>", "..."],
   "red_flags": ["<risco: orçamento incompatível com escopo, cliente sem pagamento verificado, projeto MUITO concorrido, escopo vago, prazo irreal, pedido fora do seu núcleo>", "..."],
   "sinais_cliente": ["<sinal de qualidade do cliente: verificado, nº de projetos pagos, rating, recorrência>", "..."],
   "ganchos": ["<algo do SEU perfil que conversa com este projeto — projeto/skill a citar>", "..."],
@@ -44,14 +48,35 @@ PERFIL MESTRE do freelancer. Produza:
 - "fit_score" (0-100): quão alinhado o projeto está com o que o freelancer
   COMPROVA no perfil. Projeto fora do núcleo dele = score baixo, por mais
   atraente que pareça.
+- "confianca_analise": quanto o TEXTO COLADO te deixa analisar com SEGURANÇA —
+  NÃO é o fit. "baixa" quando o texto é curto, genérico ou sem escopo/stack (aí
+  NÃO finja certeza: rebaixe fit/estimativa pro lado conservador e diga em
+  "confianca_motivo" o que falta pra cravar). "media" quando dá pra ter ideia mas
+  faltam detalhes. "alta" só quando o texto descreve escopo o bastante pra cotar.
 - "recomendacao": "vale" (fit alto, sinais bons), "talvez" (vale só se o preço/
   cliente compensar) ou "evite" (fit baixo ou muitas red flags).
 - "risco": "alto" se houver sinais de golpe/perda de tempo (cliente sem
   pagamento verificado, pedido de contato/pagamento fora da plataforma, oferta
   "boa demais", escopo vago demais pra cotar); "medio" se um desses; "baixo" se
   o cliente parece sólido.
+- "complexidade_tecnica": o quão DIFÍCIL tecnicamente — separe de tempo. Um CRUD
+  grande pode ser "trivial" e demorado; uma integração de pagamento pode ser
+  "alta" e rápida. "incerta" quando o texto não deixa claro.
+- "clareza_escopo": "claro" se dá pra cotar com segurança, "parcial" se faltam
+  detalhes que mudam o preço, "vago" se é genérico demais (risco de scope creep).
 - "veredito": uma frase direta pra decidir.
 - "requisitos" e "stack": o que o projeto pede de fato.
+- "tarefas": quebre o escopo nas ENTREGAS concretas (ex.: "autenticação",
+  "CRUD de produtos", "integração de pagamento", "deploy") com horas realistas
+  por entrega. A SOMA das horas deve bater, grosso modo, com
+  "estimativa.horas_estimadas". Se o escopo for vago demais pra quebrar, devolva
+  lista vazia. Acaba com o "número de horas mágico".
+- "perguntas_cliente": o que está AMBÍGUO e muda preço/prazo (ex.: "tem design
+  pronto?", "quantas telas?", "precisa de painel admin?"). São as perguntas que
+  você faria antes de cravar a cotação. Vazio se o escopo já estiver claro.
+- "skills_faltando": seja honesto — skills/experiências que o projeto EXIGE e que
+  NÃO aparecem claras no perfil do freela (o gap). Use só o que o projeto pede de
+  verdade; se ele cobre tudo, devolva lista vazia. (É o oposto de "ganchos".)
 - "red_flags": seja CÉTICO. Sinalize orçamento incompatível com o escopo,
   cliente sem pagamento verificado, projeto muito concorrido (muitas propostas/
   interessados), escopo vago, prazo irreal, ou pedido fora do núcleo do freela.
@@ -80,11 +105,11 @@ def construir_prompt(
     descricao_projeto: str,
     perfil: PerfilMestreResponse,
     *,
-    titulo: Optional[str] = None,
-    faixa_orcamento: Optional[str] = None,
-    n_propostas: Optional[int] = None,
-    n_interessados: Optional[int] = None,
-    sinais_cliente: Optional[str] = None,
+    titulo: str | None = None,
+    faixa_orcamento: str | None = None,
+    n_propostas: int | None = None,
+    n_interessados: int | None = None,
+    sinais_cliente: str | None = None,
 ) -> str:
     cab = []
     if titulo:

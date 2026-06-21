@@ -12,7 +12,6 @@ import re
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Optional
 
 from app.analyzers.boleto import extrator
 from app.analyzers.boleto.parser import parse_boleto
@@ -41,9 +40,9 @@ async def importar_boleto(
     *,
     usuario_id: str,
     conteudo: bytes,
-    nome_original: Optional[str] = None,
-    content_type: Optional[str] = None,
-    categoria_id: Optional[str] = None,
+    nome_original: str | None = None,
+    content_type: str | None = None,
+    categoria_id: str | None = None,
 ) -> ImportarBoletoResponse:
     uid = _uuid(usuario_id, campo="usuario_id")
     cat_id = _uuid(categoria_id, campo="categoria_id") if categoria_id else None

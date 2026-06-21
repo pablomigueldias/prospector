@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from sqlalchemy import Numeric, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,14 +19,14 @@ class Plataforma(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "pessoal_freela_plataforma"
 
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
-    url_base: Mapped[Optional[str]] = mapped_column(String(300))
+    url_base: Mapped[str | None] = mapped_column(String(300))
 
     # Faixas de comissão escalonada por cliente. Ex. Workana:
     # {"faixas": [{"ate_usd": 300, "pct": 0.20}, {"ate_usd": 3000, "pct": 0.10},
     #             {"ate_usd": null, "pct": 0.05}], "custo_servico_cliente_pct": 0.045}
-    config_comissao: Mapped[Optional[dict]] = mapped_column(JSONB)
+    config_comissao: Mapped[dict | None] = mapped_column(JSONB)
 
-    lance_minimo_padrao: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+    lance_minimo_padrao: Mapped[float | None] = mapped_column(Numeric(12, 2))
 
     def __repr__(self) -> str:
         return f"<Plataforma id={self.id} nome={self.nome!r}>"

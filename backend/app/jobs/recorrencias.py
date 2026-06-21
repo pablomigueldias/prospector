@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import Optional
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +52,7 @@ async def _tem_ocorrencia_no_mes(
 
 
 async def _gerar_previstas(
-    session: AsyncSession, usuario_id: Optional[uuid.UUID], ref: date
+    session: AsyncSession, usuario_id: uuid.UUID | None, ref: date
 ) -> int:
     mes_ref = date(ref.year, ref.month, 1)
 
@@ -107,7 +106,7 @@ async def _gerar_previstas(
 
 
 async def _marcar_atrasadas(
-    session: AsyncSession, usuario_id: Optional[uuid.UUID], ref: date
+    session: AsyncSession, usuario_id: uuid.UUID | None, ref: date
 ) -> int:
     stmt = (
         update(Transacao)
@@ -125,7 +124,7 @@ async def _marcar_atrasadas(
 
 
 async def processar_recorrencias(
-    usuario_id: Optional[uuid.UUID] = None, ref: Optional[date] = None
+    usuario_id: uuid.UUID | None = None, ref: date | None = None
 ) -> dict:
     ref = ref or date.today()
     async with get_session() as session:

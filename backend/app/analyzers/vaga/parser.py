@@ -1,8 +1,6 @@
 """Parser da resposta do analisador de vaga."""
 from __future__ import annotations
 
-from typing import Optional, Tuple
-
 from pydantic import ValidationError
 
 from app.analyzers._json_extract import extrair_json
@@ -12,7 +10,7 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 
-def parse_resposta(texto_cru: str) -> Optional[Tuple[AnaliseVaga, MatchVaga]]:
+def parse_resposta(texto_cru: str) -> tuple[AnaliseVaga, MatchVaga] | None:
     """Converte o texto cru da LLM em (AnaliseVaga, MatchVaga), ou None."""
     dados = extrair_json(texto_cru)
     if dados is None:

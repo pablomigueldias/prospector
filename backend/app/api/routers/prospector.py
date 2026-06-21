@@ -14,7 +14,6 @@ from app.api.services.prospector_service import (
     preview_lead,
 )
 
-
 router = APIRouter(prefix="/api/agents/prospector", tags=["prospector"])
 
 
