@@ -130,13 +130,21 @@ def avaliar(
         "ok" if tem_link_interno else "warn",
         "Adicione ao menos 1 link interno (ex.: /servicos/automacao).")
 
-    # Imagens: se houver, exigir alt preenchido.
+    # Imagens no conteúdo: ter ao menos 1 (com alt) deixa o post mais atrativo.
     imgs = re.findall(r"!\[([^\]]*)\]\([^)]*\)", body)
+    marcadores = re.findall(r"\{\{\s*IMG:", body, flags=re.IGNORECASE)
+    if marcadores:
+        add("img_marcador", f"Marcadores de imagem sem gerar ({len(marcadores)})",
+            "fail",
+            "Gere as imagens dos marcadores {{IMG}} (ou remova) antes de publicar.")
     if imgs:
         sem_alt = sum(1 for a in imgs if not a.strip())
         add("img_alt", f"Alt nas imagens ({len(imgs)-sem_alt}/{len(imgs)})",
             "ok" if sem_alt == 0 else "warn",
             "Toda imagem precisa de texto alternativo (alt).")
+    else:
+        add("img_conteudo", "Imagem no conteúdo", "warn",
+            "Inclua ao menos 1 imagem no corpo — deixa o post mais atrativo e ajuda o SEO.")
 
     add("excerpt", "Resumo (excerpt) preenchido",
         "ok" if (excerpt or "").strip() else "warn",

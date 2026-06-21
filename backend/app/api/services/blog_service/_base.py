@@ -169,13 +169,26 @@ def to_pauta_item(p: BlogPauta) -> BlogPautaItem:
     )
 
 
+# Marcador {{IMG: ...}} que o redator insere; some no público se ficar sem gerar.
+_MARCADOR_IMG_PUB = re.compile(r"\{\{\s*IMG:.*?\}\}", re.IGNORECASE | re.DOTALL)
+
+
+def _limpar_marcadores(md: str | None) -> str | None:
+    """Tira marcadores `{{IMG:...}}` NÃO preenchidos — defesa pra nunca vazarem no
+    site (se o Pablo publicar sem gerar a imagem). O editor (admin) ainda os vê."""
+    if not md:
+        return md
+    limpo = _MARCADOR_IMG_PUB.sub("", md)
+    return re.sub(r"\n{3,}", "\n\n", limpo).strip()
+
+
 def to_public(post: BlogPost) -> BlogPostPublic:
     return BlogPostPublic(
         slug=post.slug,
         title=post.title,
         excerpt=post.excerpt,
         category=post.category,
-        body_md=post.body_md,
+        body_md=_limpar_marcadores(post.body_md),
         toc=_toc(post),
         cover_url=post.cover_url,
         cover_alt=post.cover_alt,
