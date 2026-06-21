@@ -128,7 +128,16 @@ def _request_gemini(
         if not parts:
             raise GeminiError(f"Candidato sem 'parts'. finishReason={finish_reason}")
 
-        texto = parts[0].get("text", "").strip()
+        # Modelos "thinking" (gemini-2.5/3-pro e flash) podem emitir uma parte de
+        # RACIOCÍNIO (`thought: true`) ANTES da resposta. Pegar só `parts[0]`
+        # capturava o pensamento e quebrava o parse de JSON (intermitente). Junta
+        # só as partes de RESPOSTA (texto sem `thought`); cai pra qualquer texto
+        # se não houver.
+        texto = "".join(
+            p.get("text", "") for p in parts if p.get("text") and not p.get("thought")
+        ).strip()
+        if not texto:
+            texto = "".join(p.get("text", "") for p in parts if p.get("text")).strip()
         if not texto:
             raise GeminiError("Gemini devolveu texto vazio")
 
