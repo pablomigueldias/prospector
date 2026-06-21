@@ -101,6 +101,7 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 > prioridade aqui é **qualidade da análise/match/candidatura**, não features novas.
 > Princípios: *para no rascunho* + *anti-mentira*.
 
+
 ### 4.1 🔴 Lapidar o modelo de IA (prioridade do módulo)
 - [ ] 🔴 **Afinar prompts** de `analyzers/{vaga,candidatura,curriculo}` — match mais preciso (obrigatórios×desejáveis), veredito mais útil, currículo ATS mais aderente. (Conecta com **S5 Prompt Studio** §5.1 — editar/preview/rollback sem deploy.)
 - [ ] 🟡 **Nota de confiança / anti-alucinação** no match (não inflar aderência sem prova no Perfil Mestre).
