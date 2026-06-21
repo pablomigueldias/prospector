@@ -10,6 +10,7 @@ import type {
   BlogStatus,
   CapaSugestao,
   ChecklistSeo,
+  ImagemConteudoSugestao,
 } from '@/lib/types';
 
 const STATUS_TABS: { key: BlogStatus | 'todos'; label: string }[] = [
@@ -816,6 +817,11 @@ function ImagensPanel({
   const [sugestoes, setSugestoes] = useState<CapaSugestao[] | null>(null);
   const [sugerindo, setSugerindo] = useState(false);
   const [gerandoConteudo, setGerandoConteudo] = useState(false);
+  const [sugConteudo, setSugConteudo] = useState<ImagemConteudoSugestao[] | null>(
+    null,
+  );
+  const [sugerindoConteudo, setSugerindoConteudo] = useState(false);
+  const [inserindo, setInserindo] = useState<number | null>(null);
 
   if (!editando) {
     return (
@@ -834,6 +840,29 @@ function ImagensPanel({
     const post = await acoes.gerarImagensConteudo(id);
     setGerandoConteudo(false);
     if (post) onAtualizado(post);
+  }
+
+  async function sugerirConteudo() {
+    setSugerindoConteudo(true);
+    const r = await acoes.sugerirImagensConteudo(id);
+    setSugerindoConteudo(false);
+    if (r) setSugConteudo(r.sugestoes);
+  }
+
+  async function inserirConteudo(s: ImagemConteudoSugestao, i: number) {
+    setInserindo(i);
+    const post = await acoes.inserirImagemConteudo(id, {
+      prompt: s.prompt,
+      alt: s.alt,
+      secao: s.secao,
+      aspect_ratio: s.aspect_ratio,
+    });
+    setInserindo(null);
+    if (post) {
+      onAtualizado(post);
+      // tira a sugestão já usada da lista
+      setSugConteudo((prev) => prev?.filter((_, idx) => idx !== i) ?? null);
+    }
   }
 
   async function sugerir() {
@@ -944,26 +973,67 @@ function ImagensPanel({
         final antes de publicar.
       </p>
 
-      <div className="border-t border-line pt-2.5 mt-1 flex flex-col gap-1.5">
+      <div className="border-t border-line pt-2.5 mt-1 flex flex-col gap-2">
         <div className="eyebrow">Imagens do conteúdo</div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            onClick={gerarConteudo}
-            disabled={gerandoConteudo || marcadores === 0}
+            onClick={sugerirConteudo}
+            disabled={sugerindoConteudo || inserindo !== null}
             className="btn btn-ghost text-[13px]"
-            title="Gera as imagens dos marcadores {{IMG}} do corpo e insere no texto"
+            title="A IA sugere imagens pro corpo, por seção — você escolhe quais gerar"
           >
-            {gerandoConteudo
-              ? 'Gerando imagens…'
-              : `🖼️ Gerar imagens do conteúdo${marcadores ? ` (${marcadores})` : ''}`}
+            {sugerindoConteudo ? 'Pensando…' : '💡 Sugerir imagens do conteúdo'}
           </button>
-          <span className="text-[11px] text-ink-mute">
-            {marcadores > 0
-              ? `${marcadores} marcador(es) {{IMG}} no rascunho salvo`
-              : 'Sem marcadores {{IMG}} no rascunho salvo — o redator insere; salve antes.'}
-          </span>
+          {marcadores > 0 && (
+            <button
+              type="button"
+              onClick={gerarConteudo}
+              disabled={gerandoConteudo}
+              className="btn btn-ghost text-[13px]"
+              title="Gera as imagens dos marcadores {{IMG}} que o redator deixou no corpo"
+            >
+              {gerandoConteudo
+                ? 'Gerando…'
+                : `🖼️ Gerar marcadores {{IMG}} (${marcadores})`}
+            </button>
+          )}
         </div>
+
+        {sugConteudo && sugConteudo.length === 0 && (
+          <p className="text-[11px] text-ink-mute m-0">
+            Todas as sugestões foram inseridas. Clique de novo pra mais ideias.
+          </p>
+        )}
+
+        {sugConteudo && sugConteudo.length > 0 && (
+          <div className="grid sm:grid-cols-2 gap-2">
+            {sugConteudo.map((s, i) => (
+              <div
+                key={i}
+                className="border border-line rounded-md p-2.5 flex flex-col gap-1.5 bg-bg-alt/30"
+              >
+                <div className="text-[12px] font-medium text-ink">{s.conceito}</div>
+                {s.secao && (
+                  <div className="text-[10px] uppercase tracking-wide text-ink-mute font-mono">
+                    ↳ {s.secao}
+                  </div>
+                )}
+                {s.descricao && (
+                  <p className="text-[11px] text-ink-mute m-0 flex-1">{s.descricao}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => inserirConteudo(s, i)}
+                  disabled={inserindo !== null}
+                  className="btn btn-primary text-[12px] mt-1"
+                >
+                  {inserindo === i ? 'Gerando…' : 'Gerar e inserir'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

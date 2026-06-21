@@ -280,6 +280,29 @@ class CapaSugestoesResponse(BaseModel):
     sugestoes: list[CapaSugestao]
 
 
+class ImagemConteudoSugestao(BaseModel):
+    secao: str = ""               # heading H2 onde a imagem entra ('' = fim do corpo)
+    conceito: str
+    descricao: str | None = None
+    prompt: str
+    alt: str = ""
+    aspect_ratio: str = "16:9"
+
+
+class ImagemConteudoSugestoesResponse(BaseModel):
+    sugestoes: list[ImagemConteudoSugestao]
+
+
+class GerarImagemConteudoRequest(BaseModel):
+    """Gera UMA imagem de conteúdo (a partir de uma sugestão escolhida) e a
+    insere no corpo, logo após a seção-alvo (ou no fim, se `secao` vazio)."""
+
+    prompt: str
+    alt: str = ""
+    secao: str = ""
+    aspect_ratio: str = "16:9"
+
+
 class BlogPautaUpdate(BaseModel):
     titulo: str | None = None
     resumo: str | None = None

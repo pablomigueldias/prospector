@@ -8,6 +8,7 @@ asyncio.to_thread.
 from __future__ import annotations
 
 import base64
+import re
 
 import httpx
 from tenacity import (
@@ -29,6 +30,30 @@ from app.utils.logger import get_logger
 logger = get_logger()
 
 TIMEOUT_SECONDS = 120.0
+
+# Tokens que viram TEXTO dentro da imagem se ficarem no prompt (o Imagen desenha
+# "16:9", "1920x1080" etc. como letras). A proporção vai pelo parâmetro aspectRatio,
+# nunca pelo prompt — então removemos do texto.
+_ASPECT_RE = re.compile(r"\b\d{1,2}\s*:\s*\d{1,2}\b")          # 16:9, 4:3
+_RES_RE = re.compile(r"\b\d{3,5}\s*[x×]\s*\d{3,5}\b", re.I)    # 1920x1080
+_ASPECT_WORD_RE = re.compile(
+    r"\b(aspect[\s-]?ratio|wide[\s-]?screen|widescreen|resolution)\b", re.I
+)
+# Trava anti-texto: o Imagen tende a inventar legendas/marca d'água; reforça aqui.
+_SEM_TEXTO = (
+    " Clean illustration with absolutely no text, no letters, no numbers, "
+    "no words, no captions, no labels, no watermark, no logo, no UI."
+)
+
+
+def _higienizar_prompt(prompt: str) -> str:
+    """Tira proporção/resolução do TEXTO do prompt e anexa a trava anti-texto —
+    senão o Imagen desenha esses tokens como letras na imagem (ex.: '16:9')."""
+    p = _ASPECT_RE.sub(" ", prompt or "")
+    p = _RES_RE.sub(" ", p)
+    p = _ASPECT_WORD_RE.sub(" ", p)
+    p = re.sub(r"\s{2,}", " ", p).strip(" ,;.-")
+    return p + _SEM_TEXTO
 
 
 def _base_url() -> str:
@@ -52,8 +77,9 @@ def gerar_imagem(prompt: str, *, aspect_ratio: str = "16:9") -> tuple[bytes, str
             "Pegue uma chave em https://aistudio.google.com/apikey"
         )
 
+    prompt_limpo = _higienizar_prompt(prompt)
     payload = {
-        "instances": [{"prompt": prompt}],
+        "instances": [{"prompt": prompt_limpo}],
         "parameters": {"sampleCount": 1, "aspectRatio": aspect_ratio},
     }
     headers = {

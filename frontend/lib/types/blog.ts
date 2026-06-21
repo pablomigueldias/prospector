@@ -101,6 +101,26 @@ export interface CapaSugestoesResponse {
   sugestoes: CapaSugestao[];
 }
 
+export interface ImagemConteudoSugestao {
+  secao: string;
+  conceito: string;
+  descricao?: string | null;
+  prompt: string;
+  alt: string;
+  aspect_ratio: string;
+}
+
+export interface ImagemConteudoSugestoesResponse {
+  sugestoes: ImagemConteudoSugestao[];
+}
+
+export interface GerarImagemConteudoRequest {
+  prompt: string;
+  alt?: string;
+  secao?: string;
+  aspect_ratio?: string;
+}
+
 export interface ChecklistSeoRequest {
   title?: string | null;
   slug?: string | null;

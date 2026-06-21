@@ -30,7 +30,10 @@ cena/ilustração concreta). Cada capa deve:
 
 Para cada conceito escreva um `prompt` em INGLÊS, detalhado e autossuficiente
 (assunto + estilo + composição + paleta + iluminação), e uma `descricao` curta
-em PT explicando a ideia. Responda APENAS com o JSON do schema (3 sugestões).
+em PT explicando a ideia. NUNCA escreva proporção, dimensões nem termos como
+"16:9", "4:3", "aspect ratio" ou "1920x1080" dentro do `prompt` — a proporção é
+controlada à parte; se aparecer no texto, vira letra desenhada na imagem.
+Responda APENAS com o JSON do schema (3 sugestões).
 """
 
 

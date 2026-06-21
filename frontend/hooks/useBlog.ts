@@ -18,7 +18,9 @@ import type {
   CapaSugestoesResponse,
   ChecklistSeo,
   ChecklistSeoRequest,
+  GerarImagemConteudoRequest,
   GerarImagemRequest,
+  ImagemConteudoSugestoesResponse,
 } from '@/lib/types';
 
 function toApiError(err: unknown): ApiError {
@@ -132,6 +134,18 @@ export function useBlogActions() {
     (id: string) => wrap<BlogPostAdmin>(() => api.blogGerarImagensConteudo(id))(),
     [],
   );
+  const sugerirImagensConteudo = useCallback(
+    (id: string) =>
+      wrap<ImagemConteudoSugestoesResponse>(
+        () => api.blogSugerirImagensConteudo(id),
+      )(),
+    [],
+  );
+  const inserirImagemConteudo = useCallback(
+    (id: string, body: GerarImagemConteudoRequest) =>
+      wrap<BlogPostAdmin>(() => api.blogInserirImagemConteudo(id, body))(),
+    [],
+  );
 
   return {
     loading,
@@ -151,5 +165,7 @@ export function useBlogActions() {
     gerarImagem,
     uploadImagem,
     gerarImagensConteudo,
+    sugerirImagensConteudo,
+    inserirImagemConteudo,
   };
 }

@@ -12,8 +12,18 @@ import uuid
 
 from app.analyzers.blog.capa.parser import parse_resposta as parse_capas
 from app.analyzers.blog.capa.prompt_builder import construir_prompt as construir_capas
+from app.analyzers.blog.conteudo_img.parser import parse_resposta as parse_conteudo
+from app.analyzers.blog.conteudo_img.prompt_builder import (
+    construir_prompt as construir_conteudo,
+)
 from app.analyzers.gemini import image_client
-from app.api.schemas.blog import BlogPostAdmin, CapaSugestao, CapaSugestoesResponse
+from app.api.schemas.blog import (
+    BlogPostAdmin,
+    CapaSugestao,
+    CapaSugestoesResponse,
+    ImagemConteudoSugestao,
+    ImagemConteudoSugestoesResponse,
+)
 from app.config import settings
 from app.db.session import get_session
 from app.repositories.blog_repository import BlogRepository
@@ -44,6 +54,25 @@ def _subir(data: bytes, mime: str, key: str) -> str:
     storage.ensure_public_bucket(bucket)
     storage.upload_bytes(bucket, key, data, content_type=mime)
     return storage.public_url(bucket, key)
+
+
+def _h2_headings(body: str) -> list[str]:
+    """Lista o texto dos headings H2 (## ...) do corpo — contexto pras sugestões."""
+    return [m.group(1).strip() for m in re.finditer(r"^##\s+(.+?)\s*$", body, re.M)]
+
+
+def _inserir_apos_secao(body: str, secao: str, md_img: str) -> str:
+    """Insere `md_img` logo após o heading H2 `secao`. Sem match (ou seção vazia),
+    anexa no fim do corpo. Casa por texto trimado/casefold (tolera caixa)."""
+    if secao.strip():
+        alvo = secao.strip().casefold()
+        linhas = body.splitlines()
+        for i, ln in enumerate(linhas):
+            m = re.match(r"^##\s+(.+?)\s*$", ln)
+            if m and m.group(1).strip().casefold() == alvo:
+                linhas.insert(i + 1, f"\n{md_img}\n")
+                return "\n".join(linhas)
+    return body.rstrip() + f"\n\n{md_img}\n"
 
 
 async def _aplicar_no_post(
@@ -150,6 +179,65 @@ async def gerar_conteudo(
 
     async with get_session() as session:
         repo = BlogRepository(session)
+        atualizado = await repo.update(pid, {"body_md": body, "imagens": imagens})
+        return to_admin(atualizado)
+
+
+async def sugerir_conteudo(post_id: str) -> ImagemConteudoSugestoesResponse:
+    """Sugere imagens pro CORPO (uma por seção que se beneficie) — o Pablo escolhe
+    quais gerar, igual nas capas."""
+    pid = _uuid(post_id, "post_id")
+    async with get_session() as session:
+        post = await BlogRepository(session).get(pid)
+        if post is None:
+            raise BlogError("Post não encontrado.")
+        title, category, body = post.title, post.category, (post.body_md or "")
+
+    prompt = construir_conteudo(
+        title=title, secoes=_h2_headings(body), category=category
+    )
+    cru = _chamar_llm(prompt, operacao="sugerir_imagens_conteudo")
+    sugestoes = parse_conteudo(cru)
+    if not sugestoes:
+        raise BlogError("A IA não retornou sugestões de imagem. Tente de novo.")
+    return ImagemConteudoSugestoesResponse(
+        sugestoes=[ImagemConteudoSugestao(**s) for s in sugestoes]
+    )
+
+
+async def inserir_conteudo(
+    post_id: str,
+    *,
+    prompt: str,
+    alt: str = "",
+    secao: str = "",
+    aspect_ratio: str = "16:9",
+) -> BlogPostAdmin:
+    """Gera UMA imagem de conteúdo (de uma sugestão escolhida) e a insere no corpo
+    logo após a seção-alvo (ou no fim, se `secao` vazio)."""
+    if not (prompt or "").strip():
+        raise BlogError("Descreva a imagem (prompt).")
+    try:
+        data, mime = await asyncio.to_thread(
+            image_client.gerar_imagem, prompt, aspect_ratio=aspect_ratio
+        )
+    except Exception as e:
+        raise BlogError(f"Não consegui gerar a imagem: {e}")
+    url = await asyncio.to_thread(_subir, data, mime, _key(post_id, "secao", mime))
+    alt = (alt or "").strip()
+    md_img = f"![{alt}]({url})"
+    pid = _uuid(post_id, "post_id")
+    async with get_session() as session:
+        repo = BlogRepository(session)
+        post = await repo.get(pid)
+        if post is None:
+            raise BlogError("Post não encontrado.")
+        body = _inserir_apos_secao(post.body_md or "", secao, md_img)
+        imagens = list(post.imagens or [])
+        imagens.append(
+            {"papel": "secao", "url": url, "origem": "gerada",
+             "prompt": prompt, "alt": alt or None}
+        )
         atualizado = await repo.update(pid, {"body_md": body, "imagens": imagens})
         return to_admin(atualizado)
 

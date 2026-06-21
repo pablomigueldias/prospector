@@ -21,7 +21,9 @@ from app.api.schemas.blog import (
     CapaSugestoesResponse,
     ChecklistSeoRequest,
     ChecklistSeoResponse,
+    GerarImagemConteudoRequest,
     GerarImagemRequest,
+    ImagemConteudoSugestoesResponse,
 )
 from app.api.services import blog_service
 from app.api.services.blog_service import BlogError
@@ -160,6 +162,27 @@ async def gerar_imagem(post_id: str, req: GerarImagemRequest) -> BlogPostAdmin:
 async def gerar_imagens_conteudo(post_id: str) -> BlogPostAdmin:
     try:
         return await blog_service.imagens.gerar_conteudo(post_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/posts/{post_id}/imagem/conteudo/sugestoes", response_model=ImagemConteudoSugestoesResponse, summary="IA: sugere imagens pro corpo (por seção)")
+async def sugerir_imagens_conteudo(post_id: str) -> ImagemConteudoSugestoesResponse:
+    try:
+        return await blog_service.imagens.sugerir_conteudo(post_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/posts/{post_id}/imagem/conteudo/inserir", response_model=BlogPostAdmin, summary="IA: gera 1 imagem de conteúdo e insere na seção")
+async def inserir_imagem_conteudo(
+    post_id: str, req: GerarImagemConteudoRequest
+) -> BlogPostAdmin:
+    try:
+        return await blog_service.imagens.inserir_conteudo(
+            post_id, prompt=req.prompt, alt=req.alt,
+            secao=req.secao, aspect_ratio=req.aspect_ratio,
+        )
     except Exception as e:
         raise _handle(e)
 

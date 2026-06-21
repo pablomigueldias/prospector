@@ -17,7 +17,9 @@ import type {
   CapaSugestoesResponse,
   ChecklistSeo,
   ChecklistSeoRequest,
+  GerarImagemConteudoRequest,
   GerarImagemRequest,
+  ImagemConteudoSugestoesResponse,
 } from '../types';
 
 const BASE = '/api/blog';
@@ -124,6 +126,26 @@ export const blogApi = {
     return request<BlogPostAdmin>(`${BASE}/posts/${id}/imagem/conteudo`, {
       method: 'POST',
       timeoutMs: 180_000,
+    });
+  },
+
+  /** Sugere imagens pro corpo (por seção) — igual as capas. */
+  blogSugerirImagensConteudo(id: string): Promise<ImagemConteudoSugestoesResponse> {
+    return request<ImagemConteudoSugestoesResponse>(
+      `${BASE}/posts/${id}/imagem/conteudo/sugestoes`,
+      { method: 'POST', timeoutMs: 60_000 },
+    );
+  },
+
+  /** Gera 1 imagem de conteúdo (sugestão escolhida) e insere na seção. */
+  blogInserirImagemConteudo(
+    id: string,
+    body: GerarImagemConteudoRequest,
+  ): Promise<BlogPostAdmin> {
+    return request<BlogPostAdmin>(`${BASE}/posts/${id}/imagem/conteudo/inserir`, {
+      method: 'POST',
+      body,
+      timeoutMs: 120_000,
     });
   },
 
