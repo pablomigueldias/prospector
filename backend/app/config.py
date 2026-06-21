@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     # Modelo de geração de IMAGEM (capa/seções do blog, B-IMG). Imagen via a
     # mesma generativelanguage API (:predict). Trocável sem mexer no código.
     gemini_image_model: str = "imagen-4.0-generate-001"
+    # Modelo de TEXTO do agente Blog. Blog é público/SEO e de baixo volume → vale
+    # um Pro (qualidade > custo, irrisório a poucos posts/semana); os demais agentes
+    # seguem no flash (constante MODEL em gemini/client.py). Estável: gemini-2.5-pro;
+    # topo (preview): gemini-3-pro-preview. Vazio → cai no flash padrão.
+    gemini_model_blog: str = "gemini-2.5-pro"
     groq_api_key: str = ""
 
     # Pasta pública do Drive com os certificados do Pablo (sync autônomo do

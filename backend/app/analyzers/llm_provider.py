@@ -24,11 +24,13 @@ def _bloquear_gemini_hoje() -> None:
 def gerar_texto(
     prompt: str, *, json_mode: bool = True,
     agente: str = "desconhecido", operacao: str | None = None,
+    model: str | None = None,
 ) -> str:
     provider = getattr(settings, "llm_provider", "gemini")
     if provider == "gemini":
         return _gerar_com_fallback(
-            prompt, json_mode=json_mode, agente=agente, operacao=operacao
+            prompt, json_mode=json_mode, agente=agente,
+            operacao=operacao, model=model,
         )
     if provider == 'groq':
         from app.analyzers.groq.client import gerar_conteudo as groq_gerar
@@ -40,6 +42,7 @@ def gerar_texto(
 def _gerar_com_fallback(
         prompt: str, *,json_mode:bool,
         agente: str, operacao: str | None,
+        model: str | None = None,
         ) -> str:
 
     from app.analyzers.groq.client import gerar_conteudo as groq_gerar
@@ -53,7 +56,8 @@ def _gerar_com_fallback(
 
     try:
         return gemini_gerar(
-            prompt, response_json=json_mode, agente=agente, operacao=operacao
+            prompt, response_json=json_mode, agente=agente,
+            operacao=operacao, model=model,
         )
     except GeminiRateLimit:
         _bloquear_gemini_hoje()

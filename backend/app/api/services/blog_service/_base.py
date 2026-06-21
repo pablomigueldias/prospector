@@ -20,6 +20,7 @@ from app.api.schemas.blog import (
 )
 from app.api.services._helpers import iso as _iso
 from app.api.services._helpers import parse_uuid
+from app.config import settings
 from app.db.models.blog.pauta import BlogPauta
 from app.db.models.blog.post import BlogPost
 from app.utils.logger import get_logger
@@ -40,7 +41,12 @@ def _uuid(valor: str, label: str = "id") -> uuid.UUID:
 
 def _chamar_llm(prompt: str, *, operacao: str) -> str:
     try:
-        return gerar_texto(prompt, json_mode=True, agente="blog", operacao=operacao)
+        # Blog usa um modelo Pro (settings.gemini_model_blog) — qualidade do texto
+        # importa mais aqui; volume é baixo. Vazio → cai no flash padrão.
+        return gerar_texto(
+            prompt, json_mode=True, agente="blog", operacao=operacao,
+            model=(settings.gemini_model_blog or None),
+        )
     except Exception as e:
         logger.error("blog: falha na LLM (%s): %s", operacao, e)
         raise BlogError(
