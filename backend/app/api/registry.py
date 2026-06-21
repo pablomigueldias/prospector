@@ -73,6 +73,22 @@ _AGENTS: list[Agent] = [
         capabilities={"gera_rascunho": True, "sincroniza": True},
     ),
     Agent(
+        slug="blog",
+        name="Blog",
+        description=(
+            "Cérebro de conteúdo do site: cria, revisa e publica posts "
+            "otimizados pra SEO. Você aprova o rascunho; o site pega via API."
+        ),
+        icon="ti-news",
+        status="active",
+        order=19,  # depois de outreach (18), antes de cobrança (20)
+        capabilities={
+            "crud_posts": True,
+            "publica": True,
+            "headless_api": True,
+        },
+    ),
+    Agent(
         slug="cobranca",
         name="Cobrança",
         description=(

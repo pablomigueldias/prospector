@@ -11,6 +11,11 @@ from app.db.models.auth.usuario import Usuario
 from app.db.models.auth.usuario_2fa import UsuarioTwoFA
 from app.db.models.auth.usuario_papel import UsuarioPapel
 from app.db.models.atividade import Atividade
+
+# ── Blog headless (tabelas blog_*) — conteúdo do site Reative ──────
+from app.db.models.blog.pauta import BlogPauta
+from app.db.models.blog.post import BlogPost
+from app.db.models.blog.redirect import BlogRedirect
 from app.db.models.config_app import ConfigApp
 from app.db.models.contato import Contato
 from app.db.models.crm_opcao import CrmOpcao
@@ -71,6 +76,10 @@ __all__ = [
     "EmailOutreach",
     "CrmOpcao",
     "ConfigApp",
+    # blog (site headless)
+    "BlogPost",
+    "BlogRedirect",
+    "BlogPauta",
     # pessoal
     "PerfilMestre",
     "Vaga",

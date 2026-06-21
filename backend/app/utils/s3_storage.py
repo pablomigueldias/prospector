@@ -44,6 +44,18 @@ class S3Storage:
             "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=expires
         )
 
+    def public_url(self, bucket: str, key: str) -> str:
+        """URL PERMANENTE (não-assinada) do objeto — pro blog público.
+
+        Diferente de ``presigned_url`` (que expira em 1h e não serve pra um post
+        que fica no ar), monta ``{base}/{bucket}/{key}`` a partir de
+        ``settings.s3_public_url`` (ex.: o MinIO atrás do Caddy). Sem
+        ``s3_public_url`` configurado, cai no ``s3_endpoint`` — válido em dev,
+        mas em produção o bucket precisa ser de **leitura pública**.
+        """
+        base = (settings.s3_public_url or settings.s3_endpoint).rstrip("/")
+        return f"{base}/{bucket}/{key.lstrip('/')}"
+
 
 _storage: S3Storage | None = None
 

@@ -8,6 +8,8 @@ from app.api.routers import admin_usuarios as admin_usuarios_router
 from app.api.routers import agendamentos as agendamentos_router
 from app.api.routers import agents as agents_router
 from app.api.routers import auth as auth_router
+from app.api.routers import blog as blog_router
+from app.api.routers import blog_public as blog_public_router
 from app.api.routers import cartoes as cartoes_router
 from app.api.routers import categorias as categorias_router
 from app.api.routers import compras as compras_router
@@ -81,6 +83,18 @@ async def lifespan(app: FastAPI):
                 rotina_briefing,
                 CronTrigger(hour=settings.briefing_hora, minute=0),
                 id="rotina_briefing",
+                replace_existing=True,
+            )
+        if settings.blog_pautas_cron_enabled:
+            from app.jobs.blog_pautas import rotina_pautas
+            agendador.add_job(
+                rotina_pautas,
+                CronTrigger(
+                    day_of_week=settings.blog_pautas_dia_semana,
+                    hour=settings.blog_pautas_hora,
+                    minute=0,
+                ),
+                id="blog_pautas",
                 replace_existing=True,
             )
         agendador.start()
@@ -162,6 +176,10 @@ app.include_router(memoria_router.router)
 app.include_router(orchestrator_router.router)
 app.include_router(observability_router.router)
 app.include_router(outreach_router.router)
+
+# ── Blog headless (site Reative) — pública (sem auth) + admin (auth) ─
+app.include_router(blog_public_router.router)
+app.include_router(blog_router.router)
 
 # ── Área pessoal (separada da Reative) ────────────────────────────
 app.include_router(perfil_router.router)

@@ -56,6 +56,25 @@ class Settings(BaseSettings):
     s3_access_key: str = "minioadmin"
     s3_secret_key: str = "minioadmin"
     s3_region: str = "us-east-1"
+    # Base PÚBLICA pra URLs permanentes de imagem (blog). Em dev aponta pro MinIO
+    # local; em produção, o MinIO atrás do Caddy (ex.: https://cdn.reativesystems.com.br).
+    # Vazio → cai no s3_endpoint (presumindo bucket de leitura pública). A URL final
+    # é "{s3_public_url}/{bucket}/{key}" — ver utils/s3_storage.public_url.
+    s3_public_url: str = ""
+    # Bucket dos assets do blog (imagens de capa/seção geradas pelo agente).
+    s3_bucket_blog: str = "blog"
+
+    # URL pública do SITE institucional (não do studio). Usada pra montar links
+    # absolutos no sitemap.xml / feed.xml do blog headless.
+    site_url: str = "https://reativesystems.com.br"
+
+    # Agente Blog — cron semanal que mantém o backlog de pautas cheio (B4).
+    # Desligado por padrão (consome cota de LLM); ligue no .env quando quiser.
+    blog_pautas_cron_enabled: bool = False
+    blog_pautas_min_backlog: int = 3   # gera só se houver < N pautas "ideia"
+    blog_pautas_gerar: int = 5         # quantas gerar quando o backlog está baixo
+    blog_pautas_dia_semana: str = "mon"  # cron day_of_week
+    blog_pautas_hora: int = 7
 
     # Telegram (Organizador Financeiro). chat_id → usuario_id mapeia quem fala
     # no bot pro perfil do financas (você / Sandra). Sem tabela usuarios ainda.

@@ -13,6 +13,7 @@ import { outreachApi } from './outreach';
 import { pessoalApi } from './pessoal';
 import { freelaApi } from './freela';
 import { financasApi } from './financas';
+import { blogApi } from './blog';
 import { authApi } from './auth';
 
 export { API_URL } from './client';
@@ -28,5 +29,6 @@ export const api = {
   ...pessoalApi,
   ...freelaApi,
   ...financasApi,
+  ...blogApi,
   ...authApi,
 };

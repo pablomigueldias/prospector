@@ -22,6 +22,7 @@ CATALOGO: list[tuple[str, str]] = [
     ("comprovantes.ver", "Ver comprovantes"),
     ("relatorios.ver", "Ver relatórios"),
     ("usuarios.gerenciar", "Criar e editar usuários (admin)"),
+    ("blog.editar", "Criar, editar e publicar posts do blog"),
 ]
 
 # Subconjunto seguro pro papel "padrao" (ex.: Sandra): SEM pessoal.ver nem
