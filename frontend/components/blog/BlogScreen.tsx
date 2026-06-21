@@ -215,6 +215,10 @@ export default function BlogScreen() {
           acoes={acoes}
           onClose={fechar}
           onSave={salvar}
+          onPostAtualizado={(p) => {
+            setEditando(p);
+            setForm((f) => (f ? { ...f, cover_url: p.cover_url ?? '' } : f));
+          }}
         />
       )}
     </div>
@@ -295,6 +299,7 @@ function Editor({
   acoes,
   onClose,
   onSave,
+  onPostAtualizado,
 }: {
   form: FormState;
   setForm: (f: FormState) => void;
@@ -302,6 +307,7 @@ function Editor({
   acoes: ReturnType<typeof useBlogActions>;
   onClose: () => void;
   onSave: () => void;
+  onPostAtualizado: (p: BlogPostAdmin) => void;
 }) {
   const set = (campo: keyof FormState, valor: unknown) =>
     setForm({ ...form, [campo]: valor });
@@ -453,6 +459,12 @@ function Editor({
             />
           </Field>
         </div>
+
+        <ImagensPanel
+          editando={editando}
+          acoes={acoes}
+          onAtualizado={onPostAtualizado}
+        />
 
         <div className="border-t border-line pt-3 mt-1">
           <div className="eyebrow mb-2">SEO</div>
@@ -781,6 +793,88 @@ function SeoPanel({ seo }: { seo: ChecklistSeo }) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function ImagensPanel({
+  editando,
+  acoes,
+  onAtualizado,
+}: {
+  editando: BlogPostAdmin | null;
+  acoes: ReturnType<typeof useBlogActions>;
+  onAtualizado: (p: BlogPostAdmin) => void;
+}) {
+  const [prompt, setPrompt] = useState('');
+  const [gerando, setGerando] = useState(false);
+
+  if (!editando) {
+    return (
+      <div className="rounded-md border border-line bg-bg-alt/40 p-3 text-[12px] text-ink-mute">
+        Imagens: salve o rascunho primeiro pra gerar a capa com IA ou enviar a
+        sua versão final.
+      </div>
+    );
+  }
+  const id = editando.id;
+
+  async function gerar() {
+    if (!prompt.trim()) return;
+    setGerando(true);
+    const p = await acoes.gerarImagem(id, { prompt, papel: 'cover' });
+    setGerando(false);
+    if (p) onAtualizado(p);
+  }
+
+  async function enviar(file?: File | null) {
+    if (!file) return;
+    const p = await acoes.uploadImagem(id, file, 'cover', editando?.title);
+    if (p) onAtualizado(p);
+  }
+
+  return (
+    <div className="rounded-md border border-line p-3 flex flex-col gap-2">
+      <div className="eyebrow">Capa</div>
+      {editando.cover_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={editando.cover_url}
+          alt="capa atual"
+          className="w-full max-h-44 object-cover rounded-md border border-line"
+        />
+      ) : (
+        <div className="text-[12px] text-ink-mute">Sem capa ainda.</div>
+      )}
+      <div className="flex gap-2 items-center flex-wrap">
+        <input
+          className="input flex-1 min-w-[200px]"
+          placeholder="Descreva a capa pra IA gerar (Imagen)"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={gerar}
+          disabled={gerando || !prompt.trim()}
+          className="btn btn-ghost text-[13px]"
+        >
+          {gerando ? 'Gerando…' : '✨ Gerar capa'}
+        </button>
+        <label className="btn btn-ghost text-[13px] cursor-pointer">
+          Enviar imagem
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(e) => enviar(e.target.files?.[0])}
+          />
+        </label>
+      </div>
+      <p className="text-[11px] text-ink-mute m-0">
+        A IA gera um rascunho; você pode baixar, ajustar fora e reenviar a versão
+        final antes de publicar.
+      </p>
     </div>
   );
 }

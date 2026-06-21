@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     notion_db_projetos: str = "35a6c23e-8c3c-8012-9054-eecead911b30"
 
     gemini_api_key: str = ""
+    # Modelo de geração de IMAGEM (capa/seções do blog, B-IMG). Imagen via a
+    # mesma generativelanguage API (:predict). Trocável sem mexer no código.
+    gemini_image_model: str = "imagen-4.0-generate-001"
     groq_api_key: str = ""
 
     # Pasta pública do Drive com os certificados do Pablo (sync autônomo do

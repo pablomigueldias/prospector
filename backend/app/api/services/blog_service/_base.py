@@ -18,9 +18,9 @@ from app.api.schemas.blog import (
     SeoPublic,
     TocItem,
 )
-from app.db.models.blog.pauta import BlogPauta
 from app.api.services._helpers import iso as _iso
 from app.api.services._helpers import parse_uuid
+from app.db.models.blog.pauta import BlogPauta
 from app.db.models.blog.post import BlogPost
 from app.utils.logger import get_logger
 

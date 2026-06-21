@@ -263,6 +263,12 @@ class BlogPautaManualCreate(BaseModel):
     estagio_funil: str | None = None
 
 
+class GerarImagemRequest(BaseModel):
+    prompt: str
+    papel: str = "cover"          # cover | secao
+    aspect_ratio: str = "16:9"    # 16:9 | 1:1 | 4:3 | 9:16
+
+
 class BlogPautaUpdate(BaseModel):
     titulo: str | None = None
     resumo: str | None = None

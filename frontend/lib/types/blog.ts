@@ -84,6 +84,12 @@ export interface BlogRedacao {
   og_description?: string | null;
 }
 
+export interface GerarImagemRequest {
+  prompt: string;
+  papel?: 'cover' | 'secao';
+  aspect_ratio?: string;
+}
+
 export interface ChecklistSeoRequest {
   title?: string | null;
   slug?: string | null;

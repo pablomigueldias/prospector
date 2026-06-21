@@ -4,7 +4,7 @@ Autenticada (`blog.editar`) e separada da pública (`/api/public/blog`). Aqui é
 mesa de edição do Pablo: criar/editar rascunho, publicar (checkpoint humano),
 arquivar. O agente de IA (B2+) escreve via estes mesmos services.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 
 from app.api.dependencies.auth import require_permission
 from app.api.schemas.blog import (
@@ -20,6 +20,7 @@ from app.api.schemas.blog import (
     BlogStatusUpdate,
     ChecklistSeoRequest,
     ChecklistSeoResponse,
+    GerarImagemRequest,
 )
 from app.api.services import blog_service
 from app.api.services.blog_service import BlogError
@@ -132,6 +133,36 @@ async def criar(payload: BlogPostCreate) -> BlogPostAdmin:
 async def atualizar(post_id: str, payload: BlogPostUpdate) -> BlogPostAdmin:
     try:
         return await blog_service.admin.atualizar(post_id, payload)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/posts/{post_id}/imagem", response_model=BlogPostAdmin, summary="IA: gera imagem (capa/seção) → MinIO")
+async def gerar_imagem(post_id: str, req: GerarImagemRequest) -> BlogPostAdmin:
+    try:
+        return await blog_service.imagens.gerar(
+            post_id, papel=req.papel, prompt=req.prompt, aspect_ratio=req.aspect_ratio
+        )
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.post("/posts/{post_id}/imagem/upload", response_model=BlogPostAdmin, summary="Sobe a imagem final (editada fora)")
+async def upload_imagem(
+    post_id: str,
+    arquivo: UploadFile = File(...),
+    papel: str = Form("cover"),
+    alt: str | None = Form(None),
+) -> BlogPostAdmin:
+    try:
+        data = await arquivo.read()
+        return await blog_service.imagens.upload(
+            post_id,
+            papel=papel,
+            data=data,
+            content_type=arquivo.content_type or "image/png",
+            alt=alt,
+        )
     except Exception as e:
         raise _handle(e)
 

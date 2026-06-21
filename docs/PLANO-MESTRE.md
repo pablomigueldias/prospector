@@ -248,9 +248,14 @@ Pipeline espelha o padrão existente (analyzer `prompt_builder`+`parser` → ser
   rotas admin `POST /api/blog/redigir` + `POST /api/blog/checklist`; smoke `tests/test_blog_seo.py`.
   **Front:** no editor da `BlogScreen`, "✨ Gerar com IA" (brief → preenche o form) + "Checar SEO"
   (painel com score + itens pendentes). Geração real rendeu artigo de ~1000 palavras, score 88.
-- [ ] 🟢 **B-IMG — Imagens (Gemini):** gerar capa/seções via Gemini (Imagen/Flash Image) → upload no
-  MinIO/S3 → no rascunho, **baixar/editar/reenviar** a versão final antes de publicar. (cliente Gemini
-  de imagem novo; pode vir junto do B2 ou logo após.)
+- [x] 🟢 **B-IMG — Imagens (Gemini) (feito 2026-06-21, verde — testado c/ Imagen 4 real):** cliente
+  `analyzers/gemini/image_client.py` (Imagen `:predict`, modelo `gemini_image_model` default
+  `imagen-4.0-generate-001`) → `blog_service/imagens.py` sobe pro **MinIO com bucket de leitura pública**
+  (`s3_storage.ensure_public_bucket` + `public_url` permanente) e grava em `imagens`/`cover_url`. Rotas
+  `POST /api/blog/posts/{id}/imagem` (gera) e `/imagem/upload` (versão **editada** pelo Pablo via
+  multipart). Front: `ImagensPanel` no editor (preview da capa + "✨ Gerar capa" + "Enviar imagem").
+  *Decisão Pablo:* IA gera rascunho → baixar/editar fora/reenviar final antes de publicar. **Em prod:**
+  expor o MinIO atrás do Caddy (§5.4) pra a URL pública abrir no domínio (em dev abre via localhost:9000).
 - [x] 🟢 **B3 — Motor de pauta (feito 2026-06-21, verde — testado c/ Gemini real):** entidade própria
   `blog_pauta` (migração `a7c2e5f9b1d8`) + analyzer `analyzers/blog/pauta` (3 fontes: projeto/seo/
   tendência, ancorado no Perfil Mestre, com score 0-100) + `blog_service/pauta.py` (gerar com dedup +

@@ -17,6 +17,7 @@ import type {
   BlogStatus,
   ChecklistSeo,
   ChecklistSeoRequest,
+  GerarImagemRequest,
 } from '@/lib/types';
 
 function toApiError(err: unknown): ApiError {
@@ -111,6 +112,16 @@ export function useBlogActions() {
     (id: string) => wrap<BlogPostAdmin>(() => api.blogEscreverPauta(id))(),
     [],
   );
+  const gerarImagem = useCallback(
+    (id: string, body: GerarImagemRequest) =>
+      wrap<BlogPostAdmin>(() => api.blogGerarImagem(id, body))(),
+    [],
+  );
+  const uploadImagem = useCallback(
+    (id: string, arquivo: File, papel: 'cover' | 'secao' = 'cover', alt?: string) =>
+      wrap<BlogPostAdmin>(() => api.blogUploadImagem(id, arquivo, papel, alt))(),
+    [],
+  );
 
   return {
     loading,
@@ -126,5 +137,7 @@ export function useBlogActions() {
     atualizarPauta,
     removerPauta,
     escreverPauta,
+    gerarImagem,
+    uploadImagem,
   };
 }

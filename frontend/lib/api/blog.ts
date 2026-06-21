@@ -16,6 +16,7 @@ import type {
   BlogStatus,
   ChecklistSeo,
   ChecklistSeoRequest,
+  GerarImagemRequest,
 } from '../types';
 
 const BASE = '/api/blog';
@@ -98,6 +99,32 @@ export const blogApi = {
     return request<BlogPostAdmin>(`${BASE}/pautas/${id}/escrever`, {
       method: 'POST',
       timeoutMs: 90_000,
+    });
+  },
+
+  // ── Imagens (B-IMG) ─────────────────────────────────────────────
+  blogGerarImagem(id: string, body: GerarImagemRequest): Promise<BlogPostAdmin> {
+    return request<BlogPostAdmin>(`${BASE}/posts/${id}/imagem`, {
+      method: 'POST',
+      body,
+      timeoutMs: 120_000,
+    });
+  },
+
+  blogUploadImagem(
+    id: string,
+    arquivo: File,
+    papel: 'cover' | 'secao' = 'cover',
+    alt?: string,
+  ): Promise<BlogPostAdmin> {
+    const fd = new FormData();
+    fd.append('arquivo', arquivo);
+    fd.append('papel', papel);
+    if (alt) fd.append('alt', alt);
+    return request<BlogPostAdmin>(`${BASE}/posts/${id}/imagem/upload`, {
+      method: 'POST',
+      body: fd,
+      timeoutMs: 60_000,
     });
   },
 

@@ -1,7 +1,13 @@
 """Service do Blog headless (P5 §6). Reexporta a API pública do pacote pra
 ``from app.api.services import blog_service`` funcionar como nos demais agentes.
 """
-from app.api.services.blog_service import admin, agente, coordenador, pauta
+from app.api.services.blog_service import (
+    admin,
+    agente,
+    coordenador,
+    imagens,
+    pauta,
+)
 from app.api.services.blog_service._base import (
     BlogError,
     contar_palavras,
@@ -28,4 +34,5 @@ __all__ = [
     "agente",
     "pauta",
     "coordenador",
+    "imagens",
 ]

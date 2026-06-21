@@ -4,6 +4,8 @@ boto3 é síncrono; os serviços async chamam via asyncio.to_thread.
 """
 from __future__ import annotations
 
+import json
+
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
@@ -31,6 +33,27 @@ class S3Storage:
         except ClientError:
             self.client.create_bucket(Bucket=bucket)
             logger.info(f"Bucket criado: {bucket}")
+
+    def ensure_public_bucket(self, bucket: str) -> None:
+        """Garante o bucket COM política de leitura pública (GetObject anônimo).
+        Necessário pra imagens do blog terem URL permanente que o site/navegador
+        abrem sem assinatura. Idempotente."""
+        self.ensure_bucket(bucket)
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"AWS": ["*"]},
+                    "Action": ["s3:GetObject"],
+                    "Resource": [f"arn:aws:s3:::{bucket}/*"],
+                }
+            ],
+        }
+        try:
+            self.client.put_bucket_policy(Bucket=bucket, Policy=json.dumps(policy))
+        except ClientError as e:  # alguns backends restringem; não derruba o upload
+            logger.warning(f"Não consegui setar política pública em {bucket}: {e}")
 
     def upload_bytes(
         self, bucket: str, key: str, data: bytes, content_type: str | None = None
