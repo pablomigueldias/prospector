@@ -119,6 +119,14 @@ export const blogApi = {
     });
   },
 
+  /** Gera as imagens do corpo (marcadores {{IMG}}) — pode levar ~1min p/ 2-3. */
+  blogGerarImagensConteudo(id: string): Promise<BlogPostAdmin> {
+    return request<BlogPostAdmin>(`${BASE}/posts/${id}/imagem/conteudo`, {
+      method: 'POST',
+      timeoutMs: 180_000,
+    });
+  },
+
   blogUploadImagem(
     id: string,
     arquivo: File,

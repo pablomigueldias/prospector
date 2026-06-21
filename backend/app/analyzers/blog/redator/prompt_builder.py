@@ -44,6 +44,14 @@ REGRAS DE CORPO (body_md):
 - Tamanho: 600-1100 palavras. Conteúdo denso, sem repetição pra "encher".
 - Use listas, **negrito** em pontos-chave, e exemplos concretos. Pode usar bloco
   de código (```), tabela ou citação (>) quando ajudar de verdade.
+- IMAGENS NO CORPO: insira de 2 a 3 marcadores de imagem em pontos naturais (logo
+  após a introdução e entre seções densas) pra deixar o post mais atrativo. Use
+  EXATAMENTE esta sintaxe, sozinha numa linha em branco antes e depois:
+  `{{IMG: <prompt em INGLÊS descrevendo uma ilustração/figura conceitual e limpa,
+  estilo flat/isométrico, SEM nenhum texto e SEM logo> || <alt em português que
+  descreve a imagem pra acessibilidade/SEO>}}`.
+  NÃO use imagens de stock, NÃO invente URLs, NÃO escreva `![...]()` — só o marcador
+  `{{IMG: ... || ...}}`. A capa do post NÃO conta como imagem de corpo.
 - LINK INTERNO: inclua pelo menos 1 link Markdown pra uma página de serviço do
   site — use caminhos relativos: `/servicos`, `/servicos/automacao`,
   `/servicos/sites`, `/servicos/suporte`. Ex.: "[automação sob medida](/servicos/automacao)".

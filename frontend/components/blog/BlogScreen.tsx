@@ -218,7 +218,11 @@ export default function BlogScreen() {
           onSave={salvar}
           onPostAtualizado={(p) => {
             setEditando(p);
-            setForm((f) => (f ? { ...f, cover_url: p.cover_url ?? '' } : f));
+            setForm((f) =>
+              f
+                ? { ...f, cover_url: p.cover_url ?? '', body_md: p.body_md ?? f.body_md }
+                : f,
+            );
           }}
         />
       )}
@@ -811,6 +815,7 @@ function ImagensPanel({
   const [gerando, setGerando] = useState(false);
   const [sugestoes, setSugestoes] = useState<CapaSugestao[] | null>(null);
   const [sugerindo, setSugerindo] = useState(false);
+  const [gerandoConteudo, setGerandoConteudo] = useState(false);
 
   if (!editando) {
     return (
@@ -821,6 +826,15 @@ function ImagensPanel({
     );
   }
   const id = editando.id;
+  // marcadores {{IMG: ...}} pendentes no corpo SALVO (o redator insere; aqui geramos)
+  const marcadores = (editando.body_md?.match(/\{\{\s*IMG:/gi) ?? []).length;
+
+  async function gerarConteudo() {
+    setGerandoConteudo(true);
+    const post = await acoes.gerarImagensConteudo(id);
+    setGerandoConteudo(false);
+    if (post) onAtualizado(post);
+  }
 
   async function sugerir() {
     setSugerindo(true);
@@ -929,6 +943,28 @@ function ImagensPanel({
         A IA gera um rascunho; você pode baixar, ajustar fora e reenviar a versão
         final antes de publicar.
       </p>
+
+      <div className="border-t border-line pt-2.5 mt-1 flex flex-col gap-1.5">
+        <div className="eyebrow">Imagens do conteúdo</div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={gerarConteudo}
+            disabled={gerandoConteudo || marcadores === 0}
+            className="btn btn-ghost text-[13px]"
+            title="Gera as imagens dos marcadores {{IMG}} do corpo e insere no texto"
+          >
+            {gerandoConteudo
+              ? 'Gerando imagens…'
+              : `🖼️ Gerar imagens do conteúdo${marcadores ? ` (${marcadores})` : ''}`}
+          </button>
+          <span className="text-[11px] text-ink-mute">
+            {marcadores > 0
+              ? `${marcadores} marcador(es) {{IMG}} no rascunho salvo`
+              : 'Sem marcadores {{IMG}} no rascunho salvo — o redator insere; salve antes.'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

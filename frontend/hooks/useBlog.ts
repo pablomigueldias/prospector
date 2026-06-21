@@ -128,6 +128,10 @@ export function useBlogActions() {
       wrap<BlogPostAdmin>(() => api.blogUploadImagem(id, arquivo, papel, alt))(),
     [],
   );
+  const gerarImagensConteudo = useCallback(
+    (id: string) => wrap<BlogPostAdmin>(() => api.blogGerarImagensConteudo(id))(),
+    [],
+  );
 
   return {
     loading,
@@ -146,5 +150,6 @@ export function useBlogActions() {
     sugerirCapas,
     gerarImagem,
     uploadImagem,
+    gerarImagensConteudo,
   };
 }

@@ -156,6 +156,14 @@ async def gerar_imagem(post_id: str, req: GerarImagemRequest) -> BlogPostAdmin:
         raise _handle(e)
 
 
+@router.post("/posts/{post_id}/imagem/conteudo", response_model=BlogPostAdmin, summary="IA: gera as imagens do corpo (marcadores {{IMG}})")
+async def gerar_imagens_conteudo(post_id: str) -> BlogPostAdmin:
+    try:
+        return await blog_service.imagens.gerar_conteudo(post_id)
+    except Exception as e:
+        raise _handle(e)
+
+
 @router.post("/posts/{post_id}/imagem/upload", response_model=BlogPostAdmin, summary="Sobe a imagem final (editada fora)")
 async def upload_imagem(
     post_id: str,

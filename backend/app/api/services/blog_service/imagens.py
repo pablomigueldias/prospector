@@ -7,6 +7,7 @@ pública permanente (bucket de leitura pública)."""
 from __future__ import annotations
 
 import asyncio
+import re
 import uuid
 
 from app.analyzers.blog.capa.parser import parse_resposta as parse_capas
@@ -22,6 +23,13 @@ from ._base import BlogError, _chamar_llm, _uuid, to_admin
 
 _EXT = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
 _PAPEIS = {"cover", "secao"}
+
+# Marcador que o redator insere no corpo: {{IMG: prompt em inglês || alt em PT}}.
+# O passo `gerar_conteudo` troca cada um por ![alt](url) apontando pro MinIO.
+_MARCADOR_IMG = re.compile(
+    r"\{\{\s*IMG:\s*(?P<prompt>.+?)\s*\|\|\s*(?P<alt>.+?)\s*\}\}",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def _key(post_id: str, papel: str, mime: str) -> str:
@@ -100,6 +108,50 @@ async def gerar(
     return await _aplicar_no_post(
         post_id, papel, url, origem="gerada", prompt=prompt, alt=None
     )
+
+
+async def gerar_conteudo(
+    post_id: str, *, aspect_ratio: str = "16:9"
+) -> BlogPostAdmin:
+    """Varre os marcadores `{{IMG: prompt || alt}}` no corpo, gera cada imagem via
+    Imagen, sobe pro MinIO e troca o marcador por `![alt](url)` Markdown — deixa o
+    post ilustrado, não só com capa. Opera no rascunho SALVO (use o body do banco)."""
+    pid = _uuid(post_id, "post_id")
+    async with get_session() as session:
+        post = await BlogRepository(session).get(pid)
+        if post is None:
+            raise BlogError("Post não encontrado.")
+        body = post.body_md or ""
+        imagens = list(post.imagens or [])
+
+    matches = list(_MARCADOR_IMG.finditer(body))
+    if not matches:
+        raise BlogError(
+            "Nenhum marcador de imagem no corpo. Insira `{{IMG: descrição em "
+            "inglês || alt em português}}` no texto (o redator já insere alguns) "
+            "e salve o rascunho antes de gerar."
+        )
+
+    for m in matches:
+        prompt = m.group("prompt").strip()
+        alt = m.group("alt").strip()
+        try:
+            data, mime = await asyncio.to_thread(
+                image_client.gerar_imagem, prompt, aspect_ratio=aspect_ratio
+            )
+        except Exception as e:
+            raise BlogError(f"Falha ao gerar imagem do conteúdo: {e}")
+        url = await asyncio.to_thread(_subir, data, mime, _key(post_id, "secao", mime))
+        # troca só a 1ª ocorrência exata deste marcador (preserva a ordem)
+        body = body.replace(m.group(0), f"![{alt}]({url})", 1)
+        imagens.append(
+            {"papel": "secao", "url": url, "origem": "gerada", "prompt": prompt, "alt": alt}
+        )
+
+    async with get_session() as session:
+        repo = BlogRepository(session)
+        atualizado = await repo.update(pid, {"body_md": body, "imagens": imagens})
+        return to_admin(atualizado)
 
 
 async def upload(
