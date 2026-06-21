@@ -272,6 +272,28 @@ Pipeline espelha o padrão existente (analyzer `prompt_builder`+`parser` → ser
   palavras, SEO 92, pauta linkada.
 - [ ] 🟢 **B5 — Cross-agent:** publicar → divulgação automática no LinkedIn (depende do §6.C).
 
+> **Status (2026-06-21):** código B0–B4 + B-IMG + sugestão de capa **feito, testado e PUSHADO**
+> (studio `feat/blog-agente-headless` → `prospector`; site `feat/blog-headless-b0` → `reative-site`).
+> Falta só **ATIVAR** (infra/config), abaixo.
+
+### 6.E ⏳ ATIVAÇÃO — por que "publiquei e não replicou no site" (PENDENTE, fazer a seguir)
+> O código está pronto e verde; o post não aparece no site porque falta **ligar os dois em produção**.
+> Checklist na ordem (o item 1 é quase certo o motivo):
+> 1. **`NEXT_PUBLIC_API_URL` no site** apontando pro studio (ex.: `https://studio.reativesystems.com.br`).
+>    Sem isso o site usa o **fallback local** (`lib/content`) e ignora o banco. É **build-time** no Next:
+>    setar a env **e rebuildar/redeployar** o site. (Em dev: `.env.local` + reiniciar `npm run dev`.)
+> 2. **Studio acessível** publicamente e **`CORS_ORIGINS`** com o domínio do site (CORS não é estritamente
+>    necessário pro fetch server-side/ISR, mas configurar evita dor no client-side).
+> 3. **ISR**: a lista revalida a cada 300s e o post a cada 600s → pode levar até ~10 min; ou redeploy força.
+> 4. **Gate de publicação**: o público só vê `status=publicado` **E** `published_at <= agora`. Se publicou
+>    **agendado** (data futura), não aparece até a data. Conferir no editor.
+> 5. **Imagens**: cobertura abre via URL do MinIO; em prod precisa do **MinIO atrás do Caddy** (§5.4) +
+>    `S3_PUBLIC_URL`, senão a `cover_url` aponta pra `localhost:9000` e quebra.
+> 6. **Deploy do backend**: rodar `python -m app.jobs.seed_admin` (permissão `blog.editar`); as 2 migrações
+>    do blog (`blog_post`, `blog_pauta`) rodam no start do container.
+> **Próximo passo recomendado:** abrir PR das 2 branches → deploy do studio → setar as 2 envs no site →
+> rebuild do site → testar `GET https://studio.../api/public/blog/posts` e depois a página `/blog`.
+
 ### 6.C ⚪ Agente LinkedIn (próxima fase — esboço)
 > Manter o LinkedIn ativo e atrair recrutador + serviço.
 - ⚠️ **Restrição honesta:** publicar pela API oficial do LinkedIn exige app aprovado (Marketing/
