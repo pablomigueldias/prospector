@@ -257,6 +257,14 @@ Pipeline espelha o padrão existente (analyzer `prompt_builder`+`parser` → ser
   multipart). Front: `ImagensPanel` no editor (preview da capa + "✨ Gerar capa" + "Enviar imagem").
   *Decisão Pablo:* IA gera rascunho → baixar/editar fora/reenviar final antes de publicar. **Em prod:**
   expor o MinIO atrás do Caddy (§5.4) pra a URL pública abrir no domínio (em dev abre via localhost:9000).
+- [x] 🟢 **B-IMG+ — Imagens NO CONTEÚDO + sugestões + fix 16:9 (feito 2026-06-21, verde, c/ Imagen real):**
+  (1) redator insere marcadores `{{IMG: prompt-en || alt-pt}}` → `imagens.gerar_conteudo` preenche; (2)
+  **sugestões de imagem do corpo iguais às da capa** (`analyzers/blog/conteudo_img`, ancoradas em H2):
+  rotas `/imagem/conteudo/sugestoes` + `/imagem/conteudo/inserir` (gera e insere `![alt](url)` após a
+  seção); editor com cards "Gerar e inserir". (3) **FIX:** `image_client._higienizar_prompt` remove
+  `16:9`/`4:3`/`1920x1080`/"aspect ratio" do texto + trava anti-texto — o Imagen desenhava "16:9" como
+  letra na capa; redator/capa também proíbem proporção no prompt. **Decisão prod (MinIO):** subdomínio
+  **`cdn.reativesystems.com.br`** (só o bucket `blog` público; demais privados) → `S3_PUBLIC_URL`.
 - [x] 🟢 **B3 — Motor de pauta (feito 2026-06-21, verde — testado c/ Gemini real):** entidade própria
   `blog_pauta` (migração `a7c2e5f9b1d8`) + analyzer `analyzers/blog/pauta` (3 fontes: projeto/seo/
   tendência, ancorado no Perfil Mestre, com score 0-100) + `blog_service/pauta.py` (gerar com dedup +
