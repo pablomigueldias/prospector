@@ -1,3 +1,4 @@
+
 # 🧭 PLANO MESTRE — Prospector (roadmap único de código)
 
 > **Fonte única do caminho de código.** Consolida 6 planos antigos
@@ -276,8 +277,15 @@ Pipeline espelha o padrão existente (analyzer `prompt_builder`+`parser` → ser
 > (studio `feat/blog-agente-headless` → `prospector`; site `feat/blog-headless-b0` → `reative-site`).
 > Falta só **ATIVAR** (infra/config), abaixo.
 
-### 6.E ⏳ ATIVAÇÃO — por que "publiquei e não replicou no site" (PENDENTE, fazer a seguir)
-> O código está pronto e verde; o post não aparece no site porque falta **ligar os dois em produção**.
+### 6.E ✅ ATIVAÇÃO LOCAL provada (2026-06-21) / ⏳ produção pendente
+> **Causa raiz confirmada do "publiquei e não replicou":** o site não tinha `.env.local`, então usava o
+> **fallback local** (`lib/content`) e nunca consultava o studio. **Resolvido em dev:** criado
+> `Reative Systems/.env.local` com `NEXT_PUBLIC_API_URL=http://localhost:8000` (gitignored). Backend local
+> (já rodava na :8000) verificado servindo `GET /api/public/blog/posts` (3 publicados, incl. 1 gerado por
+> IA com capa), detalhe `[slug]`, `sitemap.xml`, `feed.xml` (todos 200) e a capa no MinIO (200 `image/png`,
+> bucket público OK). **Falta só o usuário reiniciar o `npm run dev` do site** (env é lida no startup;
+> limpar `.next` antes evita o `MODULE_NOT_FOUND` de build/dev misturados). **Produção** segue pelo
+> checklist abaixo.
 > Checklist na ordem (o item 1 é quase certo o motivo):
 > 1. **`NEXT_PUBLIC_API_URL` no site** apontando pro studio (ex.: `https://studio.reativesystems.com.br`).
 >    Sem isso o site usa o **fallback local** (`lib/content`) e ignora o banco. É **build-time** no Next:
