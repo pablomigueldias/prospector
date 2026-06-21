@@ -45,12 +45,12 @@ class Settings(BaseSettings):
     notion_db_projetos: str = "35a6c23e-8c3c-8012-9054-eecead911b30"
 
     gemini_api_key: str = ""
-    # Modelo de geração de IMAGEM (capa/seções do blog, B-IMG). Imagen via a
-    # mesma generativelanguage API (:predict). Blog é ≤1 post/dia → custo irrisório,
-    # então usa o Ultra (mais qualidade). Alternativas: imagen-4.0-generate-001
-    # (standard), imagen-4.0-fast-generate-001 (rápido/barato). O topo absoluto
-    # (gemini-3-pro-image, "nano banana pro") usa outra API (generateContent).
-    gemini_image_model: str = "imagen-4.0-ultra-generate-001"
+    # Modelo de geração de IMAGEM (capa/seções do blog, B-IMG). O image_client
+    # roteia sozinho pela API certa: `imagen-*` → :predict; `gemini-*` →
+    # :generateContent. Blog é ≤1 post/dia → custo irrisório, então usa o TOPO:
+    # gemini-3-pro-image ("nano banana pro"). Alternativas: imagen-4.0-ultra/
+    # generate/fast-generate-001.
+    gemini_image_model: str = "gemini-3-pro-image"
     # Modelo de TEXTO do agente Blog. Blog é público/SEO e de baixo volume → vale
     # um Pro (qualidade > custo, irrisório a poucos posts/semana); os demais agentes
     # seguem no flash (constante MODEL em gemini/client.py). Estável: gemini-2.5-pro;
