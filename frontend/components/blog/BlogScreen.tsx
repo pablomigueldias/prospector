@@ -822,6 +822,7 @@ function ImagensPanel({
   );
   const [sugerindoConteudo, setSugerindoConteudo] = useState(false);
   const [inserindo, setInserindo] = useState<number | null>(null);
+  const [trocando, setTrocando] = useState<string | null>(null);
 
   if (!editando) {
     return (
@@ -834,6 +835,8 @@ function ImagensPanel({
   const id = editando.id;
   // marcadores {{IMG: ...}} pendentes no corpo SALVO (o redator insere; aqui geramos)
   const marcadores = (editando.body_md?.match(/\{\{\s*IMG:/gi) ?? []).length;
+  // imagens já no corpo (papel=secao) — pra visualizar/baixar/substituir
+  const imgsConteudo = (editando.imagens ?? []).filter((i) => i.papel === 'secao');
 
   async function gerarConteudo() {
     setGerandoConteudo(true);
@@ -863,6 +866,14 @@ function ImagensPanel({
       // tira a sugestão já usada da lista
       setSugConteudo((prev) => prev?.filter((_, idx) => idx !== i) ?? null);
     }
+  }
+
+  async function trocarConteudo(urlAntiga: string, alt: string, file?: File | null) {
+    if (!file) return;
+    setTrocando(urlAntiga);
+    const post = await acoes.substituirImagemConteudo(id, file, urlAntiga, alt);
+    setTrocando(null);
+    if (post) onAtualizado(post);
   }
 
   async function sugerir() {
@@ -1030,6 +1041,51 @@ function ImagensPanel({
                 >
                   {inserindo === i ? 'Gerando…' : 'Gerar e inserir'}
                 </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Galeria das imagens já no corpo: visualizar, baixar e substituir */}
+        {imgsConteudo.length > 0 && (
+          <div className="grid sm:grid-cols-2 gap-2">
+            {imgsConteudo.map((img) => (
+              <div
+                key={img.url}
+                className="border border-line rounded-md p-2 flex flex-col gap-1.5"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.url}
+                  alt={img.alt ?? 'imagem do conteúdo'}
+                  className="w-full h-28 object-cover rounded-md border border-line"
+                />
+                {img.alt && (
+                  <p className="text-[11px] text-ink-mute m-0 line-clamp-2">{img.alt}</p>
+                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a
+                    href={img.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    className="btn btn-ghost text-[12px]"
+                  >
+                    Baixar
+                  </a>
+                  <label className="btn btn-ghost text-[12px] cursor-pointer">
+                    {trocando === img.url ? 'Enviando…' : 'Substituir'}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      disabled={trocando !== null}
+                      onChange={(e) =>
+                        trocarConteudo(img.url, img.alt ?? '', e.target.files?.[0])
+                      }
+                    />
+                  </label>
+                </div>
               </div>
             ))}
           </div>

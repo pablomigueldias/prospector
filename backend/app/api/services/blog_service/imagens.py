@@ -242,6 +242,52 @@ async def inserir_conteudo(
         return to_admin(atualizado)
 
 
+async def substituir_conteudo(
+    post_id: str,
+    *,
+    url_antiga: str,
+    data: bytes,
+    content_type: str,
+    alt: str | None = None,
+) -> BlogPostAdmin:
+    """Troca UMA imagem do conteúdo pela versão que o Pablo subiu: sobe a nova,
+    substitui a URL antiga no corpo (no `![](url)`) e atualiza o `imagens[]`."""
+    if not data:
+        raise BlogError("Arquivo vazio.")
+    if content_type not in _EXT:
+        raise BlogError(f"Tipo não suportado: {content_type} (use PNG/JPEG/WebP).")
+    if not (url_antiga or "").strip():
+        raise BlogError("Faltou a imagem a substituir.")
+    nova_url = await asyncio.to_thread(
+        _subir, data, content_type, _key(post_id, "secao", content_type)
+    )
+    pid = _uuid(post_id, "post_id")
+    async with get_session() as session:
+        repo = BlogRepository(session)
+        post = await repo.get(pid)
+        if post is None:
+            raise BlogError("Post não encontrado.")
+        body = (post.body_md or "").replace(url_antiga, nova_url)
+        imagens = []
+        trocou = False
+        for img in (post.imagens or []):
+            if img.get("url") == url_antiga:
+                novo = {**img, "url": nova_url, "origem": "editada"}
+                if alt is not None:
+                    novo["alt"] = alt
+                imagens.append(novo)
+                trocou = True
+            else:
+                imagens.append(img)
+        if not trocou:
+            imagens.append(
+                {"papel": "secao", "url": nova_url, "origem": "editada",
+                 "prompt": None, "alt": alt}
+            )
+        atualizado = await repo.update(pid, {"body_md": body, "imagens": imagens})
+        return to_admin(atualizado)
+
+
 async def upload(
     post_id: str,
     *,

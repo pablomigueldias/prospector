@@ -146,6 +146,13 @@ export function useBlogActions() {
       wrap<BlogPostAdmin>(() => api.blogInserirImagemConteudo(id, body))(),
     [],
   );
+  const substituirImagemConteudo = useCallback(
+    (id: string, arquivo: File, urlAntiga: string, alt?: string) =>
+      wrap<BlogPostAdmin>(
+        () => api.blogSubstituirImagemConteudo(id, arquivo, urlAntiga, alt),
+      )(),
+    [],
+  );
 
   return {
     loading,
@@ -167,5 +174,6 @@ export function useBlogActions() {
     gerarImagensConteudo,
     sugerirImagensConteudo,
     inserirImagemConteudo,
+    substituirImagemConteudo,
   };
 }

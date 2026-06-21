@@ -207,6 +207,26 @@ async def upload_imagem(
         raise _handle(e)
 
 
+@router.post("/posts/{post_id}/imagem/conteudo/substituir", response_model=BlogPostAdmin, summary="Substitui uma imagem do conteúdo (versão editada)")
+async def substituir_imagem_conteudo(
+    post_id: str,
+    arquivo: UploadFile = File(...),
+    url_antiga: str = Form(...),
+    alt: str | None = Form(None),
+) -> BlogPostAdmin:
+    try:
+        data = await arquivo.read()
+        return await blog_service.imagens.substituir_conteudo(
+            post_id,
+            url_antiga=url_antiga,
+            data=data,
+            content_type=arquivo.content_type or "image/png",
+            alt=alt,
+        )
+    except Exception as e:
+        raise _handle(e)
+
+
 @router.patch("/posts/{post_id}/status", response_model=BlogPostAdmin, summary="Muda status (publicar/arquivar)")
 async def mudar_status(post_id: str, payload: BlogStatusUpdate) -> BlogPostAdmin:
     try:

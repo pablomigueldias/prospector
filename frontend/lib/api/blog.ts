@@ -149,6 +149,24 @@ export const blogApi = {
     });
   },
 
+  /** Substitui uma imagem do conteúdo (sua versão editada) pela URL antiga. */
+  blogSubstituirImagemConteudo(
+    id: string,
+    arquivo: File,
+    urlAntiga: string,
+    alt?: string,
+  ): Promise<BlogPostAdmin> {
+    const fd = new FormData();
+    fd.append('arquivo', arquivo);
+    fd.append('url_antiga', urlAntiga);
+    if (alt) fd.append('alt', alt);
+    return request<BlogPostAdmin>(`${BASE}/posts/${id}/imagem/conteudo/substituir`, {
+      method: 'POST',
+      body: fd,
+      timeoutMs: 60_000,
+    });
+  },
+
   blogUploadImagem(
     id: string,
     arquivo: File,

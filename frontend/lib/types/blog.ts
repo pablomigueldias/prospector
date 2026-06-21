@@ -7,6 +7,14 @@ export interface BlogTocItem {
   label: string;
 }
 
+export interface BlogImagem {
+  papel: 'cover' | 'secao';
+  url: string;
+  origem?: 'gerada' | 'editada' | string;
+  prompt?: string | null;
+  alt?: string | null;
+}
+
 export interface BlogPostAdmin {
   id: string;
   slug: string;
@@ -18,7 +26,7 @@ export interface BlogPostAdmin {
   cover_url?: string | null;
   cover_alt?: string | null;
   cover_class?: string | null;
-  imagens: Record<string, unknown>[];
+  imagens: BlogImagem[];
   status: BlogStatus;
   author: string;
   lang: string;
