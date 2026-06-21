@@ -64,6 +64,9 @@ services:
     environment:
       DOMAIN: ${DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
+      # cdn das imagens do blog; sem CDN_DOMAIN no .env, cai em cdn.localhost
+      # (cert interno, inofensivo) — não derruba o Caddy.
+      CDN_DOMAIN: ${CDN_DOMAIN:-cdn.localhost}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
