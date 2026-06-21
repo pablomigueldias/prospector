@@ -15,12 +15,19 @@ logger = get_logger()
 
 
 def _limpar_texto(texto: str) -> str:
-    """Tira cercas markdown e recorta do primeiro '{' ao último '}'."""
+    """Tira cercas markdown e recorta o JSON do topo. Suporta objeto `{...}` E
+    array `[...]` (a LLM — ex.: gemini-2.5-pro — às vezes devolve o array direto,
+    sem o wrapper esperado)."""
     t = texto.strip()
     t = re.sub(r"^```(?:json)?\s*", "", t)
     t = re.sub(r"\s*```$", "", t)
-    inicio = t.find("{")
-    fim = t.rfind("}")
+    t = t.strip()
+    abre_obj, abre_arr = t.find("{"), t.find("[")
+    # Se um array abre ANTES de qualquer objeto, é um array no topo → recorta [..].
+    if abre_arr != -1 and (abre_obj == -1 or abre_arr < abre_obj):
+        inicio, fim = abre_arr, t.rfind("]")
+    else:
+        inicio, fim = abre_obj, t.rfind("}")
     if inicio != -1 and fim != -1 and fim > inicio:
         t = t[inicio : fim + 1]
     return t.strip()
@@ -68,10 +75,11 @@ def _reparar_json_truncado(texto: str) -> str | None:
         return None
 
 
-def extrair_json(texto_cru: str) -> dict | None:
-    """Converte o texto cru da LLM num dict, ou None se não der.
+def extrair_json(texto_cru: str) -> dict | list | None:
+    """Converte o texto cru da LLM num dict (ou list), ou None se não der.
 
     Tenta: parse direto do texto limpo → reparo de truncamento → desiste.
+    Suporta objeto `{...}` e array `[...]` no topo (parsers tratam ambos).
     """
     if not texto_cru or not texto_cru.strip():
         logger.warning("LLM retornou texto vazio")
