@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Modal } from '@/components/shared/Modal';
 import { PostPreview } from '@/components/blog/PostPreview';
@@ -48,10 +48,28 @@ const FORM_VAZIO: FormState = {
 export default function BlogScreen() {
   const [view, setView] = useState<'posts' | 'pautas'>('posts');
   const [aba, setAba] = useState<BlogStatus | 'todos'>('todos');
+  const [busca, setBusca] = useState('');
+  const [catFiltro, setCatFiltro] = useState('');
   const { posts, loading, refetch } = useBlogPosts(
     aba === 'todos' ? undefined : aba,
   );
   const acoes = useBlogActions();
+
+  // Categorias presentes (pro filtro) + lista filtrada por busca/categoria.
+  const categorias = useMemo(
+    () => [...new Set(posts.map((p) => p.category).filter(Boolean))] as string[],
+    [posts],
+  );
+  const postsFiltrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return posts.filter((p) => {
+      if (catFiltro && p.category !== catFiltro) return false;
+      if (!termo) return true;
+      return `${p.title} ${p.keyword_alvo ?? ''} ${p.slug}`
+        .toLowerCase()
+        .includes(termo);
+    });
+  }, [posts, busca, catFiltro]);
 
   const [editando, setEditando] = useState<BlogPostAdmin | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
@@ -187,6 +205,34 @@ export default function BlogScreen() {
             </button>
           </div>
 
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <input
+              className="input max-w-xs"
+              placeholder="Buscar por título, keyword ou slug…"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+            {categorias.length > 0 && (
+              <select
+                className="input max-w-[200px]"
+                value={catFiltro}
+                onChange={(e) => setCatFiltro(e.target.value)}
+              >
+                <option value="">Todas as categorias</option>
+                {categorias.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            )}
+            {(busca || catFiltro) && (
+              <span className="text-[12px] text-ink-mute">
+                {postsFiltrados.length} de {posts.length}
+              </span>
+            )}
+          </div>
+
           {loading ? (
             <p className="text-ink-mute text-sm">Carregando…</p>
           ) : posts.length === 0 ? (
@@ -194,9 +240,13 @@ export default function BlogScreen() {
               Nenhum post aqui ainda. Clique em <strong>Novo post</strong> pra
               começar.
             </p>
+          ) : postsFiltrados.length === 0 ? (
+            <p className="text-ink-mute text-sm">
+              Nenhum post bate com o filtro. Limpe a busca ou a categoria.
+            </p>
           ) : (
             <div className="flex flex-col gap-2">
-              {posts.map((p) => (
+              {postsFiltrados.map((p) => (
                 <PostRow
                   key={p.id}
                   post={p}
