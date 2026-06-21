@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { Modal } from '@/components/shared/Modal';
+import { PostPreview } from '@/components/blog/PostPreview';
 import { useBlogActions, useBlogPautas, useBlogPosts } from '@/hooks/useBlog';
 import type {
   BlogBriefRequest,
@@ -325,6 +326,7 @@ function Editor({
   const [gerando, setGerando] = useState(false);
   const [brief, setBrief] = useState<BlogBriefRequest>({ tema: '' });
   const [seo, setSeo] = useState<ChecklistSeo | null>(null);
+  const [preview, setPreview] = useState(false);
 
   async function gerar() {
     const tema = brief.tema.trim() || form.title.trim();
@@ -379,15 +381,34 @@ function Editor({
           >
             ✨ {briefAberto ? 'Fechar gerador' : 'Gerar com IA'}
           </button>
-          <button
-            type="button"
-            onClick={checarSeo}
-            disabled={acoes.loading}
-            className="btn btn-ghost text-[13px]"
-          >
-            Checar SEO
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPreview((v) => !v)}
+              className="btn btn-ghost text-[13px]"
+            >
+              {preview ? '✏️ Editar' : '👁️ Visualizar'}
+            </button>
+            <button
+              type="button"
+              onClick={checarSeo}
+              disabled={acoes.loading}
+              className="btn btn-ghost text-[13px]"
+            >
+              Checar SEO
+            </button>
+          </div>
         </div>
+
+        {preview ? (
+          <PostPreview
+            title={form.title}
+            excerpt={form.excerpt}
+            coverUrl={form.cover_url}
+            bodyMd={form.body_md}
+          />
+        ) : (
+        <>
 
         {briefAberto && (
           <BriefPanel
@@ -523,6 +544,8 @@ function Editor({
             }
           />
         </Field>
+        </>
+        )}
       </div>
 
       <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-line">
