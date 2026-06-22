@@ -12,6 +12,7 @@ import type {
   VagasFiltro,
   VagasMetricas,
   AnalisarVagaResponse,
+  CurriculoVaga,
   GerarCandidaturaResponse,
   GerarCurriculoResponse,
   CandidaturaEmailItem,
@@ -141,6 +142,28 @@ export const pessoalApi = {
     return request<CandidaturaEmailItem[]>(
       `/api/pessoal/vagas/${encodeURIComponent(id)}/rascunhos`,
       { timeoutMs: 10_000 },
+    );
+  },
+
+  // Edição manual (corrigir antes de baixar) — sem LLM.
+  vagaSalvarCurriculo(
+    id: string,
+    curriculo: CurriculoVaga,
+  ): Promise<GerarCurriculoResponse> {
+    return request<GerarCurriculoResponse>(
+      `/api/pessoal/vagas/${encodeURIComponent(id)}/curriculo`,
+      { method: 'PATCH', body: curriculo, timeoutMs: 15_000 },
+    );
+  },
+
+  vagaAtualizarRascunho(
+    id: string,
+    emailId: string,
+    body: { assunto?: string | null; corpo?: string | null; tom?: string | null },
+  ): Promise<CandidaturaEmailItem> {
+    return request<CandidaturaEmailItem>(
+      `/api/pessoal/vagas/${encodeURIComponent(id)}/rascunhos/${encodeURIComponent(emailId)}`,
+      { method: 'PATCH', body, timeoutMs: 15_000 },
     );
   },
 

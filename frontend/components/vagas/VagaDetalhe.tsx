@@ -354,7 +354,15 @@ export function VagaDetalhe({
               “Regerar” pra atualizar.
             </p>
           )}
-          <CurriculoPdf curriculo={curriculoMostrar} vagaTitulo={vaga.titulo} />
+          <CurriculoPdf
+            curriculo={curriculoMostrar}
+            vagaTitulo={vaga.titulo}
+            vagaId={vagaId}
+            onSalvo={(c) => {
+              setCurriculo(c);
+              refetch();
+            }}
+          />
         </div>
       )}
 
@@ -366,6 +374,9 @@ export function VagaDetalhe({
           contato={curriculoMostrar?.contato ?? perfil?.contato ?? null}
           empresa={vaga.empresa}
           vagaTitulo={vaga.titulo}
+          vagaId={vagaId}
+          cartaId={rascunhos.find((r) => r.tipo === 'carta')?.id ?? null}
+          onCartaSalva={() => void refetchRascunhos()}
         />
       )}
     </div>
@@ -378,12 +389,18 @@ function RascunhoCandidatura({
   contato,
   empresa,
   vagaTitulo,
+  vagaId,
+  cartaId,
+  onCartaSalva,
 }: {
   dados: GerarCandidaturaResponse;
   nome: string;
   contato?: ContatoPessoal | null;
   empresa?: string | null;
   vagaTitulo?: string | null;
+  vagaId?: string;
+  cartaId?: string | null;
+  onCartaSalva?: () => void;
 }) {
   return (
     <div className="card p-5">
@@ -414,6 +431,9 @@ function RascunhoCandidatura({
             contato={contato}
             empresa={empresa}
             vagaTitulo={vagaTitulo}
+            vagaId={vagaId}
+            rascunhoId={cartaId}
+            onSalvo={onCartaSalva}
           />
         </div>
       )}

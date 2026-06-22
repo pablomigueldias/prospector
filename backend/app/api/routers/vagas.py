@@ -8,9 +8,11 @@ from app.api.schemas.pessoal import (
     EstudoVagasResponse,
     ExtrairVagaRequest,
     ExtrairVagaResponse,
+    CurriculoVaga,
     GerarCandidaturaRequest,
     GerarCandidaturaResponse,
     GerarCurriculoResponse,
+    RascunhoUpdate,
     VagaCreate,
     VagaListResponse,
     VagaResponse,
@@ -146,6 +148,29 @@ async def gerar_candidatura(
 async def gerar_curriculo(vaga_id: str) -> GerarCurriculoResponse:
     try:
         return await vaga_service.gerar_curriculo(vaga_id)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.patch("/{vaga_id}/curriculo", response_model=GerarCurriculoResponse,
+              summary="Salva o currículo editado na mão (sem LLM)")
+async def salvar_curriculo(
+    vaga_id: str, body: CurriculoVaga
+) -> GerarCurriculoResponse:
+    try:
+        return await vaga_service.salvar_curriculo_editado(vaga_id, body)
+    except Exception as e:
+        raise _handle(e)
+
+
+@router.patch("/{vaga_id}/rascunhos/{email_id}",
+              response_model=CandidaturaEmailItem,
+              summary="Edita um rascunho (carta/e-mail) antes de baixar/enviar")
+async def atualizar_rascunho(
+    vaga_id: str, email_id: str, body: RascunhoUpdate
+) -> CandidaturaEmailItem:
+    try:
+        return await vaga_service.atualizar_rascunho(vaga_id, email_id, body)
     except Exception as e:
         raise _handle(e)
 

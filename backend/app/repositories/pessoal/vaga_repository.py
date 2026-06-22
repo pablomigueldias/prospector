@@ -184,3 +184,24 @@ class VagaRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_email(
+        self, vaga_id: uuid.UUID, email_id: uuid.UUID
+    ) -> CandidaturaEmail | None:
+        stmt = select(CandidaturaEmail).where(
+            CandidaturaEmail.id == email_id,
+            CandidaturaEmail.vaga_id == vaga_id,
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def update_email(
+        self, vaga_id: uuid.UUID, email_id: uuid.UUID, dados: dict
+    ) -> CandidaturaEmail | None:
+        email = await self.get_email(vaga_id, email_id)
+        if email is None:
+            return None
+        for campo, valor in dados.items():
+            setattr(email, campo, valor)
+        await self.session.commit()
+        await self.session.refresh(email)
+        return email

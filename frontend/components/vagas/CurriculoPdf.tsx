@@ -1,6 +1,15 @@
 'use client';
 
-import type { CurriculoVaga } from '@/lib/types';
+import { useEffect, useState } from 'react';
+
+import { api } from '@/lib/api';
+import { ApiError } from '@/lib/types';
+import type {
+  CompetenciaGrupo,
+  CurriculoExperiencia,
+  CurriculoProjeto,
+  CurriculoVaga,
+} from '@/lib/types';
 import { esc, imprimirDocumento, slug, slugNome } from './_pdf';
 
 /**
@@ -184,25 +193,64 @@ function imprimir(c: CurriculoVaga, vagaTitulo?: string | null) {
 }
 
 export function CurriculoPdf({
-  curriculo,
+  curriculo: curriculoProp,
   vagaTitulo,
+  vagaId,
+  onSalvo,
 }: {
   curriculo: CurriculoVaga;
   vagaTitulo?: string | null;
+  vagaId?: string;
+  onSalvo?: (c: CurriculoVaga) => void;
 }) {
+  const [curriculo, setCurriculo] = useState(curriculoProp);
+  const [editando, setEditando] = useState(false);
+
+  // Ressincroniza quando o pai regenera o currículo (novo objeto).
+  useEffect(() => {
+    setCurriculo(curriculoProp);
+    setEditando(false);
+  }, [curriculoProp]);
+
+  if (editando && vagaId) {
+    return (
+      <EditarCurriculoForm
+        inicial={curriculo}
+        vagaId={vagaId}
+        onCancelar={() => setEditando(false)}
+        onSalvo={(c) => {
+          setCurriculo(c);
+          setEditando(false);
+          onSalvo?.(c);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
         <h4 className="font-display font-semibold text-sm text-ink m-0">
           Currículo ATS — sob medida pra esta vaga
         </h4>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => imprimir(curriculo, vagaTitulo)}
-        >
-          Baixar PDF (imprimir)
-        </button>
+        <div className="flex items-center gap-2">
+          {vagaId && (
+            <button
+              type="button"
+              className="btn-ghost text-[13px]"
+              onClick={() => setEditando(true)}
+            >
+              ✏️ Editar
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => imprimir(curriculo, vagaTitulo)}
+          >
+            Baixar PDF (imprimir)
+          </button>
+        </div>
       </div>
 
       {/* Prévia fiel ao PDF */}
@@ -328,5 +376,312 @@ function PreviewSecao({
       </h5>
       {children}
     </section>
+  );
+}
+
+// ── Edição manual do currículo (corrigir antes de baixar) ─────────
+
+const linhas = (s: string): string[] =>
+  s.split('\n').map((x) => x.trim()).filter(Boolean);
+const csv = (s: string): string[] =>
+  s.split(',').map((x) => x.trim()).filter(Boolean);
+
+type CompForm = { categoria: string; itens: string };
+type ExpForm = { cargo: string; empresa: string; periodo: string; bullets: string };
+type ProjForm = { nome: string; descricao: string; stack: string; link: string };
+
+function compInit(c: CompetenciaGrupo[]): CompForm[] {
+  return c.map((g) => ({ categoria: g.categoria, itens: g.itens.join(', ') }));
+}
+function expInit(e: CurriculoExperiencia[]): ExpForm[] {
+  return e.map((x) => ({
+    cargo: x.cargo ?? '',
+    empresa: x.empresa ?? '',
+    periodo: x.periodo ?? '',
+    bullets: x.bullets.join('\n'),
+  }));
+}
+function projInit(p: CurriculoProjeto[]): ProjForm[] {
+  return p.map((x) => ({
+    nome: x.nome,
+    descricao: x.descricao ?? '',
+    stack: x.stack.join(', '),
+    link: x.link ?? '',
+  }));
+}
+
+function EditarCurriculoForm({
+  inicial,
+  vagaId,
+  onCancelar,
+  onSalvo,
+}: {
+  inicial: CurriculoVaga;
+  vagaId: string;
+  onCancelar: () => void;
+  onSalvo: (c: CurriculoVaga) => void;
+}) {
+  const [titulo, setTitulo] = useState(inicial.titulo ?? '');
+  const [resumo, setResumo] = useState(inicial.resumo ?? '');
+  const [comps, setComps] = useState<CompForm[]>(compInit(inicial.competencias));
+  const [exps, setExps] = useState<ExpForm[]>(expInit(inicial.experiencias));
+  const [projs, setProjs] = useState<ProjForm[]>(projInit(inicial.projetos));
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  function montar(): CurriculoVaga {
+    return {
+      ...inicial, // nome, contato e formação (factual) seguem do perfil
+      titulo: titulo.trim() || null,
+      resumo: resumo.trim() || null,
+      competencias: comps
+        .map((c) => ({ categoria: c.categoria.trim(), itens: csv(c.itens) }))
+        .filter((c) => c.categoria && c.itens.length),
+      experiencias: exps.map((e) => ({
+        cargo: e.cargo.trim() || null,
+        empresa: e.empresa.trim() || null,
+        periodo: e.periodo.trim() || null,
+        bullets: linhas(e.bullets),
+      })),
+      projetos: projs
+        .filter((p) => p.nome.trim())
+        .map((p) => ({
+          nome: p.nome.trim(),
+          descricao: p.descricao.trim() || null,
+          stack: csv(p.stack),
+          link: p.link.trim() || null,
+        })),
+    };
+  }
+
+  async function salvar() {
+    setSalvando(true);
+    setErro(null);
+    try {
+      const r = await api.vagaSalvarCurriculo(vagaId, montar());
+      onSalvo(r.curriculo);
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.detail || e.message : 'Falha ao salvar.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className="card p-5 flex flex-col gap-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h4 className="font-display font-semibold text-sm text-ink m-0">
+          Editar currículo
+        </h4>
+        <span className="text-[11px] text-ink-mute">
+          Nome, contato e formação vêm do Perfil Mestre (não editáveis aqui).
+        </span>
+      </div>
+
+      {erro && (
+        <div className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded p-2">
+          {erro}
+        </div>
+      )}
+
+      <CampoCV label="Título / headline">
+        <input className="input" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+      </CampoCV>
+      <CampoCV label="Resumo (sobre)">
+        <textarea
+          className="input resize-y min-h-[80px]"
+          value={resumo}
+          onChange={(e) => setResumo(e.target.value)}
+        />
+      </CampoCV>
+
+      {/* Competências */}
+      <BlocoCV
+        titulo="Competências"
+        onAdicionar={() => setComps((p) => [...p, { categoria: '', itens: '' }])}
+      >
+        {comps.map((c, i) => (
+          <ItemCV key={i} onRemover={() => setComps((p) => p.filter((_, j) => j !== i))}>
+            <input
+              className="input"
+              placeholder="Categoria (ex.: Linguagens)"
+              value={c.categoria}
+              onChange={(e) =>
+                setComps((p) => p.map((x, j) => (j === i ? { ...x, categoria: e.target.value } : x)))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Itens separados por vírgula"
+              value={c.itens}
+              onChange={(e) =>
+                setComps((p) => p.map((x, j) => (j === i ? { ...x, itens: e.target.value } : x)))
+              }
+            />
+          </ItemCV>
+        ))}
+      </BlocoCV>
+
+      {/* Experiências */}
+      <BlocoCV
+        titulo="Experiência profissional"
+        onAdicionar={() =>
+          setExps((p) => [...p, { cargo: '', empresa: '', periodo: '', bullets: '' }])
+        }
+      >
+        {exps.map((e, i) => (
+          <ItemCV key={i} onRemover={() => setExps((p) => p.filter((_, j) => j !== i))}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                className="input"
+                placeholder="Cargo"
+                value={e.cargo}
+                onChange={(ev) =>
+                  setExps((p) => p.map((x, j) => (j === i ? { ...x, cargo: ev.target.value } : x)))
+                }
+              />
+              <input
+                className="input"
+                placeholder="Empresa"
+                value={e.empresa}
+                onChange={(ev) =>
+                  setExps((p) => p.map((x, j) => (j === i ? { ...x, empresa: ev.target.value } : x)))
+                }
+              />
+              <input
+                className="input"
+                placeholder="Período"
+                value={e.periodo}
+                onChange={(ev) =>
+                  setExps((p) => p.map((x, j) => (j === i ? { ...x, periodo: ev.target.value } : x)))
+                }
+              />
+            </div>
+            <textarea
+              className="input resize-y min-h-[70px]"
+              placeholder="Realizações — uma por linha"
+              value={e.bullets}
+              onChange={(ev) =>
+                setExps((p) => p.map((x, j) => (j === i ? { ...x, bullets: ev.target.value } : x)))
+              }
+            />
+          </ItemCV>
+        ))}
+      </BlocoCV>
+
+      {/* Projetos */}
+      <BlocoCV
+        titulo="Projetos"
+        onAdicionar={() =>
+          setProjs((p) => [...p, { nome: '', descricao: '', stack: '', link: '' }])
+        }
+      >
+        {projs.map((pr, i) => (
+          <ItemCV key={i} onRemover={() => setProjs((p) => p.filter((_, j) => j !== i))}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                className="input"
+                placeholder="Nome do projeto"
+                value={pr.nome}
+                onChange={(e) =>
+                  setProjs((p) => p.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))
+                }
+              />
+              <input
+                className="input"
+                placeholder="Link (opcional)"
+                value={pr.link}
+                onChange={(e) =>
+                  setProjs((p) => p.map((x, j) => (j === i ? { ...x, link: e.target.value } : x)))
+                }
+              />
+            </div>
+            <textarea
+              className="input resize-y min-h-[56px]"
+              placeholder="Descrição"
+              value={pr.descricao}
+              onChange={(e) =>
+                setProjs((p) => p.map((x, j) => (j === i ? { ...x, descricao: e.target.value } : x)))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Stack separada por vírgula"
+              value={pr.stack}
+              onChange={(e) =>
+                setProjs((p) => p.map((x, j) => (j === i ? { ...x, stack: e.target.value } : x)))
+              }
+            />
+          </ItemCV>
+        ))}
+      </BlocoCV>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="btn-primary disabled:opacity-40"
+          onClick={() => void salvar()}
+          disabled={salvando}
+        >
+          {salvando ? 'Salvando…' : 'Salvar alterações'}
+        </button>
+        <button type="button" className="btn-ghost" onClick={onCancelar} disabled={salvando}>
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CampoCV({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[12px] font-medium text-ink-mute">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function BlocoCV({
+  titulo,
+  onAdicionar,
+  children,
+}: {
+  titulo: string;
+  onAdicionar: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[12px] font-medium text-ink-mute">{titulo}</span>
+        <button type="button" className="btn-ghost text-[12px]" onClick={onAdicionar}>
+          + adicionar
+        </button>
+      </div>
+      <div className="flex flex-col gap-3">{children}</div>
+    </div>
+  );
+}
+
+function ItemCV({
+  onRemover,
+  children,
+}: {
+  onRemover: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative border border-line rounded p-3 pr-9 flex flex-col gap-2 bg-bg-alt/40">
+      <button
+        type="button"
+        className="absolute top-2 right-2 text-[12px] text-red-600 hover:underline"
+        onClick={onRemover}
+        title="Remover"
+      >
+        ✕
+      </button>
+      {children}
+    </div>
   );
 }

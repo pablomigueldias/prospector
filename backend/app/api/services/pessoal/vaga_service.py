@@ -38,6 +38,7 @@ from app.api.schemas.pessoal import (
     GerarCandidaturaResponse,
     GerarCurriculoResponse,
     MatchVaga,
+    RascunhoUpdate,
     SkillEstudo,
     VagaCreate,
     VagaListItem,
@@ -605,6 +606,56 @@ async def listar_rascunhos(vaga_id: str) -> list[CandidaturaEmailItem]:
             )
             for r in rows
         ]
+
+
+# ── Edição manual (corrigir antes de baixar) ─────────────────────
+
+async def salvar_curriculo_editado(
+    vaga_id: str, curriculo: CurriculoVaga
+) -> GerarCurriculoResponse:
+    """Persiste o currículo editado na mão (sem LLM). Sobrescreve o salvo."""
+    async with get_session() as session:
+        vaga = await VagaRepository(session).salvar_curriculo(
+            _uuid(vaga_id), curriculo.model_dump(mode="json")
+        )
+        if vaga is None:
+            raise VagaError("Vaga não encontrada.")
+        gerado_em = _iso(vaga.curriculo_gerado_em)
+
+    logger.info("Currículo: editado e salvo pra vaga {}", vaga_id)
+    return GerarCurriculoResponse(
+        vaga_id=vaga_id, curriculo=curriculo, gerado_em=gerado_em
+    )
+
+
+async def atualizar_rascunho(
+    vaga_id: str, email_id: str, body: RascunhoUpdate
+) -> CandidaturaEmailItem:
+    """Edita um rascunho salvo (e-mail/carta) — só os campos enviados."""
+    dados = body.model_dump(exclude_unset=True)
+    if not dados:
+        raise VagaError("Nada pra atualizar.")
+    if "corpo" in dados and not (dados["corpo"] or "").strip():
+        raise VagaError("O corpo não pode ficar vazio.")
+
+    async with get_session() as session:
+        r = await VagaRepository(session).update_email(
+            _uuid(vaga_id), _uuid(email_id), dados
+        )
+        if r is None:
+            raise VagaError("Rascunho não encontrado.")
+        return CandidaturaEmailItem(
+            id=str(r.id),
+            vaga_id=str(r.vaga_id),
+            tipo=r.tipo,
+            destinatario=r.destinatario,
+            assunto=r.assunto,
+            corpo=r.corpo,
+            tom=r.tom,
+            status=r.status,
+            variantes=[EmailCandidatura(**v) for v in (r.variantes or [])],
+            created_at=_iso(r.created_at),
+        )
 
 
 # ── helper LLM ───────────────────────────────────────────────────

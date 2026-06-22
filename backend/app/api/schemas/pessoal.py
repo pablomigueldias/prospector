@@ -346,6 +346,13 @@ class CandidaturaEmailItem(BaseModel):
     created_at: str | None = None
 
 
+class RascunhoUpdate(BaseModel):
+    """Edição manual de um rascunho (e-mail/carta) antes de baixar/enviar."""
+    assunto: str | None = None
+    corpo: str | None = None
+    tom: str | None = None
+
+
 # ══════════════════════════════════════════════════════════════════
 # Currículo sob medida pra vaga (gera PDF no front)
 # ══════════════════════════════════════════════════════════════════
