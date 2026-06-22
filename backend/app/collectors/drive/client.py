@@ -60,7 +60,7 @@ def listar_pasta_publica(folder_id: str) -> list[ArquivoDrive]:
         vistos.add(fid)
         arquivos.append(ArquivoDrive(file_id=fid, nome=nome))
 
-    logger.info("Drive: %d arquivos na pasta %s", len(arquivos), folder_id)
+    logger.info("Drive: {} arquivos na pasta {}", len(arquivos), folder_id)
     return arquivos
 
 

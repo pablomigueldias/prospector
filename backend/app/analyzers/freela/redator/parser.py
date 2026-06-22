@@ -28,7 +28,7 @@ def parse_resposta(texto_cru: str) -> RedacaoProposta | None:
     try:
         redacao = RedacaoProposta(**dados)
     except ValidationError as e:
-        logger.warning("Redação de proposta freela não validou: %s", e)
+        logger.warning("Redação de proposta freela não validou: {}", e)
         return None
 
     if not (redacao.texto or "").strip():

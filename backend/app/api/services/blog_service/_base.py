@@ -48,7 +48,7 @@ def _chamar_llm(prompt: str, *, operacao: str) -> str:
             model=(settings.gemini_model_blog or None),
         )
     except Exception as e:
-        logger.error("blog: falha na LLM (%s): %s", operacao, e)
+        logger.error("blog: falha na LLM ({}): {}", operacao, e)
         raise BlogError(
             "Não consegui falar com o modelo de IA. "
             "Verifique a conexão/configuração e tente de novo."

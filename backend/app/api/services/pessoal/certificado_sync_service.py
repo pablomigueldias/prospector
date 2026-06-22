@@ -125,7 +125,7 @@ async def sincronizar(folder_id: str | None = None) -> SyncResultado:
                 destino.write_bytes(conteudo)
                 arquivados += 1
         except Exception as e:  # noqa: BLE001 — registra e segue pros próximos
-            logger.warning("Falha ao obter %s: %s", arq.nome, e)
+            logger.warning("Falha ao obter {}: {}", arq.nome, e)
             itens.append(SyncItem(arquivo=arq.nome, status="falha", detalhe=str(e)))
             continue
 
@@ -148,7 +148,7 @@ async def sincronizar(folder_id: str | None = None) -> SyncResultado:
         except CertificadoSemChave as e:
             raise CertificadoSyncError(str(e))
         except Exception as e:  # noqa: BLE001 — registra e segue pros próximos
-            logger.warning("Falha no certificado %s: %s", arq.nome, e)
+            logger.warning("Falha no certificado {}: {}", arq.nome, e)
             itens.append(SyncItem(arquivo=arq.nome, status="falha", detalhe=str(e)))
 
     if novas:

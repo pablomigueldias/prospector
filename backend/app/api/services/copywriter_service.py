@@ -70,7 +70,7 @@ def _salvar_email(req: CopywriterRequest, resp: CopywriterResponse) -> None:
 
         destino = pasta / f"{carimbo}_{empresa_slug}.json"
         destino.write_text(resp.model_dump_json(indent=2), encoding="utf-8")
-        logger.info("Copywriter: e-mail salvo em %s", destino)
+        logger.info("Copywriter: e-mail salvo em {}", destino)
     except Exception as e:
         logger.warning(f"Copywriter: não foi possível salvar o e-mail: {e}")
 
@@ -78,20 +78,20 @@ def _salvar_email(req: CopywriterRequest, resp: CopywriterResponse) -> None:
 def gerar_email(req: CopywriterRequest) -> CopywriterResponse:
     """Gera um e-mail de prospecção a partir do request."""
     if req.lead_arquivo:
-        logger.info("Copywriter: enriquecendo com lead '%s'", req.lead_arquivo)
+        logger.info("Copywriter: enriquecendo com lead '{}'", req.lead_arquivo)
         req = _enriquecer_com_lead(req)
 
     if not req.empresa or not req.empresa.strip():
         raise CopywriterError("É obrigatório informar a empresa alvo.")
 
     prompt = construir_prompt(req)
-    logger.debug("Copywriter: prompt montado (%d caracteres)", len(prompt))
+    logger.debug("Copywriter: prompt montado ({} caracteres)", len(prompt))
 
     try:
         texto_cru = gerar_texto(prompt, json_mode=True,
                                 agente="copywriter", operacao="gerar_email")
     except Exception as e:
-        logger.error("Copywriter: falha na chamada da LLM: %s", e)
+        logger.error("Copywriter: falha na chamada da LLM: {}", e)
         raise CopywriterError(
             "Não foi possível contatar o modelo de IA. "
             "Verifique a conexão ou as configurações e tente de novo."

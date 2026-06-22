@@ -18,5 +18,5 @@ def parse_boleto(texto_cru: str) -> BoletoExtraido | None:
     try:
         return BoletoExtraido(**dados)
     except ValidationError as e:
-        logger.warning("Boleto extraído não passou na validação: %s", e)
+        logger.warning("Boleto extraído não passou na validação: {}", e)
         return None

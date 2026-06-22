@@ -118,7 +118,7 @@ def _validar(dados: dict) -> CopywriterResponse | None:
         return CopywriterResponse(**dados)
 
     except ValidationError as e:
-        logger.warning("Resposta da LLM não passou na validação: %s", e)
+        logger.warning("Resposta da LLM não passou na validação: {}", e)
         return None
 
 

@@ -18,5 +18,5 @@ def parse_resposta(texto_cru: str) -> ExtrairProjetoResponse | None:
     try:
         return ExtrairProjetoResponse(**dados)
     except ValidationError as e:
-        logger.warning("Extração de projeto freela não validou: %s", e)
+        logger.warning("Extração de projeto freela não validou: {}", e)
         return None

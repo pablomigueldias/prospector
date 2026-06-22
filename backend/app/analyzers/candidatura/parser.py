@@ -39,7 +39,7 @@ def parse_resposta(texto_cru: str) -> GerarCandidaturaResponse | None:
             carta = CartaCandidatura(**bloco_carta)
 
     except ValidationError as e:
-        logger.warning("Candidatura não passou na validação: %s", e)
+        logger.warning("Candidatura não passou na validação: {}", e)
         return None
 
     return GerarCandidaturaResponse(

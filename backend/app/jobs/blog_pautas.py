@@ -34,10 +34,10 @@ async def rotina_pautas() -> dict:
             BlogPautaGerarRequest(quantidade=settings.blog_pautas_gerar)
         )
     except Exception as e:  # noqa: BLE001 — cron nunca derruba o processo
-        logger.warning("blog_pautas: falha ao gerar (%s)", e)
+        logger.warning("blog_pautas: falha ao gerar ({})", e)
         return {"geradas": 0, "motivo": f"erro: {e}"}
 
-    logger.info("blog_pautas: %d pautas novas no backlog", len(novas))
+    logger.info("blog_pautas: {} pautas novas no backlog", len(novas))
 
     if settings.telegram_chat_id and settings.telegram_bot_token and novas:
         linhas = "\n".join(f"• {p.titulo}" for p in novas[:5])
@@ -48,6 +48,6 @@ async def rotina_pautas() -> dict:
                 f"📝 Blog: gerei {len(novas)} pautas novas pra revisar:\n{linhas}",
             )
         except Exception as e:  # noqa: BLE001
-            logger.warning("blog_pautas: falha no aviso Telegram (%s)", e)
+            logger.warning("blog_pautas: falha no aviso Telegram ({})", e)
 
     return {"geradas": len(novas)}

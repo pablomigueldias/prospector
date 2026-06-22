@@ -103,7 +103,7 @@ def _chamar_llm(prompt: str, *, operacao: str) -> str:
     try:
         return gerar_texto(prompt, json_mode=True, agente="freela", operacao=operacao)
     except Exception as e:
-        logger.error("freela: falha na LLM (%s): %s", operacao, e)
+        logger.error("freela: falha na LLM ({}): {}", operacao, e)
         raise FreelaError(
             "Não consegui falar com o modelo de IA. "
             "Verifique a conexão/configuração e tente de novo."

@@ -20,7 +20,7 @@ def parse_resposta(texto_cru: str) -> tuple[AnaliseVaga, MatchVaga] | None:
         analise = AnaliseVaga(**(dados.get("analise") or {}))
         match = MatchVaga(**(dados.get("match") or {}))
     except ValidationError as e:
-        logger.warning("Análise de vaga não passou na validação: %s", e)
+        logger.warning("Análise de vaga não passou na validação: {}", e)
         return None
 
     # Garante aderência num intervalo sano

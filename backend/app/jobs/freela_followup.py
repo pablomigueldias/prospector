@@ -69,5 +69,5 @@ async def lembrete_followup(ref: datetime | None = None) -> dict:
         await asyncio.to_thread(tg.send_message, chat_id, texto)
         return {"enviados": 1, "pendentes": len(pendentes)}
     except Exception as e:  # nunca derruba a rotina por causa de envio
-        logger.warning("Falha ao enviar follow-up do freela: %s", e)
+        logger.warning("Falha ao enviar follow-up do freela: {}", e)
         return {"enviados": 0, "pendentes": len(pendentes), "erro": str(e)}

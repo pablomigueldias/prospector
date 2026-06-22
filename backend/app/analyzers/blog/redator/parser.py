@@ -24,7 +24,7 @@ def parse_resposta(texto_cru: str) -> BlogRedacao | None:
     try:
         red = BlogRedacao(**dados)
     except ValidationError as e:
-        logger.warning("Redação de blog não validou: %s", e)
+        logger.warning("Redação de blog não validou: {}", e)
         return None
 
     if not (red.body_md or "").strip() or not (red.title or "").strip():

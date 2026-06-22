@@ -23,5 +23,5 @@ async def webhook(request: Request) -> dict:
         await bot_service.processar_update(update)
     except Exception as e:
         # Nunca devolve erro pro Telegram (senão ele reenvia em loop); loga.
-        logger.exception("Erro processando update do Telegram: %s", e)
+        logger.exception("Erro processando update do Telegram: {}", e)
     return {"ok": True}

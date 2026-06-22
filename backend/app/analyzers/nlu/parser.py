@@ -18,5 +18,5 @@ def parse_nlu(texto_cru: str) -> NLUResult | None:
     try:
         return NLUResult(**dados)
     except ValidationError as e:
-        logger.warning("NLU não passou na validação: %s", e)
+        logger.warning("NLU não passou na validação: {}", e)
         return None

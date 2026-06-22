@@ -18,5 +18,5 @@ def parse_resposta(texto_cru: str) -> ExtrairVagaResponse | None:
     try:
         return ExtrairVagaResponse(**dados)
     except ValidationError as e:
-        logger.warning("Extração de vaga não validou: %s", e)
+        logger.warning("Extração de vaga não validou: {}", e)
         return None

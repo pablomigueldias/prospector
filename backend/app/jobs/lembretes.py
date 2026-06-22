@@ -190,7 +190,7 @@ async def enviar_lembretes(ref: date | None = None) -> dict:
                 await asyncio.to_thread(tg.send_message, chat_id, texto)
                 enviados += 1
             except Exception as e:  # nunca derruba a rotina por causa de envio
-                logger.warning("Falha ao enviar lembrete pro chat %s: %s", chat_id, e)
+                logger.warning("Falha ao enviar lembrete pro chat {}: {}", chat_id, e)
     return {"enviados": enviados}
 
 

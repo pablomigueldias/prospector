@@ -40,7 +40,7 @@ async def rotina_briefing() -> dict:
             tg.send_message(chat_id, b.texto)
             return {"enviado": True, "data": b.data}
         except Exception as e:  # noqa: BLE001
-            logger.warning("briefing: falha ao enviar Telegram: %s", e)
+            logger.warning("briefing: falha ao enviar Telegram: {}", e)
     return {"enviado": False, "data": b.data, "motivo": "sem telegram"}
 
 

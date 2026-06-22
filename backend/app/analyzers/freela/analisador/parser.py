@@ -19,7 +19,7 @@ def parse_resposta(texto_cru: str) -> AnaliseFreela | None:
     try:
         analise = AnaliseFreela(**dados)
     except ValidationError as e:
-        logger.warning("Análise de projeto freela não validou: %s", e)
+        logger.warning("Análise de projeto freela não validou: {}", e)
         return None
 
     analise.fit_score = max(0, min(100, int(analise.fit_score or 0)))

@@ -18,5 +18,5 @@ def parse_certificado(texto_cru: str) -> CertificadoExtraido | None:
     try:
         return CertificadoExtraido(**dados)
     except ValidationError as e:
-        logger.warning("Certificado extraído não passou na validação: %s", e)
+        logger.warning("Certificado extraído não passou na validação: {}", e)
         return None

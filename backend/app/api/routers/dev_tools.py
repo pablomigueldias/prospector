@@ -85,7 +85,7 @@ async def sync_prod_to_dev(_: Usuario = Depends(usuario_atual)) -> dict:
 
     log = (out or b"").decode("utf-8", "replace")
     if proc.returncode != 0:
-        logger.error("Sync produção→dev falhou (rc=%s):\n%s", proc.returncode, log)
+        logger.error("Sync produção→dev falhou (rc={}):\n{}", proc.returncode, log)
         raise HTTPException(
             status_code=500,
             detail=f"Sync falhou (rc={proc.returncode}). {log.strip()[-400:]}",
@@ -100,7 +100,7 @@ async def sync_prod_to_dev(_: Usuario = Depends(usuario_atual)) -> dict:
     try:
         email = await _resetar_senha_admin_dev()
     except Exception as e:  # nunca falha o sync por causa do reset
-        logger.error("Reset de senha pós-sync falhou: %s", e)
+        logger.error("Reset de senha pós-sync falhou: {}", e)
         email = None
 
     if email:

@@ -18,7 +18,7 @@ def parse_resposta(texto_cru: str) -> ChecklistResponse | None:
     try:
         resp = ChecklistResponse(proposta_id="", **dados)
     except ValidationError as e:
-        logger.warning("Checklist de proposta não validou: %s", e)
+        logger.warning("Checklist de proposta não validou: {}", e)
         return None
     resp.score = max(0, min(100, int(resp.score or 0)))
     return resp

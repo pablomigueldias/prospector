@@ -57,7 +57,7 @@ async def registrar(
             ))
             await session.commit()
     except Exception as e:  # noqa: BLE001 — memória é acessória
-        logger.warning("memoria_service.registrar falhou: %s", e)
+        logger.warning("memoria_service.registrar falhou: {}", e)
 
 
 async def criar(p: EventoCreate) -> EventoOut:
