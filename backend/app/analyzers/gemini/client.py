@@ -13,9 +13,15 @@ from app.utils.logger import get_logger
 
 logger = get_logger()
 
-# gemini-2.5-flash andou com 0% de disponibilidade (503 "high demand" em massa);
-# o 3.5-flash é mais novo, melhor e estava estável (~5/6) com a mesma chave.
+# Fallback final do modelo de texto. O valor EFETIVO vem de `settings.gemini_model`
+# (editável na tela de Configurações); gemini-2.5-flash andou com 0% de
+# disponibilidade (503 "high demand"), por isso o default é o 3.5-flash.
 MODEL = "gemini-3.5-flash"
+
+
+def _modelo_padrao() -> str:
+    """Modelo de texto efetivo (override da UI em runtime → fallback constante)."""
+    return getattr(settings, "gemini_model", "") or MODEL
 BASE_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
 TIMEOUT_SECONDS = 60.0
 
@@ -57,7 +63,7 @@ def _request_gemini(
             "Pegue uma chave gratuita em https://aistudio.google.com/apikey"
         )
 
-    modelo = model or MODEL
+    modelo = model or _modelo_padrao()
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
         f"{modelo}:generateContent"
@@ -186,7 +192,7 @@ def gerar_conteudo(
 
     from app.db.observability import AiCallRecord, register_ai_call
 
-    modelo = model or MODEL
+    modelo = model or _modelo_padrao()
     inicio = time.perf_counter()
     try:
         texto, meta = _request_gemini(prompt, response_json, model=modelo)

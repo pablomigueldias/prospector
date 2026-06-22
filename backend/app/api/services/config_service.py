@@ -70,6 +70,20 @@ CATALOGO: tuple[ConfigItem, ...] = (
     ConfigItem("llm_provider", "LLM", "Provedor de IA primário", "select",
                "Modelo primário (com fallback automático Gemini → Groq).",
                opcoes=("gemini", "groq")),
+    ConfigItem("gemini_model", "LLM", "Modelo Gemini (geral)", "select",
+               "Modelo de texto de todos os agentes menos o Blog. Se um modelo "
+               "ficar instável (503 'high demand'), troque aqui sem mexer no código.",
+               opcoes=(
+                   "gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash",
+                   "gemini-2.5-flash-lite", "gemini-3-flash-preview",
+               )),
+    ConfigItem("gemini_model_blog", "LLM", "Modelo Gemini (blog)", "select",
+               "Modelo de texto do agente Blog (público/SEO, baixo volume → vale "
+               "um Pro pela qualidade).",
+               opcoes=(
+                   "gemini-2.5-pro", "gemini-pro-latest", "gemini-3-pro-preview",
+                   "gemini-3.5-flash",
+               )),
     # ── Orçamento ──
     ConfigItem("orcamento_alerta_pct", "Orçamento",
                "Alerta de categoria acima de (%)", "int", "",

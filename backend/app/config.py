@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     notion_db_projetos: str = "35a6c23e-8c3c-8012-9054-eecead911b30"
 
     gemini_api_key: str = ""
+    # Modelo de TEXTO padrão (todos os agentes menos o Blog). Editável na tela de
+    # Configurações (chave `gemini_model`). gemini-2.5-flash andou com 0% de
+    # disponibilidade (503 "high demand"); 3.5-flash é mais novo e estável.
+    gemini_model: str = "gemini-3.5-flash"
     # Modelo de geração de IMAGEM (capa/seções do blog, B-IMG). O image_client
     # roteia sozinho pela API certa: `imagen-*` → :predict; `gemini-*` →
     # :generateContent. Blog é ≤1 post/dia → custo irrisório, então usa o TOPO:
