@@ -26,7 +26,7 @@
 |---|---|---|
 | **Vagas** | ✅ bom | CRUD por JD, analisar (match/gaps/veredito), candidatura, currículo ATS, pipeline, funil, plano-de-gaps (**ranking "O que estudar" corrigido**). *Pablo: "só falta lapidar o modelo de IA".* |
 | **Freela** | ✅ **essencialmente fechado** | Agente especializado + gestão total na tela + autonomia (cadeia coordenador). Detalhe em `FREELA_FEITO.md`. **Pablo satisfeito (2026-06-20); resto = manutenção** (§2). |
-| **Site (Reative Systems)** | 🟢 **próximo foco** | Next.js institucional headless-ready (`NEXT_PUBLIC_API_URL`). **P5:** studio vira o cérebro (blog headless + LinkedIn + docs). Começar pelo **agente de blog** (§6). |
+| **Blog / Site (Reative Systems)** | ✅ **NO AR (2026-06-21)** | Agente de blog headless **completo e em produção** (studio ⇄ site Vercel ⇄ cdn de imagens); SEO completo. Detalhe em `BLOG_FEITO.md`. Falta **B5/LinkedIn** (§6.C) e **pendências** (§6.F: form de contato, custo na observabilidade). |
 | **CRM** | ✅ completo | 5 seções (Empresas/Contatos/Negócios/Atividades/Projetos) fora do Notion, CRUD, filtros, pipeline+forecast, ficha 360, dashboard, edição inline, drawer, opções gerenciáveis. |
 | **MAS (multi-agente)** | ✅ núcleo | Memória compartilhada (blackboard), coordenador (cadeia candidatura), outcomes, briefing noturno. Subiu a escada inteira do curso. |
 | **Self-service (Parte 1)** | ✅ núcleo | Cockpit (S1), Observabilidade (S2), Configurações na UI (S3), Agendamentos (S4), Export/Backup (S8). Falta S5–S7. |
@@ -39,7 +39,7 @@
 
 ## 1. O caminho único (prioridades)
 
-1. 🟢 **P5 — Reative Systems: Presença & Conteúdo** (🆕 FOCO ATUAL, 2026-06-20): **agente de blog** (começar) → **LinkedIn** → **Docs-keeper**. O studio vira o cérebro headless do site. (§6)
+1. 🟢 **P5 — Reative Systems: Presença & Conteúdo** (2026-06-21): **agente de blog ✅ NO AR** → próximo: **LinkedIn** (B5/§6.C) → **Docs-keeper**. Pendências do site em §6.F. (§6 / `BLOG_FEITO.md`)
 2. 🟡 **P2 — Novos agentes** de captação/comercial: **Propostas Comerciais, Radar de Oportunidades, Outbound**. (§3)
 3. 🟢 **P3 — Vagas**: **lapidar o modelo de IA** (+ backlog de conveniência). (§4)
 4. ✅ **P1 — Freela**: essencialmente fechado → **manutenção** (Pablo satisfeito, vai testar). (§2)
@@ -164,152 +164,24 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 > **SEO/palavras-chave (ranquear no Google p/ recrutador E cliente) + projetos feitos viram case +
 > tendências do setor**.
 
-### 6.A Arquitetura da linkagem (studio ⇄ site) — base de tudo
-> A "linkagem que o Pablo não sabia fazer". Resposta: **o site chama a API do studio.**
-> **Análise pré-build (2026-06-20):** confirmado no código. Site mora em `~/Documentos/Reative Systems`
-> (repo git próprio, branch `main`). **Achados que mudam o contrato** (entram no B0 pra não refatorar):
-> (1) hoje TODO router do studio é autenticado (`require_permission`) — a API pública é **padrão novo**
-> (`/api/public/blog`, sem auth/CSRF, com `Cache-Control`/ETag); (2) `s3_storage.presigned_url` **expira
-> em 1h** — blog público precisa de **URL permanente** → puxa a task §5.4 "MinIO atrás do Caddy" pra DENTRO
-> do B0; (3) o site usa **`coverClass`** (classe CSS, não URL), `date`/`readTime` como string e **corpo
-> ReactNode (JSX), não markdown** — o B0 no site = renderer markdown + trocar `coverClass`→`cover_url`.
-- **Studio = hub headless.** Nova vertical slice `blog` no backend (FastAPI): tabela `blog_post`
-  (categoria **Reative**, não-pessoal → `db/models/blog/`), API **pública** read-only (só `status=publicado`
-  E `published_at<=now()`) + API **admin** (CRUD / gerar / aprovar, B1+).
-- **Site consome a API.** `lib/api/client.ts` usa `NEXT_PUBLIC_API_URL` (vazio→mock). Setar
-  `NEXT_PUBLIC_API_URL=https://studio.reativesystems.com.br` + `CORS_ORIGINS` no studio liberando o
-  domínio. O blog do site passa a **buscar via ISR** (`revalidate`) em vez de TSX hardcoded.
-- **Corpo em Markdown** (amigável pro agente) renderizado no site (react-markdown/MDX), reusando
-  `blog.css`/`app/blog/[slug]`. Migrar o post hardcoded (`lib/content/posts.tsx`) pro banco prova o cano.
-- **Modelo `blog_post` (enriquecido — pro JSON-LD/SEO já nascer completo):** `slug(unique), title,
-  excerpt, category, cover_url, cover_alt, cover_class(fallback p/ migração), body_md, toc(jsonb),
-  status(rascunho|aprovado|publicado|arquivado), author, lang, tags(jsonb[]), reading_time, word_count,
-  noindex, seo(meta_description, keyword_alvo, keywords[], og_image, og_title, og_description),
-  imagens(jsonb: [{papel:cover|secao, url, origem:gerada|editada, prompt, alt}]),
-  fonte(projeto|seo|tendencia|brief), published_at(=gate de agendamento), created/updated`. *(migração)*
-- **`blog_redirect`** (`slug_antigo→slug_novo`): renomear post publicado sem 404/perder ranking (301).
-- **`blog_pauta`** (B3): backlog de pautas é entidade própria (pauta→vira post), não `status` do post.
-- **SEO de plataforma:** endpoints `/sitemap.xml` + `/feed.xml` (RSS) servidos pelo studio a partir de
-  `published_at`/`updated_at`; JSON-LD `BlogPosting` montado no site com `author`/`datePublished`/`dateModified`/`image`.
-- **Imagens** ficam no **MinIO/S3** (`s3_*` no `config.py`) com **URL pública permanente** (Caddy);
-  `body_md`/`cover_url`/`og_image` referenciam essa URL.
-- **Anti-mentira no redator (crítico):** cases vêm dos projetos reais do Perfil Mestre; prompt **proíbe
-  métricas/clientes inventados** (mesma trava do freela — `[[perfil-mestre-estado]]`).
-- **Loop de outcomes:** contar views/cliques no CTA (evento) p/ medir qual pauta converte (integra S2).
+### 6.A–6.E — ✅ FEITO E EM PRODUÇÃO (ver `docs/BLOG_FEITO.md`)
+> Agente de blog **completo e no ar** (2026-06-21): studio (API pública+admin) ⇄ site (Vercel, ISR) +
+> cdn de imagens (`cdn.reativesystems.com.br`). Arquitetura, fatias **B0–B4 + B-IMG/+**, SEO completo,
+> deploy de produção e bugs resolvidos → movidos pra **`docs/BLOG_FEITO.md`** (não inflar o plano).
+> O que falta do blog está abaixo (B5) e em **§6.F** (pendências).
 
-### 6.B 🟢 Agente de Blog (especialista) — DETALHADO (começar por aqui)
-Pipeline espelha o padrão existente (analyzer `prompt_builder`+`parser` → service → coordenador como
-`proposta_freela`), com **checkpoint humano**:
-1. **Motor de pauta** — gera/ranqueia temas de 3 fontes: (a) **projetos feitos** (o studio já sabe o
-   que o Pablo construiu → vira case/prova de competência), (b) **SEO/palavras-chave** (queries que
-   PME/recrutador/cliente buscam no Google → intenção + volume + dificuldade), (c) **tendências**
-   (IA/automação/dados). Saída: backlog de pautas com `keyword_alvo`, intenção (informacional/comercial),
-   público-alvo (recrutador|cliente), estágio de funil.
-2. **Briefing da pauta** — outline (TOC), keyword primária + secundárias, intenção de busca, CTA
-   (serviço/contratar), tom Reative.
-3. **Redator** — artigo completo em Markdown: título SEO, meta description, corpo com os headings do
-   TOC, **links internos** (pras páginas `/servicos`), CTA. Voz do Pablo/Reative.
-4. **Checklist SEO** (gate 0–100, anti-keyword-stuffing): keyword no título/H1/1º parágrafo/meta/slug,
-   tamanho do texto, legibilidade, links internos, alt de imagem, meta description 150–160 chars.
-   Espelha o checklist anti-genérico do freela.
-5. **Imagens (Gemini)** — gera capa + imagens de seção via **Gemini** (Imagen 3/4 `:predict` p/
-   qualidade, ou Gemini 2.x Flash Image `:generateContent` p/ inline/editável). Reusa a REST de Gemini
-   que já existe. As imagens entram como **rascunho de asset**: ficam pra **Pablo baixar, editar fora
-   e reenviar a versão final ANTES de publicar** (decisão dele 2026-06-20). Salvas no MinIO/S3.
-6. **Checkpoint humano** — salva `rascunho` (texto + imagens geradas); Pablo revisa no studio (preview
-   do markdown + score SEO + baixar/trocar imagens) → **Aprovar** vira `publicado` (seta
-   `published_at`); o site pega no próximo ISR.
-7. **(depois) Distribuição** — ao publicar, dispara o **agente LinkedIn** pra um post de divulgação
-   linkando de volta (cross-agent via memória compartilhada, `alvo_tipo="blog"`).
-
-**Fatias (cada uma = 1 commit testável):**
-- [x] 🟢 **B0 — Cano ponta-a-ponta (linkagem) — FUNDAÇÃO COMPLETA (feito 2026-06-20, verde):**
-  **Backend (studio):** modelo enriquecido `blog_post` + `blog_redirect` + migração `f3b9c1d4e7a2`; API
-  **pública** `/api/public/blog` (list/get publicado, sem auth/CSRF, `Cache-Control`, 301 em slug
-  renomeado) + `/sitemap.xml` + `/feed.xml`; `s3_storage.public_url` (URL permanente) + config
-  (`s3_public_url`, `s3_bucket_blog`, `site_url`); smoke `tests/test_blog_public_api.py` (6 testes).
-  **Site (`Reative Systems`):** client `lib/api/blog.ts` + camada `lib/blog/source.tsx` (API via ISR,
-  fallback local), renderer Markdown (`react-markdown`+`remark-gfm`+`rehype-slug`+`rehype-highlight`,
-  TOC casa via `github-slugger`), `cover_url`→`<img>` com fallback `coverClass`, página índice `/blog`,
-  Blog de volta na home + item no menu, metadata/OG a partir do `seo`. Migração: `scripts/seed_blog.py`
-  levou os 3 posts hardcoded pro banco. **Verificado:** `npm run build` com `NEXT_PUBLIC_API_URL`
-  pré-renderiza os 3 posts do studio. **Falta só infra:** MinIO atrás do Caddy (§5.4) + `CORS_ORIGINS`
-  prod (CORS é dispensável pro blog — fetch é server-side/ISR, não browser).
-- [x] 🟢 **B1 — CRUD + UI no studio (feito 2026-06-20/21, build verde):** agente "Blog" no `registry.py`
-  (`category="Reative Systems"`, order 19, ícone `ti-news`); API admin `/api/blog` (auth `blog.editar` —
-  permissão nova no catálogo + seed) com CRUD + `PATCH /status` (publicar carimba `published_at`) +
-  redirect 301 automático no rename; service `blog_service/admin.py` (slug único, métricas, gate);
-  smoke `tests/test_blog_admin.py`. **Front:** `lib/api/blog.ts`+`hooks/useBlog.ts`+
-  `components/blog/BlogScreen.tsx` (abas por status, lista com publicar/despublicar/apagar, editor
-  Markdown + campos SEO com contador de meta description) ligado no `pages/agents/[slug].tsx`.
-- [x] 🟢 **B2 — Redator + checklist SEO + checkpoint (feito 2026-06-21, verde — testado c/ Gemini real):**
-  analyzer `analyzers/blog/redator` (prompt_builder+parser, **anti-mentira** ancorado no Perfil Mestre,
-  espelha o redator do freela) → `body_md` completo; **checklist SEO determinístico**
-  (`analyzers/blog/checklist_seo.py`, gate 0-100, **anti-keyword-stuffing** = densidade alta vira fail);
-  service `blog_service/agente.py` (`redigir` PARA no rascunho/devolve pro editor; `checklist` puro);
-  rotas admin `POST /api/blog/redigir` + `POST /api/blog/checklist`; smoke `tests/test_blog_seo.py`.
-  **Front:** no editor da `BlogScreen`, "✨ Gerar com IA" (brief → preenche o form) + "Checar SEO"
-  (painel com score + itens pendentes). Geração real rendeu artigo de ~1000 palavras, score 88.
-- [x] 🟢 **B-IMG — Imagens (Gemini) (feito 2026-06-21, verde — testado c/ Imagen 4 real):** cliente
-  `analyzers/gemini/image_client.py` (Imagen `:predict`, modelo `gemini_image_model` default
-  `imagen-4.0-generate-001`) → `blog_service/imagens.py` sobe pro **MinIO com bucket de leitura pública**
-  (`s3_storage.ensure_public_bucket` + `public_url` permanente) e grava em `imagens`/`cover_url`. Rotas
-  `POST /api/blog/posts/{id}/imagem` (gera) e `/imagem/upload` (versão **editada** pelo Pablo via
-  multipart). Front: `ImagensPanel` no editor (preview da capa + "✨ Gerar capa" + "Enviar imagem").
-  *Decisão Pablo:* IA gera rascunho → baixar/editar fora/reenviar final antes de publicar. **Em prod:**
-  expor o MinIO atrás do Caddy (§5.4) pra a URL pública abrir no domínio (em dev abre via localhost:9000).
-- [x] 🟢 **B-IMG+ — Imagens NO CONTEÚDO + sugestões + fix 16:9 (feito 2026-06-21, verde, c/ Imagen real):**
-  (1) redator insere marcadores `{{IMG: prompt-en || alt-pt}}` → `imagens.gerar_conteudo` preenche; (2)
-  **sugestões de imagem do corpo iguais às da capa** (`analyzers/blog/conteudo_img`, ancoradas em H2):
-  rotas `/imagem/conteudo/sugestoes` + `/imagem/conteudo/inserir` (gera e insere `![alt](url)` após a
-  seção); editor com cards "Gerar e inserir". (3) **FIX:** `image_client._higienizar_prompt` remove
-  `16:9`/`4:3`/`1920x1080`/"aspect ratio" do texto + trava anti-texto — o Imagen desenhava "16:9" como
-  letra na capa; redator/capa também proíbem proporção no prompt. **Decisão prod (MinIO):** subdomínio
-  **`cdn.reativesystems.com.br`** (só o bucket `blog` público; demais privados) → `S3_PUBLIC_URL`.
-- [x] 🟢 **B3 — Motor de pauta (feito 2026-06-21, verde — testado c/ Gemini real):** entidade própria
-  `blog_pauta` (migração `a7c2e5f9b1d8`) + analyzer `analyzers/blog/pauta` (3 fontes: projeto/seo/
-  tendência, ancorado no Perfil Mestre, com score 0-100) + `blog_service/pauta.py` (gerar com dedup +
-  CRUD) + rotas `/api/blog/pautas*` + smoke `tests/test_blog_pauta.py`. **Front:** aba **Pautas** na
-  `BlogScreen` (gerar c/ foco/sementes, lista por score, "Escrever" → abre o editor com o brief
-  prefilled e marca a pauta como escrita ao salvar). Geração real rendeu 4 pautas ranqueadas das 3 fontes.
-- [x] 🟢 **B4 — Coordenador (1 clique pauta→rascunho) + agendamento + cron (feito 2026-06-21, verde —
-  testado c/ Gemini real):** `blog_service/coordenador.py` encadeia pauta → redator (B2) → post rascunho
-  → liga a pauta (status escrita) — rota `POST /api/blog/pautas/{id}/escrever`; no front, "Escrever" virou
-  **1-clique** (gera, salva e abre o rascunho pra revisão). **Agendamento:** `published_at` editável no
-  editor (campo datetime-local) — o gate público já esconde data futura = calendário editorial enxuto.
-  **Cron:** `jobs/blog_pautas.py` (semanal, top-up do backlog + aviso Telegram), guardado por
-  `blog_pautas_cron_enabled` (default off), registrado no lifespan. Teste real: pauta→rascunho de ~1000
-  palavras, SEO 92, pauta linkada.
+### 6.B — Falta no agente de blog
 - [ ] 🟢 **B5 — Cross-agent:** publicar → divulgação automática no LinkedIn (depende do §6.C).
 
-> **Status (2026-06-21):** código B0–B4 + B-IMG + sugestão de capa **feito, testado e PUSHADO**
-> (studio `feat/blog-agente-headless` → `prospector`; site `feat/blog-headless-b0` → `reative-site`).
-> Falta só **ATIVAR** (infra/config), abaixo.
 
-### 6.E ✅ ATIVAÇÃO LOCAL provada (2026-06-21) / ⏳ produção pendente
-> **Causa raiz confirmada do "publiquei e não replicou":** o site não tinha `.env.local`, então usava o
-> **fallback local** (`lib/content`) e nunca consultava o studio. **Resolvido em dev:** criado
-> `Reative Systems/.env.local` com `NEXT_PUBLIC_API_URL=http://localhost:8000` (gitignored). Backend local
-> (já rodava na :8000) verificado servindo `GET /api/public/blog/posts` (3 publicados, incl. 1 gerado por
-> IA com capa), detalhe `[slug]`, `sitemap.xml`, `feed.xml` (todos 200) e a capa no MinIO (200 `image/png`,
-> bucket público OK). **Falta só o usuário reiniciar o `npm run dev` do site** (env é lida no startup;
-> limpar `.next` antes evita o `MODULE_NOT_FOUND` de build/dev misturados). **Produção** segue pelo
-> checklist abaixo.
-> Checklist na ordem (o item 1 é quase certo o motivo):
-> 1. **`NEXT_PUBLIC_API_URL` no site** apontando pro studio (ex.: `https://studio.reativesystems.com.br`).
->    Sem isso o site usa o **fallback local** (`lib/content`) e ignora o banco. É **build-time** no Next:
->    setar a env **e rebuildar/redeployar** o site. (Em dev: `.env.local` + reiniciar `npm run dev`.)
-> 2. **Studio acessível** publicamente e **`CORS_ORIGINS`** com o domínio do site (CORS não é estritamente
->    necessário pro fetch server-side/ISR, mas configurar evita dor no client-side).
-> 3. **ISR**: a lista revalida a cada 300s e o post a cada 600s → pode levar até ~10 min; ou redeploy força.
-> 4. **Gate de publicação**: o público só vê `status=publicado` **E** `published_at <= agora`. Se publicou
->    **agendado** (data futura), não aparece até a data. Conferir no editor.
-> 5. **Imagens**: cobertura abre via URL do MinIO; em prod precisa do **MinIO atrás do Caddy** (§5.4) +
->    `S3_PUBLIC_URL`, senão a `cover_url` aponta pra `localhost:9000` e quebra.
-> 6. **Deploy do backend**: rodar `python -m app.jobs.seed_admin` (permissão `blog.editar`); as 2 migrações
->    do blog (`blog_post`, `blog_pauta`) rodam no start do container.
-> **Próximo passo recomendado:** abrir PR das 2 branches → deploy do studio → setar as 2 envs no site →
-> rebuild do site → testar `GET https://studio.../api/public/blog/posts` e depois a página `/blog`.
+### 6.F ⏳ Pendências do site/blog (registradas 2026-06-21 — NÃO resolver agora)
+- [ ] 🔴 **Formulário "Entrar em contato" do site não envia** — hoje o submit não vai pra lugar nenhum.
+  Rotear pro **e-mail da empresa** (`contato@reativesystems.com.br`) — ex.: serverless do Vercel +
+  Resend/SMTP, com confirmação pro usuário. O CTA de todo post já aponta pra `/#contato`, então isso
+  **destrava o funil inteiro** do blog. (Pablo: prioridade quando for resolver.)
+- [ ] 🟡 **Observabilidade não captura o CUSTO** das chamadas de IA (coluna $ = $0.00 na tela "Últimas
+  chamadas") — falta a **tabela de preço por modelo** (gemini-2.5-pro, gemini-3-pro-image, flash…) →
+  `tokens_input/output × preço`. É transversal (S2/observabilidade), aparece em todos os agentes.
 
 ### 6.C ⚪ Agente LinkedIn (próxima fase — esboço)
 > Manter o LinkedIn ativo e atrair recrutador + serviço.
