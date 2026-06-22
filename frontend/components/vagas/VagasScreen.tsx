@@ -105,7 +105,9 @@ export default function VagasScreen() {
           selecionada={selecionada}
           onSelecionar={setSelecionada}
         />
-        <div>
+        {/* min-w-0: sem isso a coluna 1fr cresce com conteúdo não-quebrável
+            (ex.: URL longa da vaga), estourando o card e a barra de etapas. */}
+        <div className="min-w-0">
           {selecionada ? (
             <VagaDetalhe
               key={selecionada}

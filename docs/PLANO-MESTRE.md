@@ -113,6 +113,7 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 - [ ] 🟢 **Kanban do pipeline** (arrastar card muda status).
 - [ ] 🟢 **Enviar candidatura com 1 clique** (opt-in, mailer, grava `enviado_em`, confirmação explícita).
 - [ ] 🟢 **Timeline de eventos por vaga** (reusar MAS-1 / `pessoal_vaga_eventos`).
+- [~] 🟢 **Polir UI do detalhe da vaga** — overflow corrigido (2026-06-22): coluna `1fr` do grid sem `min-w-0` deixava a URL longa estourar o card e a barra de etapas (`VagasScreen`). **Pendente:** revisar overflow/responsividade do detalhe inteiro (descrição longa, tags, salário) e em telas estreitas.
 
 ---
 
