@@ -53,7 +53,7 @@ def parse_resposta(texto_cru: str) -> CurriculoLLM | None:
             if isinstance(p, dict) and p.get("nome")
         ]
     except ValidationError as e:
-        logger.warning("Currículo não validou: %s", e)
+        logger.warning("Currículo não validou: {}", e)
         return None
 
     return CurriculoLLM(

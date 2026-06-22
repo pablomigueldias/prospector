@@ -101,6 +101,8 @@ def extrair_json(texto_cru: str) -> dict | list | None:
             pass
 
     logger.error(
-        "Não foi possível extrair JSON válido. Início: %s", texto_cru[:200]
+        "Não foi possível extrair JSON válido ({} chars). Conteúdo cru: {!r}",
+        len(texto_cru),
+        texto_cru[:800],
     )
     return None

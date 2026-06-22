@@ -520,7 +520,7 @@ async def gerar_candidatura(
 
         resultado.rascunho_id = str(email_row.id)
 
-    logger.info("Candidatura: rascunho gerado pra vaga %s", vaga_id)
+    logger.info("Candidatura: rascunho gerado pra vaga {}", vaga_id)
     return resultado
 
 
@@ -581,7 +581,7 @@ async def gerar_curriculo(vaga_id: str) -> GerarCurriculoResponse:
         )
         gerado_em = _iso(vaga.curriculo_gerado_em) if vaga else None
 
-    logger.info("Currículo: gerado e salvo pra vaga %s", vaga_id)
+    logger.info("Currículo: gerado e salvo pra vaga {}", vaga_id)
     return GerarCurriculoResponse(
         vaga_id=vaga_id, curriculo=curriculo, gerado_em=gerado_em
     )
@@ -615,7 +615,7 @@ def _chamar_llm(prompt: str, *, agente: str, operacao: str) -> str:
             prompt, json_mode=True, agente=agente, operacao=operacao
         )
     except Exception as e:
-        logger.error("%s: falha na LLM: %s", agente, e)
+        logger.error("{} ({}): falha na LLM: {}", agente, operacao, e)
         raise VagaError(
             "Não consegui falar com o modelo de IA. "
             "Verifique a conexão/configuração e tente de novo."

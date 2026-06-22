@@ -51,7 +51,9 @@ def _gerar_com_fallback(
         logger.info('Gemini bloqueado hoje - indo direto pro Groq')
         return groq_gerar(prompt, response_json=json_mode)
 
-    from app.analyzers.gemini.client import GeminiRateLimit
+    import httpx
+
+    from app.analyzers.gemini.client import GeminiIndisponivel, GeminiRateLimit
     from app.analyzers.gemini.client import gerar_conteudo as gemini_gerar
 
     try:
@@ -60,8 +62,15 @@ def _gerar_com_fallback(
             operacao=operacao, model=model,
         )
     except GeminiRateLimit:
+        # 429 = cota diária esgotada (dura o dia): marca e vai pro Groq até amanhã.
         _bloquear_gemini_hoje()
-        return groq_gerar(prompt,response_json=json_mode)
+        return groq_gerar(prompt, response_json=json_mode)
+    except (GeminiIndisponivel, httpx.TimeoutException, httpx.NetworkError) as e:
+        # Aqui só chega DEPOIS das 5 tentativas do client (pico de 503 longo). Sem
+        # bloquear o dia: na próxima chamada tenta o Gemini de novo. Groq é só a
+        # rede de segurança pra nunca travar o coordenador.
+        logger.warning("Gemini insistiu e segue indisponível ({}) — caindo pro Groq", e)
+        return groq_gerar(prompt, response_json=json_mode)
 
 
 

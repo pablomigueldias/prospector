@@ -34,9 +34,12 @@ class GeminiIndisponivel(GeminiError):
     """API fora do ar."""
 
 
+# 503 ("model overloaded") acontece mesmo no tier PAGO em picos do Google e some
+# em segundos. Insistimos no Gemini (5 tentativas, backoff até 30s ≈ ~58s no pior
+# caso) em vez de cair pro Groq — preferência do Pablo por manter a qualidade.
 @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=2, min=4, max=20),
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=2, min=4, max=30),
     retry=retry_if_exception_type(
         (httpx.TimeoutException, httpx.NetworkError, GeminiIndisponivel)
     ),
@@ -137,6 +140,15 @@ def _request_gemini(
             p.get("text", "") for p in parts if p.get("text") and not p.get("thought")
         ).strip()
         if not texto:
+            # Só sobraram partes de RACIOCÍNIO (thought): a resposta de verdade não
+            # veio. Cair pro pensamento quase sempre quebra o parse de JSON depois —
+            # logamos pra flagrar (vide gotcha das partes 'thought').
+            logger.warning(
+                "Gemini devolveu só parte(s) de raciocínio, sem resposta. "
+                "finishReason={}, partes={}",
+                finish_reason,
+                [{"thought": p.get("thought"), "chars": len(p.get("text", ""))} for p in parts],
+            )
             texto = "".join(p.get("text", "") for p in parts if p.get("text")).strip()
         if not texto:
             raise GeminiError("Gemini devolveu texto vazio")
