@@ -201,6 +201,9 @@ class BlogRedacao(BaseModel):
     body_md: str
     og_title: str | None = None
     og_description: str | None = None
+    # Recursos/ofertas que o texto menciona mas que talvez não existam — pro Pablo
+    # criar ou remover (anti-mentira: não prometer o que não tem).
+    pendencias: list[str] = Field(default_factory=list)
 
 
 class ChecklistSeoRequest(BaseModel):

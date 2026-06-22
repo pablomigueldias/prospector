@@ -21,7 +21,8 @@ OUTPUT_SCHEMA = """
   "toc": [{"id": "<slug-do-heading>", "label": "<texto do heading H2>"}],
   "body_md": "<ARTIGO COMPLETO em Markdown GFM. Veja as REGRAS DE CORPO abaixo.>",
   "og_title": "<título p/ compartilhamento (pode = title)>",
-  "og_description": "<descrição p/ compartilhamento (pode = meta_description)>"
+  "og_description": "<descrição p/ compartilhamento (pode = meta_description)>",
+  "pendencias": ["<recursos/ofertas que o texto menciona mas que talvez não existam ainda — pro Pablo criar/remover; [] se nada>"]
 }
 """
 
@@ -74,6 +75,18 @@ REGRAS ANTI-MENTIRA (inegociáveis):
 - NÃO invente depoimentos, nomes de clientes, prêmios ou parcerias.
 - Conteúdo educativo genérico (boas práticas, conceitos) é livre — a trava é
   sobre alegar feitos/resultados específicos não comprovados.
+- NÃO OFEREÇA O QUE NÃO EXISTE: nunca prometa recursos/brindes que a Reative pode
+  não ter — planilhas, templates, e-books, checklists, ferramentas/calculadoras
+  grátis, "bônus", kits, demos, ou frases como "(link para download virá aqui)".
+  NÃO crie placeholders de download. O único CTA do post é FALAR com a Reative
+  (o site renderiza o botão — não escreva botão/CTA de agendamento/download no
+  corpo). Se o tema realmente se beneficiaria de um material de apoio, NÃO finja
+  que ele existe: explique o conceito e LISTE esse material em `pendencias`.
+
+PENDÊNCIAS: em `pendencias`, liste (curto) qualquer recurso/oferta que o texto
+MENCIONE mas que talvez ainda NÃO exista (ex.: "planilha de estimativa de
+projeto", "calculadora de ROI"), pro Pablo decidir criar ou remover. Se o post
+não promete nada externo, devolva `[]`.
 
 Português brasileiro, segunda pessoa ("você"), tom da Reative: claro, honesto,
 sem promessa exagerada. Responda APENAS com JSON. Sem markdown fora do JSON.

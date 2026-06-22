@@ -14,6 +14,21 @@ from app.api.schemas.blog import ChecklistItem, ChecklistSeoResponse
 
 _PESO = {"ok": 1.0, "warn": 0.5, "fail": 0.0}
 
+# Placeholders/ofertas que sinalizam um recurso prometido que talvez não exista
+# (planilha pra baixar, e-book, bônus, "link virá aqui"…). Vira pendência.
+_OFERTA_RE = re.compile(
+    r"\([^)]*link[^)]*\)"
+    r"|link para download|vir[áa] aqui|dispon[íi]vel para download"
+    r"|fa[çc]a o download|baixe (a|o|aqui|agora|gr[áa]tis|abaixo)"
+    r"|clique para baixar|download (gr[áa]tis|gratuito)"
+    r"|b[ôo]nus\b|e-?book|infogr[áa]fico para baixar"
+    r"|template (gr[áa]tis|gratuito)|modelo para (baixar|download)"
+    r"|planilha (gr[áa]tis|gratuita|para (baixar|download)|abaixo|em anexo)"
+    r"|material (gr[áa]tis|gratuito|de apoio)|kit (gr[áa]tis|gratuito)"
+    r"|calculadora (gr[áa]tis|gratuita)|checklist (gr[áa]tis|gratuito|para baixar)",
+    re.IGNORECASE,
+)
+
 
 def _norm(s: str) -> str:
     """minúsculo + sem acento — comparação robusta de keyword."""
@@ -149,6 +164,18 @@ def avaliar(
     add("excerpt", "Resumo (excerpt) preenchido",
         "ok" if (excerpt or "").strip() else "warn",
         "Um bom resumo melhora o CTR no Google e nos cards.")
+
+    # ── Pendência: o post oferece recurso/oferta que talvez não exista? ──
+    # (anti-mentira) placeholders e brindes que precisam de um material real.
+    ofertas = sorted({
+        m.group(0).strip() for m in _OFERTA_RE.finditer(body)
+    })
+    if ofertas:
+        add("oferta_fantasma",
+            f"Pendência: promete recurso que pode não existir ({len(ofertas)})",
+            "fail",
+            "Mencionou: " + " · ".join(ofertas[:4])
+            + ". Crie o material/oferta ou remova do texto.")
 
     # ── Score ────────────────────────────────────────────────────
     total = sum(_PESO[i.status] for i in itens)

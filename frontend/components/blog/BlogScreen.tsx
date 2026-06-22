@@ -377,6 +377,7 @@ function Editor({
   const [brief, setBrief] = useState<BlogBriefRequest>({ tema: '' });
   const [seo, setSeo] = useState<ChecklistSeo | null>(null);
   const [preview, setPreview] = useState(false);
+  const [pendencias, setPendencias] = useState<string[]>([]);
 
   async function gerar() {
     const tema = brief.tema.trim() || form.title.trim();
@@ -400,6 +401,7 @@ function Editor({
       });
       setBriefAberto(false);
       setSeo(null);
+      setPendencias(r.pendencias ?? []);
     }
   }
 
@@ -468,6 +470,31 @@ function Editor({
             onGerar={gerar}
             fallbackTitulo={form.title}
           />
+        )}
+
+        {pendencias.length > 0 && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <strong className="text-[13px] text-amber-800">
+                ⚠️ Pendências — o post menciona recursos que talvez você não tenha
+              </strong>
+              <button
+                type="button"
+                onClick={() => setPendencias([])}
+                className="text-amber-700 hover:text-amber-900 text-xs"
+              >
+                dispensar
+              </button>
+            </div>
+            <ul className="text-[12px] text-amber-800 mt-1 list-disc pl-5">
+              {pendencias.map((p, i) => (
+                <li key={i}>{p}</li>
+              ))}
+            </ul>
+            <p className="text-[11px] text-amber-700 m-0 mt-1">
+              Crie esses materiais/ofertas ou tire a menção do texto antes de publicar.
+            </p>
+          </div>
         )}
 
         {seo && <SeoPanel seo={seo} />}

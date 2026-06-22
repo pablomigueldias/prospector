@@ -90,6 +90,7 @@ export interface BlogRedacao {
   body_md: string;
   og_title?: string | null;
   og_description?: string | null;
+  pendencias?: string[];
 }
 
 export interface GerarImagemRequest {
