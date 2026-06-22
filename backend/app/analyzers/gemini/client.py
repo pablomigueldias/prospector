@@ -13,7 +13,9 @@ from app.utils.logger import get_logger
 
 logger = get_logger()
 
-MODEL = "gemini-2.5-flash"
+# gemini-2.5-flash andou com 0% de disponibilidade (503 "high demand" em massa);
+# o 3.5-flash é mais novo, melhor e estava estável (~5/6) com a mesma chave.
+MODEL = "gemini-3.5-flash"
 BASE_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
 TIMEOUT_SECONDS = 60.0
 
@@ -34,12 +36,12 @@ class GeminiIndisponivel(GeminiError):
     """API fora do ar."""
 
 
-# 503 ("model overloaded") acontece mesmo no tier PAGO em picos do Google e some
-# em segundos. Insistimos no Gemini (5 tentativas, backoff até 30s ≈ ~58s no pior
-# caso) em vez de cair pro Groq — preferência do Pablo por manter a qualidade.
+# 503 ("high demand") ainda pode pintar pontualmente. 4 tentativas com backoff
+# curto (~14s no pior caso) seguram o pico ocasional sem deixar o coordenador
+# lento — o preparar encadeia 2 chamadas, então retry longo somava minutos.
 @retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=2, min=4, max=30),
+    stop=stop_after_attempt(4),
+    wait=wait_exponential(multiplier=2, min=2, max=12),
     retry=retry_if_exception_type(
         (httpx.TimeoutException, httpx.NetworkError, GeminiIndisponivel)
     ),
