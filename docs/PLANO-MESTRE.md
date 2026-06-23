@@ -122,7 +122,11 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 
 ### 5.1 Self-service (Parte 1 restante)
 - [ ] 🟡 **S5 — Prompt Studio** — mover prompts do código pra templates versionados (`config_app`/tabela própria) com variáveis, **preview** do prompt montado e **histórico/rollback**. Começar por 1 agente (candidatura ou vaga — casa com §4.1). *Pesado.*
-- [ ] 🟡 **S6 — Manuseio direto em todas as telas** — reusar InlineCell/SidePanel/RecordModal/Timeline em Vaga e Freela (overlap com §2.A). *Refactor.*
+- [~] 🟡 **S6 — Manuseio direto em todas as telas** — **drawer padronizado (2026-06-22):** `Modal`→`SidePanel`
+  em **15 telas de CRUD** (CRM forms, Finanças forms/sections, Blog editor) pra "parecer um sistema só".
+  Mantidos como `Modal` por design: confirmações de pagamento (Pagar/PagarMes/PagarRecorrencia),
+  `ConfirmarExclusao`, busca global, extrato (leitura). **Falta:** reusar InlineCell/Timeline em Vaga e
+  Freela (overlap §2.A).
 - [ ] 🟡 **S7 — Opções dinâmicas além do CRM** — generalizar `OpcoesManager`/`crm_opcoes` pra status de vaga, estágios de freela, tags. *Médio: status de vaga é enum tipado hoje.*
 
 ### 5.2 MAS (multi-agente — núcleo feito)
@@ -173,7 +177,9 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 > O que falta do blog está abaixo (B5) e em **§6.F** (pendências).
 
 ### 6.B — Falta no agente de blog
-- [ ] 🟢 **B5 — Cross-agent:** publicar → divulgação automática no LinkedIn (depende do §6.C).
+- [x] 🟢 **B5 — Cross-agent** (2026-06-22): publicar post de blog → rascunho de divulgação no LinkedIn
+  (Página Reative), ligado por `origem_blog_post_id`. Determinístico (não trava/encarece a publicação),
+  idempotente. Detalhe em §6.C (L3).
 
 
 ### 6.F ⏳ Pendências do site/blog (registradas 2026-06-21 — NÃO resolver agora)
@@ -185,14 +191,41 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
   chamadas") — falta a **tabela de preço por modelo** (gemini-2.5-pro, gemini-3-pro-image, flash…) →
   `tokens_input/output × preço`. É transversal (S2/observabilidade), aparece em todos os agentes.
 
-### 6.C ⚪ Agente LinkedIn (próxima fase — esboço)
-> Manter o LinkedIn ativo e atrair recrutador + serviço.
+### 6.C ✅ Agente LinkedIn (L0–L5 FEITOS — 2026-06-22)
+> Manter o LinkedIn ativo e atrair recrutador + serviço. **Autônomo no sistema**
+> (vai sozinho até o rascunho pronto na fila+calendário), mas **não auto-posta**.
+> **Duas contas:** Página da Reative E perfil pessoal do Pablo (campo `conta`).
 - ⚠️ **Restrição honesta:** publicar pela API oficial do LinkedIn exige app aprovado (Marketing/
   Community); auto-post "não-oficial" é frágil e arrisca ban. **Default:** o agente **gera rascunhos**
-  (post + ideias de carrossel) numa fila + calendário; Pablo publica (copia/cola ou ferramenta de
-  agendamento). Revisitar auto-post oficial se compensar o esforço de aprovação.
-- **Conteúdo:** cada projeto/feature entregue e cada post de blog vira post de LinkedIn (hook + CTA);
-  sugestões de otimização de perfil; pautas de engajamento.
+  (post + ideias de carrossel) numa fila + calendário; Pablo revisa, copia/cola e publica.
+- **Conteúdo:** cada post de blog (cross-agent), cada projeto do Perfil Mestre e tendências do setor
+  viram post (hook + corpo + CTA + hashtags), ancorado no Perfil Mestre (anti-mentira).
+- [x] 🟢 **L0 — Cano ponta-a-ponta** (2026-06-22): modelo `linkedin_post` (conta/formato/hook/body/cta/
+  hashtags/status/fonte/scheduled_for…) + migração + repo + service admin (CRUD + char_count +
+  publicar) + schema + router `/api/linkedin` (perm `linkedin.editar`) + registry + tela
+  `LinkedInScreen` **com SidePanel (drawer)** (abas por status, filtro por conta, preview "copiar pro
+  LinkedIn", agendamento). Edição manual ponta-a-ponta funcionando.
+- [x] 🟢 **L1 — Redator IA** (2026-06-22): `analyzers/linkedin/redator` (brief → hook/body/cta/hashtags,
+  **sem Markdown**, anti-mentira ancorado no Perfil Mestre) com **voz por conta** (pessoal = 1ª pessoa/
+  autoridade; reative = institucional). `POST /redigir` + botão "✍️ Escrever com IA" no drawer (preenche
+  os campos, Pablo revisa). Testado c/ Gemini real nas duas vozes.
+- [x] 🟢 **L2 — Coordenador autônomo** (2026-06-22): `linkedin_service/coordenador` gera **rascunhos
+  prontos** sozinho — `gerar_de_projetos` (cada projeto do Perfil Mestre vira case) e
+  `gerar_de_tendencias` (`analyzers/linkedin/temas` propõe N temas → redige cada, evita repetir o que já
+  está na fila). `POST /gerar` + drawer "✨ Gerar com IA" (conta/fonte/qtd/público). Testado c/ Gemini.
+- [x] 🟢 **L3 — Cross-agent** (= B5) (2026-06-22): `coordenador.do_blog` plugado em
+  `blog_service.admin.mudar_status` (só na 1ª publicação, best-effort/try-except). Testado ponta-a-ponta
+  + idempotência.
+- [x] 🟢 **L4 — Cron + calendário editorial** (2026-06-22): `jobs/linkedin_posts.py` (off por default,
+  `linkedin_cron_*`) mantém a fila de rascunhos cheia e **agenda `scheduled_for`** espaçado; aviso no
+  Telegram; registrado no `main.py`. Front: toggle **Lista / 📅 Calendário** (agrupa por dia). Testado.
+- [x] 🟢 **L5 — Direção de arte/mídia** (2026-06-22): `analyzers/linkedin/midia` (social media pro)
+  recomenda a mídia ideal (foto/ilustração/carrossel/**vídeo-reel**/screenshot/gráfico) com
+  **justificativa + roteiro passo a passo + dicas**; campos `midia`/`imagens` no modelo (migração
+  `c1e8a4d7f3b2`). `POST /midia/sugerir` + `POST /imagem` (gera por IA via `image_client` Gemini → MinIO,
+  bucket do blog). Front: seção "🎨 Direção de arte" no drawer + **preview fiel do feed do LinkedIn**
+  (toggle Feed/Texto, avatar/nome por conta, imagem). Sugestão testada c/ Gemini; geração de imagem
+  espelha o blog (em produção) — falta 1 teste com imagem real + MinIO.
 
 ### 6.D ⚪ Agente Docs-keeper (próxima fase — esboço)
 > Manter a documentação do projeto sempre atualizada.
