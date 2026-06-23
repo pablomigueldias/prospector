@@ -40,8 +40,8 @@
 
 ## 1. O caminho único (prioridades)
 
-1. 🟢 **P5 — Reative Systems: Presença & Conteúdo**: **blog ✅ NO AR** + **LinkedIn ✅ NO AR** (2026-06-22, `LINKEDIN_FEITO.md`) → próximo: **Docs-keeper + RAG do Second Brain** (§6.D). Pendências do site em §6.F. (§6)
-2. 🔵 **P6 — Otimização, Testes & Refatoração** (NOVO — Pablo 2026-06-22, sentiu o sistema mais lento): desempenho/escalabilidade/segurança + cobertura de testes + manutenibilidade. (§8)
+1. 🟢 **P5 — Reative Systems: Presença & Conteúdo**: **blog ✅ NO AR** + **LinkedIn ✅ NO AR** (2026-06-22, `LINKEDIN_FEITO.md`) → 🎯 **PRÓXIMO: Docs-keeper + RAG do Second Brain** (§6.D) — Pablo quer o **agente que aprende sozinho ANTES da otimização**, pra usar como base de conhecimento. Pendências do site em §6.F. (§6)
+2. 🔵 **P6 — Otimização, Testes & Refatoração** (Pablo 2026-06-22, sentiu o sistema mais lento) — **vem DEPOIS do Docs-keeper**: desempenho/escalabilidade/segurança + testes **100% verdes** + manutenibilidade. (§8)
 3. 🟡 **P2 — Novos agentes** de captação/comercial: **Propostas Comerciais, Radar de Oportunidades, Outbound**. (§3)
 4. 🟢 **P3 — Vagas**: **lapidar o modelo de IA** (+ backlog de conveniência). (§4)
 5. ✅ **P1 — Freela**: essencialmente fechado → **manutenção** (Pablo satisfeito, vai testar). (§2)
@@ -239,6 +239,15 @@ similaridade → injeta no prompt dos agentes. *Para no rascunho* + *anti-mentir
 > segurança e manutenibilidade**. Princípio: medir antes de mexer (não otimizar no
 > escuro); cada melhoria = fatia testável; nada de big-bang. Consolida e prioriza os
 > itens transversais que já estavam espalhados em §5.5.
+>
+> ⏱️ **SEQUÊNCIA (Pablo 2026-06-22):** este épico vem **DEPOIS do Docs-keeper + RAG
+> (§6.D)** — o Pablo quer primeiro o **agente que aprende sozinho** pra usar como
+> base de conhecimento durante a otimização/refatoração.
+>
+> ✅ **META DE TESTES (Pablo 2026-06-22):** **todos os testes que escrevermos passam
+> 100% (verde)** — nada de teste flaky, pulado (`skip`/`xfail`) ou vermelho aceito;
+> a suíte fica sempre 100% antes de seguir. (Os smokes manuais de hoje viram testes
+> de verdade.)
 
 ### 8.1 🔴 Desempenho (investigar a lentidão percebida primeiro)
 - [ ] 🔴 **Medir antes de mexer:** baixar tempos reais — `/api/health` e endpoints
@@ -255,7 +264,9 @@ similaridade → injeta no prompt dos agentes. *Para no rascunho* + *anti-mentir
 - [ ] 🟢 **Infra:** revisar recursos do VPS (CPU/RAM/swap), logs de container,
   healthcheck do compose; ver se algo está reiniciando/lento desde o último deploy.
 
-### 8.2 🟡 Testes (rede de segurança pra refatorar com confiança)
+### 8.2 🟡 Testes (rede de segurança pra refatorar com confiança) — **meta: 100% verde**
+- [ ] 🔴 **Suíte sempre 100%** (Pablo): todo teste que escrevermos passa; zero
+  flaky/`skip`/`xfail`. É o gate antes de qualquer refatoração.
 - [ ] 🟡 **Cobertura backend:** subir testes de service/repo dos caminhos críticos
   (auth, finanças, vagas/freela, agora linkedin) — hoje os smokes são manuais.
 - [ ] 🟡 **E2E / visual (Playwright)** — login + smoke das telas principais (já em
