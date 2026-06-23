@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { api } from '@/lib/api';
 import { type CategoriaPlana } from '@/lib/categorias';
 import { ApiError, type Conta } from '@/lib/types';
@@ -183,7 +183,7 @@ export function LancamentoForm({
   }
 
   return (
-    <Modal open onClose={onClose} title={editando ? 'Editar lançamento' : 'Novo lançamento'}>
+    <SidePanel open onClose={onClose} title={editando ? 'Editar lançamento' : 'Novo lançamento'}>
       <form onSubmit={salvar} className="space-y-4">
         {/* Toggle despesa / receita */}
         <div className="grid grid-cols-2 gap-2">
@@ -518,6 +518,6 @@ export function LancamentoForm({
           </button>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }

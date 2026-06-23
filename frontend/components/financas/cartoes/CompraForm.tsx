@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useCategorias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
@@ -93,7 +93,7 @@ export function CompraForm({
   }
 
   return (
-    <Modal open onClose={onClose} title={`Compra no ${cartao.nome}`}>
+    <SidePanel open onClose={onClose} title={`Compra no ${cartao.nome}`}>
       <form onSubmit={salvar} className="space-y-4">
         <div>
           <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
@@ -219,6 +219,6 @@ export function CompraForm({
           </button>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }

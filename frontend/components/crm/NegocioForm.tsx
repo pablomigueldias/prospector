@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { Campo, MultiCampo, SelectCampo } from '@/components/crm/_crmShared';
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useFetch } from '@/hooks/useFetch';
 import { api } from '@/lib/api';
 import type { NegocioListItem, NegocioUpsert } from '@/lib/types';
@@ -91,7 +91,7 @@ export function NegocioForm({
   }
 
   return (
-    <Modal open onClose={onClose} title={editando ? 'Editar negócio' : 'Novo negócio'}>
+    <SidePanel open onClose={onClose} title={editando ? 'Editar negócio' : 'Novo negócio'}>
       <div className="flex flex-col gap-4">
         <div className="grid md:grid-cols-2 gap-4">
           <Campo label="Nome *" span2>
@@ -204,6 +204,6 @@ export function NegocioForm({
           </button>
         </div>
       </div>
-    </Modal>
+    </SidePanel>
   );
 }

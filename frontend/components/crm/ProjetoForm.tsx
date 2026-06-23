@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { Campo, SelectCampo } from '@/components/crm/_crmShared';
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useFetch } from '@/hooks/useFetch';
 import { api } from '@/lib/api';
 import type { ProjetoListItem, ProjetoUpsert } from '@/lib/types';
@@ -94,7 +94,7 @@ export function ProjetoForm({
   }
 
   return (
-    <Modal open onClose={onClose} title={editando ? 'Editar projeto' : 'Novo projeto'}>
+    <SidePanel open onClose={onClose} title={editando ? 'Editar projeto' : 'Novo projeto'}>
       <div className="flex flex-col gap-4">
         <div className="grid md:grid-cols-2 gap-4">
           <Campo label="Nome *" span2>
@@ -224,6 +224,6 @@ export function ProjetoForm({
           </button>
         </div>
       </div>
-    </Modal>
+    </SidePanel>
   );
 }

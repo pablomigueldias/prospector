@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { Campo } from '@/components/crm/_crmShared';
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { api } from '@/lib/api';
 import type {
   ContatoListItem,
@@ -88,7 +88,7 @@ export function ContatoForm({
   }
 
   return (
-    <Modal open onClose={onClose} title={editando ? 'Editar contato' : 'Novo contato'}>
+    <SidePanel open onClose={onClose} title={editando ? 'Editar contato' : 'Novo contato'}>
       <div className="flex flex-col gap-4">
         <div className="grid md:grid-cols-2 gap-4">
           <Campo label="Empresa *" span2>
@@ -181,6 +181,6 @@ export function ContatoForm({
           </button>
         </div>
       </div>
-    </Modal>
+    </SidePanel>
   );
 }

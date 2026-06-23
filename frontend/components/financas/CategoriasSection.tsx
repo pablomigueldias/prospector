@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useCategorias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias, type CategoriaPlana } from '@/lib/categorias';
@@ -199,7 +199,7 @@ function CategoriaForm({
   }
 
   return (
-    <Modal
+    <SidePanel
       open
       onClose={onClose}
       title={editando ? 'Editar categoria' : 'Nova categoria'}
@@ -273,6 +273,6 @@ function CategoriaForm({
           </div>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }

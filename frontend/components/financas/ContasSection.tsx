@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { api } from '@/lib/api';
 import { formatBRL } from '@/lib/format';
 import { ApiError, type Conta, type TipoConta } from '@/lib/types';
@@ -247,7 +247,7 @@ function GuardarReservaModal({
   }
 
   return (
-    <Modal open onClose={onClose} title={`Guardar em ${reserva.nome}`}>
+    <SidePanel open onClose={onClose} title={`Guardar em ${reserva.nome}`}>
       {origens.length === 0 ? (
         <p className="text-sm text-ink-soft m-0">
           Você precisa de outra conta (corrente/dinheiro) pra tirar o dinheiro e
@@ -307,7 +307,7 @@ function GuardarReservaModal({
           </div>
         </form>
       )}
-    </Modal>
+    </SidePanel>
   );
 }
 
@@ -407,7 +407,7 @@ function ContaForm({
   }
 
   return (
-    <Modal
+    <SidePanel
       open
       onClose={onClose}
       title={editando ? 'Editar conta' : 'Nova conta'}
@@ -517,6 +517,6 @@ function ContaForm({
           </div>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }

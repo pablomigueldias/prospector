@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { Campo, SelectCampo } from '@/components/crm/_crmShared';
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useFetch } from '@/hooks/useFetch';
 import { api } from '@/lib/api';
 import type { AtividadeListItem, AtividadeUpsert } from '@/lib/types';
@@ -81,7 +81,7 @@ export function AtividadeForm({
   }
 
   return (
-    <Modal open onClose={onClose} title={editando ? 'Editar atividade' : 'Nova atividade'}>
+    <SidePanel open onClose={onClose} title={editando ? 'Editar atividade' : 'Nova atividade'}>
       <div className="flex flex-col gap-4">
         <div className="grid md:grid-cols-2 gap-4">
           <Campo label="Título *" span2>
@@ -170,6 +170,6 @@ export function AtividadeForm({
           </button>
         </div>
       </div>
-    </Modal>
+    </SidePanel>
   );
 }

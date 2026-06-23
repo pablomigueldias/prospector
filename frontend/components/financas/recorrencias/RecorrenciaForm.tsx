@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useCartoes, useCategorias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { achatarCategorias } from '@/lib/categorias';
@@ -112,7 +112,7 @@ export function RecorrenciaForm({
   }
 
   return (
-    <Modal
+    <SidePanel
       open
       onClose={onClose}
       title={editando ? 'Editar conta fixa' : 'Nova conta fixa'}
@@ -309,6 +309,6 @@ export function RecorrenciaForm({
           </div>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }

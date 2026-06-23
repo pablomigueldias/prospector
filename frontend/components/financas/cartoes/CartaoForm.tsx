@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { api } from '@/lib/api';
 import { ApiError, type Cartao } from '@/lib/types';
 
@@ -95,7 +95,7 @@ export function CartaoForm({
   }
 
   return (
-    <Modal open onClose={onClose} title={editando ? 'Editar cartão' : 'Novo cartão'}>
+    <SidePanel open onClose={onClose} title={editando ? 'Editar cartão' : 'Novo cartão'}>
       <form onSubmit={salvar} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -208,6 +208,6 @@ export function CartaoForm({
           </div>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }

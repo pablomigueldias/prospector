@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useLeituras } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { ApiError, type LeituraConsumo } from '@/lib/types';
@@ -116,7 +116,7 @@ function LeituraForm({
   }
 
   return (
-    <Modal open onClose={onClose} title="Registrar leitura de consumo">
+    <SidePanel open onClose={onClose} title="Registrar leitura de consumo">
       <form onSubmit={salvar} className="space-y-4">
         <div className="grid grid-cols-3 gap-2">
           {(['agua', 'gas', 'luz'] as const).map((t) => (
@@ -213,7 +213,7 @@ function LeituraForm({
           </button>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }
 

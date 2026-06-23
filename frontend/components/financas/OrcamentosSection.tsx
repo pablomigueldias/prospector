@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useFetch } from '@/hooks/useFetch';
 import { useCategorias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
@@ -212,7 +212,7 @@ function OrcamentoForm({
   }
 
   return (
-    <Modal open onClose={onClose} title={editando ? 'Editar orçamento' : 'Novo orçamento'}>
+    <SidePanel open onClose={onClose} title={editando ? 'Editar orçamento' : 'Novo orçamento'}>
       <form onSubmit={salvar} className="space-y-4">
         <div>
           <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
@@ -285,6 +285,6 @@ function OrcamentoForm({
           </div>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { PostPreview } from '@/components/blog/PostPreview';
 import { useBlogActions, useBlogPautas, useBlogPosts } from '@/hooks/useBlog';
 import type {
@@ -418,11 +418,11 @@ function Editor({
   }
 
   return (
-    <Modal
+    <SidePanel
       open
       onClose={onClose}
       title={editando ? 'Editar post' : 'Novo post'}
-      maxWidth="max-w-3xl"
+      width="max-w-3xl"
     >
       <div className="flex flex-col gap-3 max-h-[70vh] overflow-y-auto pr-1">
         <div className="flex items-center justify-between gap-2 -mb-1">
@@ -638,7 +638,7 @@ function Editor({
           {acoes.loading ? 'Salvando…' : editando ? 'Salvar' : 'Criar rascunho'}
         </button>
       </div>
-    </Modal>
+    </SidePanel>
   );
 }
 

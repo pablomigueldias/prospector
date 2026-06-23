@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
-import { Modal } from '@/components/shared/Modal';
+import { SidePanel } from '@/components/shared/SidePanel';
 import { useRecorrencias } from '@/hooks/useFinancas';
 import { api } from '@/lib/api';
 import { type CategoriaPlana } from '@/lib/categorias';
@@ -103,7 +103,7 @@ export function EditarPrevistaModal({
   }
 
   return (
-    <Modal open onClose={onClose} title="Editar conta a pagar" maxWidth="max-w-lg">
+    <SidePanel open onClose={onClose} title="Editar conta a pagar" width="max-w-lg">
       <form onSubmit={salvar} className="space-y-4">
         <div>
           <label className="block text-[13px] font-medium text-ink-soft mb-1.5">
@@ -286,7 +286,7 @@ export function EditarPrevistaModal({
           </button>
         </div>
       </form>
-    </Modal>
+    </SidePanel>
   );
 }
 
