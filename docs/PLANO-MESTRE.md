@@ -26,8 +26,9 @@
 |---|---|---|
 | **Vagas** | ✅ bom | CRUD por JD, analisar (match/gaps/veredito), candidatura, currículo ATS, pipeline, funil, plano-de-gaps (**ranking "O que estudar" corrigido**). *Pablo: "só falta lapidar o modelo de IA".* |
 | **Freela** | ✅ **essencialmente fechado** | Agente especializado + gestão total na tela + autonomia (cadeia coordenador). Detalhe em `FREELA_FEITO.md`. **Pablo satisfeito (2026-06-20); resto = manutenção** (§2). |
-| **Blog / Site (Reative Systems)** | ✅ **NO AR (2026-06-21)** | Agente de blog headless **completo e em produção** (studio ⇄ site Vercel ⇄ cdn de imagens); SEO completo. Detalhe em `BLOG_FEITO.md`. Falta **B5/LinkedIn** (§6.C) e **pendências** (§6.F: form de contato, custo na observabilidade). |
-| **CRM** | ✅ completo | 5 seções (Empresas/Contatos/Negócios/Atividades/Projetos) fora do Notion, CRUD, filtros, pipeline+forecast, ficha 360, dashboard, edição inline, drawer, opções gerenciáveis. |
+| **Blog / Site (Reative Systems)** | ✅ **NO AR (2026-06-21)** | Agente de blog headless **completo e em produção** (studio ⇄ site Vercel ⇄ cdn de imagens); SEO completo. Detalhe em `BLOG_FEITO.md`. **Pendências** em §6.F (form de contato, custo na observabilidade). |
+| **LinkedIn (Reative Systems)** | ✅ **NO AR (2026-06-22)** | Agente de LinkedIn **completo e em produção**: 2 contas (Reative+pessoal), redator/coordenador autônomo, cross-agent do blog, cron+calendário, direção de arte (mídia+imagem IA), preview do feed. **+ drawer padronizado** em 15 telas. Detalhe em `LINKEDIN_FEITO.md`. |
+| **CRM** | ✅ completo | 5 seções (Empresas/Contatos/Negócios/Atividades/Projetos) fora do Notion, CRUD, filtros, pipeline+forecast, ficha 360, dashboard, edição inline, drawer, opções gerenciáveis. *Pendente: integrar Copywriter+Outreach aqui (§5.3).* |
 | **MAS (multi-agente)** | ✅ núcleo | Memória compartilhada (blackboard), coordenador (cadeia candidatura), outcomes, briefing noturno. Subiu a escada inteira do curso. |
 | **Self-service (Parte 1)** | ✅ núcleo | Cockpit (S1), Observabilidade (S2), Configurações na UI (S3), Agendamentos (S4), Export/Backup (S8). Falta S5–S7. |
 | **Finanças** | ✅ usável | Bot Telegram, contas/cartões/boletos, recorrências, orçamento, relatório. Backlog: **Dívidas/parcelamentos** (prioridade), Open Finance, NL queries. |
@@ -39,11 +40,12 @@
 
 ## 1. O caminho único (prioridades)
 
-1. 🟢 **P5 — Reative Systems: Presença & Conteúdo** (2026-06-21): **agente de blog ✅ NO AR** → próximo: **LinkedIn** (B5/§6.C) → **Docs-keeper**. Pendências do site em §6.F. (§6 / `BLOG_FEITO.md`)
-2. 🟡 **P2 — Novos agentes** de captação/comercial: **Propostas Comerciais, Radar de Oportunidades, Outbound**. (§3)
-3. 🟢 **P3 — Vagas**: **lapidar o modelo de IA** (+ backlog de conveniência). (§4)
-4. ✅ **P1 — Freela**: essencialmente fechado → **manutenção** (Pablo satisfeito, vai testar). (§2)
-5. ⚪ **P4 — Backlogs de manutenção**: self-service S5–S7, MAS, CRM, Finanças, infra. (§5)
+1. 🟢 **P5 — Reative Systems: Presença & Conteúdo**: **blog ✅ NO AR** + **LinkedIn ✅ NO AR** (2026-06-22, `LINKEDIN_FEITO.md`) → próximo: **Docs-keeper + RAG do Second Brain** (§6.D). Pendências do site em §6.F. (§6)
+2. 🔵 **P6 — Otimização, Testes & Refatoração** (NOVO — Pablo 2026-06-22, sentiu o sistema mais lento): desempenho/escalabilidade/segurança + cobertura de testes + manutenibilidade. (§8)
+3. 🟡 **P2 — Novos agentes** de captação/comercial: **Propostas Comerciais, Radar de Oportunidades, Outbound**. (§3)
+4. 🟢 **P3 — Vagas**: **lapidar o modelo de IA** (+ backlog de conveniência). (§4)
+5. ✅ **P1 — Freela**: essencialmente fechado → **manutenção** (Pablo satisfeito, vai testar). (§2)
+6. ⚪ **P4 — Backlogs de manutenção**: self-service S5–S7, MAS, CRM, Finanças, infra. (§5)
 
 ---
 
@@ -195,41 +197,17 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
   chamadas") — falta a **tabela de preço por modelo** (gemini-2.5-pro, gemini-3-pro-image, flash…) →
   `tokens_input/output × preço`. É transversal (S2/observabilidade), aparece em todos os agentes.
 
-### 6.C ✅ Agente LinkedIn (L0–L5 FEITOS — 2026-06-22)
-> Manter o LinkedIn ativo e atrair recrutador + serviço. **Autônomo no sistema**
-> (vai sozinho até o rascunho pronto na fila+calendário), mas **não auto-posta**.
-> **Duas contas:** Página da Reative E perfil pessoal do Pablo (campo `conta`).
-- ⚠️ **Restrição honesta:** publicar pela API oficial do LinkedIn exige app aprovado (Marketing/
-  Community); auto-post "não-oficial" é frágil e arrisca ban. **Default:** o agente **gera rascunhos**
-  (post + ideias de carrossel) numa fila + calendário; Pablo revisa, copia/cola e publica.
-- **Conteúdo:** cada post de blog (cross-agent), cada projeto do Perfil Mestre e tendências do setor
-  viram post (hook + corpo + CTA + hashtags), ancorado no Perfil Mestre (anti-mentira).
-- [x] 🟢 **L0 — Cano ponta-a-ponta** (2026-06-22): modelo `linkedin_post` (conta/formato/hook/body/cta/
-  hashtags/status/fonte/scheduled_for…) + migração + repo + service admin (CRUD + char_count +
-  publicar) + schema + router `/api/linkedin` (perm `linkedin.editar`) + registry + tela
-  `LinkedInScreen` **com SidePanel (drawer)** (abas por status, filtro por conta, preview "copiar pro
-  LinkedIn", agendamento). Edição manual ponta-a-ponta funcionando.
-- [x] 🟢 **L1 — Redator IA** (2026-06-22): `analyzers/linkedin/redator` (brief → hook/body/cta/hashtags,
-  **sem Markdown**, anti-mentira ancorado no Perfil Mestre) com **voz por conta** (pessoal = 1ª pessoa/
-  autoridade; reative = institucional). `POST /redigir` + botão "✍️ Escrever com IA" no drawer (preenche
-  os campos, Pablo revisa). Testado c/ Gemini real nas duas vozes.
-- [x] 🟢 **L2 — Coordenador autônomo** (2026-06-22): `linkedin_service/coordenador` gera **rascunhos
-  prontos** sozinho — `gerar_de_projetos` (cada projeto do Perfil Mestre vira case) e
-  `gerar_de_tendencias` (`analyzers/linkedin/temas` propõe N temas → redige cada, evita repetir o que já
-  está na fila). `POST /gerar` + drawer "✨ Gerar com IA" (conta/fonte/qtd/público). Testado c/ Gemini.
-- [x] 🟢 **L3 — Cross-agent** (= B5) (2026-06-22): `coordenador.do_blog` plugado em
-  `blog_service.admin.mudar_status` (só na 1ª publicação, best-effort/try-except). Testado ponta-a-ponta
-  + idempotência.
-- [x] 🟢 **L4 — Cron + calendário editorial** (2026-06-22): `jobs/linkedin_posts.py` (off por default,
-  `linkedin_cron_*`) mantém a fila de rascunhos cheia e **agenda `scheduled_for`** espaçado; aviso no
-  Telegram; registrado no `main.py`. Front: toggle **Lista / 📅 Calendário** (agrupa por dia). Testado.
-- [x] 🟢 **L5 — Direção de arte/mídia** (2026-06-22): `analyzers/linkedin/midia` (social media pro)
-  recomenda a mídia ideal (foto/ilustração/carrossel/**vídeo-reel**/screenshot/gráfico) com
-  **justificativa + roteiro passo a passo + dicas**; campos `midia`/`imagens` no modelo (migração
-  `c1e8a4d7f3b2`). `POST /midia/sugerir` + `POST /imagem` (gera por IA via `image_client` Gemini → MinIO,
-  bucket do blog). Front: seção "🎨 Direção de arte" no drawer + **preview fiel do feed do LinkedIn**
-  (toggle Feed/Texto, avatar/nome por conta, imagem). Sugestão testada c/ Gemini; geração de imagem
-  espelha o blog (em produção) — falta 1 teste com imagem real + MinIO.
+### 6.C ✅ Agente LinkedIn (L0–L5 + drawer) — FEITO E EM PRODUÇÃO (2026-06-22; ver `docs/LINKEDIN_FEITO.md`)
+> Agente de LinkedIn **completo e no ar** (`studio.reativesystems.com.br`): autônomo no sistema (vai até
+> o rascunho pronto na fila+calendário) mas **não auto-posta**; **duas contas** (Página Reative + perfil
+> pessoal, voz por conta); redator IA, coordenador autônomo (projetos+tendências), cross-agent (blog
+> publicado→rascunho), cron+calendário, **direção de arte** (mídia ideal + roteiro + gera imagem por IA) e
+> **preview fiel do feed**. Junto: **drawer (`SidePanel`) padronizado em 15 telas de CRUD**. Detalhe,
+> fatias e deploy → **`docs/LINKEDIN_FEITO.md`** (não inflar o plano). O que falta segue em §6.G.
+
+### 6.G ⏳ Pendências do LinkedIn / drawer (NÃO resolver agora)
+- [ ] 🟢 Testar as telas no navegador (LinkedIn + os 15 drawers migrados).
+- [ ] 🟡 Resto do **S6** (§5.1): reusar InlineCell/Timeline em Vaga e Freela.
 
 ### 6.D 🟡 Agente Docs-keeper + RAG do Second Brain (PRÓXIMO — visão Pablo 2026-06-22)
 > **Visão do Pablo:** um agente que **aprende tudo sobre o sistema sozinho** e mantém a documentação
@@ -251,6 +229,51 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 **no próprio Postgres (pgvector)**, sem serviço externo; gerar embeddings via **Gemini (cloud)** (sem GPU
 no VPS — ver `[[deploy-vps-hetzner]]` e §3.4). Ingestão (upload/markdown/colar) → chunk → embed → busca por
 similaridade → injeta no prompt dos agentes. *Para no rascunho* + *anti-mentira* continuam valendo.
+
+---
+
+## 8. 🔵 P6 — Otimização, Testes & Refatoração (NOVO — Pablo 2026-06-22)
+
+> **Pedido do Pablo:** "sinto o sistema mais lento que o normal." Quer um épico de
+> **otimização + testes + refatoração** pra ganhar **desempenho, escalabilidade,
+> segurança e manutenibilidade**. Princípio: medir antes de mexer (não otimizar no
+> escuro); cada melhoria = fatia testável; nada de big-bang. Consolida e prioriza os
+> itens transversais que já estavam espalhados em §5.5.
+
+### 8.1 🔴 Desempenho (investigar a lentidão percebida primeiro)
+- [ ] 🔴 **Medir antes de mexer:** baixar tempos reais — `/api/health` e endpoints
+  quentes (dashboard, listas), tempo de boot do container, latência de query no
+  Postgres (`pg_stat_statements`), tamanho do bundle/JS do front e LCP das telas.
+  Sem número, não otimizar.
+- [ ] 🟡 **Backend:** caçar **N+1** e queries sem índice (CRM/finanças/listas),
+  adicionar índices que faltam, paginação onde lista cresce, cache de respostas
+  caras (config/resumos). Conferir se o **agendador/cron** (linkedin/blog/lembretes)
+  pesa no boot/process.
+- [ ] 🟡 **Front:** code-split por agente (já há 1 tela por slug), lazy-load de telas
+  pesadas (BlogScreen 1.2k linhas, Finanças), revisar re-render e `useFetch`
+  duplicados; checar bundle (next build --profile).
+- [ ] 🟢 **Infra:** revisar recursos do VPS (CPU/RAM/swap), logs de container,
+  healthcheck do compose; ver se algo está reiniciando/lento desde o último deploy.
+
+### 8.2 🟡 Testes (rede de segurança pra refatorar com confiança)
+- [ ] 🟡 **Cobertura backend:** subir testes de service/repo dos caminhos críticos
+  (auth, finanças, vagas/freela, agora linkedin) — hoje os smokes são manuais.
+- [ ] 🟡 **E2E / visual (Playwright)** — login + smoke das telas principais (já em
+  §5.5). Vale ligar 1 fluxo por agente.
+- [ ] 🟢 **CI** que roda ruff + tsc + testes no push (hoje é manual).
+
+### 8.3 🟡 Segurança / escalabilidade / manutenção
+- [ ] 🟡 **2FA obrigatório pro admin** (`usuarios.gerenciar`) — já em §5.5.
+- [ ] 🟡 **Hardening:** revisar CSP/headers, rate-limit nos endpoints de IA (custo),
+  secrets no `.env`, trilha de auditoria no front.
+- [ ] 🟢 **Refatoração p/ manutenção:** padronizar o boilerplate dos vertical slices
+  (router `_handle`, `_base` dos services, conversores model→schema repetidos),
+  reduzir os ~362 avisos `ruff` aceitos onde for barato, quebrar telas gigantes.
+- [ ] 🟢 **Observabilidade do custo de IA** (§6.F) liga aqui: ver onde o gasto/lentidão
+  de LLM dói.
+
+> ⚠️ **Não começar sem medir (8.1).** A "lentidão" pode ser o deploy recém-recriado,
+> cron novo, ou algo real — o profiling decide a ordem do resto.
 
 ---
 
