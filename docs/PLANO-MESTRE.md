@@ -136,6 +136,10 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
 - [ ] 🟢 **Cron do sync de certificados** (1×/dia → zero clique).
 
 ### 5.3 CRM (essencialmente completo)
+- [ ] 🟡 **Integrar Copywriter + Outreach ao CRM** (PENDENTE — Pablo 2026-06-22): hoje são **agentes
+  soltos na sidebar** e ficaram vagos/deslocados ali; o lugar deles é **dentro do CRM** (copy de
+  prospecção + envio/follow-up agem sobre contatos/negócios). Decidir como unir (aba/ação no contato ou
+  negócio) e tirar da lista de agentes. *Não fazer agora — só registrado.*
 - [ ] 🟢 **Gráficos Recharts** no dashboard comercial.
 - [ ] 🟢 **Lembretes de atividade** via `jobs/` (atrasadas/hoje no Telegram).
 - [ ] ⛔ Dual-write pro Notion — **não fazer de propósito** (o objetivo é sair do Notion).
