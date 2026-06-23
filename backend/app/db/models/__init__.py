@@ -17,6 +17,7 @@ from app.db.models.blog.pauta import BlogPauta
 from app.db.models.blog.post import BlogPost
 from app.db.models.blog.redirect import BlogRedirect
 from app.db.models.config_app import ConfigApp
+from app.db.models.linkedin.post import LinkedinPost
 from app.db.models.contato import Contato
 from app.db.models.crm_opcao import CrmOpcao
 from app.db.models.email_outreach import EmailOutreach
@@ -80,6 +81,8 @@ __all__ = [
     "BlogPost",
     "BlogRedirect",
     "BlogPauta",
+    # linkedin (presença Reative + pessoal)
+    "LinkedinPost",
     # pessoal
     "PerfilMestre",
     "Vaga",

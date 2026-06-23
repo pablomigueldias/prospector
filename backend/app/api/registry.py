@@ -89,6 +89,23 @@ _AGENTS: list[Agent] = [
         },
     ),
     Agent(
+        slug="linkedin",
+        name="LinkedIn",
+        description=(
+            "Presença ativa no LinkedIn: gera rascunhos de post pra Página da "
+            "Reative e pro seu perfil pessoal (a partir do blog, projetos e "
+            "tendências). Você revisa e publica."
+        ),
+        icon="ti-brand-linkedin",
+        status="active",
+        order=20,  # depois do blog (19), antes de cobrança (22)
+        capabilities={
+            "gera_rascunho": True,
+            "duas_contas": True,
+            "calendario": True,
+        },
+    ),
+    Agent(
         slug="cobranca",
         name="Cobrança",
         description=(
@@ -97,7 +114,7 @@ _AGENTS: list[Agent] = [
         ),
         icon="ti-cash",
         status="soon",
-        order=20,
+        order=22,
         roadmap_label="Roadmap Q3",
     ),
     Agent(

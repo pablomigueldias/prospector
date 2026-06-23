@@ -91,6 +91,18 @@ class Settings(BaseSettings):
     blog_pautas_dia_semana: str = "mon"  # cron day_of_week
     blog_pautas_hora: int = 7
 
+    # Agente LinkedIn — cron que mantém a FILA de rascunhos cheia (L4) e os
+    # agenda no calendário editorial. Não auto-posta no LinkedIn; só prepara
+    # rascunhos pro Pablo. Desligado por padrão (consome cota de LLM).
+    linkedin_cron_enabled: bool = False
+    linkedin_min_fila: int = 3          # gera se houver < N rascunhos na conta
+    linkedin_gerar: int = 3             # quantos gerar quando a fila está baixa
+    linkedin_conta: str = "reative"     # conta-alvo do cron (reative | pessoal)
+    linkedin_fonte: str = "tendencia"   # fonte do cron (tendencia | projeto)
+    linkedin_intervalo_dias: int = 2    # espaçamento entre posts no calendário
+    linkedin_dia_semana: str = "mon"    # cron day_of_week
+    linkedin_hora: int = 8
+
     # Telegram (Organizador Financeiro). chat_id → usuario_id mapeia quem fala
     # no bot pro perfil do financas (você / Sandra). Sem tabela usuarios ainda.
     telegram_bot_token: str = ""

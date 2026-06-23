@@ -115,10 +115,33 @@ async def mudar_status(post_id: str, status: str) -> BlogPostAdmin:
             raise BlogError("Post não encontrado.")
         dados: dict = {"status": status}
         # Publicar pela 1ª vez carimba a data (vira o gate de visibilidade).
-        if status == "publicado" and atual.published_at is None:
+        primeira_publicacao = status == "publicado" and atual.published_at is None
+        if primeira_publicacao:
             dados["published_at"] = datetime.now(UTC)
         post = await repo.update(pid, dados)
-        return to_admin(post)
+        resultado = to_admin(post)
+
+    # Cross-agent (L3/B5): ao publicar pela 1ª vez, gera um rascunho de
+    # divulgação no LinkedIn. Best-effort — uma falha aqui NÃO derruba a
+    # publicação do blog (o agente LinkedIn é opcional).
+    if primeira_publicacao:
+        await _divulgar_no_linkedin(post)
+
+    return resultado
+
+
+async def _divulgar_no_linkedin(post) -> None:
+    try:
+        from app.api.services import linkedin_service
+        await linkedin_service.coordenador.do_blog(
+            blog_post_id=post.id,
+            slug=post.slug,
+            title=post.title,
+            excerpt=post.excerpt,
+        )
+    except Exception as e:  # noqa: BLE001 — divulgação é best-effort
+        from app.utils.logger import get_logger
+        get_logger().warning("blog→linkedin: falha ao gerar rascunho ({})", e)
 
 
 async def deletar(post_id: str) -> None:

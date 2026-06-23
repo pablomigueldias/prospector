@@ -15,3 +15,4 @@ export * from './pessoal';
 export * from './freela';
 export * from './financas';
 export * from './blog';
+export * from './linkedin';

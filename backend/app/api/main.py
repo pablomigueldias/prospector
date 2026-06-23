@@ -24,6 +24,7 @@ from app.api.routers import export as export_router
 from app.api.routers import freela as freela_router
 from app.api.routers import importador as importador_router
 from app.api.routers import leituras as leituras_router
+from app.api.routers import linkedin as linkedin_router
 from app.api.routers import memoria as memoria_router
 from app.api.routers import nlu as nlu_router
 from app.api.routers import observability as observability_router
@@ -95,6 +96,18 @@ async def lifespan(app: FastAPI):
                     minute=0,
                 ),
                 id="blog_pautas",
+                replace_existing=True,
+            )
+        if settings.linkedin_cron_enabled:
+            from app.jobs.linkedin_posts import rotina_fila
+            agendador.add_job(
+                rotina_fila,
+                CronTrigger(
+                    day_of_week=settings.linkedin_dia_semana,
+                    hour=settings.linkedin_hora,
+                    minute=0,
+                ),
+                id="linkedin_posts",
                 replace_existing=True,
             )
         agendador.start()
@@ -180,6 +193,7 @@ app.include_router(outreach_router.router)
 # ── Blog headless (site Reative) — pública (sem auth) + admin (auth) ─
 app.include_router(blog_public_router.router)
 app.include_router(blog_router.router)
+app.include_router(linkedin_router.router)
 
 # ── Área pessoal (separada da Reative) ────────────────────────────
 app.include_router(perfil_router.router)

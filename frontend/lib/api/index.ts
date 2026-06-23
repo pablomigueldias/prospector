@@ -14,6 +14,7 @@ import { pessoalApi } from './pessoal';
 import { freelaApi } from './freela';
 import { financasApi } from './financas';
 import { blogApi } from './blog';
+import { linkedinApi } from './linkedin';
 import { authApi } from './auth';
 
 export { API_URL } from './client';
@@ -30,5 +31,6 @@ export const api = {
   ...freelaApi,
   ...financasApi,
   ...blogApi,
+  ...linkedinApi,
   ...authApi,
 };
