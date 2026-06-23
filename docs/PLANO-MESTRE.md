@@ -227,11 +227,26 @@ abordagem. O Prospector + copywriter já são a base; grava no CRM como negócio
   (toggle Feed/Texto, avatar/nome por conta, imagem). Sugestão testada c/ Gemini; geração de imagem
   espelha o blog (em produção) — falta 1 teste com imagem real + MinIO.
 
-### 6.D ⚪ Agente Docs-keeper (próxima fase — esboço)
-> Manter a documentação do projeto sempre atualizada.
-- **Gatilho:** roda no commit/PR (ou cron) → lê o `git diff` → detecta drift entre código e docs
-  (`README`, `PLANO-MESTRE`, docs de arquitetura/API) → **propõe atualização como rascunho/PR** pra
-  revisão (não edita direto sem checkpoint). Reusa o padrão MAS (memória + coordenador).
+### 6.D 🟡 Agente Docs-keeper + RAG do Second Brain (PRÓXIMO — visão Pablo 2026-06-22)
+> **Visão do Pablo:** um agente que **aprende tudo sobre o sistema sozinho** e mantém a documentação
+> **totalmente organizada** — pra ele não precisar re-explicar a mesma coisa toda hora e o sistema
+> sempre progredir. Junto: um **RAG do "Second Brain"** (o conteúdo que ele estuda/anota) pra a IA
+> **saber tudo que o Pablo sabe** e usar isso no **blog, no LinkedIn, no sistema, no site e no
+> desenvolvimento pessoal** dele. Une o Docs-keeper com o "Segundo Cérebro (RAG)" do §3.4.
+
+**Duas frentes que se reforçam:**
+1. **Docs-keeper (documentação viva do sistema):** auto-aprende a arquitetura (lê código/`git diff`),
+   detecta drift entre código e docs (`README`, `PLANO-MESTRE`, docs de arquitetura/API), e **propõe
+   atualização como rascunho** (checkpoint humano, padrão MAS). Objetivo: documentação sempre atual =
+   contexto pronto pros outros agentes (e pra mim) sem re-explicação.
+2. **RAG do Second Brain (conhecimento do Pablo):** indexa as anotações/estudos dele (Second Brain) +
+   projetos + certificados → vira **fonte de recuperação** que alimenta o redator do blog/LinkedIn
+   (mais autêntico, ancorado no que ele REALMENTE sabe), o sistema e o site.
+
+**Arquitetura (decisão travada):** o Postgres de produção **já é `pgvector/pgvector:pg16`** → embeddings
+**no próprio Postgres (pgvector)**, sem serviço externo; gerar embeddings via **Gemini (cloud)** (sem GPU
+no VPS — ver `[[deploy-vps-hetzner]]` e §3.4). Ingestão (upload/markdown/colar) → chunk → embed → busca por
+similaridade → injeta no prompt dos agentes. *Para no rascunho* + *anti-mentira* continuam valendo.
 
 ---
 
